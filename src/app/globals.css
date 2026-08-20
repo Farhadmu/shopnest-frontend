@@ -31,22 +31,7 @@
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
-/* Automatic System-level Dark Mode Support */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f172a; /* Slate-900 */
-    --foreground: #f8fafc; /* Slate-50 */
-    --primary: #00b945; /* Slightly brighter green for dark mode accessibility */
-    --primary-hover: #00a63e;
-    --secondary: #38bdf8; /* Sky-400 */
-    --secondary-hover: #0ea5e9;
-    --muted: #94a3b8; /* Slate-400 */
-    --muted-foreground: #64748b; /* Slate-500 */
-    --border: #334155; /* Slate-700 */
-  }
-}
-
-/* Selector-based Manual Dark Mode Support (.dark class on html/body element) */
+/* Manual Class-based Dark Mode Support (.dark class on html/body element) */
 .dark {
   --background: #0f172a;
   --foreground: #f8fafc;
