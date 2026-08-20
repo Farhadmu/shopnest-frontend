@@ -61,7 +61,7 @@ const WhyShopNest = () => {
         {features.map((item, index) => (
           <div
             key={index}
-            className="card p-6 hover:shadow-card-hover transition-all duration-300 hover:-translate-y-1"
+            className="bg-white rounded-2xl border border-gray-100 shadow-card p-6 hover:shadow-card-hover transition-all duration-300 hover:-translate-y-1"
           >
             <div
               className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl mb-4 ${item.bg} ${
