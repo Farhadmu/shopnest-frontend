@@ -18,7 +18,7 @@ export default function LoginPage() {
     <div className="flex justify-center items-center py-12">
       <Card className="w-full max-w-md">
         <h2 className="text-xl font-bold mb-1">Sign In to ShopNest</h2>
-        <p className="text-sm text-slate-500 mb-6">Enter your email and password to access your account.</p>
+        <p className="text-sm text-muted mb-6">Enter your email and password to access your account.</p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Input

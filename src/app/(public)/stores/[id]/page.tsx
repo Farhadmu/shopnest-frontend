@@ -8,7 +8,7 @@ export default async function StorePage({ params }: StorePageProps) {
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-2xl font-bold">Store Profile</h1>
-      <p className="text-slate-500">Viewing seller store ID: {id}</p>
+      <p className="text-muted">Viewing seller store ID: {id}</p>
     </div>
   );
 }

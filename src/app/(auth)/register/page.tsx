@@ -19,7 +19,7 @@ export default function RegisterPage() {
     <div className="flex justify-center items-center py-12">
       <Card className="w-full max-w-md">
         <h2 className="text-xl font-bold mb-1">Create an Account</h2>
-        <p className="text-sm text-slate-500 mb-6">Join ShopNest as a customer or seller.</p>
+        <p className="text-sm text-muted mb-6">Join ShopNest as a customer or seller.</p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Input
