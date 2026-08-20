@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/client";
 import ProductCard from "../components/ProductCard";
+import WhyShopNest from "../components/home/WhyShopNest";
 
 const Home = () => {
   const [products, setProducts] = useState([]);
@@ -121,27 +122,8 @@ const Home = () => {
           </div>
         )}
       </section>
-
-      {/* Feature strip */}
-      <section className="max-w-7xl mx-auto px-4 py-10">
-        <div className="grid sm:grid-cols-3 gap-4">
-          <div className="card p-6 text-center hover:shadow-card-hover transition-shadow">
-            <div className="w-12 h-12 mx-auto rounded-xl bg-brand-gradient flex items-center justify-center text-white text-xl mb-3">🚚</div>
-            <h3 className="font-semibold text-gray-800">Fast Delivery</h3>
-            <p className="text-sm text-gray-500 mt-1">Real-time order tracking from checkout to your door.</p>
-          </div>
-          <div className="card p-6 text-center hover:shadow-card-hover transition-shadow">
-            <div className="w-12 h-12 mx-auto rounded-xl bg-violet-gradient flex items-center justify-center text-white text-xl mb-3">🤖</div>
-            <h3 className="font-semibold text-gray-800">AI Shopping Assistant</h3>
-            <p className="text-sm text-gray-500 mt-1">Get personalized product recommendations in seconds.</p>
-          </div>
-          <div className="card p-6 text-center hover:shadow-card-hover transition-shadow">
-            <div className="w-12 h-12 mx-auto rounded-xl bg-teal-gradient flex items-center justify-center text-white text-xl mb-3">🛡️</div>
-            <h3 className="font-semibold text-gray-800">Verified Sellers</h3>
-            <p className="text-sm text-gray-500 mt-1">Every store is reviewed and moderated by our team.</p>
-          </div>
-        </div>
-      </section>
+        {/* why shopnest */}
+        <WhyShopNest />
     </div>
   );
 };
