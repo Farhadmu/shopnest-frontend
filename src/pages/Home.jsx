@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import api from "../api/client";
 import ProductCard from "../components/ProductCard";
 import WhyShopNest from "../components/home/WhyShopNest";
+import TrendingProducts from "../components/home/TrendingProducts";
 
 const Home = () => {
   const [products, setProducts] = useState([]);
@@ -93,35 +94,8 @@ const Home = () => {
         </section>
       )}
 
-      {/* Trending products */}
-      <section className="max-w-7xl mx-auto px-4 py-10">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="section-title">🔥 Trending Products</h2>
-          <Link to="/products" className="btn-ghost text-sm">
-            View all →
-          </Link>
-        </div>
-        {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="skeleton aspect-square rounded-2xl" />
-            ))}
-          </div>
-        ) : products.length === 0 ? (
-          <p className="text-gray-400">
-            No products yet — run <code className="bg-gray-100 px-1.5 py-0.5 rounded">npm run seed</code> in the
-            backend to load demo data.
-          </p>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-            {products.map((p, i) => (
-              <div key={p._id} style={{ animationDelay: `${i * 40}ms` }}>
-                <ProductCard product={p} />
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+    
+    <TrendingProducts />
         {/* why shopnest */}
         <WhyShopNest />
     </div>
