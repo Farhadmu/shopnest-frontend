@@ -1,5 +1,5 @@
 import React from "react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@heroui/react";
 
 export interface EmptyStateProps {
   title?: string;
@@ -20,7 +20,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       <h3 className="text-base font-semibold text-foreground mb-1">{title}</h3>
       <p className="text-sm text-muted max-w-sm mb-4">{description}</p>
       {actionLabel && onAction && (
-        <Button onClick={onAction} variant="outline" size="sm">
+        <Button onPress={onAction} variant="outline" size="sm">
           {actionLabel}
         </Button>
       )}
