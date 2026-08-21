@@ -1,5 +1,5 @@
 import React from "react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@heroui/react";
 
 export interface PaginationProps {
   currentPage: number;
@@ -22,16 +22,16 @@ export const Pagination: React.FC<PaginationProps> = ({
         <Button
           variant="outline"
           size="sm"
-          disabled={currentPage <= 1}
-          onClick={() => onPageChange(currentPage - 1)}
+          isDisabled={currentPage <= 1}
+          onPress={() => onPageChange(currentPage - 1)}
         >
           Previous
         </Button>
         <Button
           variant="outline"
           size="sm"
-          disabled={currentPage >= totalPages}
-          onClick={() => onPageChange(currentPage + 1)}
+          isDisabled={currentPage >= totalPages}
+          onPress={() => onPageChange(currentPage + 1)}
         >
           Next
         </Button>

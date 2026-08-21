@@ -1,5 +1,5 @@
 import React from "react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@heroui/react";
 
 export interface ErrorStateProps {
   title?: string;
@@ -18,7 +18,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
       <h3 className="text-sm font-semibold text-error mb-1">{title}</h3>
       <p className="text-xs text-error/80 max-w-sm mb-4">{message}</p>
       {onRetry && (
-        <Button onClick={onRetry} variant="danger" size="sm">
+        <Button onPress={onRetry} variant="danger" size="sm">
           Try Again
         </Button>
       )}
