@@ -1,5 +1,5 @@
 import { ProductCard } from "@/features/products/components/ProductCard";
-
+import  WhyShopNest  from "@/components/home/WhyShopNest";
 const SAMPLE_PRODUCTS = [
   { id: "1", title: "Wireless Noise-Canceling Headphones", price: 199.99, category: "Electronics", rating: 4.8 },
   { id: "2", title: "Ergonomic Mechanical Keyboard", price: 129.5, category: "Accessories", rating: 4.6 },
@@ -26,6 +26,7 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+      <WhyShopNest /> 
     </div>
   );
 }

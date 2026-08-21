@@ -1,20 +1,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "@heroui/styles"; 
 @import "tailwindcss";
 
 :root {
-  /* Centralized Core Theme Variables */
-  --background: #f8fafc; /* Slate-50 style for clean light mode background */
-  --foreground: #0f172a; /* Slate-900 style for text */
-  --primary: #00a63e; /* Team's selected primary green */
-  --primary-hover: #008732;
-  --secondary: #0ea5e9; /* Sky-500 */
-  --secondary-hover: #0284c7;
-  --muted: #64748b; /* Slate-500 */
-  --muted-foreground: #94a3b8; /* Slate-400 */
-  --border: #e2e8f0; /* Slate-200 */
-  --success: #10b981; /* Emerald-500 */
-  --warning: #f59e0b; /* Amber-500 */
-  --error: #ef4444; /* Red-500 */
+  /* Brand & Core Identity */
+  --color-primary: #4F46E5;
+  --color-primary-hover: #4338CA;
+  --color-secondary: #0F172A;
+  --color-accent: #7C3AED;
+  --color-warm: #F97316;
+
+  /* Surfaces & Backgrounds */
+  --color-background: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-muted-bg: #F1F5F9;
+
+  /* Text & Borders */
+  --color-text: #0F172A;
+  --color-muted: #64748B;
+  --color-border: #E2E8F0;
+
+  /* Status & Risk Assessment Indicators */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #F43F5E;
+  --color-risk-low: #10B981;
+  --color-risk-medium: #F59E0B;
+  --color-risk-high: #F97316;
+  --color-risk-critical: #F43F5E;
 
   /* Global Typography Foundation */
   --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -33,31 +46,40 @@
 
 /* Manual Class-based Dark Mode Support (.dark class on html/body element) */
 .dark {
-  --background: #0f172a;
-  --foreground: #f8fafc;
-  --primary: #00b945;
-  --primary-hover: #00a63e;
-  --secondary: #38bdf8;
-  --secondary-hover: #0ea5e9;
-  --muted: #94a3b8;
-  --muted-foreground: #64748b;
-  --border: #334155;
+  --color-background: #0F172A;
+  --color-surface: #1E293B;
+  --color-muted-bg: #334155;
+  --color-text: #F8FAFC;
+  --color-muted: #94A3B8;
+  --color-border: #334155;
+  --color-primary: #6366F1;
+  --color-primary-hover: #4F46E5;
+  --color-accent: #A855F7;
 }
 
 /* Tailwind CSS v4 Theme Integration */
 @theme {
-  --color-primary: var(--primary);
-  --color-primary-hover: var(--primary-hover);
-  --color-secondary: var(--secondary);
-  --color-secondary-hover: var(--secondary-hover);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-border: var(--border);
-  --color-success: var(--success);
-  --color-warning: var(--warning);
-  --color-error: var(--error);
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-secondary: var(--color-secondary);
+  --color-accent: var(--color-accent);
+  --color-warm: var(--color-warm);
+
+  --color-background: var(--color-background);
+  --color-surface: var(--color-surface);
+  --color-muted-bg: var(--color-muted-bg);
+
+  --color-text: var(--color-text);
+  --color-muted: var(--color-muted);
+  --color-border: var(--color-border);
+
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-error: var(--color-error);
+  --color-risk-low: var(--color-risk-low);
+  --color-risk-medium: var(--color-risk-medium);
+  --color-risk-high: var(--color-risk-high);
+  --color-risk-critical: var(--color-risk-critical);
 
   --font-sans: var(--font-sans);
 
@@ -73,8 +95,8 @@
 
 /* Global Body and Base Styles */
 body {
-  background-color: var(--background);
-  color: var(--foreground);
+  background-color: var(--color-background);
+  color: var(--color-text);
   font-family: var(--font-sans);
   margin: 0;
   padding: 0;
@@ -86,12 +108,12 @@ body {
 /* Global Typography Foundation */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-sans);
-  color: var(--foreground);
+  color: var(--color-text);
 }
 
 /* Global Accessibility Styles: focus-visible */
 *:focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 

@@ -1,13 +1,15 @@
 import Link from "next/link";
 import React from "react";
 import { APP_NAME } from "@/lib/constants";
+import Image from "next/image";
 
 export const Navbar: React.FC = () => {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary">
-          <span>🛍️ {APP_NAME}</span>
+        <Image src="/shopnest-logo.png" width={40} height={40} alt="ShopNest Logo" />
+          <span>{APP_NAME}</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted">
