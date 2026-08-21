@@ -3,6 +3,7 @@ import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { APP_NAME } from "@/lib/constants";
+import { AppHeroUIProvider } from "@/providers/HeroUIProvider";
 
 export const metadata: Metadata = {
   title: `${APP_NAME} - Multi-Vendor E-Commerce Platform`,
@@ -17,11 +18,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="flex min-h-screen flex-col">
-        <Navbar />
-        <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-          {children}
-        </main>
-        <Footer />
+        <AppHeroUIProvider>
+          <Navbar />
+          <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+            {children}
+          </main>
+          <Footer />
+        </AppHeroUIProvider>
       </body>
     </html>
   );
