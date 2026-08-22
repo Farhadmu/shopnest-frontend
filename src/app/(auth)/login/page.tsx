@@ -43,8 +43,8 @@ export default function LoginPage() {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/20 transition-transform group-hover:scale-105">
               <FiShoppingBag className="h-5 w-5" />
             </div>
-            <span>
-              Shop<span className="text-primary">Nest</span>
+            <span className="inline-block bg-gradient-to-r from-slate-900 via-indigo-700 to-primary bg-clip-text text-transparent drop-shadow-[0_2px_10px_rgba(79,70,229,0.14)] font-black tracking-[-0.06em]">
+              ShopNest
             </span>
           </Link>
           <h1 className="text-2xl font-extrabold text-foreground mt-4 tracking-tight">
