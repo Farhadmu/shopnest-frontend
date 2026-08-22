@@ -2,6 +2,7 @@ import Link from "next/link";
 import React from "react";
 import { APP_NAME } from "@/lib/constants";
 import Image from "next/image";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 export const Navbar: React.FC = () => {
   return (
@@ -33,6 +34,7 @@ export const Navbar: React.FC = () => {
         </nav>
 
         <div className="flex items-center gap-3">
+          <NotificationBell />
           <Link
             href="/login"
             className="text-sm font-medium text-foreground hover:text-primary px-3 py-1.5 rounded-lg transition-colors"

@@ -1,4 +1,4 @@
-import { protectedFetch, protectedMutation } from "@/lib/core/server";
+import { clientFetch, clientMutation } from "@/lib/core/client";
 
 export interface CartItem {
   productId: string;
@@ -12,17 +12,17 @@ export interface Cart {
 }
 
 export async function getCart() {
-  return protectedFetch<Cart>("/cart");
+  return clientFetch<Cart>("/cart");
 }
 
 export async function addToCart(productId: string, quantity: number = 1) {
-  return protectedMutation<Cart>("/cart/items", "POST", { productId, quantity });
+  return clientMutation<Cart>("/cart/items", "POST", { productId, quantity });
 }
 
 export async function updateCartItem(productId: string, quantity: number) {
-  return protectedMutation<Cart>(`/cart/items/${productId}`, "PATCH", { quantity });
+  return clientMutation<Cart>(`/cart/items/${productId}`, "PATCH", { quantity });
 }
 
 export async function removeCartItem(productId: string) {
-  return protectedMutation<Cart>(`/cart/items/${productId}`, "DELETE");
+  return clientMutation<Cart>(`/cart/items/${productId}`, "DELETE");
 }
