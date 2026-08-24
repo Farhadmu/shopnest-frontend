@@ -1,6 +1,13 @@
 import { ApiError } from "./errors";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
+function getBaseUrl(): string {
+  let url = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
+  url = url.trim().replace(/\/$/, "");
+  if (url.startsWith("http") && !url.includes("/api/v1")) {
+    url = `${url}/api/v1`;
+  }
+  return url;
+}
 
 interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
@@ -8,9 +15,10 @@ interface RequestOptions extends RequestInit {
 
 function buildUrl(endpoint: string, params?: RequestOptions["params"]): string {
   const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-  let fullPath = BASE_URL.startsWith("http")
-    ? `${BASE_URL}${cleanEndpoint}`
-    : `${BASE_URL.replace(/\/$/, "")}${cleanEndpoint}`;
+  const baseUrl = getBaseUrl();
+  let fullPath = baseUrl.startsWith("http")
+    ? `${baseUrl}${cleanEndpoint}`
+    : `${baseUrl.replace(/\/$/, "")}${cleanEndpoint}`;
 
   if (params) {
     const searchParams = new URLSearchParams();
