@@ -92,8 +92,6 @@ export default function TrustFeatures() {
               className="
                 group relative flex flex-col justify-between
                 overflow-hidden rounded-2xl
-                border border-slate-200 dark:border-slate-800
-                bg-white dark:bg-[#0d1117]
                 p-6
                 shadow-lg dark:shadow-xl
                 transition-all duration-500
