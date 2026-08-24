@@ -5,18 +5,34 @@ export interface Product {
   title: string;
   description: string;
   price: number;
+  discountPrice?: number;
   category: string;
-  storeId: string;
+  storeId?: string;
+  sellerId?: string;
   stock: number;
-  createdAt: string;
+  images?: string[];
+  tags?: string[];
+  ratingAvg?: number;
+  ratingCount?: number;
+  sold?: number;
+  views?: number;
+  status?: "pending" | "approved" | "rejected" | string;
+  specifications?: Record<string, string>;
+  sentiment?: { positive: number; neutral: number; negative: number };
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CreateProductInput {
   title: string;
   description: string;
   price: number;
+  discountPrice?: number;
   category: string;
   stock: number;
+  images?: string[];
+  tags?: string[];
+  specifications?: Record<string, string>;
 }
 
 /**
