@@ -7,7 +7,8 @@ import { ThemeBootstrap } from "@/components/layout/ThemeBootstrap";
 
 export const metadata: Metadata = {
   title: `${APP_NAME} - Multi-Vendor E-Commerce Platform`,
-  description: "Modern multi-vendor e-commerce platform for customers, sellers, and administrators.",
+  description:
+    "Modern multi-vendor e-commerce platform for customers, sellers, and administrators.",
 };
 
 export default function RootLayout({
