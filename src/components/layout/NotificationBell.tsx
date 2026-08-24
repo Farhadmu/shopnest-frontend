@@ -11,11 +11,13 @@ import {
 } from "@/lib/api/notifications";
 import { getErrorMessage } from "@/lib/core/errors";
 import { useRouter } from "next/navigation";
+import { useSession } from "@/lib/auth-client";
 
 const POLL_INTERVAL_MS = 30000;
 
 export const NotificationBell: React.FC = () => {
   const router = useRouter();
+  const { data: session, isPending } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [items, setItems] = useState<Notification[]>([]);
@@ -46,14 +48,15 @@ export const NotificationBell: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (isPending || !session?.user) return;
     refreshUnreadCount();
     const interval = setInterval(refreshUnreadCount, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [refreshUnreadCount]);
+  }, [isPending, session?.user, refreshUnreadCount]);
 
   useEffect(() => {
-    if (isOpen) loadNotifications();
-  }, [isOpen, loadNotifications]);
+    if (isOpen && session?.user) loadNotifications();
+  }, [isOpen, session?.user, loadNotifications]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -90,6 +93,8 @@ export const NotificationBell: React.FC = () => {
     setIsOpen(false);
     if (notification.link) router.push(notification.link);
   };
+
+  if (isPending || !session?.user) return null;
 
   return (
     <div className="relative" ref={containerRef}>

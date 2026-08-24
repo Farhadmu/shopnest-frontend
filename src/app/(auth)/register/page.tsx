@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { Button, Card, CardContent, TextField, Label, Input } from "@heroui/react";
 import { FcGoogle } from "react-icons/fc";
@@ -26,33 +27,54 @@ export default function RegisterPage() {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       setErrorMsg("Passwords do not match!");
+      return;
+    }
+    if (password.length < 8) {
+      setErrorMsg("Password must be at least 8 characters.");
       return;
     }
     if (!agreeTerms) {
       setErrorMsg("Please accept the Terms of Service to continue.");
       return;
     }
+
     setErrorMsg("");
     setIsLoading(true);
-
-    // Simulate Better Auth sign-up request
-    setTimeout(() => {
+    try {
+      const { signUp } = await import("@/lib/auth-client");
+      const result = await (signUp.email as any)({
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+        role,
+        callbackURL: "/",
+      });
+      if (result.error) {
+        setErrorMsg(result.error.message || "Unable to create your account.");
+        return;
+      }
+      router.replace("/");
+      router.refresh();
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : "Unable to create your account.");
+    } finally {
       setIsLoading(false);
-    }, 1200);
+    }
   };
 
   return (
-    <div className="relative flex min-h-screen items-start justify-center overflow-hidden bg-[linear-gradient(135deg,#ecfdf5_0%,#f8fafc_48%,#eff6ff_100%)] px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+    <div className="relative flex min-h-screen items-start justify-center overflow-hidden bg-background px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="w-full max-w-lg relative z-10"
+        className="relative z-10 w-full max-w-xl"
       >
         {/* Brand Header */}
         <div className="mb-8 text-center">
@@ -116,17 +138,27 @@ export default function RegisterPage() {
             {/* Social Logins */}
             <div className="grid grid-cols-2 gap-3 mb-6">
               <Button
+                type="button"
                 variant="outline"
                 className="w-full h-11 border-border/80 hover:bg-muted/10 font-medium text-sm flex items-center justify-center gap-2 transition-all"
-                onPress={() => console.log("Google Sign Up")}
+                onPress={async () => {
+                  setErrorMsg("");
+                  const { signIn } = await import("@/lib/auth-client");
+                  await signIn.social({ provider: "google", callbackURL: "/" });
+                }}
               >
                 <FcGoogle className="w-5 h-5" />
                 Google
               </Button>
               <Button
+                type="button"
                 variant="outline"
                 className="w-full h-11 border-border/80 hover:bg-muted/10 font-medium text-sm flex items-center justify-center gap-2 transition-all"
-                onPress={() => console.log("GitHub Sign Up")}
+                onPress={async () => {
+                  setErrorMsg("");
+                  const { signIn } = await import("@/lib/auth-client");
+                  await signIn.social({ provider: "github", callbackURL: "/" });
+                }}
               >
                 <FaGithub className="w-5 h-5" />
                 GitHub
@@ -162,7 +194,7 @@ export default function RegisterPage() {
                   placeholder="John Doe"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-border bg-white px-3.5 text-sm text-foreground shadow-sm placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+                  className="h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-sm text-foreground shadow-sm placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                 />
               </TextField>
 
@@ -177,7 +209,7 @@ export default function RegisterPage() {
                   placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-border bg-white px-3.5 text-sm text-foreground shadow-sm placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+                  className="h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-sm text-foreground shadow-sm placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                 />
               </TextField>
 
@@ -194,7 +226,7 @@ export default function RegisterPage() {
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="h-11 w-full rounded-xl border border-border bg-white pl-3.5 pr-10 text-sm text-foreground shadow-sm placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+                      className="h-11 w-full rounded-xl border border-border bg-surface pl-3.5 pr-10 text-sm text-foreground shadow-sm placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                     />
                     <button
                       type="button"
@@ -221,7 +253,7 @@ export default function RegisterPage() {
                     placeholder="••••••••"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="h-11 w-full rounded-xl border border-border bg-white px-3.5 text-sm text-foreground shadow-sm placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+                    className="h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-sm text-foreground shadow-sm placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                   />
                 </TextField>
               </div>

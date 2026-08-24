@@ -1,4 +1,4 @@
-import { publicFetch, protectedFetch } from "@/lib/core/server";
+import { clientFetch } from "@/lib/core/client";
 
 export interface SellerStore {
   id: string;
@@ -8,11 +8,11 @@ export interface SellerStore {
 }
 
 export async function getStoreById(storeId: string) {
-  return publicFetch<SellerStore>(`/sellers/stores/${storeId}`);
+  return clientFetch<SellerStore>(`/sellers/stores/${storeId}`);
 }
 
 export async function getSellerDashboardMetrics() {
-  return protectedFetch<{ totalSales: number; totalOrders: number; totalProducts: number }>(
+  return clientFetch<{ totalSales: number; totalOrders: number; totalProducts: number }>(
     "/sellers/metrics"
   );
 }
