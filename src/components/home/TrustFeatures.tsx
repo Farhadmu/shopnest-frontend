@@ -1,12 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import {
-  FaShieldAlt,
-  FaBrain,
-  FaShippingFast,
-  FaUserShield,
-} from "react-icons/fa";
+import { FaShieldAlt, FaBrain, FaShippingFast, FaUserShield } from "react-icons/fa";
 
 const features = [
   {
@@ -15,12 +10,9 @@ const features = [
     icon: <FaShieldAlt size={22} />,
     glowColor: "#f59e0b",
     barColor: "from-amber-500 to-orange-500",
-    iconBg:
-      "bg-amber-500/20 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400",
-    textHover:
-      "group-hover:text-amber-600 dark:group-hover:text-amber-400",
-    badgeGlow:
-      "group-hover:bg-amber-600 group-hover:text-white",
+    iconBg: "bg-amber-500/15 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400",
+    textHover: "group-hover:text-amber-600 dark:group-hover:text-amber-400",
+    badgeGlow: "group-hover:bg-amber-600 group-hover:text-white",
   },
   {
     title: "AI discovery",
@@ -28,12 +20,9 @@ const features = [
     icon: <FaBrain size={22} />,
     glowColor: "#ec4899",
     barColor: "from-pink-500 to-rose-500",
-    iconBg:
-      "bg-pink-500/20 text-pink-600 dark:bg-pink-500/20 dark:text-pink-400",
-    textHover:
-      "group-hover:text-pink-600 dark:group-hover:text-pink-400",
-    badgeGlow:
-      "group-hover:bg-pink-600 group-hover:text-white",
+    iconBg: "bg-pink-500/15 text-pink-600 dark:bg-pink-500/20 dark:text-pink-400",
+    textHover: "group-hover:text-pink-600 dark:group-hover:text-pink-400",
+    badgeGlow: "group-hover:bg-pink-600 group-hover:text-white",
   },
   {
     title: "Order tracking",
@@ -41,12 +30,9 @@ const features = [
     icon: <FaShippingFast size={22} />,
     glowColor: "#06b6d4",
     barColor: "from-cyan-500 to-blue-500",
-    iconBg:
-      "bg-cyan-500/20 text-cyan-600 dark:bg-cyan-500/20 dark:text-cyan-400",
-    textHover:
-      "group-hover:text-cyan-600 dark:group-hover:text-cyan-400",
-    badgeGlow:
-      "group-hover:bg-cyan-600 group-hover:text-white",
+    iconBg: "bg-cyan-500/15 text-cyan-600 dark:bg-cyan-500/20 dark:text-cyan-400",
+    textHover: "group-hover:text-cyan-600 dark:group-hover:text-cyan-400",
+    badgeGlow: "group-hover:bg-cyan-600 group-hover:text-white",
   },
   {
     title: "Buyer protection",
@@ -54,12 +40,9 @@ const features = [
     icon: <FaUserShield size={22} />,
     glowColor: "#10b981",
     barColor: "from-emerald-500 to-teal-500",
-    iconBg:
-      "bg-emerald-500/20 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",
-    textHover:
-      "group-hover:text-emerald-600 dark:group-hover:text-emerald-400",
-    badgeGlow:
-      "group-hover:bg-emerald-600 group-hover:text-white",
+    iconBg: "bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",
+    textHover: "group-hover:text-emerald-600 dark:group-hover:text-emerald-400",
+    badgeGlow: "group-hover:bg-emerald-600 group-hover:text-white",
   },
 ];
 
@@ -135,7 +118,7 @@ export default function TrustFeatures() {
                 className="
                   absolute inset-[1.5px]
                   rounded-[14px]
-                  bg-white/90 dark:bg-[#0d1117]
+                  bg-surface/90 dark:bg-surface
                   z-0
                 "
               />
@@ -266,7 +249,7 @@ export default function TrustFeatures() {
                   <h3
                     className={`
                       font-bold
-                      text-slate-900 dark:text-white
+                      text-text
                       tracking-wide
                       text-base
                       transition-colors duration-300
@@ -281,7 +264,7 @@ export default function TrustFeatures() {
                     className="
                       mt-1
                       text-xs
-                      text-slate-600 dark:text-slate-400
+                      text-muted
                       font-medium
                     "
                   >
