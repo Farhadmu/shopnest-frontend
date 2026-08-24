@@ -3,6 +3,7 @@ import "./globals.css";
 import { APP_NAME } from "@/lib/constants";
 import { AppHeroUIProvider } from "@/providers/HeroUIProvider";
 import { AppShell } from "@/components/layout/AppShell";
+import { ThemeBootstrap } from "@/components/layout/ThemeBootstrap";
 
 export const metadata: Metadata = {
   title: `${APP_NAME} - Multi-Vendor E-Commerce Platform`,
@@ -15,8 +16,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="flex min-h-screen flex-col">
+    <html lang="en" suppressHydrationWarning>
+      <body className="flex min-h-screen flex-col bg-background text-text">
+        <ThemeBootstrap />
         <AppHeroUIProvider>
           <AppShell>{children}</AppShell>
         </AppHeroUIProvider>

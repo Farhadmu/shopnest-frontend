@@ -1,4 +1,4 @@
-import { publicFetch, protectedMutation } from "@/lib/core/server";
+import { clientFetch, clientMutation } from "@/lib/core/client";
 
 export interface Review {
   id: string;
@@ -10,9 +10,9 @@ export interface Review {
 }
 
 export async function getProductReviews(productId: string) {
-  return publicFetch<Review[]>(`/products/${productId}/reviews`);
+  return clientFetch<Review[]>(`/products/${productId}/reviews`);
 }
 
 export async function addProductReview(productId: string, data: { rating: number; comment: string }) {
-  return protectedMutation<Review>(`/products/${productId}/reviews`, "POST", data);
+  return clientMutation<Review>(`/products/${productId}/reviews`, "POST", data);
 }
