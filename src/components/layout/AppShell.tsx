@@ -11,15 +11,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthRoute = AUTH_ROUTES.includes(pathname);
 
-  if (isAuthRoute) {
-    return <main className="min-h-screen w-full">{children}</main>;
-  }
+  if (isAuthRoute) return <main className="min-h-screen w-full">{children}</main>;
 
   return (
-    <>
+    <div className="min-h-screen bg-background text-text">
       <Navbar />
-      <main className="mx-auto flex-1 w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">{children}</main>
+      <main className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">{children}</main>
       <Footer />
-    </>
+    </div>
   );
 }

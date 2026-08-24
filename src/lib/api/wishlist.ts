@@ -1,4 +1,4 @@
-import { protectedFetch, protectedMutation } from "@/lib/core/server";
+import { clientFetch, clientMutation } from "@/lib/core/client";
 
 export interface WishlistItem {
   productId: string;
@@ -6,13 +6,13 @@ export interface WishlistItem {
 }
 
 export async function getWishlist() {
-  return protectedFetch<WishlistItem[]>("/wishlist");
+  return clientFetch<WishlistItem[]>("/wishlist");
 }
 
 export async function addToWishlist(productId: string) {
-  return protectedMutation<WishlistItem[]>("/wishlist/items", "POST", { productId });
+  return clientMutation<WishlistItem[]>("/wishlist/items", "POST", { productId });
 }
 
 export async function removeFromWishlist(productId: string) {
-  return protectedMutation<WishlistItem[]>(`/wishlist/items/${productId}`, "DELETE");
+  return clientMutation<WishlistItem[]>(`/wishlist/items/${productId}`, "DELETE");
 }

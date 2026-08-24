@@ -1,4 +1,4 @@
-import { protectedFetch, protectedMutation } from "@/lib/core/server";
+import { clientFetch, clientMutation } from "@/lib/core/client";
 
 export interface UserProfile {
   id: string;
@@ -9,9 +9,9 @@ export interface UserProfile {
 }
 
 export async function getUserProfile() {
-  return protectedFetch<UserProfile>("/users/profile");
+  return clientFetch<UserProfile>("/users/profile");
 }
 
 export async function updateUserProfile(data: Partial<UserProfile>) {
-  return protectedMutation<UserProfile>("/users/profile", "PATCH", data);
+  return clientMutation<UserProfile>("/users/profile", "PATCH", data);
 }

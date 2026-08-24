@@ -1,4 +1,4 @@
-import { publicFetch, protectedMutation } from "@/lib/core/server";
+import { clientFetch, clientMutation } from "@/lib/core/client";
 
 export interface Product {
   id: string;
@@ -21,25 +21,25 @@ export interface CreateProductInput {
 
 /**
  * Product API Resources
- * Wraps backend operations for products using core server fetch handlers.
+ * Wraps backend operations for products using core client fetch handlers.
  */
 
-export async function getProducts(params?: Record<string, string | number>) {
-  return publicFetch<Product[]>("/products", { params });
+export async function getProducts(params?: Record<string, string | number | boolean | undefined>) {
+  return clientFetch<Product[]>("/products", { params });
 }
 
 export async function getProductById(id: string) {
-  return publicFetch<Product>(`/products/${id}`);
+  return clientFetch<Product>(`/products/${id}`);
 }
 
 export async function createProduct(data: CreateProductInput) {
-  return protectedMutation<Product>("/products", "POST", data);
+  return clientMutation<Product>("/products", "POST", data);
 }
 
 export async function updateProduct(id: string, data: Partial<CreateProductInput>) {
-  return protectedMutation<Product>(`/products/${id}`, "PUT", data);
+  return clientMutation<Product>(`/products/${id}`, "PUT", data);
 }
 
 export async function deleteProduct(id: string) {
-  return protectedMutation<{ success: boolean }>(`/products/${id}`, "DELETE");
+  return clientMutation<{ success: boolean }>(`/products/${id}`, "DELETE");
 }
