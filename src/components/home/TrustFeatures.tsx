@@ -75,8 +75,6 @@ export default function TrustFeatures() {
               className="
                 group relative flex flex-col justify-between
                 overflow-hidden rounded-2xl
-                border border-border
-                bg-surface
                 p-6
                 shadow-lg dark:shadow-xl
                 transition-all duration-500
