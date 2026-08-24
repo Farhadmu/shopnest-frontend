@@ -5,6 +5,8 @@ import type React from "react";
 import { motion } from "motion/react";
 import { FaArrowRight, FaBolt, FaBrain, FaCheckCircle, FaChevronRight, FaEye, FaImage, FaMagic, FaShieldAlt, FaShoppingBag, FaStar, FaStore, FaTruck, FaUserShield } from "react-icons/fa";
 import { ProductCard } from "@/features/products/components/ProductCard";
+import ShopByCategory from "@/components/home/ShopByCategory";
+import TrustFeatures from "@/components/home/TrustFeatures";
 
 const products = [
   { id: "1", title: "AeroSound Pro Headphones", price: 129.99, category: "Electronics", rating: 4.9, imageUrl: "linear-gradient(135deg,#111827,#4f46e5)" },
@@ -13,10 +15,7 @@ const products = [
   { id: "4", title: "Aura Smart Desk Lamp", price: 49.99, category: "Home", rating: 4.7, imageUrl: "linear-gradient(135deg,#312e81,#c026d3)" },
 ];
 
-const categories = [
-  ["Electronics", "⚡", "Smart tech & gadgets"], ["Fashion", "✦", "Everyday essentials"], ["Home & Living", "⌂", "Make space beautiful"],
-  ["Beauty", "✿", "Care & wellness"], ["Sports", "◉", "Move with confidence"], ["Books", "▤", "Ideas worth keeping"],
-];
+
 
 const sellers = [
   ["Nova Tech", "4.9", "12.4k+ sales", "NT", "#4f46e5"], ["Urban Loom", "4.8", "8.7k+ sales", "UL", "#db2777"], ["HomeAura", "4.9", "6.2k+ sales", "HA", "#0891b2"],
@@ -59,10 +58,10 @@ export default function HomePage() {
       </section>
 
       {/* 02 — Trust */}
-      <section className="py-8"><div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{trustItems.map(([Icon,title,desc],i) => <motion.div key={title as string} initial={{opacity:0,y:12}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:i*.05}} className="rounded-2xl border border-border bg-surface p-4 shadow-sm"><Icon className="mb-3 text-lg text-primary"/><p className="font-bold">{title as string}</p><p className="mt-1 text-xs leading-5 text-muted">{desc as string}</p></motion.div>)}</div></section>
+       <TrustFeatures/>
 
       {/* 03 — Categories */}
-      <section className="py-8"><div className="mb-6 flex items-end justify-between"><div><p className="text-xs font-black uppercase tracking-[.2em] text-primary">Explore</p><h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">Shop by category</h2></div><Link href="/products" className="hidden items-center gap-2 text-sm font-bold text-primary sm:flex">View all <FaChevronRight /></Link></div><div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">{categories.map(([name,icon,desc],i) => <Link href={`/products?category=${encodeURIComponent(name)}`} key={name} className="group rounded-2xl border border-border bg-surface p-5 transition duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-muted-bg hover:shadow-xl"><div className="mb-7 flex h-12 w-12 items-center justify-center rounded-2xl bg-muted-bg text-2xl transition group-hover:scale-110 group-hover:bg-primary/10">{icon}</div><p className="font-bold">{name}</p><p className="mt-1 text-xs leading-5 text-muted">{desc}</p></Link>)}</div></section>
+     <ShopByCategory/>
 
       {/* 04 — Trending */}
       <section className="rounded-[2rem] border border-border bg-muted-bg p-5 sm:p-8"><div className="mb-7 flex items-end justify-between"><div><div className="flex items-center gap-2 text-xs font-black uppercase tracking-[.18em] text-warm"><FaBolt /> Trending now</div><h2 className="mt-2 text-3xl font-black">Customer favorites</h2></div><Link href="/products" className="text-sm font-bold text-primary">See more <FaArrowRight className="ml-1 inline"/></Link></div><div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{products.map((p,i)=><motion.div key={p.id} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:i*.06}}><ProductCard product={p}/></motion.div>)}</div></section>
