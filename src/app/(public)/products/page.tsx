@@ -136,7 +136,8 @@ function ProductsContent() {
               Explore Products
             </h1>
             <p className="mt-2 max-w-xl text-sm text-muted">
-              Discover verified products across Bangladesh with AI recommendations, fast shipping and buyer protection.
+              Discover verified products across Bangladesh with AI recommendations, fast shipping
+              and buyer protection.
             </p>
           </div>
 
@@ -205,7 +206,9 @@ function ProductsContent() {
               🛍️
             </div>
             <h3 className="mt-4 text-lg font-black text-text">No Products Found</h3>
-            <p className="mt-1 text-sm text-muted">Try adjusting your search keyword or selected category.</p>
+            <p className="mt-1 text-sm text-muted">
+              Try adjusting your search keyword or selected category.
+            </p>
             <button
               onClick={() => {
                 setSearch("");
@@ -268,7 +271,9 @@ function ProductsContent() {
                       <div className="flex items-center gap-1 text-xs text-amber-500">
                         <FaStar size={11} />
                         <span className="font-bold">{p.ratingAvg || "4.8"}</span>
-                        <span className="text-[11px] text-muted">({p.ratingCount || 12} reviews)</span>
+                        <span className="text-[11px] text-muted">
+                          ({p.ratingCount || 12} reviews)
+                        </span>
                       </div>
 
                       <h3 className="mt-2 line-clamp-2 text-sm font-black text-text transition group-hover:text-primary">

@@ -6,9 +6,7 @@ import { MongoClient } from "mongodb";
  * Server-side Better Auth Instance
  * Configures authentication provider, database adapter, and server credentials.
  */
-const client = new MongoClient(
-  process.env.MONGODB_URI || "mongodb://localhost:27017/shopnest"
-);
+const client = new MongoClient(process.env.MONGODB_URI || "mongodb://localhost:27017/shopnest");
 const db = client.db();
 
 export const auth = betterAuth({

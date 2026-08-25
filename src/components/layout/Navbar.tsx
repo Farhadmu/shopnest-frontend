@@ -37,7 +37,13 @@ export const Navbar: React.FC = () => {
 
   const { data: session } = useSession();
   const user = session?.user as
-    | { id?: string; name?: string; email?: string; role?: "customer" | "seller" | "admin"; image?: string }
+    | {
+        id?: string;
+        name?: string;
+        email?: string;
+        role?: "customer" | "seller" | "admin";
+        image?: string;
+      }
     | undefined;
 
   const role = user?.role || (user ? "customer" : "guest");
@@ -140,12 +146,24 @@ export const Navbar: React.FC = () => {
 
   const getRoleBadge = () => {
     if (role === "admin") {
-      return <span className="rounded-md bg-purple-500/15 px-2 py-0.5 text-[10px] font-black uppercase text-purple-600 dark:text-purple-400">Admin</span>;
+      return (
+        <span className="rounded-md bg-purple-500/15 px-2 py-0.5 text-[10px] font-black uppercase text-purple-600 dark:text-purple-400">
+          Admin
+        </span>
+      );
     }
     if (role === "seller") {
-      return <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400">Seller</span>;
+      return (
+        <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400">
+          Seller
+        </span>
+      );
     }
-    return <span className="rounded-md bg-primary/15 px-2 py-0.5 text-[10px] font-black uppercase text-primary">Customer</span>;
+    return (
+      <span className="rounded-md bg-primary/15 px-2 py-0.5 text-[10px] font-black uppercase text-primary">
+        Customer
+      </span>
+    );
   };
 
   return (
@@ -173,7 +191,10 @@ export const Navbar: React.FC = () => {
           </Link>
 
           {/* Search Bar */}
-          <form onSubmit={submitSearch} className="hidden min-w-0 flex-1 md:block md:max-w-md lg:max-w-xl">
+          <form
+            onSubmit={submitSearch}
+            className="hidden min-w-0 flex-1 md:block md:max-w-md lg:max-w-xl"
+          >
             <div className="group flex h-11 items-center rounded-xl border border-border bg-surface px-3 transition focus-within:border-primary/60 focus-within:ring-4 focus-within:ring-primary/10">
               <FaSearch className="shrink-0 text-muted" size={14} />
               <input
@@ -192,13 +213,17 @@ export const Navbar: React.FC = () => {
           {/* Navigation Links */}
           <nav className="hidden items-center gap-1 xl:flex">
             {navLinks.map((item) => {
-              const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`));
+              const active =
+                pathname === item.href ||
+                (item.href !== "/" && pathname.startsWith(`${item.href}/`));
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-                    active ? "bg-primary/10 text-primary" : "text-muted hover:bg-muted-bg hover:text-text"
+                    active
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted hover:bg-muted-bg hover:text-text"
                   }`}
                 >
                   {item.label}
@@ -273,7 +298,9 @@ export const Navbar: React.FC = () => {
                     {/* User Header */}
                     <div className="mb-2 rounded-xl bg-muted-bg p-3">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="truncate text-sm font-black text-text">{user?.name || "User"}</p>
+                        <p className="truncate text-sm font-black text-text">
+                          {user?.name || "User"}
+                        </p>
                         {getRoleBadge()}
                       </div>
                       <p className="truncate text-xs text-muted">{user?.email}</p>

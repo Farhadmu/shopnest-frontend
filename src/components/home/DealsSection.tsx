@@ -11,7 +11,12 @@ interface DealItem {
 }
 
 const deals: DealItem[] = [
-  { title: "Weekend Tech Drop", subtitle: "Up to 35% off", icon: "⚡", href: "/products?category=Electronics" },
+  {
+    title: "Weekend Tech Drop",
+    subtitle: "Up to 35% off",
+    icon: "⚡",
+    href: "/products?category=Electronics",
+  },
   { title: "Home Refresh", subtitle: "Save up to $80", icon: "⌂", href: "/products?category=Home" },
   { title: "Style Edit", subtitle: "Extra 15% off", icon: "✦", href: "/products?category=Fashion" },
 ];

@@ -2,7 +2,13 @@ import { clientFetch, clientMutation } from "@/lib/core/client";
 
 export interface Order {
   id: string;
-  items: Array<{ productId: string; title?: string; name?: string; quantity: number; price: number }>;
+  items: Array<{
+    productId: string;
+    title?: string;
+    name?: string;
+    quantity: number;
+    price: number;
+  }>;
   subtotal: number;
   discount: number;
   couponCode?: string;

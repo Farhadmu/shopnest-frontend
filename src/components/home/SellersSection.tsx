@@ -12,9 +12,27 @@ interface Seller {
 }
 
 const sellers: Seller[] = [
-  { name: "Nova Tech", rating: "4.9", sales: "12.4k+ sales", initials: "NT", accent: "var(--color-primary)" },
-  { name: "Urban Loom", rating: "4.8", sales: "8.7k+ sales", initials: "UL", accent: "var(--color-accent)" },
-  { name: "HomeAura", rating: "4.9", sales: "6.2k+ sales", initials: "HA", accent: "var(--color-warm)" },
+  {
+    name: "Nova Tech",
+    rating: "4.9",
+    sales: "12.4k+ sales",
+    initials: "NT",
+    accent: "var(--color-primary)",
+  },
+  {
+    name: "Urban Loom",
+    rating: "4.8",
+    sales: "8.7k+ sales",
+    initials: "UL",
+    accent: "var(--color-accent)",
+  },
+  {
+    name: "HomeAura",
+    rating: "4.9",
+    sales: "6.2k+ sales",
+    initials: "HA",
+    accent: "var(--color-warm)",
+  },
 ];
 
 export default function SellersSection() {
@@ -50,9 +68,7 @@ export default function SellersSection() {
               <div className="flex items-center gap-1 text-sm font-bold text-warning">
                 <FaStar size={11} /> {rating}
               </div>
-              <p className="mt-1 text-[11px] text-success">
-                Trusted seller
-              </p>
+              <p className="mt-1 text-[11px] text-success">Trusted seller</p>
             </div>
           </Link>
         ))}

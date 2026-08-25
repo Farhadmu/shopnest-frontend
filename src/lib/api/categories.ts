@@ -16,6 +16,6 @@ function normalize(raw: any): Category {
 
 export async function getCategories(): Promise<Category[]> {
   const res = await clientFetch<any>("/categories");
-  const list = Array.isArray(res) ? res : res?.data ?? [];
+  const list = Array.isArray(res) ? res : (res?.data ?? []);
   return list.map(normalize);
 }

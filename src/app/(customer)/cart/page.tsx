@@ -18,7 +18,9 @@ export default function CartPage() {
   const [couponInput, setCouponInput] = useState("");
   const [isApplying, setIsApplying] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(
+    null
+  );
 
   const loadCart = useCallback(async () => {
     setIsLoading(true);
@@ -125,7 +127,11 @@ export default function CartPage() {
                     className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-2xl bg-muted-bg text-3xl"
                   >
                     {item.images?.[0] ? (
-                      <img src={item.images[0]} alt={item.title} className="h-full w-full object-cover" />
+                      <img
+                        src={item.images[0]}
+                        alt={item.title}
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
                       "🛍️"
                     )}
@@ -198,7 +204,9 @@ export default function CartPage() {
                 <div className="mt-3 flex items-center justify-between rounded-2xl bg-primary/10 p-3.5">
                   <div>
                     <p className="text-sm font-black text-primary">{appliedCoupon.code}</p>
-                    <p className="text-xs text-muted">-{formatCurrency(appliedCoupon.discount)} discount applied</p>
+                    <p className="text-xs text-muted">
+                      -{formatCurrency(appliedCoupon.discount)} discount applied
+                    </p>
                   </div>
                   <button
                     type="button"
@@ -233,7 +241,9 @@ export default function CartPage() {
 
             {/* Order Summary */}
             <div className="rounded-3xl border border-border bg-surface p-6 shadow-sm">
-              <h3 className="text-sm font-black uppercase tracking-wider text-text">Order Summary</h3>
+              <h3 className="text-sm font-black uppercase tracking-wider text-text">
+                Order Summary
+              </h3>
 
               <div className="mt-4 space-y-3 text-sm">
                 <div className="flex justify-between text-muted">

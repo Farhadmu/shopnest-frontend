@@ -26,7 +26,9 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
       className={`inline-flex items-center justify-center rounded-xl border border-border bg-surface text-muted transition hover:border-primary/40 hover:text-primary ${compact ? "h-10 w-10" : "h-10 gap-2 px-3"}`}
     >
       {dark ? <FaSun className="text-amber-400" /> : <FaMoon />}
-      {!compact && <span className="hidden text-xs font-semibold sm:inline">{dark ? "Light" : "Night"}</span>}
+      {!compact && (
+        <span className="hidden text-xs font-semibold sm:inline">{dark ? "Light" : "Night"}</span>
+      )}
     </button>
   );
 }

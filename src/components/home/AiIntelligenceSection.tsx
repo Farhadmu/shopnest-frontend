@@ -18,7 +18,8 @@ export default function AiIntelligenceSection() {
             Let AI narrow it down.
           </h2>
           <p className="mt-4 max-w-xl leading-7 text-muted">
-            Get product recommendations, compare options and understand trade-offs without opening ten tabs.
+            Get product recommendations, compare options and understand trade-offs without opening
+            ten tabs.
           </p>
           <Link
             href="/ai-advisor"

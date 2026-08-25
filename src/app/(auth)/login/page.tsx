@@ -113,7 +113,10 @@ export default function LoginPage() {
             </div>
 
             {errorMsg && (
-              <div className="mb-4 rounded-xl border border-error/20 bg-error/10 p-3 text-xs font-medium text-error" role="alert">
+              <div
+                className="mb-4 rounded-xl border border-error/20 bg-error/10 p-3 text-xs font-medium text-error"
+                role="alert"
+              >
                 ⚠️ {errorMsg}
               </div>
             )}

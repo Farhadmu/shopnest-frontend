@@ -4,7 +4,12 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { BannerCategory, BannerSectionData, HeroSlide, PromoCard as PromoCardType } from "@/lib/banner/BannerData";
+import {
+  BannerCategory,
+  BannerSectionData,
+  HeroSlide,
+  PromoCard as PromoCardType,
+} from "@/lib/banner/BannerData";
 import { getCategories } from "@/lib/api/categories";
 
 const AUTO_ADVANCE_MS = 6000;

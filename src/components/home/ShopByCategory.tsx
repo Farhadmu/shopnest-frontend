@@ -103,10 +103,9 @@ export default function ShopByCategory() {
     // ✅ CLEAN PADDING:
     <section className="py-12">
       {/* Section Header */}
-      
+
       <div className="mb-8 flex items-end justify-between">
         <div className="relative">
-
           {/* Small Label */}
           <div className="mb-3 flex items-center gap-2">
             <span className="h-[2px] w-8 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500" />
@@ -131,7 +130,6 @@ export default function ShopByCategory() {
               "
             >
               Shop{" "}
-
               <span
                 className="
                   relative
@@ -144,7 +142,6 @@ export default function ShopByCategory() {
                 "
               >
                 by category
-
                 {/* Small Glow Dot */}
                 <span
                   className="
@@ -242,41 +239,38 @@ export default function ShopByCategory() {
           </p>
         </div>
       ) : (
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-
-        {categories.map((cat, i) => (
-          <motion.div
-            key={cat.id}
-            initial={{
-              opacity: 0,
-              y: 15,
-            }}
-            whileInView={{
-              opacity: 1,
-              y: 0,
-            }}
-            viewport={{
-              once: true,
-            }}
-            transition={{
-              duration: 0.4,
-              delay: i * 0.07,
-            }}
-          >
-            <Link
-              href={`/products?category=${encodeURIComponent(cat.name)}`}
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+          {categories.map((cat, i) => (
+            <motion.div
+              key={cat.id}
+              initial={{
+                opacity: 0,
+                y: 15,
+              }}
+              whileInView={{
+                opacity: 1,
+                y: 0,
+              }}
+              viewport={{
+                once: true,
+              }}
+              transition={{
+                duration: 0.4,
+                delay: i * 0.07,
+              }}
             >
-              <motion.div
-                animate={{
-                  opacity: [0.95, 1, 0.95],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: i * 0.3,
-                }}
-                className={`
+              <Link href={`/products?category=${encodeURIComponent(cat.name)}`}>
+                <motion.div
+                  animate={{
+                    opacity: [0.95, 1, 0.95],
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: i * 0.3,
+                  }}
+                  className={`
                   group
                   relative
                   flex
@@ -299,20 +293,19 @@ export default function ShopByCategory() {
                   ${cat.borderHover}
                   ${cat.shadowHover}
                 `}
-              >
-
-                {/* Background Gradient */}
-                <motion.div
-                  animate={{
-                    opacity: [0.45, 0.8, 0.45],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: i * 0.3,
-                  }}
-                  className={`
+                >
+                  {/* Background Gradient */}
+                  <motion.div
+                    animate={{
+                      opacity: [0.45, 0.8, 0.45],
+                    }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: i * 0.3,
+                    }}
+                    className={`
                     pointer-events-none
                     absolute
                     inset-0
@@ -322,11 +315,11 @@ export default function ShopByCategory() {
                     group-hover:opacity-100
                     ${cat.color}
                   `}
-                />
+                  />
 
-                {/* Soft Glow */}
-                <div
-                  className="
+                  {/* Soft Glow */}
+                  <div
+                    className="
                     absolute
                     -right-8
                     -top-8
@@ -341,14 +334,13 @@ export default function ShopByCategory() {
                     group-hover:opacity-100
                     dark:bg-white/10
                   "
-                />
+                  />
 
-                {/* Card Content */}
-                <div className="relative z-10">
-
-                  {/* Icon */}
-                  <div
-                    className={`
+                  {/* Card Content */}
+                  <div className="relative z-10">
+                    {/* Icon */}
+                    <div
+                      className={`
                       mb-4
                       flex
                       h-11
@@ -363,13 +355,13 @@ export default function ShopByCategory() {
                       group-hover:shadow-lg
                       ${cat.iconBg}
                     `}
-                  >
-                    <FaLayerGroup size={20} />
-                  </div>
+                    >
+                      <FaLayerGroup size={20} />
+                    </div>
 
-                  {/* Category Name */}
-                  <p
-                    className={`
+                    {/* Category Name */}
+                    <p
+                      className={`
                       text-sm
                       font-extrabold
                       tracking-wide
@@ -379,13 +371,13 @@ export default function ShopByCategory() {
                       dark:text-white
                       ${cat.textHover}
                     `}
-                  >
-                    {cat.name}
-                  </p>
+                    >
+                      {cat.name}
+                    </p>
 
-                  {/* Description */}
-                  <p
-                    className="
+                    {/* Description */}
+                    <p
+                      className="
                       mt-1
                       text-[11px]
                       font-medium
@@ -393,23 +385,23 @@ export default function ShopByCategory() {
                       text-slate-600
                       dark:text-slate-400
                     "
-                  >
-                    {cat.desc}
-                  </p>
-                </div>
+                    >
+                      {cat.desc}
+                    </p>
+                  </div>
 
-                {/* Bottom Color Bar */}
-                <motion.div
-                  animate={{
-                    opacity: [0.6, 1, 0.6],
-                  }}
-                  transition={{
-                    duration: 2.5,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: i * 0.25,
-                  }}
-                  className={`
+                  {/* Bottom Color Bar */}
+                  <motion.div
+                    animate={{
+                      opacity: [0.6, 1, 0.6],
+                    }}
+                    transition={{
+                      duration: 2.5,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: i * 0.25,
+                    }}
+                    className={`
                     absolute
                     bottom-0
                     left-0
@@ -421,11 +413,11 @@ export default function ShopByCategory() {
                     group-hover:h-1.5
                     ${cat.barColor}
                   `}
-                />
+                  />
 
-                {/* Hover Shine */}
-                <div
-                  className="
+                  {/* Hover Shine */}
+                  <div
+                    className="
                     pointer-events-none
                     absolute
                     inset-0
@@ -438,12 +430,12 @@ export default function ShopByCategory() {
                     duration-700
                     group-hover:translate-x-full
                   "
-                />
-              </motion.div>
-            </Link>
-          </motion.div>
-        ))}
-      </div>
+                  />
+                </motion.div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
       )}
 
       {/* =========================
