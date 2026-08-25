@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { Button, Card, CardContent, TextField, Label, Input } from "@heroui/react";
 import { FcGoogle } from "react-icons/fc";
@@ -14,23 +15,41 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg("");
     setIsLoading(true);
-    // Simulate Better Auth sign-in request
-    setTimeout(() => {
+    try {
+      const { signIn } = await import("@/lib/auth-client");
+      const result = await signIn.email({
+        email: email.trim().toLowerCase(),
+        password,
+        rememberMe,
+        callbackURL: "/",
+      });
+      if (result.error) {
+        setErrorMsg(result.error.message || "Invalid email or password.");
+        return;
+      }
+      router.replace("/");
+      router.refresh();
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : "Unable to sign in.");
+    } finally {
       setIsLoading(false);
-    }, 1200);
+    }
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[linear-gradient(135deg,#ecfdf5_0%,#f8fafc_48%,#eff6ff_100%)] px-4 py-12 sm:px-6 lg:px-8">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4 py-12 sm:px-6 lg:px-8">
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="w-full max-w-md relative z-10"
+        className="relative z-10 w-full max-w-md"
       >
         {/* Brand Header */}
         <div className="mb-8 text-center">
@@ -55,22 +74,31 @@ export default function LoginPage() {
           </p>
         </div>
 
+<<<<<<< Updated upstream
         <Card className="border border-border/80 bg-background/80 backdrop-blur-xl shadow-xl rounded-2xl overflow-hidden">
           <CardContent className="p-6 sm:p-8">
             {/* Social Logins */}
             <div className="grid grid-cols-2 gap-3 mb-6">
               <Button
+                type="button"
                 variant="outline"
                 className="w-full h-11 border-border/80 hover:bg-muted/10 font-medium text-sm flex items-center justify-center gap-2 transition-all"
-                onPress={() => console.log("Google Login")}
+                onPress={async () => {
+                  const { signIn } = await import("@/lib/auth-client");
+                  await signIn.social({ provider: "google", callbackURL: "/" });
+                }}
               >
                 <FcGoogle className="w-5 h-5" />
                 Google
               </Button>
               <Button
+                type="button"
                 variant="outline"
                 className="w-full h-11 border-border/80 hover:bg-muted/10 font-medium text-sm flex items-center justify-center gap-2 transition-all"
-                onPress={() => console.log("GitHub Login")}
+                onPress={async () => {
+                  const { signIn } = await import("@/lib/auth-client");
+                  await signIn.social({ provider: "github", callbackURL: "/" });
+                }}
               >
                 <FaGithub className="w-5 h-5" />
                 GitHub
@@ -85,6 +113,12 @@ export default function LoginPage() {
               </span>
             </div>
 
+            {errorMsg && (
+              <div className="mb-4 rounded-xl border border-error/20 bg-error/10 p-3 text-xs font-medium text-error" role="alert">
+                ⚠️ {errorMsg}
+              </div>
+            )}
+
             {/* Login Form */}
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <TextField>
@@ -98,7 +132,7 @@ export default function LoginPage() {
                   placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-border bg-white px-3.5 text-sm text-foreground shadow-sm placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+                  className="h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-sm text-foreground shadow-sm placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                 />
               </TextField>
 
@@ -122,7 +156,7 @@ export default function LoginPage() {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="h-11 w-full rounded-xl border border-border bg-white pl-3.5 pr-10 text-sm text-foreground shadow-sm placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+                    className="h-11 w-full rounded-xl border border-border bg-surface pl-3.5 pr-10 text-sm text-foreground shadow-sm placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                   />
                   <button
                     type="button"
@@ -187,6 +221,33 @@ export default function LoginPage() {
           </Link>
         </p>
       </motion.div>
+=======
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <TextField>
+              <Label>Email Address</Label>
+              <Input
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </TextField>
+            <TextField>
+              <Label>Password</Label>
+              <Input
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </TextField>
+            <Button type="submit" variant="primary" className="w-full mt-2 bg-primary">
+              Sign In
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+>>>>>>> Stashed changes
     </div>
   );
 }

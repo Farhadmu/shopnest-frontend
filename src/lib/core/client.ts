@@ -1,21 +1,38 @@
 import { ApiError } from "./errors";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+function getBaseUrl(): string {
+  let url = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
+  url = url.trim().replace(/\/$/, "");
+  if (url.startsWith("http") && !url.includes("/api/v1")) {
+    url = `${url}/api/v1`;
+  }
+  return url;
+}
 
 interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
 }
 
 function buildUrl(endpoint: string, params?: RequestOptions["params"]): string {
-  const url = new URL(`${BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`);
+  const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  const baseUrl = getBaseUrl();
+  let fullPath = baseUrl.startsWith("http")
+    ? `${baseUrl}${cleanEndpoint}`
+    : `${baseUrl.replace(/\/$/, "")}${cleanEndpoint}`;
+
   if (params) {
+    const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
-        url.searchParams.append(key, String(value));
+        searchParams.append(key, String(value));
       }
     });
+    const queryString = searchParams.toString();
+    if (queryString) {
+      fullPath += (fullPath.includes("?") ? "&" : "?") + queryString;
+    }
   }
-  return url.toString();
+  return fullPath;
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {

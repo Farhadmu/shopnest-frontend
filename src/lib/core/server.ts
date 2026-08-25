@@ -1,7 +1,14 @@
 import { ApiError } from "./errors";
 import { getAuthHeaders } from "./session";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+function getBaseUrl(): string {
+  let url = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+  url = url.trim().replace(/\/$/, "");
+  if (url.startsWith("http") && !url.includes("/api/v1")) {
+    url = `${url}/api/v1`;
+  }
+  return url;
+}
 
 interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
@@ -11,7 +18,9 @@ interface RequestOptions extends RequestInit {
  * Normalizes query parameter parameters onto the target URL.
  */
 function buildUrl(endpoint: string, params?: RequestOptions["params"]): string {
-  const url = new URL(`${BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`);
+  const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  const baseUrl = getBaseUrl();
+  const url = new URL(`${baseUrl}${cleanEndpoint}`);
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
