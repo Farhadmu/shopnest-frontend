@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { BannerSectionData, HeroSlide, PromoCard as PromoCardType } from "@/lib/banner/BannerData";
+import { BannerCategory, BannerSectionData, HeroSlide, PromoCard as PromoCardType } from "@/lib/banner/BannerData";
+import { getCategories } from "@/lib/api/categories";
 
 const AUTO_ADVANCE_MS = 6000;
 
@@ -215,25 +216,63 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
 }
 
 export default function BannerSection({ data }: { data: BannerSectionData }) {
-  const { saleLabel, categories, heroSlides, sideCards, bottomCards } = data;
+  const { saleLabel, heroSlides, sideCards, bottomCards } = data;
+
+  const [categories, setCategories] = useState<BannerCategory[]>(data.categories ?? []);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    getCategories()
+      .then((cats) => {
+        if (cancelled) return;
+        setCategories(
+          cats.map((c) => ({
+            id: c.id,
+            label: c.name,
+            href: `/products?category=${encodeURIComponent(c.name)}`,
+          }))
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setCategories(data.categories ?? []);
+      })
+      .finally(() => {
+        if (!cancelled) setCategoriesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <section className="grid grid-cols-2 gap-4 pb-8 sm:grid-cols-4 lg:grid-cols-12">
       {/* Categories sidebar */}
       <aside className="col-span-2 rounded-xl border border-border bg-surface p-4 sm:col-span-4 sm:p-5 lg:col-span-2">
         {saleLabel && <p className="mb-3 text-sm font-bold text-error">{saleLabel}</p>}
-        <ul className="flex gap-4 overflow-x-auto pb-1 lg:block lg:space-y-3 lg:overflow-visible lg:pb-0">
-          {categories.map((cat) => (
-            <li key={cat.id} className="shrink-0 lg:shrink">
-              <Link
-                href={cat.href}
-                className="whitespace-nowrap text-sm font-medium text-text hover:text-primary"
-              >
-                {cat.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        {categoriesLoading ? (
+          <ul className="space-y-3">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <li key={n} className="h-4 w-24 animate-pulse rounded bg-muted-bg" />
+            ))}
+          </ul>
+        ) : categories.length === 0 ? (
+          <p className="text-sm text-muted">No categories found.</p>
+        ) : (
+          <ul className="flex gap-4 overflow-x-auto pb-1 lg:block lg:space-y-3 lg:overflow-visible lg:pb-0">
+            {categories.map((cat) => (
+              <li key={cat.id} className="shrink-0 lg:shrink">
+                <Link
+                  href={cat.href}
+                  className="whitespace-nowrap text-sm font-medium text-text hover:text-primary"
+                >
+                  {cat.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </aside>
 
       {/* Hero + bottom cards */}
