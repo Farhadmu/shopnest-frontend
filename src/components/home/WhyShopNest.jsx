@@ -61,7 +61,7 @@ const WhyShopNest = () => {
       {/* Header */}
       <div className="text-center mb-10">
         <h2 className="text-2xl md:text-3xl font-bold text-secondary">
-          Why Choose <span className="inline-block bg-gradient-to-r from-slate-900 via-indigo-700 to-primary bg-clip-text font-extrabold text-transparent tracking-[-0.04em]">ShopNest</span>?
+          Why Choose <span className="inline-block bg-linear-to-r from-slate-900 via-indigo-700 to-primary bg-clip-text font-extrabold text-transparent tracking-[-0.04em]">ShopNest</span>?
         </h2>
         <p className="text-muted mt-2 max-w-xl mx-auto">
           Everything you need for a smarter shopping and selling experience — powered by AI.
