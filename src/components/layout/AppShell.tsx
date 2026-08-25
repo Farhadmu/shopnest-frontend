@@ -23,7 +23,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-text">
       <Navbar />
-      <main className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">{children}</main>
+      {/* 🟢 Clean Max-Width setup without default 'container' class */}
+      <main className="mx-auto w-full max-w-360 flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        {children}
+      </main>
       <Footer />
     </div>
   );
