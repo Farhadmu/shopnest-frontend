@@ -131,7 +131,7 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
 
   return (
     <div
-      className={`group relative h-full min-h-[220px] sm:min-h-[280px] lg:min-h-[320px] overflow-hidden rounded-xl ${
+      className={`group relative h-full min-h-55 sm:min-h-70 lg:min-h-80 overflow-hidden rounded-xl ${
         slide.bgClassName ?? "bg-muted-bg"
       }`}
     >
@@ -249,7 +249,7 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
                 key={card.id}
                 card={card}
                 imageSizes="(max-width: 1024px) 50vw, 25vw"
-                className="min-h-[110px] sm:min-h-[140px]"
+                className="min-h-27.5 sm:min-h-35"
               />
             ))}
           </div>
@@ -264,7 +264,7 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
               key={card.id}
               card={card}
               imageSizes="(max-width: 1024px) 50vw, 25vw"
-              className="min-h-[150px] sm:min-h-[190px] lg:flex-1"
+              className="min-h-37.5 sm:min-h-47.5 lg:flex-1"
             />
           ))}
         </div>
