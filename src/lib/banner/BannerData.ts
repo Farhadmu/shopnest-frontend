@@ -34,7 +34,8 @@ export type PromoCard = {
 
 export type BannerSectionData = {
     saleLabel?: string;
-    categories: BannerCategory[];
+    /** Optional static fallback; the Banner component fetches live categories from the API. */
+    categories?: BannerCategory[];
     heroSlides: HeroSlide[];
     /** Two cards stacked in the right-hand rail. */
     sideCards: PromoCard[];
@@ -44,20 +45,6 @@ export type BannerSectionData = {
 
 export const defaultBannerData: BannerSectionData = {
     saleLabel: "SALE 40% OFF",
-    categories: [
-        { id: "laptops", label: "Laptops", href: "/category/laptops" },
-        { id: "pc-computers", label: "PC & Computers", href: "/category/pc-computers" },
-        { id: "cell-phones", label: "Cell Phones", href: "/category/cell-phones" },
-        { id: "tablets", label: "Tablets", href: "/category/tablets" },
-        { id: "gaming-vr", label: "Gaming & VR", href: "/category/gaming-vr" },
-        { id: "networking", label: "Networking", href: "/category/networking" },
-        { id: "cameras", label: "Cameras", href: "/category/cameras" },
-        { id: "sounds", label: "Sounds", href: "/category/sounds" },
-        { id: "office", label: "Office", href: "/category/office" },
-        { id: "storage-usb", label: "Storage, USB", href: "/category/storage-usb" },
-        { id: "accessories", label: "Accessories", href: "/category/accessories" },
-        { id: "clearance", label: "Clearance", href: "/category/clearance" },
-    ],
     heroSlides: [
         {
             id: "slide-1",

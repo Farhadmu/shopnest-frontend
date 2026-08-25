@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { BannerSectionData, HeroSlide, PromoCard as PromoCardType } from "@/lib/banner/BannerData";
+import { BannerCategory, BannerSectionData, HeroSlide, PromoCard as PromoCardType } from "@/lib/banner/BannerData";
+import { getCategories } from "@/lib/api/categories";
 
 const AUTO_ADVANCE_MS = 6000;
 
@@ -131,7 +132,7 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
 
   return (
     <div
-      className={`group relative h-full min-h-55 sm:min-h-70 lg:min-h-80 overflow-hidden rounded-xl ${
+      className={`group relative h-full min-h-[220px] sm:min-h-[280px] lg:min-h-[320px] overflow-hidden rounded-xl ${
         slide.bgClassName ?? "bg-muted-bg"
       }`}
     >
@@ -215,25 +216,63 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
 }
 
 export default function BannerSection({ data }: { data: BannerSectionData }) {
-  const { saleLabel, categories, heroSlides, sideCards, bottomCards } = data;
+  const { saleLabel, heroSlides, sideCards, bottomCards } = data;
+
+  const [categories, setCategories] = useState<BannerCategory[]>(data.categories ?? []);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    getCategories()
+      .then((cats) => {
+        if (cancelled) return;
+        setCategories(
+          cats.map((c) => ({
+            id: c.id,
+            label: c.name,
+            href: `/products?category=${encodeURIComponent(c.name)}`,
+          }))
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setCategories(data.categories ?? []);
+      })
+      .finally(() => {
+        if (!cancelled) setCategoriesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <section className="mx-auto grid max-w-7xl grid-cols-2 gap-4 px-4 pb-6 sm:grid-cols-4 lg:grid-cols-12 lg:px-8">
       {/* Categories sidebar */}
       <aside className="col-span-2 rounded-xl border border-border bg-surface p-4 sm:col-span-4 sm:p-5 lg:col-span-2">
         {saleLabel && <p className="mb-3 text-sm font-bold text-error">{saleLabel}</p>}
-        <ul className="flex gap-4 overflow-x-auto pb-1 lg:block lg:space-y-3 lg:overflow-visible lg:pb-0">
-          {categories.map((cat) => (
-            <li key={cat.id} className="shrink-0 lg:shrink">
-              <Link
-                href={cat.href}
-                className="whitespace-nowrap text-sm font-medium text-text hover:text-primary"
-              >
-                {cat.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        {categoriesLoading ? (
+          <ul className="space-y-3">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <li key={n} className="h-4 w-24 animate-pulse rounded bg-muted-bg" />
+            ))}
+          </ul>
+        ) : categories.length === 0 ? (
+          <p className="text-sm text-muted">No categories found.</p>
+        ) : (
+          <ul className="flex gap-4 overflow-x-auto pb-1 lg:block lg:space-y-3 lg:overflow-visible lg:pb-0">
+            {categories.map((cat) => (
+              <li key={cat.id} className="shrink-0 lg:shrink">
+                <Link
+                  href={cat.href}
+                  className="whitespace-nowrap text-sm font-medium text-text hover:text-primary"
+                >
+                  {cat.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </aside>
 
       {/* Hero + bottom cards */}
@@ -249,7 +288,7 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
                 key={card.id}
                 card={card}
                 imageSizes="(max-width: 1024px) 50vw, 25vw"
-                className="min-h-27.5 sm:min-h-35"
+                className="min-h-[110px] sm:min-h-[140px]"
               />
             ))}
           </div>
@@ -264,7 +303,7 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
               key={card.id}
               card={card}
               imageSizes="(max-width: 1024px) 50vw, 25vw"
-              className="min-h-37.5 sm:min-h-47.5 lg:flex-1"
+              className="min-h-[150px] sm:min-h-[190px] lg:flex-1"
             />
           ))}
         </div>
