@@ -67,7 +67,8 @@ const categories: CategoryItem[] = [
 
 export default function ShopByCategory() {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+    // ✅ CLEAN PADDING:
+    <section className="py-12">
       {/* Section Header */}
       <div className="mb-8 flex items-end justify-between">
         <div className="relative">

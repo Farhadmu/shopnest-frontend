@@ -74,7 +74,6 @@ export default function LoginPage() {
           </p>
         </div>
 
-<<<<<<< Updated upstream
         <Card className="border border-border/80 bg-background/80 backdrop-blur-xl shadow-xl rounded-2xl overflow-hidden">
           <CardContent className="p-6 sm:p-8">
             {/* Social Logins */}
@@ -221,33 +220,6 @@ export default function LoginPage() {
           </Link>
         </p>
       </motion.div>
-=======
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <TextField>
-              <Label>Email Address</Label>
-              <Input
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </TextField>
-            <TextField>
-              <Label>Password</Label>
-              <Input
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </TextField>
-            <Button type="submit" variant="primary" className="w-full mt-2 bg-primary">
-              Sign In
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
->>>>>>> Stashed changes
     </div>
   );
 }
