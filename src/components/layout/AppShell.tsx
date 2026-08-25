@@ -13,9 +13,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (isAuthRoute) {
     return (
-      <div className="h-screen flex flex-col bg-background text-text overflow-hidden">
+      <div className="min-h-[100dvh] flex flex-col bg-background text-text">
         <Navbar />
-        <main className="flex-1 flex flex-col min-h-0 overflow-y-auto lg:overflow-hidden">{children}</main>
+        <main className="flex-1 flex flex-col min-h-0 w-full">{children}</main>
       </div>
     );
   }

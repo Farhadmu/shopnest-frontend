@@ -2,6 +2,8 @@
 @import "@heroui/styles"; 
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --color-primary: #5b5cf0;
   --color-primary-hover: #4f46e5;
@@ -106,6 +108,25 @@ a { text-decoration: none; }
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
   .shopnest-float, .shopnest-pulse-glow { animation: none; }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-muted) 25%, transparent);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--color-muted) 45%, transparent);
+}
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-muted) 25%, transparent) transparent;
 }
 
 *:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }

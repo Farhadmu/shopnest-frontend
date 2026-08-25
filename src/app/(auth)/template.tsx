@@ -20,13 +20,13 @@ export default function AuthTemplate({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.97, filter: "blur(6px)" }}
+      initial={{ opacity: 0, scale: 0.98, filter: "blur(4px)" }}
       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
       transition={{
-        duration: 0.45,
+        duration: 0.35,
         ease: [0.22, 1, 0.36, 1],
       }}
-      className="h-full"
+      className="flex-1 min-h-0 flex flex-col w-full"
     >
       {children}
     </motion.div>

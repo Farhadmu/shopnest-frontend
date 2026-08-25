@@ -134,25 +134,25 @@ interface FieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
 function F({ id, label, icon, right, err, ok, ...rest }: FieldProps) {
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-[10px] font-bold text-[#64748B] dark:text-[#94A3B8] uppercase tracking-[.12em] pl-0.5">
+      <label htmlFor={id} className="text-[10px] sm:text-[11px] font-bold text-muted uppercase tracking-[.12em] pl-0.5">
         {label}
       </label>
       <div className="relative flex items-center">
-        <span className="absolute left-3 text-[#94A3B8] dark:text-[#64748B] pointer-events-none">
+        <span className="absolute left-3 text-muted pointer-events-none">
           {icon}
         </span>
         <input
           id={id}
           {...rest}
-          className={`w-full rounded-xl py-2 pl-[32px] pr-9 text-xs text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] dark:placeholder:text-[#64748B] bg-[#F1F5F9] dark:bg-[#1A1435] border outline-none transition-all focus:ring-2 ${
+          className={`w-full rounded-xl py-2 sm:py-2.5 pl-8 sm:pl-9 pr-8 sm:pr-9 text-xs sm:text-sm text-text placeholder:text-muted bg-muted-bg border outline-none transition-all focus:ring-2 ${
             err
               ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/20"
               : ok
               ? "border-emerald-500 focus:border-emerald-500 focus:ring-emerald-500/20"
-              : "border-[#E2E8F0] dark:border-[#2D2250] focus:border-[#4F46E5] dark:focus:border-[#7C3AED] focus:ring-[#4F46E5]/20 dark:focus:ring-[#7C3AED]/25"
+              : "border-border focus:border-primary focus:ring-primary/20"
           }`}
         />
-        {right && <span className="absolute right-3">{right}</span>}
+        {right && <span className="absolute right-2.5">{right}</span>}
       </div>
     </div>
   );
@@ -164,7 +164,7 @@ const Eye = ({ show, onToggle }: { show: boolean; onToggle: () => void }) => (
     type="button"
     aria-label={show ? "Hide" : "Show"}
     onClick={onToggle}
-    className="text-[#94A3B8] hover:text-[#4F46E5] dark:hover:text-[#A78BFA] transition-colors leading-none p-1"
+    className="text-muted hover:text-primary transition-colors leading-none p-1"
   >
     {show ? <EyeOffIcon c="w-3.5 h-3.5" /> : <EyeIcon c="w-3.5 h-3.5" />}
   </button>
@@ -245,17 +245,17 @@ export default function RegisterPage() {
   const headlineWords = "Start your journey with verified boutiques & AI power. ".trim().split(" ");
 
   return (
-    <div className="h-full flex flex-col bg-[#FFFFFF] dark:bg-[#090614] text-[#0F172A] dark:text-[#F8FAFC] overflow-hidden transition-colors">
-      <div className="flex-1 min-h-0 flex overflow-hidden">
+    <div className="min-h-full flex-1 flex flex-col justify-between bg-surface dark:bg-background text-text transition-colors">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
 
-        {/* ── LEFT: Form Panel (Theme Responsive: Light / Ultra Dark Surface) ── */}
+        {/* ── LEFT: Form Panel (Fully fluid and scrollable on all devices) ── */}
         <motion.div
           variants={panelLeft}
           initial="hidden"
           animate="show"
-          className="flex-1 flex items-center justify-center overflow-y-auto px-6 py-6 bg-[#FFFFFF] dark:bg-[#090614] transition-colors"
+          className="flex-1 flex flex-col items-center justify-center overflow-y-auto custom-scrollbar px-4 py-5 sm:px-6 sm:py-8 lg:px-8 xl:px-12 bg-surface dark:bg-background transition-colors"
         >
-          <div className="w-full max-w-[23.5rem]">
+          <div className="w-full max-w-[24rem] sm:max-w-[26rem] my-auto">
 
             {/* Mobile brand mark */}
             <motion.div
@@ -263,14 +263,14 @@ export default function RegisterPage() {
               variants={fadeUp}
               initial="hidden"
               animate="show"
-              className="flex lg:hidden items-center gap-2 mb-3"
+              className="flex lg:hidden items-center gap-2 mb-2 sm:mb-3"
             >
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] flex items-center justify-center shrink-0 shadow-md">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-r from-primary to-accent flex items-center justify-center shrink-0 shadow-md">
                 <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M6 2 3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
                 </svg>
               </div>
-              <span className="font-black text-sm text-[#0F172A] dark:text-[#F8FAFC]">ShopNest</span>
+              <span className="font-black text-sm text-text">ShopNest</span>
             </motion.div>
 
             {/* Form Header */}
@@ -279,9 +279,9 @@ export default function RegisterPage() {
               variants={fadeUp}
               initial="hidden"
               animate="show"
-              className="mb-3"
+              className="mb-2.5 sm:mb-3"
             >
-              <h1 className="text-2xl font-black tracking-tight text-[#0F172A] dark:text-[#F8FAFC] leading-tight" style={{ perspective: "400px" }}>
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-text leading-tight" style={{ perspective: "400px" }}>
                 {"CREATE ACCOUNT".split("").map((char, i) => (
                   <motion.span
                     key={`rtitle-${i}`}
@@ -302,7 +302,7 @@ export default function RegisterPage() {
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4, duration: 0.3 }}
-                className="mt-0.5 text-xs text-[#64748B] dark:text-[#94A3B8]"
+                className="mt-0.5 text-xs text-muted"
               >
                 Join ShopNest as a customer or verified vendor.
               </motion.p>
@@ -314,7 +314,7 @@ export default function RegisterPage() {
               variants={fadeUp}
               initial="hidden"
               animate="show"
-              className="relative flex p-1 rounded-full mb-3 bg-[#F1F5F9] dark:bg-[#1A1435] border border-[#E2E8F0] dark:border-[#2D2250]"
+              className="relative flex p-1 rounded-full mb-2.5 sm:mb-3 bg-muted-bg border border-border"
               role="tablist"
               aria-label="Account type"
             >
@@ -328,13 +328,13 @@ export default function RegisterPage() {
                   className={`relative flex-1 z-10 rounded-full py-1.5 text-xs font-bold transition-colors duration-200 ${
                     role === r
                       ? "text-white"
-                      : "text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#F8FAFC]"
+                      : "text-muted hover:text-text"
                   }`}
                 >
                   {role === r && (
                     <motion.span
                       layoutId="reg-pill"
-                      className="absolute inset-0 rounded-full bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] shadow-sm"
+                      className="absolute inset-0 rounded-full bg-gradient-to-r from-primary to-accent shadow-sm"
                       transition={{ type: "spring", stiffness: 420, damping: 32 }}
                     />
                   )}
@@ -462,22 +462,22 @@ export default function RegisterPage() {
                 initial="hidden"
                 animate="show"
                 htmlFor="reg-agree"
-                className="flex items-start gap-2 mt-2 cursor-pointer select-none"
+                className="flex items-start gap-2 mt-1.5 sm:mt-2 cursor-pointer select-none"
               >
                 <input
                   type="checkbox"
                   id="reg-agree"
                   checked={agreed}
                   onChange={(e) => setAgreed(e.target.checked)}
-                  className="mt-0.5 w-3.5 h-3.5 shrink-0 rounded cursor-pointer accent-[#4F46E5] dark:accent-[#7C3AED]"
+                  className="mt-0.5 w-3.5 h-3.5 shrink-0 rounded cursor-pointer accent-primary"
                 />
-                <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] leading-snug">
+                <span className="text-[10px] sm:text-[11px] text-muted leading-snug">
                   I agree to the{" "}
-                  <Link href="/terms" className="font-semibold text-[#4F46E5] dark:text-[#A78BFA] hover:underline">
+                  <Link href="/terms" className="font-semibold text-primary hover:underline">
                     Terms
                   </Link>
                   {" "}&amp;{" "}
-                  <Link href="/privacy" className="font-semibold text-[#4F46E5] dark:text-[#A78BFA] hover:underline">
+                  <Link href="/privacy" className="font-semibold text-primary hover:underline">
                     Privacy Policy
                   </Link>.
                 </span>
@@ -495,9 +495,9 @@ export default function RegisterPage() {
                   id="register-submit"
                   type="submit"
                   disabled={loading || !agreed}
-                  whileHover={{ scale: 1.02, boxShadow: "0 6px 24px rgba(124,58,237,0.4)" }}
+                  whileHover={{ scale: 1.015, boxShadow: "0 6px 24px rgba(91,92,240,0.4)" }}
                   whileTap={{ scale: 0.98 }}
-                  className="group relative w-full rounded-full py-2.5 text-xs font-bold text-white overflow-hidden shadow-md disabled:opacity-60 disabled:cursor-not-allowed bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] hover:from-[#4338CA] hover:to-[#6D28D9] shadow-indigo-500/25 dark:shadow-purple-900/40 transition-all"
+                  className="group relative w-full rounded-full py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-white overflow-hidden shadow-md disabled:opacity-60 disabled:cursor-not-allowed bg-gradient-to-r from-primary to-accent hover:from-primary-hover hover:to-accent transition-all"
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-1.5">
@@ -534,13 +534,13 @@ export default function RegisterPage() {
                 variants={fadeUp}
                 initial="hidden"
                 animate="show"
-                className="flex items-center gap-2 my-2"
+                className="flex items-center gap-2 my-1.5 sm:my-2"
               >
-                <div className="flex-1 h-px bg-[#E2E8F0] dark:bg-[#2D2250]" />
-                <span className="text-[9px] font-bold text-[#64748B] dark:text-[#94A3B8] uppercase tracking-widest whitespace-nowrap">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-[9px] sm:text-[10px] font-bold text-muted uppercase tracking-widest whitespace-nowrap">
                   Or Register With
                 </span>
-                <div className="flex-1 h-px bg-[#E2E8F0] dark:bg-[#2D2250]" />
+                <div className="flex-1 h-px bg-border" />
               </motion.div>
 
               {/* Social Buttons */}
@@ -555,9 +555,9 @@ export default function RegisterPage() {
                   id="reg-google"
                   type="button"
                   onClick={onGoogle}
-                  whileHover={{ scale: 1.02 }}
+                  whileHover={{ scale: 1.015 }}
                   whileTap={{ scale: 0.97 }}
-                  className="flex items-center justify-center gap-1.5 rounded-full border border-[#E2E8F0] dark:border-[#2D2250] bg-[#FFFFFF] dark:bg-[#160F30] py-2 text-[11px] font-semibold text-[#0F172A] dark:text-[#F8FAFC] shadow-sm hover:bg-[#F8FAFC] dark:hover:bg-[#1E1540] transition-colors cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 rounded-full border border-border bg-surface py-2 sm:py-2.5 text-[11px] sm:text-xs font-semibold text-text shadow-sm hover:bg-muted-bg transition-colors cursor-pointer"
                 >
                   <GoogleIcon className="w-3.5 h-3.5 shrink-0" />
                   Google
@@ -566,9 +566,9 @@ export default function RegisterPage() {
                   id="reg-facebook"
                   type="button"
                   onClick={onFacebook}
-                  whileHover={{ scale: 1.02 }}
+                  whileHover={{ scale: 1.015 }}
                   whileTap={{ scale: 0.97 }}
-                  className="flex items-center justify-center gap-1.5 rounded-full border border-[#E2E8F0] dark:border-[#2D2250] bg-[#FFFFFF] dark:bg-[#160F30] py-2 text-[11px] font-semibold text-[#0F172A] dark:text-[#F8FAFC] shadow-sm hover:bg-[#F8FAFC] dark:hover:bg-[#1E1540] transition-colors cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 rounded-full border border-border bg-surface py-2 sm:py-2.5 text-[11px] sm:text-xs font-semibold text-text shadow-sm hover:bg-muted-bg transition-colors cursor-pointer"
                 >
                   <FacebookIcon className="w-3.5 h-3.5 shrink-0" />
                   Facebook
@@ -582,11 +582,11 @@ export default function RegisterPage() {
               variants={fadeUp}
               initial="hidden"
               animate="show"
-              className="mt-2.5 text-center text-xs text-[#64748B] dark:text-[#94A3B8]"
+              className="mt-2.5 sm:mt-3 text-center text-xs text-muted"
             >
               Already have an account?{" "}
               <motion.span whileHover={{ scale: 1.05 }} className="inline-block">
-                <Link href="/login" className="font-bold text-[#4F46E5] dark:text-[#A78BFA] hover:underline cursor-pointer">
+                <Link href="/login" className="font-bold text-primary hover:underline cursor-pointer">
                   Sign In
                 </Link>
               </motion.span>
@@ -594,12 +594,12 @@ export default function RegisterPage() {
           </div>
         </motion.div>
 
-        {/* ── RIGHT: Visual Showcase Panel ── */}
+        {/* ── RIGHT: Visual Showcase Panel (Shown on Desktop, gracefully scrollable on short heights) ── */}
         <motion.div
           variants={panelRight}
           initial="hidden"
           animate="show"
-          className="hidden lg:flex w-1/2 relative overflow-hidden flex-col p-8 xl:p-10 bg-gradient-to-br from-[#4F46E5] via-[#6366F1] to-[#7C3AED] dark:from-[#1E124A] dark:via-[#120B2E] dark:to-[#090614] text-white select-none transition-colors duration-500"
+          className="hidden lg:flex lg:w-1/2 relative overflow-y-auto custom-scrollbar flex-col justify-between p-6 xl:p-10 bg-gradient-to-br from-[#4F46E5] via-[#6366F1] to-[#7C3AED] dark:from-[#1E124A] dark:via-[#120B2E] dark:to-[#090614] text-white select-none transition-colors duration-500"
         >
           {/* Subtle dot-matrix overlay pattern (15% in light, 10% in dark) */}
           <svg className="absolute inset-0 w-full h-full opacity-15 dark:opacity-10 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
@@ -653,7 +653,7 @@ export default function RegisterPage() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, delay: 0.1 }}
-            className="relative z-10 flex items-center gap-2.5 mb-auto"
+            className="relative z-10 flex items-center gap-2.5 mb-3 xl:mb-4 shrink-0"
           >
             <div className="w-9 h-9 rounded-xl bg-white/20 dark:bg-white/10 backdrop-blur-md border border-white/30 dark:border-white/15 flex items-center justify-center shadow-md text-white">
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -666,21 +666,21 @@ export default function RegisterPage() {
           </motion.div>
 
           {/* Glassmorphic Hero Container */}
-          <div className="relative z-10 flex-1 flex items-center">
+          <div className="relative z-10 flex-1 flex items-center py-2 my-auto">
             <motion.div
               initial={{ opacity: 0, y: 24, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.55, delay: 0.18, ease: EASE }}
-              className="w-full backdrop-blur-xl bg-white/15 border border-white/25 dark:backdrop-blur-2xl dark:bg-black/40 dark:border-purple-500/20 rounded-3xl p-7 xl:p-8 shadow-2xl relative overflow-hidden"
+              className="w-full backdrop-blur-xl bg-white/15 border border-white/25 dark:backdrop-blur-2xl dark:bg-black/40 dark:border-purple-500/20 rounded-2xl xl:rounded-3xl p-5 xl:p-7 shadow-2xl relative overflow-hidden"
             >
-              {/* Lightning / Spark badge - Solid Bright Gold with soft ambient glow */}
+              {/* Lightning / Spark badge */}
               <motion.div
                 aria-hidden="true"
                 animate={{ y: [0, -6, 0] }}
                 transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                className="absolute -left-3.5 top-7 w-12 h-12 rounded-full bg-[#FBBF24] border-2 border-white/50 dark:border-amber-200/60 flex items-center justify-center shadow-[0_0_20px_rgba(251,191,36,0.65)] z-20"
+                className="absolute -left-3 top-5 xl:top-6 w-10 h-10 xl:w-12 xl:h-12 rounded-full bg-[#FBBF24] border-2 border-white/50 dark:border-amber-200/60 flex items-center justify-center shadow-[0_0_20px_rgba(251,191,36,0.65)] z-20"
               >
-                <span className="text-xl leading-none text-slate-950" role="img" aria-label="Spark">✨</span>
+                <span className="text-lg xl:text-xl leading-none text-slate-950" role="img" aria-label="Spark">✨</span>
               </motion.div>
 
               {/* Tag / Micro-copy */}
@@ -688,14 +688,14 @@ export default function RegisterPage() {
                 initial={{ opacity: 0, x: -14, filter: "blur(4px)" }}
                 animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
                 transition={{ delay: 0.25, duration: 0.45 }}
-                className="text-[11px] font-bold uppercase tracking-[.2em] text-[#EDE9FE] dark:text-purple-200/80 mb-2.5 pl-1"
+                className="text-[10px] xl:text-[11px] font-bold uppercase tracking-[.2em] text-[#EDE9FE] dark:text-purple-200/80 mb-1.5 pl-1"
               >
                 ShopNest Marketplace
               </motion.p>
 
-              {/* Main Title - Pure white high contrast with intact word wrapping */}
+              {/* Main Title */}
               <h2
-                className="text-white font-black text-2xl xl:text-3xl leading-snug tracking-tight max-w-md"
+                className="text-white font-black text-xl xl:text-2xl 2xl:text-3xl leading-snug tracking-tight max-w-md"
                 style={{ perspective: "600px" }}
               >
                 {headlineWords.map((word, wIdx, arr) => {
@@ -728,7 +728,7 @@ export default function RegisterPage() {
               </h2>
 
               {/* Perks list */}
-              <ul className="mt-4 space-y-2">
+              <ul className="mt-3.5 xl:mt-4 space-y-1.5 xl:space-y-2">
                 {[
                   { icon: "🛍", label: "Customer", desc: "Browse 10k+ curated products with AI guidance" },
                   { icon: "🏪", label: "Seller", desc: "Open your store, track orders & trust score" },
@@ -741,46 +741,46 @@ export default function RegisterPage() {
                     transition={{ delay: 0.28 + i * 0.1, duration: 0.4, ease: EASE }}
                     className="flex items-start gap-2.5"
                   >
-                    <span className="w-7 h-7 rounded-xl flex items-center justify-center text-xs shrink-0 bg-white/20 dark:bg-white/10 backdrop-blur-md border border-white/30 dark:border-white/15 text-white">
+                    <span className="w-6 h-6 xl:w-7 xl:h-7 rounded-xl flex items-center justify-center text-xs shrink-0 bg-white/20 dark:bg-white/10 backdrop-blur-md border border-white/30 dark:border-white/15 text-white">
                       {icon}
                     </span>
                     <div>
                       <p className="text-white font-bold text-xs leading-tight">{label}</p>
-                      <p className="text-[#EDE9FE] dark:text-purple-200/80 text-[11px] mt-0.5">{desc}</p>
+                      <p className="text-[#EDE9FE] dark:text-purple-200/80 text-[10px] xl:text-[11px] mt-0.5">{desc}</p>
                     </div>
                   </motion.li>
                 ))}
               </ul>
 
               {/* Product showcase widget */}
-              <div className="mt-4 flex items-end justify-between gap-3">
+              <div className="mt-3.5 xl:mt-4 flex items-end justify-between gap-3">
                 <motion.div
-                  className="bg-white/20 dark:bg-white/10 backdrop-blur-md border border-white/30 dark:border-white/15 text-white rounded-2xl p-3 shadow-lg flex-1 max-w-[12rem] cursor-default"
+                  className="bg-white/20 dark:bg-white/10 backdrop-blur-md border border-white/30 dark:border-white/15 text-white rounded-2xl p-2.5 xl:p-3 shadow-lg flex-1 max-w-[10rem] xl:max-w-[12rem] cursor-default"
                   animate={{ y: [0, -5, 0] }}
                   transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
                   whileHover={{ scale: 1.03 }}
                 >
-                  <div className="flex items-center gap-1.5 text-[10px] text-[#EDE9FE] dark:text-purple-200/80 font-semibold mb-1.5">
+                  <div className="flex items-center gap-1.5 text-[10px] text-[#EDE9FE] dark:text-purple-200/80 font-semibold mb-1">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#10B981] shadow-[0_0_6px_#10B981]" />
                     Trusted Seller
                   </div>
                   <img
                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6HreEvV6fYiuxEjQ9RL2P_vKICkXpEMiv7M2fT_zUi_Hd0a9gT4ng_a3iCk-PDkXOcdoz01gojbVpxiuoKSL3W6MRQ3Dx28FiUd3Bvv7cxfeuQy3rTWycxnCLNloIkm-wbfLpQ__Yf2nneUbojHp4GAxra0tcwtRNLa57mX0-cle52a4_DN4QoupV-R96YkVaK2bmZitU_0dNLgHfgzciB2kI0WDaiGtlK9lh73jmCqMYjePoyiu_abWVnC_-gofaazk"
                     alt="Featured product"
-                    className="w-full h-16 object-contain drop-shadow-xl mix-blend-luminosity"
+                    className="w-full h-14 xl:h-16 object-contain drop-shadow-xl mix-blend-luminosity"
                   />
-                  <p className="mt-1 text-white font-bold text-[11px]">Nova Tech · 4.9 ★</p>
+                  <p className="mt-1 text-white font-bold text-[10px] xl:text-[11px]">Nova Tech · 4.9 ★</p>
                 </motion.div>
 
                 <motion.div
-                  className="flex-shrink-0 -mb-6"
+                  className="flex-shrink-0 -mb-4 xl:-mb-6"
                   animate={{ y: [0, -7, 0], rotate: [-12, -10, -12] }}
                   transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut", delay: 0.5 }}
                 >
                   <img
                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-GWxFQcDLwQZBZ7v_A-t8LagrYGornlbyaQ1-tp_8aaheqy9nY0UbU6NfB81br1Rvtm6V1V_kGtDwmC8SWWlQka0S_HHCkWvZxWXFQoJjLXtifgD-jA8JusrrIBOCFChUMw011N8oVShS-NgWuC5qPi5aCmoDTvwo0WJfsgjdTKsHO2VrfzB0ku-FfuZvkg5lPgE4Jn_guSr09iqRkB8ZOMAWaY63g9Th6hzyh2Xdagxf-SAJ0hhPXg"
                     alt="Minimalist sneaker"
-                    className="w-24 xl:w-32 h-auto drop-shadow-2xl"
+                    className="w-20 xl:w-32 h-auto drop-shadow-2xl"
                   />
                 </motion.div>
               </div>
@@ -790,12 +790,12 @@ export default function RegisterPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.45, duration: 0.35 }}
-                className="mt-4 grid grid-cols-3 gap-2 border-t border-white/20 dark:border-white/10 pt-3"
+                className="mt-3 xl:mt-4 grid grid-cols-3 gap-2 border-t border-white/20 dark:border-white/10 pt-2.5 xl:pt-3"
               >
                 {[["10k+", "Products"], ["2k+", "Sellers"], ["4.9★", "AI Curated"]].map(([v, l]) => (
                   <div key={l} className="text-center">
-                    <p className="text-white font-black text-sm">{v}</p>
-                    <p className="text-[#EDE9FE] dark:text-purple-200/70 text-[10px] mt-0.5">{l}</p>
+                    <p className="text-white font-black text-xs xl:text-sm">{v}</p>
+                    <p className="text-[#EDE9FE] dark:text-purple-200/70 text-[9px] xl:text-[10px] mt-0.5">{l}</p>
                   </div>
                 ))}
               </motion.div>
@@ -806,7 +806,7 @@ export default function RegisterPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.55, duration: 0.5 }}
-            className="relative z-10 mt-6 text-xs text-[#EDE9FE]/80 dark:text-purple-200/60 font-medium"
+            className="relative z-10 shrink-0 mt-3 xl:mt-4 text-[10px] xl:text-xs text-[#EDE9FE]/80 dark:text-purple-200/60 font-medium"
           >
             © {new Date().getFullYear()} ShopNest · Discover · Compare · Buy with confidence
           </motion.p>
@@ -814,12 +814,12 @@ export default function RegisterPage() {
       </div>
 
       {/* ── Minimalist Footer ── */}
-      <footer className="flex-shrink-0 border-t border-[#E2E8F0] dark:border-[#2D2250] py-2 px-6 flex items-center justify-between gap-4 text-[10px] text-[#64748B] dark:text-[#94A3B8] bg-[#FFFFFF] dark:bg-[#090614] transition-colors">
+      <footer className="flex-shrink-0 border-t border-border py-2 px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-[10px] sm:text-xs text-muted bg-surface dark:bg-background transition-colors">
         <span>© {new Date().getFullYear()} ShopNest, Inc. All rights reserved.</span>
-        <nav className="hidden sm:flex items-center gap-4" aria-label="Legal">
-          <Link href="/privacy" className="hover:text-[#4F46E5] dark:hover:text-[#A78BFA] transition-colors">Privacy</Link>
-          <Link href="/terms" className="hover:text-[#4F46E5] dark:hover:text-[#A78BFA] transition-colors">Terms</Link>
-          <Link href="/support" className="hover:text-[#4F46E5] dark:hover:text-[#A78BFA] transition-colors">Support</Link>
+        <nav className="flex flex-wrap items-center justify-center gap-3 sm:gap-4" aria-label="Legal">
+          <Link href="/privacy" className="hover:text-primary transition-colors">Privacy</Link>
+          <Link href="/terms" className="hover:text-primary transition-colors">Terms</Link>
+          <Link href="/support" className="hover:text-primary transition-colors">Support</Link>
         </nav>
       </footer>
     </div>
