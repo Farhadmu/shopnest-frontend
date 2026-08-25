@@ -4,7 +4,7 @@ import BannerSection from "@/components/home/Banner";
 import ShopByCategory from "@/components/home/ShopByCategory";
 import TrustFeatures from "@/components/home/TrustFeatures";
 import VisualSearchSection from "@/components/home/VisualSearchSection";
-import TrendingSection from "@/components/home/TrendingSection";
+
 import DealsSection from "@/components/home/DealsSection";
 import SellersSection from "@/components/home/SellersSection";
 import RecommendationsSection from "@/components/home/RecommendationsSection";
@@ -13,8 +13,12 @@ import ProofSection from "@/components/home/ProofSection";
 import FinalCtaSection from "@/components/home/FinalCtaSection";
 import { defaultBannerData } from "@/lib/banner/BannerData";
 import AiIntelligenceSection from "@/components/home/AiIntelligenceSection";
+import TrendingSection from "@/components/home/Trending/TrendingSection";
 
 export default function HomePage() {
+
+
+
   return (
     <div className="space-y-10 overflow-hidden">
       {/* 01 — Hero */}
@@ -27,7 +31,7 @@ export default function HomePage() {
       <ShopByCategory />
 
       {/* 04 — Trending */}
-      <TrendingSection />
+     <TrendingSection/>
 
       {/* 05 — AI */}
       <AiIntelligenceSection />
