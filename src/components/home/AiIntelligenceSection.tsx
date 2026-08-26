@@ -199,11 +199,11 @@ export default function AiIntelligenceSection() {
     <section className="py-6 sm:py-10">
       <div className="group relative overflow-hidden rounded-3xl p-6 sm:p-10 lg:p-12 shadow-xl transition-all duration-500 hover:shadow-2xl">
         {/* Conic Glow & Surface Backgrounds */}
-        <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none p-[2px]">
-          <motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 7, repeat: Infinity, ease: "linear" }} style={{ background: "conic-gradient(from 0deg at 50% 50%, transparent 0%, transparent 60%, var(--color-primary) 85%, var(--color-accent) 95%, var(--color-primary) 100%)" }} className="absolute -inset-[60%] opacity-60 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none p-0.5">
+          <motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 7, repeat: Infinity, ease: "linear" }} style={{ background: "conic-gradient(from 0deg at 50% 50%, transparent 0%, transparent 60%, var(--color-primary) 85%, var(--color-accent) 95%, var(--color-primary) 100%)" }} className="absolute inset-[-60%] opacity-60 group-hover:opacity-100 transition-opacity duration-500" />
         </div>
         <div className="absolute inset-[1.5px] rounded-[22px] bg-surface/95 dark:bg-surface/95 backdrop-blur-xl z-0" />
-        <div className="absolute inset-0 rounded-3xl pointer-events-none z-[1] opacity-40 bg-[radial-gradient(circle_at_20%_20%,var(--color-primary)_0%,transparent_60%)]" />
+        <div className="absolute inset-0 rounded-3xl pointer-events-none z-1 opacity-40 bg-[radial-gradient(circle_at_20%_20%,var(--color-primary)_0%,transparent_60%)]" />
 
         {/* Two-Column Grid */}
         <div className="relative z-10 grid gap-8 lg:grid-cols-[1.1fr_1.2fr] lg:gap-12 items-center">
@@ -221,7 +221,7 @@ export default function AiIntelligenceSection() {
             <div>
               <h2 className="text-3xl font-black tracking-tight text-text sm:text-4xl lg:text-5xl leading-[1.15]">
                 Tell us what you need.{" "}
-                <span className="block mt-1 bg-gradient-to-r from-primary via-accent to-warm bg-clip-text text-transparent">
+                <span className="block mt-1 bg-linear-to-r from-primary via-accent to-warm bg-clip-text text-transparent">
                   Let AI narrow it down.
                 </span>
               </h2>
@@ -280,10 +280,10 @@ export default function AiIntelligenceSection() {
           </div>
 
           {/* Right Column: AI Assistant Chat Interface */}
-          <div className="relative flex h-[500px] sm:h-[520px] flex-col rounded-2xl border border-border bg-surface/90 shadow-2xl backdrop-blur-xl overflow-hidden">
+          <div className="relative flex h-125 sm:h-130 flex-col rounded-2xl border border-border bg-surface/90 shadow-2xl backdrop-blur-xl overflow-hidden">
             <div className="flex items-center justify-between border-b border-border/80 bg-muted-bg/40 px-4 sm:px-5 py-3.5">
               <div className="flex items-center gap-3">
-                <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-primary to-accent text-surface shadow-md">
+                <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-tr from-primary to-accent text-surface shadow-md">
                   <Bot className="w-5 h-5" />
                   <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
