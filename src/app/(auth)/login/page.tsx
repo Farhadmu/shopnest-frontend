@@ -210,7 +210,7 @@ export default function LoginPage() {
           variants={panelLeft}
           initial="hidden"
           animate="show"
-          className="hidden lg:flex lg:w-1/2 relative overflow-y-auto custom-scrollbar flex-col justify-between p-6 xl:p-10 bg-gradient-to-br from-[#4F46E5] via-[#6366F1] to-[#7C3AED] dark:from-[#1E124A] dark:via-[#120B2E] dark:to-[#090614] text-white select-none transition-colors duration-500"
+          className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col justify-between p-6 xl:p-10 bg-gradient-to-br from-[#4F46E5] via-[#6366F1] to-[#7C3AED] dark:from-[#1E124A] dark:via-[#120B2E] dark:to-[#090614] text-white select-none transition-colors duration-500"
         >
           {/* Subtle dot-matrix overlay pattern (15% in light, 10% in dark) */}
           <svg className="absolute inset-0 w-full h-full opacity-15 dark:opacity-10 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
