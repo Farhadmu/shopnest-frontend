@@ -4,5 +4,7 @@ export interface ProductCardData {
   price: number;
   category: string;
   imageUrl?: string;
+  image?: string;       
+  images?: string[];
   rating?: number;
 }
