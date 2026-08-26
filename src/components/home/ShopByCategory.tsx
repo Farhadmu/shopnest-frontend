@@ -3,8 +3,18 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { FaChevronRight } from "react-icons/fa";
-import { FaLayerGroup } from "react-icons/fa6";
+import { 
+  FaChevronRight, 
+  FaLaptop, 
+  FaTshirt, 
+  FaBook, 
+  FaHome, 
+  FaMobileAlt, 
+  FaRunning, 
+  FaBicycle, 
+  FaPumpSoap,
+  FaBoxes
+} from "react-icons/fa";
 import { getCategories } from "@/lib/api/categories";
 
 const STYLES = [
@@ -64,10 +74,25 @@ const STYLES = [
   },
 ];
 
+
+const getCategoryIcon = (name: string) => {
+  const lowerName = name.toLowerCase();
+  if (lowerName.includes("beauty")) return <FaPumpSoap size={20} />;
+  if (lowerName.includes("book")) return <FaBook size={20} />;
+  if (lowerName.includes("electronic")) return <FaLaptop size={20} />;
+  if (lowerName.includes("fashion") || lowerName.includes("cloth")) return <FaTshirt size={20} />;
+  if (lowerName.includes("home") || lowerName.includes("kitchen")) return <FaHome size={20} />;
+  if (lowerName.includes("mobile") || lowerName.includes("phone")) return <FaMobileAlt size={20} />;
+  if (lowerName.includes("sport")) return <FaRunning size={20} />;
+  if (lowerName.includes("cycle") || lowerName.includes("bike")) return <FaBicycle size={20} />;
+  return <FaBoxes size={20} />;
+};
+
 type DisplayCategory = {
   id: string;
   name: string;
   desc: string;
+  icon: React.ReactNode;
 } & (typeof STYLES)[number];
 
 export default function ShopByCategory() {
@@ -84,7 +109,8 @@ export default function ShopByCategory() {
             id: c.id,
             name: c.name,
             desc: "Explore this category",
-            ...STYLES[i % STYLES.length],
+            icon: getCategoryIcon(c.name),
+            ...STYLES[i % STYLES.length], 
           }))
         );
       })
@@ -100,65 +126,26 @@ export default function ShopByCategory() {
   }, []);
 
   return (
-    // ✅ CLEAN PADDING:
     <section className="py-12">
       {/* Section Header */}
-      
       <div className="mb-8 flex items-end justify-between">
         <div className="relative">
-
           {/* Small Label */}
           <div className="mb-3 flex items-center gap-2">
             <span className="h-[2px] w-8 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500" />
-
             <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-indigo-600 dark:text-indigo-400">
               Discover Categories
             </span>
-
             <span className="h-[2px] w-8 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500" />
           </div>
 
-          {/* Main Title*/}
+          {/* Main Title */}
           <div className="relative inline-block">
-            <h2
-              className="
-                text-3xl
-                font-black
-                tracking-tight
-                text-slate-900
-                dark:text-white
-                sm:text-4xl
-              "
-            >
+            <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-4xl">
               Shop{" "}
-
-              <span
-                className="
-                  relative
-                  bg-gradient-to-r
-                  from-indigo-500
-                  via-violet-500
-                  to-fuchsia-500
-                  bg-clip-text
-                  text-transparent
-                "
-              >
+              <span className="relative bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 bg-clip-text text-transparent">
                 by category
-
-                {/* Small Glow Dot */}
-                <span
-                  className="
-                    absolute
-                    -right-4
-                    -top-1
-                    h-2
-                    w-2
-                    rounded-full
-                    bg-violet-500
-                    shadow-[0_0_14px_rgba(139,92,246,0.9)]
-                    animate-pulse
-                  "
-                />
+                <span className="absolute -right-4 -top-1 h-2 w-2 rounded-full bg-violet-500 shadow-[0_0_14px_rgba(139,92,246,0.9)] animate-pulse" />
               </span>
             </h2>
           </div>
@@ -169,63 +156,19 @@ export default function ShopByCategory() {
           </p>
         </div>
 
-        {/*  View All Button*/}
+        {/* View All Button */}
         <Link
           href="/products"
-          className="
-            group
-            hidden
-            items-center
-            gap-2
-            rounded-full
-            border
-            border-indigo-100
-            bg-indigo-50/70
-            px-4
-            py-2
-            text-sm
-            font-bold
-            text-indigo-600
-            transition-all
-            duration-300
-            hover:-translate-y-0.5
-            hover:border-indigo-500
-            hover:bg-indigo-600
-            hover:text-white
-            sm:flex
-            dark:border-indigo-500/20
-            dark:bg-indigo-500/10
-            dark:text-indigo-400
-            dark:hover:bg-indigo-500
-            dark:hover:text-white
-          "
+          className="group hidden items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50/70 px-4 py-2 text-sm font-bold text-indigo-600 transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-500 hover:bg-indigo-600 hover:text-white sm:flex dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-400 dark:hover:bg-indigo-500 dark:hover:text-white"
         >
           <span>View all</span>
-
-          <span
-            className="
-              flex
-              h-6
-              w-6
-              items-center
-              justify-center
-              rounded-full
-              bg-white
-              text-indigo-600
-              transition-all
-              duration-300
-              group-hover:translate-x-0.5
-              dark:bg-slate-800
-              dark:text-indigo-400
-              dark:group-hover:bg-white
-            "
-          >
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-indigo-600 transition-all duration-300 group-hover:translate-x-0.5 dark:bg-slate-800 dark:text-indigo-400 dark:group-hover:bg-white">
             <FaChevronRight size={9} />
           </span>
         </Link>
       </div>
 
-      {/*  Category Grid*/}
+      {/* Category Grid */}
       {loading ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
           {[1, 2, 3, 4, 5, 6].map((n) => (
@@ -242,253 +185,69 @@ export default function ShopByCategory() {
           </p>
         </div>
       ) : (
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-
-        {categories.map((cat, i) => (
-          <motion.div
-            key={cat.id}
-            initial={{
-              opacity: 0,
-              y: 15,
-            }}
-            whileInView={{
-              opacity: 1,
-              y: 0,
-            }}
-            viewport={{
-              once: true,
-            }}
-            transition={{
-              duration: 0.4,
-              delay: i * 0.07,
-            }}
-          >
-            <Link
-              href={`/products?category=${encodeURIComponent(cat.name)}`}
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+          {categories.map((cat, i) => (
+            <motion.div
+              key={cat.id}
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: i * 0.07 }}
             >
-              <motion.div
-                animate={{
-                  opacity: [0.95, 1, 0.95],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: i * 0.3,
-                }}
-                className={`
-                  group
-                  relative
-                  flex
-                  min-h-[170px]
-                  flex-col
-                  justify-between
-                  overflow-hidden
-                  rounded-2xl
-                  border
-                  border-slate-200
-                  bg-white
-                  p-4
-                  backdrop-blur-xl
-                  transition-all
-                  duration-500
-                  hover:-translate-y-2
-                  hover:shadow-xl
-                  dark:border-slate-800
-                  dark:bg-slate-900/80
-                  ${cat.borderHover}
-                  ${cat.shadowHover}
-                `}
-              >
-
-                {/* Background Gradient */}
+              <Link href={`/products?category=${encodeURIComponent(cat.name)}`}>
                 <motion.div
-                  animate={{
-                    opacity: [0.45, 0.8, 0.45],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: i * 0.3,
-                  }}
+                  animate={{ opacity: [0.95, 1, 0.95] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: i * 0.3 }}
                   className={`
-                    pointer-events-none
-                    absolute
-                    inset-0
-                    bg-gradient-to-br
-                    transition-opacity
-                    duration-500
-                    group-hover:opacity-100
-                    ${cat.color}
+                    group relative flex min-h-[170px] flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 backdrop-blur-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/80
+                    ${cat.borderHover} ${cat.shadowHover}
                   `}
-                />
+                >
+                  {/* Background Gradient */}
+                  <motion.div
+                    animate={{ opacity: [0.45, 0.8, 0.45] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: i * 0.3 }}
+                    className={`pointer-events-none absolute inset-0 bg-gradient-to-br transition-opacity duration-500 group-hover:opacity-100 ${cat.color}`}
+                  />
 
-                {/* Soft Glow */}
-                <div
-                  className="
-                    absolute
-                    -right-8
-                    -top-8
-                    h-20
-                    w-20
-                    rounded-full
-                    bg-white/30
-                    opacity-0
-                    blur-2xl
-                    transition-opacity
-                    duration-500
-                    group-hover:opacity-100
-                    dark:bg-white/10
-                  "
-                />
+                  {/* Soft Glow */}
+                  <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-white/30 opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100 dark:bg-white/10" />
 
-                {/* Card Content */}
-                <div className="relative z-10">
+                  {/* Card Content */}
+                  <div className="relative z-10">
+                    {/* Icon */}
+                    <div
+                      className={`
+                        mb-4 flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-500 group-hover:rotate-3 group-hover:scale-110 group-hover:shadow-lg
+                        ${cat.iconBg}
+                      `}
+                    >
+                      {cat.icon}
+                    </div>
 
-                  {/* Icon */}
-                  <div
-                    className={`
-                      mb-4
-                      flex
-                      h-11
-                      w-11
-                      items-center
-                      justify-center
-                      rounded-xl
-                      transition-all
-                      duration-500
-                      group-hover:rotate-3
-                      group-hover:scale-110
-                      group-hover:shadow-lg
-                      ${cat.iconBg}
-                    `}
-                  >
-                    <FaLayerGroup size={20} />
+                    {/* Category Name */}
+                    <p className={`text-sm font-extrabold tracking-wide text-slate-900 transition-colors duration-300 dark:text-white ${cat.textHover}`}>
+                      {cat.name}
+                    </p>
+
+                    {/* Description */}
+                    <p className="mt-1 text-[11px] font-medium leading-relaxed text-slate-600 dark:text-slate-400">
+                      {cat.desc}
+                    </p>
                   </div>
 
-                  {/* Category Name */}
-                  <p
-                    className={`
-                      text-sm
-                      font-extrabold
-                      tracking-wide
-                      text-slate-900
-                      transition-colors
-                      duration-300
-                      dark:text-white
-                      ${cat.textHover}
-                    `}
-                  >
-                    {cat.name}
-                  </p>
-
-                  {/* Description */}
-                  <p
-                    className="
-                      mt-1
-                      text-[11px]
-                      font-medium
-                      leading-relaxed
-                      text-slate-600
-                      dark:text-slate-400
-                    "
-                  >
-                    {cat.desc}
-                  </p>
-                </div>
-
-                {/* Bottom Color Bar */}
-                <motion.div
-                  animate={{
-                    opacity: [0.6, 1, 0.6],
-                  }}
-                  transition={{
-                    duration: 2.5,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: i * 0.25,
-                  }}
-                  className={`
-                    absolute
-                    bottom-0
-                    left-0
-                    h-1
-                    w-full
-                    bg-gradient-to-r
-                    transition-all
-                    duration-300
-                    group-hover:h-1.5
-                    ${cat.barColor}
-                  `}
-                />
-
-                {/* Hover Shine */}
-                <div
-                  className="
-                    pointer-events-none
-                    absolute
-                    inset-0
-                    -translate-x-full
-                    bg-gradient-to-r
-                    from-transparent
-                    via-white/20
-                    to-transparent
-                    transition-transform
-                    duration-700
-                    group-hover:translate-x-full
-                  "
-                />
-              </motion.div>
-            </Link>
-          </motion.div>
-        ))}
-      </div>
+                  {/* Bottom Color Bar */}
+                  <motion.div
+                    animate={{ opacity: [0.6, 1, 0.6] }}
+                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: i * 0.25 }}
+                    className={`absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r transition-all duration-300 group-hover:h-1.5 ${cat.barColor}`}
+                  />
+                </motion.div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
       )}
-
-      {/* =========================
-          Mobile View All
-      ========================== */}
-      <div className="mt-6 flex justify-center sm:hidden">
-        <Link
-          href="/products"
-          className="
-            group
-            flex
-            items-center
-            gap-2
-            rounded-full
-            border
-            border-indigo-100
-            bg-indigo-50
-            px-5
-            py-2.5
-            text-sm
-            font-bold
-            text-indigo-600
-            transition-all
-            duration-300
-            hover:bg-indigo-600
-            hover:text-white
-            dark:border-indigo-500/20
-            dark:bg-indigo-500/10
-            dark:text-indigo-400
-            dark:hover:bg-indigo-500
-            dark:hover:text-white
-          "
-        >
-          <span>View all categories</span>
-
-          <FaChevronRight
-            size={10}
-            className="
-              transition-transform
-              duration-300
-              group-hover:translate-x-1
-            "
-          />
-        </Link>
-      </div>
     </section>
   );
 }
