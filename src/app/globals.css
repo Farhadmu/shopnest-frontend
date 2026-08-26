@@ -2,6 +2,8 @@
 @import "@heroui/styles"; 
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --color-primary: #5b5cf0;
   --color-primary-hover: #4f46e5;
@@ -25,16 +27,26 @@
 }
 
 .dark {
-  --color-background: #0a0f1c;
-  --color-surface: #111827;
-  --color-muted-bg: #182235;
-  --color-text: #f8fafc;
-  --color-muted: #94a3b8;
-  --color-border: #263247;
-  --color-primary: #818cf8;
-  --color-primary-hover: #6366f1;
+  --color-background: #090614;      
+  --color-surface: #110c24;     
+  --color-muted-bg: #1a1435;        
+  --color-text: #f8fafc;           
+  --color-muted: #94a3b8;           
+  --color-border: #2d2250;           
+  --color-primary: #6366f1;
+  --color-primary-hover: #4f46e5;
   --color-secondary: #e2e8f0;
-  --color-accent: #a78bfa;
+  --color-accent: #a855f7;
+
+  /* Aliases for direct variable access */
+  --background: #090614;
+  --surface: #110c24;
+  --surface-muted: #1a1435;
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --border: #2d2250;
+  --primary: #6366f1;
+  --accent: #a855f7;
 }
 
 @theme {
