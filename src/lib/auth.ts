@@ -14,21 +14,24 @@ const client = new MongoClient(
 );
 const db = client.db();
 
+const rawBaseURL =
+  process.env.BETTER_AUTH_URL ||
+  process.env.NEXT_PUBLIC_APP_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined) ||
+  "https://shopnest-frontend-six.vercel.app";
+
+const baseURL = rawBaseURL.replace(/\/$/, "");
+
 export const auth = betterAuth({
   database: mongodbAdapter(db),
   secret: process.env.BETTER_AUTH_SECRET,
-  baseURL:
-    process.env.BETTER_AUTH_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined) ||
-    "https://shopnest-frontend-six.vercel.app",
+  baseURL,
   trustedOrigins: [
     "https://shopnest-frontend-six.vercel.app",
     "https://*.vercel.app",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    process.env.BETTER_AUTH_URL,
-    process.env.NEXT_PUBLIC_APP_URL,
+    baseURL,
   ].filter((v): v is string => Boolean(v)),
   emailAndPassword: {
     enabled: true,
@@ -38,6 +41,16 @@ export const auth = betterAuth({
       role: {
         type: "string",
         defaultValue: "customer",
+        input: true,
+      },
+      phone: {
+        type: "string",
+        required: false,
+        input: true,
+      },
+      shopName: {
+        type: "string",
+        required: false,
         input: true,
       },
     },
