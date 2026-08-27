@@ -3,11 +3,13 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
+// Import your configured Better Auth client instance
+import { authClient } from "@/lib/auth-client"; 
 
 function MailIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 00-2 2z" />
     </svg>
   );
 }
@@ -32,16 +34,28 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!email.trim()) return;
+
     setIsLoading(true);
-    // Simulate / Trigger request
-    setTimeout(() => {
-      setIsLoading(false);
+    setErrorMessage(null);
+
+    // Call Better Auth client API
+    const { error } = await authClient.requestPasswordReset({
+      email,
+      redirectTo: "/reset-password",
+    });
+
+    setIsLoading(false);
+
+    if (error) {
+      setErrorMessage(error.message || "Something went wrong. Please try again.");
+    } else {
       setSent(true);
-    }, 600);
+    }
   };
 
   return (
@@ -74,6 +88,17 @@ export default function ForgotPasswordPage() {
             No worries! Enter your registered email address and we&apos;ll send you instructions to reset your password.
           </p>
 
+          {/* Error Banner */}
+          {errorMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-600 dark:text-red-400"
+            >
+              {errorMessage}
+            </motion.div>
+          )}
+
           {sent ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -88,7 +113,10 @@ export default function ForgotPasswordPage() {
               </p>
               <button
                 type="button"
-                onClick={() => setSent(false)}
+                onClick={() => {
+                  setSent(false);
+                  setErrorMessage(null);
+                }}
                 className="mt-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 underline hover:opacity-80"
               >
                 Try another email
@@ -111,10 +139,11 @@ export default function ForgotPasswordPage() {
                     id="forgot-email"
                     type="email"
                     required
+                    disabled={isLoading}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@example.com"
-                    className="w-full rounded-xl border border-border bg-muted-bg pl-9 sm:pl-10 pr-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-text placeholder:text-muted shadow-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    className="w-full rounded-xl border border-border bg-muted-bg pl-9 sm:pl-10 pr-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-text placeholder:text-muted shadow-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
                   />
                 </div>
               </div>
