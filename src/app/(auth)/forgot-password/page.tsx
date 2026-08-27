@@ -70,7 +70,7 @@ export default function ForgotPasswordPage() {
           {/* Back link */}
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline mb-4 sm:mb-6 group transition-colors"
+            className="inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline mb-4 sm:mb-6 group transition-colors cursor-pointer"
           >
             <ArrowLeftIcon className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
             Back to Login
@@ -81,7 +81,7 @@ export default function ForgotPasswordPage() {
             <KeyIcon className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
 
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-text">
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-text cursor-pointer">
             Forgot Password?
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-muted leading-relaxed">
