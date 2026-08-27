@@ -93,25 +93,21 @@ export const Navbar: React.FC = () => {
     setMobileMenuOpen(false);
   };
 
-  // Compute navigation links based on user role
+  // Compute navigation links based on user role (clean & minimal to give maximum room to search bar)
   const getNavLinks = () => {
     if (!isAuthenticated) {
       return [
         { href: "/products", label: "Shop" },
         { href: "/ai-advisor", label: "AI Advisor" },
         { href: "/stores", label: "Stores" },
-        { href: "/register", label: "Sell on ShopNest" },
       ];
     }
 
     if (role === "seller") {
       return [
         { href: "/products", label: "Shop" },
-        { href: "/stores", label: "Stores" },
         { href: "/seller/dashboard", label: "Seller Hub" },
-        { href: "/seller/products/add", label: "+ Add Product" },
         { href: "/seller/orders", label: "Orders" },
-        { href: "/seller/ai-tools", label: "AI Seller Tools" },
       ];
     }
 
@@ -119,20 +115,15 @@ export const Navbar: React.FC = () => {
       return [
         { href: "/products", label: "Shop" },
         { href: "/admin/dashboard", label: "Admin Control" },
-        { href: "/admin/users", label: "Users" },
-        { href: "/admin/sellers", label: "Sellers" },
-        { href: "/admin/products", label: "Moderation" },
-        { href: "/admin/security", label: "Security" },
+        { href: "/admin/orders", label: "Orders" },
       ];
     }
 
-    // Default Customer Role (No "Sell on ShopNest" in main nav)
+    // Default Customer Role
     return [
       { href: "/products", label: "Shop" },
       { href: "/ai-advisor", label: "AI Advisor" },
-      { href: "/stores", label: "Stores" },
       { href: "/orders", label: "My Orders" },
-      { href: "/wishlist", label: "Wishlist" },
     ];
   };
 
@@ -190,12 +181,12 @@ export const Navbar: React.FC = () => {
             </span>
           </Link>
 
-          {/* Search Bar */}
+          {/* Search Bar (Spacious and prominent across all screen sizes) */}
           <form
             onSubmit={submitSearch}
-            className="hidden min-w-0 flex-1 md:block md:max-w-md lg:max-w-xl"
+            className="flex min-w-0 flex-1 max-w-xl md:max-w-2xl"
           >
-            <div className="group flex h-11 items-center rounded-xl border border-border bg-surface px-3 transition focus-within:border-primary/60 focus-within:ring-4 focus-within:ring-primary/10">
+            <div className="group flex h-11 w-full items-center rounded-xl border border-border bg-surface px-3.5 transition focus-within:border-primary/60 focus-within:ring-4 focus-within:ring-primary/10">
               <FaSearch className="shrink-0 text-muted" size={14} />
               <input
                 value={search}
@@ -211,7 +202,7 @@ export const Navbar: React.FC = () => {
           </form>
 
           {/* Navigation Links */}
-          <nav className="hidden items-center gap-1 xl:flex">
+          <nav className="hidden items-center gap-1.5 lg:flex">
             {navLinks.map((item) => {
               const active =
                 pathname === item.href ||
@@ -220,7 +211,7 @@ export const Navbar: React.FC = () => {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                  className={`rounded-xl px-3.5 py-2 text-sm font-semibold transition ${
                     active
                       ? "bg-primary/10 text-primary"
                       : "text-muted hover:bg-muted-bg hover:text-text"
@@ -318,6 +309,20 @@ export const Navbar: React.FC = () => {
                             <span className="text-sm">📊</span> Customer Dashboard
                           </Link>
                           <Link
+                            href="/customer/analytics"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
+                          >
+                            <span className="text-sm">📈</span> Spending Analytics
+                          </Link>
+                          <Link
+                            href="/customer/security"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
+                          >
+                            <FaShieldAlt className="text-muted" size={13} /> Security Center
+                          </Link>
+                          <Link
                             href="/orders"
                             onClick={() => setUserDropdownOpen(false)}
                             className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
@@ -350,7 +355,7 @@ export const Navbar: React.FC = () => {
                             onClick={() => setUserDropdownOpen(false)}
                             className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
                           >
-                            <FaUser className="text-muted" size={13} /> Profile & Security
+                            <FaUser className="text-muted" size={13} /> Profile Settings
                           </Link>
                           <Link
                             href="/seller/dashboard"
@@ -372,6 +377,41 @@ export const Navbar: React.FC = () => {
                             <FaStore className="text-muted" size={13} /> Seller Overview
                           </Link>
                           <Link
+                            href="/seller/analytics"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
+                          >
+                            <span className="text-sm">📈</span> Sales Analytics
+                          </Link>
+                          <Link
+                            href="/seller/forecast"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
+                          >
+                            <span className="text-sm">🔮</span> Sales Forecast
+                          </Link>
+                          <Link
+                            href="/seller/inventory"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
+                          >
+                            <span className="text-sm">📦</span> Smart Inventory
+                          </Link>
+                          <Link
+                            href="/seller/store-health"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
+                          >
+                            <span className="text-sm">🩺</span> Store Health
+                          </Link>
+                          <Link
+                            href="/seller/customers"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
+                          >
+                            <span className="text-sm">👥</span> Customer Insights
+                          </Link>
+                          <Link
                             href="/seller/products"
                             onClick={() => setUserDropdownOpen(false)}
                             className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
@@ -390,14 +430,7 @@ export const Navbar: React.FC = () => {
                             onClick={() => setUserDropdownOpen(false)}
                             className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
                           >
-                            <span className="text-sm">📦</span> Order Fulfillment
-                          </Link>
-                          <Link
-                            href="/seller/inventory"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <span className="text-sm">📊</span> Smart Inventory
+                            <span className="text-sm">🚚</span> Order Fulfillment
                           </Link>
                           <Link
                             href="/seller/ai-tools"
@@ -423,7 +456,42 @@ export const Navbar: React.FC = () => {
                             onClick={() => setUserDropdownOpen(false)}
                             className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
                           >
-                            <FaShieldAlt className="text-muted" size={13} /> Platform Overview
+                            <FaShieldAlt className="text-muted" size={13} /> Command Center
+                          </Link>
+                          <Link
+                            href="/admin/analytics"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
+                          >
+                            <span className="text-sm">📈</span> Platform Analytics
+                          </Link>
+                          <Link
+                            href="/admin/security"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
+                          >
+                            <FaShieldAlt className="text-muted" size={13} /> Security Center
+                          </Link>
+                          <Link
+                            href="/admin/risk"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
+                          >
+                            <span className="text-sm">🚨</span> Risk & Fraud Detection
+                          </Link>
+                          <Link
+                            href="/admin/incidents"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
+                          >
+                            <span className="text-sm">📑</span> Incident Management
+                          </Link>
+                          <Link
+                            href="/admin/audit-logs"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
+                          >
+                            <span className="text-sm">📜</span> Governance Audit Logs
                           </Link>
                           <Link
                             href="/admin/users"
@@ -452,13 +520,6 @@ export const Navbar: React.FC = () => {
                             className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
                           >
                             <span className="text-sm">📦</span> Order Operations
-                          </Link>
-                          <Link
-                            href="/admin/security"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <FaShieldAlt className="text-muted" size={13} /> Security Center
                           </Link>
                         </>
                       )}

@@ -6,6 +6,10 @@ function getBaseUrl(): string {
   if (url.startsWith("http") && !url.includes("/api/v1")) {
     url = `${url}/api/v1`;
   }
+  if (typeof window === "undefined" && !url.startsWith("http")) {
+    const port = process.env.PORT || 3000;
+    url = `http://localhost:${port}${url.startsWith("/") ? "" : "/"}${url}`;
+  }
   return url;
 }
 

@@ -2,9 +2,11 @@ import { ApiError } from "./errors";
 import { getAuthHeaders } from "./session";
 
 function getBaseUrl(): string {
-  let url = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+  let url = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:5000/api/v1";
   url = url.trim().replace(/\/$/, "");
-  if (url.startsWith("http") && !url.includes("/api/v1")) {
+  if (!url.startsWith("http")) {
+    url = `http://127.0.0.1:5000${url.startsWith("/") ? url : `/${url}`}`;
+  } else if (!url.includes("/api/v1")) {
     url = `${url}/api/v1`;
   }
   return url;
@@ -20,15 +22,21 @@ interface RequestOptions extends RequestInit {
 function buildUrl(endpoint: string, params?: RequestOptions["params"]): string {
   const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
   const baseUrl = getBaseUrl();
-  const url = new URL(`${baseUrl}${cleanEndpoint}`);
+  let fullPath = `${baseUrl}${cleanEndpoint}`;
+
   if (params) {
+    const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
-        url.searchParams.append(key, String(value));
+        searchParams.append(key, String(value));
       }
     });
+    const queryString = searchParams.toString();
+    if (queryString) {
+      fullPath += (fullPath.includes("?") ? "&" : "?") + queryString;
+    }
   }
-  return url.toString();
+  return fullPath;
 }
 
 /**
