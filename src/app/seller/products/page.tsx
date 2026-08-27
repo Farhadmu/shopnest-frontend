@@ -44,7 +44,11 @@ export default function SellerProducts() {
   };
 
   const filteredItems = search
-    ? items.filter((p) => p.title.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase()))
+    ? items.filter(
+        (p) =>
+          p.title.toLowerCase().includes(search.toLowerCase()) ||
+          p.category.toLowerCase().includes(search.toLowerCase())
+      )
     : items;
 
   return (
@@ -95,7 +99,9 @@ export default function SellerProducts() {
               <FaBox />
             </div>
             <h3 className="mt-4 text-lg font-black text-text">No Products Listed Yet</h3>
-            <p className="mt-1 text-sm text-muted">Start listing products on ShopNest to begin receiving orders.</p>
+            <p className="mt-1 text-sm text-muted">
+              Start listing products on ShopNest to begin receiving orders.
+            </p>
             <Link
               href="/seller/products/add"
               className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20"
@@ -133,7 +139,11 @@ export default function SellerProducts() {
                         </span>
                       )}
                       {" · "}
-                      <span className={p.stock > 5 ? "text-emerald-600 font-bold" : "text-amber-600 font-bold"}>
+                      <span
+                        className={
+                          p.stock > 5 ? "text-emerald-600 font-bold" : "text-amber-600 font-bold"
+                        }
+                      >
                         {p.stock} in stock
                       </span>
                     </p>

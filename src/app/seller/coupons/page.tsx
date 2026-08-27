@@ -219,7 +219,9 @@ export default function SellerCouponsPage() {
                   <td className="px-4 py-3 font-semibold">{coupon.code}</td>
                   <td className="px-4 py-3 capitalize">{coupon.type}</td>
                   <td className="px-4 py-3">
-                    {coupon.type === "percentage" ? `${coupon.value}%` : formatCurrency(coupon.value)}
+                    {coupon.type === "percentage"
+                      ? `${coupon.value}%`
+                      : formatCurrency(coupon.value)}
                   </td>
                   <td className="px-4 py-3">{formatCurrency(coupon.minPurchase)}</td>
                   <td className="px-4 py-3">

@@ -86,7 +86,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }
               onClick={handleWishlistClick}
               aria-label="Add to wishlist"
               className={`absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full backdrop-blur-md shadow-sm transition ${
-                isWishlist ? "bg-rose-500 text-white" : "bg-surface/90 text-muted hover:text-rose-500"
+                isWishlist
+                  ? "bg-rose-500 text-white"
+                  : "bg-surface/90 text-muted hover:text-rose-500"
               }`}
             >
               <FaHeart size={12} />

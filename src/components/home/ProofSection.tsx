@@ -42,15 +42,20 @@ export default function ProofSection() {
           <div className="mt-7 grid gap-4 sm:grid-cols-2">
             <blockquote className="rounded-2xl border border-border bg-surface p-5">
               <p className="text-sm leading-6 text-muted">
-                “The AI comparison made it much easier to decide without reading dozens of product pages.”
+                “The AI comparison made it much easier to decide without reading dozens of product
+                pages.”
               </p>
-              <footer className="mt-5 text-xs font-bold text-text">— Ayesha, verified shopper</footer>
+              <footer className="mt-5 text-xs font-bold text-text">
+                — Ayesha, verified shopper
+              </footer>
             </blockquote>
             <blockquote className="rounded-2xl border border-border bg-surface p-5">
               <p className="text-sm leading-6 text-muted">
                 “The seller trust signals give me much more confidence before ordering.”
               </p>
-              <footer className="mt-5 text-xs font-bold text-text">— Rahim, verified shopper</footer>
+              <footer className="mt-5 text-xs font-bold text-text">
+                — Rahim, verified shopper
+              </footer>
             </blockquote>
           </div>
         </div>

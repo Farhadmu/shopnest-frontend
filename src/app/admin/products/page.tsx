@@ -1,5 +1,58 @@
 "use client";
-import { useEffect,useState } from "react";
-import { getProducts,Product } from "@/lib/api/products";
+import { useEffect, useState } from "react";
+import { getProducts, Product } from "@/lib/api/products";
 import { clientMutation } from "@/lib/core/client";
-export default function AdminProducts(){const [items,setItems]=useState<Product[]>([]);const load=()=>{getProducts({page:1,limit:100,status:'pending'}).then(setItems).catch(()=>setItems([]))};useEffect(()=>{load()},[]);const moderate=(id:string,status:string)=>clientMutation(`/products/${id}/moderate`,'PATCH',{status}).then(load).catch(()=>undefined);return <div><h1 className="text-3xl font-black">Product Moderation</h1><p className="mt-2 text-sm text-muted">Review marketplace catalog quality and publishing status.</p><div className="mt-5 grid gap-3">{items.length===0?<div className="rounded-2xl border border-border bg-surface p-8 text-center text-muted">No pending products.</div>:items.map(p=><div key={p.id} className="rounded-2xl border border-border bg-surface p-5"><h2 className="font-black">{p.title}</h2><p className="mt-1 text-sm text-muted">৳{p.price} · {p.category}</p><p className="mt-3 text-sm">{p.description}</p><div className="mt-4 flex gap-2"><button onClick={()=>moderate(p.id,'approved')} className="rounded-lg bg-success px-3 py-2 text-xs font-bold text-white">Approve</button><button onClick={()=>moderate(p.id,'rejected')} className="rounded-lg bg-error px-3 py-2 text-xs font-bold text-white">Reject</button></div></div>)}</div></div>}
+export default function AdminProducts() {
+  const [items, setItems] = useState<Product[]>([]);
+  const load = () => {
+    getProducts({ page: 1, limit: 100, status: "pending" })
+      .then(setItems)
+      .catch(() => setItems([]));
+  };
+  useEffect(() => {
+    load();
+  }, []);
+  const moderate = (id: string, status: string) =>
+    clientMutation(`/products/${id}/moderate`, "PATCH", { status })
+      .then(load)
+      .catch(() => undefined);
+  return (
+    <div>
+      <h1 className="text-3xl font-black">Product Moderation</h1>
+      <p className="mt-2 text-sm text-muted">
+        Review marketplace catalog quality and publishing status.
+      </p>
+      <div className="mt-5 grid gap-3">
+        {items.length === 0 ? (
+          <div className="rounded-2xl border border-border bg-surface p-8 text-center text-muted">
+            No pending products.
+          </div>
+        ) : (
+          items.map((p) => (
+            <div key={p.id} className="rounded-2xl border border-border bg-surface p-5">
+              <h2 className="font-black">{p.title}</h2>
+              <p className="mt-1 text-sm text-muted">
+                ৳{p.price} · {p.category}
+              </p>
+              <p className="mt-3 text-sm">{p.description}</p>
+              <div className="mt-4 flex gap-2">
+                <button
+                  onClick={() => moderate(p.id, "approved")}
+                  className="rounded-lg bg-success px-3 py-2 text-xs font-bold text-white"
+                >
+                  Approve
+                </button>
+                <button
+                  onClick={() => moderate(p.id, "rejected")}
+                  className="rounded-lg bg-error px-3 py-2 text-xs font-bold text-white"
+                >
+                  Reject
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
