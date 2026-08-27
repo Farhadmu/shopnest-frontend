@@ -128,9 +128,7 @@ export const NotificationBell: React.FC = () => {
           </div>
 
           <div className="max-h-96 overflow-y-auto">
-            {isLoading && (
-              <p className="px-4 py-6 text-center text-sm text-muted">Loading...</p>
-            )}
+            {isLoading && <p className="px-4 py-6 text-center text-sm text-muted">Loading...</p>}
             {!isLoading && error && (
               <p className="px-4 py-6 text-center text-sm text-error">{error}</p>
             )}
@@ -156,7 +154,9 @@ export const NotificationBell: React.FC = () => {
                       <p className="text-sm font-medium text-foreground line-clamp-1">
                         {notification.title}
                       </p>
-                      <p className="text-xs text-muted line-clamp-2 mt-0.5">{notification.message}</p>
+                      <p className="text-xs text-muted line-clamp-2 mt-0.5">
+                        {notification.message}
+                      </p>
                     </div>
                   </div>
                 </button>

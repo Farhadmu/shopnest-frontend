@@ -167,7 +167,9 @@ function CheckoutForm() {
               <div className="flex items-center justify-between rounded-lg bg-primary/5 px-3 py-2">
                 <div>
                   <p className="text-sm font-medium text-primary">{appliedCoupon.code}</p>
-                  <p className="text-xs text-muted">-{formatCurrency(appliedCoupon.discount)} applied</p>
+                  <p className="text-xs text-muted">
+                    -{formatCurrency(appliedCoupon.discount)} applied
+                  </p>
                 </div>
                 <button
                   type="button"
@@ -189,7 +191,10 @@ function CheckoutForm() {
                     onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
                     fullWidth
                   />
-                  <Button onPress={handleApplyCoupon} isDisabled={isApplying || !couponInput.trim()}>
+                  <Button
+                    onPress={handleApplyCoupon}
+                    isDisabled={isApplying || !couponInput.trim()}
+                  >
                     {isApplying ? "Applying..." : "Apply"}
                   </Button>
                 </div>

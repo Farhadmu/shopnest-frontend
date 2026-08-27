@@ -1,4 +1,68 @@
 "use client";
-import { useEffect,useState } from "react";
-import { clientFetch,clientMutation } from "@/lib/core/client";
-export default function AdminUsers(){const [users,setUsers]=useState<any[]>([]);const [search,setSearch]=useState('');const load=()=>{clientFetch<any[]>('/users',{params:{search:search||undefined}}).then(r=>setUsers((r as any).data??r)).catch(()=>setUsers([]))};useEffect(()=>{load()},[]);return <div><h1 className="text-3xl font-black">User Management</h1><p className="mt-2 text-sm text-muted">Search, review and protect the ShopNest community.</p><div className="mt-5 flex gap-2"><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search name or email" className="flex-1 rounded-xl border border-border bg-surface px-4 py-3"/><button onClick={load} className="rounded-xl bg-primary px-4 py-3 font-bold text-white">Search</button></div><div className="mt-5 overflow-x-auto rounded-2xl border border-border bg-surface"><table className="w-full min-w-[700px] text-sm"><thead className="bg-muted-bg"><tr><th className="p-4 text-left">User</th><th className="p-4 text-left">Role</th><th className="p-4 text-left">Status</th><th className="p-4 text-left">Action</th></tr></thead><tbody>{users.map(u=><tr key={u.id} className="border-t border-border"><td className="p-4"><b>{u.name}</b><p className="text-xs text-muted">{u.email}</p></td><td className="p-4 capitalize">{u.role}</td><td className="p-4">{u.banned?'Suspended':'Active'}</td><td className="p-4"><button onClick={()=>clientMutation(`/users/${u.id}/status`,'PATCH',{banned:!u.banned}).then(load)} className="rounded-lg border border-border px-3 py-2 text-xs font-bold">{u.banned?'Activate':'Suspend'}</button></td></tr>)}</tbody></table></div></div>}
+import { useEffect, useState } from "react";
+import { clientFetch, clientMutation } from "@/lib/core/client";
+export default function AdminUsers() {
+  const [users, setUsers] = useState<any[]>([]);
+  const [search, setSearch] = useState("");
+  const load = () => {
+    clientFetch<any[]>("/users", { params: { search: search || undefined } })
+      .then((r) => setUsers((r as any).data ?? r))
+      .catch(() => setUsers([]));
+  };
+  useEffect(() => {
+    load();
+  }, []);
+  return (
+    <div>
+      <h1 className="text-3xl font-black">User Management</h1>
+      <p className="mt-2 text-sm text-muted">Search, review and protect the ShopNest community.</p>
+      <div className="mt-5 flex gap-2">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search name or email"
+          className="flex-1 rounded-xl border border-border bg-surface px-4 py-3"
+        />
+        <button onClick={load} className="rounded-xl bg-primary px-4 py-3 font-bold text-white">
+          Search
+        </button>
+      </div>
+      <div className="mt-5 overflow-x-auto rounded-2xl border border-border bg-surface">
+        <table className="w-full min-w-[700px] text-sm">
+          <thead className="bg-muted-bg">
+            <tr>
+              <th className="p-4 text-left">User</th>
+              <th className="p-4 text-left">Role</th>
+              <th className="p-4 text-left">Status</th>
+              <th className="p-4 text-left">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map((u) => (
+              <tr key={u.id} className="border-t border-border">
+                <td className="p-4">
+                  <b>{u.name}</b>
+                  <p className="text-xs text-muted">{u.email}</p>
+                </td>
+                <td className="p-4 capitalize">{u.role}</td>
+                <td className="p-4">{u.banned ? "Suspended" : "Active"}</td>
+                <td className="p-4">
+                  <button
+                    onClick={() =>
+                      clientMutation(`/users/${u.id}/status`, "PATCH", { banned: !u.banned }).then(
+                        load
+                      )
+                    }
+                    className="rounded-lg border border-border px-3 py-2 text-xs font-bold"
+                  >
+                    {u.banned ? "Activate" : "Suspend"}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

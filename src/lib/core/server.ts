@@ -64,10 +64,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
  * Public Fetch Handler
  * Makes unauthenticated requests to the Express backend.
  */
-export async function publicFetch<T>(
-  endpoint: string,
-  options: RequestOptions = {}
-): Promise<T> {
+export async function publicFetch<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const { params, headers: customHeaders, ...fetchOptions } = options;
   const url = buildUrl(endpoint, params);
 
