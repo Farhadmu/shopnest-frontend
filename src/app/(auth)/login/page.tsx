@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
+import { authClient } from "@/lib/auth-client";
 
 /* ─── SVG Icons ─────────────────────────────────────────────────────────────── */
 function GoogleIcon({ className }: { className?: string }) {
@@ -158,16 +159,17 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<"google" | "facebook" | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isLoading || socialLoading) return;
     setErrorMsg("");
     setIsLoading(true);
     try {
-      const { signIn } = await import("@/lib/auth-client");
-      const result = await signIn.email({
+      const result = await authClient.signIn.email({
         email: email.trim().toLowerCase(),
         password,
         rememberMe,
@@ -180,6 +182,7 @@ export default function LoginPage() {
       router.replace("/");
       router.refresh();
     } catch (err) {
+      console.error("Sign in error:", err);
       setErrorMsg(err instanceof Error ? err.message : "Unable to sign in.");
     } finally {
       setIsLoading(false);
@@ -187,13 +190,43 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = async () => {
-    const { signIn } = await import("@/lib/auth-client");
-    await signIn.social({ provider: "google", callbackURL: "/" });
+    if (isLoading || socialLoading) return;
+    setErrorMsg("");
+    setSocialLoading("google");
+    try {
+      const res = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/",
+      });
+      if (res?.error) {
+        setErrorMsg(res.error.message || "Failed to sign in with Google.");
+        setSocialLoading(null);
+      }
+    } catch (err) {
+      console.error("Google sign in error:", err);
+      setErrorMsg(err instanceof Error ? err.message : "Failed to sign in with Google.");
+      setSocialLoading(null);
+    }
   };
 
   const handleFacebookSignIn = async () => {
-    const { signIn } = await import("@/lib/auth-client");
-    await signIn.social({ provider: "facebook", callbackURL: "/" });
+    if (isLoading || socialLoading) return;
+    setErrorMsg("");
+    setSocialLoading("facebook");
+    try {
+      const res = await authClient.signIn.social({
+        provider: "facebook",
+        callbackURL: "/",
+      });
+      if (res?.error) {
+        setErrorMsg(res.error.message || "Failed to sign in with Facebook.");
+        setSocialLoading(null);
+      }
+    } catch (err) {
+      console.error("Facebook sign in error:", err);
+      setErrorMsg(err instanceof Error ? err.message : "Failed to sign in with Facebook.");
+      setSocialLoading(null);
+    }
   };
 
   /* stagger index counter for smooth sequential reveals */
@@ -593,7 +626,7 @@ export default function LoginPage() {
                 <motion.button
                   id="login-submit"
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || Boolean(socialLoading)}
                   whileHover={{ scale: 1.015, boxShadow: "0 8px 28px rgba(91,92,240,0.4)" }}
                   whileTap={{ scale: 0.98 }}
                   className="group relative w-full rounded-full py-3 sm:py-3.5 text-xs sm:text-sm font-bold text-white overflow-hidden shadow-lg transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed bg-gradient-to-r from-primary to-accent hover:from-primary-hover hover:to-accent"
@@ -608,7 +641,7 @@ export default function LoginPage() {
                       Signing in…
                     </span>
                   ) : (
-                    <span className="relative z-10 flex items-center justify-center gap-2">
+                    <span className="relative z-10 flex items-center justify-center gap-2 cursor-pointer">
                       Login Now
                       <motion.svg
                         className="w-4 h-4"
@@ -654,26 +687,28 @@ export default function LoginPage() {
                 <motion.button
                   id="login-google"
                   type="button"
+                  disabled={isLoading || Boolean(socialLoading)}
                   onClick={handleGoogleSignIn}
                   whileHover={{ scale: 1.015, y: -1 }}
                   whileTap={{ scale: 0.98 }}
-                  className="flex w-full items-center justify-center gap-2.5 rounded-full border border-border bg-surface py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-text shadow-sm hover:bg-muted-bg transition-all"
+                  className="flex w-full items-center justify-center gap-2.5 rounded-full border border-border bg-surface py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-text shadow-sm hover:bg-muted-bg transition-all cursor-pointer"
                 >
                   <GoogleIcon className="w-4 h-4 shrink-0" />
-                  Login with Google
+                  {socialLoading === "google" ? "Connecting to Google…" : "Login with Google"}
                 </motion.button>
 
                 {/* Facebook */}
                 <motion.button
                   id="login-facebook"
                   type="button"
+                  disabled={isLoading || Boolean(socialLoading)}
                   onClick={handleFacebookSignIn}
                   whileHover={{ scale: 1.015, y: -1 }}
                   whileTap={{ scale: 0.98 }}
-                  className="flex w-full items-center justify-center gap-2.5 rounded-full border border-border bg-surface py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-text shadow-sm hover:bg-muted-bg transition-all"
+                  className="flex w-full items-center justify-center gap-2.5 rounded-full border border-border bg-surface py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-text shadow-sm hover:bg-muted-bg transition-all cursor-pointer"
                 >
                   <FacebookIcon className="w-4 h-4 shrink-0" />
-                  Login with Facebook
+                  {socialLoading === "facebook" ? "Connecting to Facebook…" : "Login with Facebook"}
                 </motion.button>
               </motion.div>
             </form>

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
+import { authClient } from "@/lib/auth-client";
 
 /* ─── SVG Icons ─────────────────────────────────────────────────────────────── */
 const GoogleIcon = ({ className }: { className?: string }) => (
@@ -188,6 +189,7 @@ export default function RegisterPage() {
   const [showCf, setShowCf] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<"google" | "facebook" | null>(null);
   const [error, setError] = useState("");
   const router = useRouter();
 
@@ -196,6 +198,7 @@ export default function RegisterPage() {
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (loading || socialLoading) return;
     if (!agreed) {
       setError("Please accept the Terms & Conditions.");
       return;
@@ -207,8 +210,7 @@ export default function RegisterPage() {
     setError("");
     setLoading(true);
     try {
-      const { signUp } = await import("@/lib/auth-client");
-      const res = await signUp.email({
+      const res = await authClient.signUp.email({
         name: fullName.trim(),
         email: email.trim().toLowerCase(),
         password: pw,
@@ -223,6 +225,7 @@ export default function RegisterPage() {
       router.replace("/");
       router.refresh();
     } catch (err) {
+      console.error("Sign up error:", err);
       setError(err instanceof Error ? err.message : "Unable to register.");
     } finally {
       setLoading(false);
@@ -230,13 +233,43 @@ export default function RegisterPage() {
   };
 
   const onGoogle = async () => {
-    const { signIn } = await import("@/lib/auth-client");
-    await signIn.social({ provider: "google", callbackURL: "/" });
+    if (loading || socialLoading) return;
+    setError("");
+    setSocialLoading("google");
+    try {
+      const res = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/",
+      });
+      if (res?.error) {
+        setError(res.error.message || "Failed to sign in with Google.");
+        setSocialLoading(null);
+      }
+    } catch (err) {
+      console.error("Google sign up error:", err);
+      setError(err instanceof Error ? err.message : "Failed to sign in with Google.");
+      setSocialLoading(null);
+    }
   };
 
   const onFacebook = async () => {
-    const { signIn } = await import("@/lib/auth-client");
-    await signIn.social({ provider: "facebook", callbackURL: "/" });
+    if (loading || socialLoading) return;
+    setError("");
+    setSocialLoading("facebook");
+    try {
+      const res = await authClient.signIn.social({
+        provider: "facebook",
+        callbackURL: "/",
+      });
+      if (res?.error) {
+        setError(res.error.message || "Failed to sign in with Facebook.");
+        setSocialLoading(null);
+      }
+    } catch (err) {
+      console.error("Facebook sign up error:", err);
+      setError(err instanceof Error ? err.message : "Failed to sign in with Facebook.");
+      setSocialLoading(null);
+    }
   };
 
   /* Stagger counter */
@@ -494,7 +527,7 @@ export default function RegisterPage() {
                 <motion.button
                   id="register-submit"
                   type="submit"
-                  disabled={loading || !agreed}
+                  disabled={loading || Boolean(socialLoading) || !agreed}
                   whileHover={{ scale: 1.015, boxShadow: "0 6px 24px rgba(91,92,240,0.4)" }}
                   whileTap={{ scale: 0.98 }}
                   className="group relative w-full rounded-full py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-white overflow-hidden shadow-md disabled:opacity-60 disabled:cursor-not-allowed bg-gradient-to-r from-primary to-accent hover:from-primary-hover hover:to-accent transition-all"
@@ -554,24 +587,26 @@ export default function RegisterPage() {
                 <motion.button
                   id="reg-google"
                   type="button"
+                  disabled={loading || Boolean(socialLoading)}
                   onClick={onGoogle}
                   whileHover={{ scale: 1.015 }}
                   whileTap={{ scale: 0.97 }}
-                  className="flex items-center justify-center gap-1.5 rounded-full border border-border bg-surface py-2 sm:py-2.5 text-[11px] sm:text-xs font-semibold text-text shadow-sm hover:bg-muted-bg transition-colors cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 rounded-full border border-border bg-surface py-2 sm:py-2.5 text-[11px] sm:text-xs font-semibold text-text shadow-sm hover:bg-muted-bg transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <GoogleIcon className="w-3.5 h-3.5 shrink-0" />
-                  Google
+                  {socialLoading === "google" ? "Connecting…" : "Google"}
                 </motion.button>
                 <motion.button
                   id="reg-facebook"
                   type="button"
+                  disabled={loading || Boolean(socialLoading)}
                   onClick={onFacebook}
                   whileHover={{ scale: 1.015 }}
                   whileTap={{ scale: 0.97 }}
-                  className="flex items-center justify-center gap-1.5 rounded-full border border-border bg-surface py-2 sm:py-2.5 text-[11px] sm:text-xs font-semibold text-text shadow-sm hover:bg-muted-bg transition-colors cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 rounded-full border border-border bg-surface py-2 sm:py-2.5 text-[11px] sm:text-xs font-semibold text-text shadow-sm hover:bg-muted-bg transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <FacebookIcon className="w-3.5 h-3.5 shrink-0" />
-                  Facebook
+                  {socialLoading === "facebook" ? "Connecting…" : "Facebook"}
                 </motion.button>
               </motion.div>
             </form>
