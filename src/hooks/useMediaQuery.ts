@@ -23,4 +23,3 @@ export function useMediaQuery(query: string): boolean {
 
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
-

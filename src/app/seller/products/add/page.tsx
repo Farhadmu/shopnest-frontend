@@ -3,7 +3,15 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { FaArrowLeft, FaMagic, FaBox, FaTags, FaDollarSign, FaImage, FaCheckCircle } from "react-icons/fa";
+import {
+  FaArrowLeft,
+  FaMagic,
+  FaBox,
+  FaTags,
+  FaDollarSign,
+  FaImage,
+  FaCheckCircle,
+} from "react-icons/fa";
 import { createProduct, getProductById, updateProduct } from "@/lib/api/products";
 import { clientFetch, clientMutation } from "@/lib/core/client";
 
@@ -50,7 +58,7 @@ function AddProductForm() {
     // Fetch categories
     clientFetch<any>("/categories")
       .then((res) => {
-        const list = Array.isArray(res) ? res : res?.data ?? [];
+        const list = Array.isArray(res) ? res : (res?.data ?? []);
         if (list.length > 0) {
           setCategories(list.map((c: any) => c.name || c.title));
         }
@@ -102,7 +110,7 @@ function AddProductForm() {
         setForm((prev) => ({
           ...prev,
           description: data.description,
-          tagsInput: (data.tags && Array.isArray(data.tags)) ? data.tags.join(", ") : prev.tagsInput,
+          tagsInput: data.tags && Array.isArray(data.tags) ? data.tags.join(", ") : prev.tagsInput,
         }));
         setSuccessMsg("✨ AI generated rich description and tags successfully!");
         setTimeout(() => setSuccessMsg(""), 4000);
@@ -133,7 +141,10 @@ function AddProductForm() {
     setErrorMsg("");
 
     const tags = form.tagsInput
-      ? form.tagsInput.split(",").map((t) => t.trim()).filter(Boolean)
+      ? form.tagsInput
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean)
       : [form.category.toLowerCase()];
 
     const images = form.imageUrl.trim() ? [form.imageUrl.trim()] : [];
@@ -155,7 +166,9 @@ function AddProductForm() {
       } else {
         await createProduct(payload);
       }
-      setSuccessMsg(editId ? "Product updated successfully!" : "Product published to catalog successfully!");
+      setSuccessMsg(
+        editId ? "Product updated successfully!" : "Product published to catalog successfully!"
+      );
       setTimeout(() => {
         router.push("/seller/products");
       }, 1200);
@@ -176,7 +189,9 @@ function AddProductForm() {
         >
           <FaArrowLeft size={10} /> Back to Products
         </Link>
-        <span className="text-xs font-bold uppercase tracking-widest text-primary">Seller Center</span>
+        <span className="text-xs font-bold uppercase tracking-widest text-primary">
+          Seller Center
+        </span>
       </div>
 
       <div className="rounded-3xl border border-border bg-surface p-6 shadow-sm sm:p-8">
@@ -195,7 +210,8 @@ function AddProductForm() {
             disabled={isAiGenerating}
             className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-primary px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-primary/25 transition hover:opacity-95 disabled:opacity-50"
           >
-            <FaMagic size={12} /> {isAiGenerating ? "Generating with AI..." : "✨ AI Generate Content"}
+            <FaMagic size={12} />{" "}
+            {isAiGenerating ? "Generating with AI..." : "✨ AI Generate Content"}
           </button>
         </div>
 

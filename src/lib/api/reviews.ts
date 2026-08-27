@@ -13,6 +13,9 @@ export async function getProductReviews(productId: string) {
   return clientFetch<Review[]>(`/products/${productId}/reviews`);
 }
 
-export async function addProductReview(productId: string, data: { rating: number; comment: string }) {
+export async function addProductReview(
+  productId: string,
+  data: { rating: number; comment: string }
+) {
   return clientMutation<Review>(`/products/${productId}/reviews`, "POST", data);
 }

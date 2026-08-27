@@ -15,7 +15,8 @@ export default function RecommendationsSection() {
             Your next favorite thing is closer.
           </h2>
           <p className="mt-4 leading-7 text-muted">
-            ShopNest learns from your browsing and shopping intent to make product discovery more relevant.
+            ShopNest learns from your browsing and shopping intent to make product discovery more
+            relevant.
           </p>
           <Link
             href="/login"

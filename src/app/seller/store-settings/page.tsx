@@ -1,4 +1,62 @@
 "use client";
-import { useEffect,useState } from "react";
-import { clientFetch,clientMutation } from "@/lib/core/client";
-export default function StoreSettings(){const [form,setForm]=useState({storeName:'',description:'',logo:'',banner:''});const [msg,setMsg]=useState('');useEffect(()=>{clientFetch<any>('/sellers/me').then(r=>{const d=r.data??r;setForm({storeName:d.storeName||'',description:d.description||'',logo:d.logo||'',banner:d.banner||''})}).catch(()=>undefined)},[]);const save=()=>clientMutation('/sellers/me','PATCH',form).then(()=>setMsg('Store updated successfully')).catch(e=>setMsg(e instanceof Error?e.message:'Update failed'));return <div className="mx-auto max-w-3xl"><p className="text-xs font-bold uppercase tracking-[.2em] text-primary">Seller storefront</p><h1 className="mt-1 text-3xl font-black">Store Settings</h1><p className="mt-2 text-sm text-muted">Control the public identity of your ShopNest store.</p><div className="mt-5 grid gap-4 rounded-2xl border border-border bg-surface p-6"><input value={form.storeName} onChange={e=>setForm({...form,storeName:e.target.value})} placeholder="Store name" className="rounded-xl border border-border bg-background px-4 py-3"/><textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder="Store description" rows={5} className="rounded-xl border border-border bg-background px-4 py-3"/><input value={form.logo} onChange={e=>setForm({...form,logo:e.target.value})} placeholder="Logo URL" className="rounded-xl border border-border bg-background px-4 py-3"/><input value={form.banner} onChange={e=>setForm({...form,banner:e.target.value})} placeholder="Banner URL" className="rounded-xl border border-border bg-background px-4 py-3"/><button onClick={save} className="rounded-xl bg-primary px-4 py-3 font-bold text-white">Save store</button>{msg&&<p className="text-sm font-semibold text-primary">{msg}</p>}</div></div>}
+import { useEffect, useState } from "react";
+import { clientFetch, clientMutation } from "@/lib/core/client";
+export default function StoreSettings() {
+  const [form, setForm] = useState({ storeName: "", description: "", logo: "", banner: "" });
+  const [msg, setMsg] = useState("");
+  useEffect(() => {
+    clientFetch<any>("/sellers/me")
+      .then((r) => {
+        const d = r.data ?? r;
+        setForm({
+          storeName: d.storeName || "",
+          description: d.description || "",
+          logo: d.logo || "",
+          banner: d.banner || "",
+        });
+      })
+      .catch(() => undefined);
+  }, []);
+  const save = () =>
+    clientMutation("/sellers/me", "PATCH", form)
+      .then(() => setMsg("Store updated successfully"))
+      .catch((e) => setMsg(e instanceof Error ? e.message : "Update failed"));
+  return (
+    <div className="mx-auto max-w-3xl">
+      <p className="text-xs font-bold uppercase tracking-[.2em] text-primary">Seller storefront</p>
+      <h1 className="mt-1 text-3xl font-black">Store Settings</h1>
+      <p className="mt-2 text-sm text-muted">Control the public identity of your ShopNest store.</p>
+      <div className="mt-5 grid gap-4 rounded-2xl border border-border bg-surface p-6">
+        <input
+          value={form.storeName}
+          onChange={(e) => setForm({ ...form, storeName: e.target.value })}
+          placeholder="Store name"
+          className="rounded-xl border border-border bg-background px-4 py-3"
+        />
+        <textarea
+          value={form.description}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
+          placeholder="Store description"
+          rows={5}
+          className="rounded-xl border border-border bg-background px-4 py-3"
+        />
+        <input
+          value={form.logo}
+          onChange={(e) => setForm({ ...form, logo: e.target.value })}
+          placeholder="Logo URL"
+          className="rounded-xl border border-border bg-background px-4 py-3"
+        />
+        <input
+          value={form.banner}
+          onChange={(e) => setForm({ ...form, banner: e.target.value })}
+          placeholder="Banner URL"
+          className="rounded-xl border border-border bg-background px-4 py-3"
+        />
+        <button onClick={save} className="rounded-xl bg-primary px-4 py-3 font-bold text-white">
+          Save store
+        </button>
+        {msg && <p className="text-sm font-semibold text-primary">{msg}</p>}
+      </div>
+    </div>
+  );
+}

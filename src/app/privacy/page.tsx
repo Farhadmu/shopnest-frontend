@@ -1,1 +1,14 @@
-export default function PrivacyPage(){return <article className="prose max-w-3xl py-8 dark:prose-invert"><p className="text-xs font-black uppercase tracking-[.2em] text-primary">ShopNest policy</p><h1>Privacy Policy</h1><p>ShopNest is a project marketplace prototype. Account, order and seller information should be handled only for the purposes required to operate the platform. Production deployments should add a complete privacy policy covering retention, analytics, cookies and third-party services.</p></article>}
+export default function PrivacyPage() {
+  return (
+    <article className="prose max-w-3xl py-8 dark:prose-invert">
+      <p className="text-xs font-black uppercase tracking-[.2em] text-primary">ShopNest policy</p>
+      <h1>Privacy Policy</h1>
+      <p>
+        ShopNest is a project marketplace prototype. Account, order and seller information should be
+        handled only for the purposes required to operate the platform. Production deployments
+        should add a complete privacy policy covering retention, analytics, cookies and third-party
+        services.
+      </p>
+    </article>
+  );
+}

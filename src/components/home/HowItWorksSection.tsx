@@ -24,10 +24,7 @@ export default function HowItWorksSection() {
 
       <div className="mt-10 grid gap-6 md:grid-cols-3">
         {steps.map(({ num, title, desc }) => (
-          <div
-            key={num}
-            className="rounded-2xl border border-border bg-surface p-6 shadow-sm"
-          >
+          <div key={num} className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
             <span className="text-sm font-black text-primary">{num}</span>
             <h3 className="mt-8 text-xl font-black text-text">{title}</h3>
             <p className="mt-2 text-sm leading-6 text-muted">{desc}</p>
