@@ -11,18 +11,19 @@ export interface Order {
   }>;
   subtotal: number;
   discount: number;
+  deliveryFee?: number;
   couponCode?: string;
   totalAmount: number;
   status:
-    | "pending"
-    | "confirmed"
-    | "processing"
-    | "shipped"
-    | "out_for_delivery"
-    | "delivered"
-    | "cancelled"
-    | "returned"
-    | "refunded";
+  | "pending"
+  | "confirmed"
+  | "processing"
+  | "shipped"
+  | "out_for_delivery"
+  | "delivered"
+  | "cancelled"
+  | "returned"
+  | "refunded";
   createdAt: string;
 }
 
@@ -36,6 +37,7 @@ export async function getOrderById(id: string) {
 
 export async function createOrder(data: {
   shippingAddress: string;
+  division: string;
   paymentMethod: string;
   couponCode?: string;
 }) {

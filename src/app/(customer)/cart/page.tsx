@@ -88,6 +88,18 @@ export default function CartPage() {
   const subtotal = cart?.subtotal ?? 0;
   const discount = appliedCoupon?.discount ?? 0;
   const total = Math.max(0, subtotal - discount);
+  // A cart should contain at most one row per product. Merge any legacy or
+  // race-created duplicate rows before rendering so React always receives a
+  // stable, unique key while the API also repairs the persisted cart.
+  const cartItems = Array.from(
+    (cart?.items ?? []).reduce((items: Map<string, any>, item: any) => {
+      const existing = items.get(item.productId);
+      items.set(item.productId, existing
+        ? { ...existing, quantity: existing.quantity + item.quantity }
+        : item);
+      return items;
+    }, new Map<string, any>()).values()
+  );
 
   return (
     <div className="mx-auto max-w-6xl pb-16">
@@ -105,7 +117,7 @@ export default function CartPage() {
         </div>
       )}
 
-      {!cart || !cart.items || cart.items.length === 0 ? (
+      {!cart || cartItems.length === 0 ? (
         <EmptyState
           title="Your Cart is Empty"
           description="Explore our marketplace and add authentic products from verified sellers to your cart."
@@ -116,7 +128,7 @@ export default function CartPage() {
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Cart Item List */}
           <div className="lg:col-span-2 flex flex-col gap-4">
-            {cart.items.map((item: any) => (
+            {cartItems.map((item: any) => (
               <div
                 key={item.productId}
                 className="flex flex-col gap-4 rounded-3xl border border-border bg-surface p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between"
