@@ -27,7 +27,8 @@ const TRACKING_STEPS = [
 
 export default function OrderDetailsPage() {
   const params = useParams();
-  const id = typeof params?.id === "string" ? params.id : Array.isArray(params?.id) ? params.id[0] : "";
+  const id =
+    typeof params?.id === "string" ? params.id : Array.isArray(params?.id) ? params.id[0] : "";
 
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -57,7 +58,9 @@ export default function OrderDetailsPage() {
       <div className="max-w-4xl mx-auto py-20 px-4 text-center">
         <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
         <h2 className="text-lg font-bold text-foreground">Retrieving Live Order Tracking...</h2>
-        <p className="text-xs text-muted mt-1">Connecting to ShopNest real-time delivery telemetry.</p>
+        <p className="text-xs text-muted mt-1">
+          Connecting to ShopNest real-time delivery telemetry.
+        </p>
       </div>
     );
   }
@@ -68,7 +71,8 @@ export default function OrderDetailsPage() {
         <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-8 shadow-sm">
           <h1 className="text-2xl font-black text-foreground">Order Record Not Found</h1>
           <p className="mt-2 text-sm text-muted">
-            {error || "This order may not exist or you do not have active authorization to access its record."}
+            {error ||
+              "This order may not exist or you do not have active authorization to access its record."}
           </p>
           <div className="mt-6 flex items-center justify-center gap-3">
             <button
@@ -105,22 +109,29 @@ export default function OrderDetailsPage() {
           </Link>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-              Order #{String(order.id || order._id || "").slice(-8).toUpperCase()}
+              Order #
+              {String(order.id || order._id || "")
+                .slice(-8)
+                .toUpperCase()}
             </h1>
             <span
               className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                 order.status === "delivered"
                   ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
                   : order.status === "cancelled"
-                  ? "bg-red-500/10 text-red-500 border border-red-500/20"
-                  : "bg-primary/10 text-primary border border-primary/20"
+                    ? "bg-red-500/10 text-red-500 border border-red-500/20"
+                    : "bg-primary/10 text-primary border border-primary/20"
               }`}
             >
               {order.status?.replaceAll("_", " ") || "Pending"}
             </span>
           </div>
           <p className="text-xs text-muted mt-1">
-            Placed on {new Date(order.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
+            Placed on{" "}
+            {new Date(order.createdAt).toLocaleString("en-US", {
+              dateStyle: "medium",
+              timeStyle: "short",
+            })}
           </p>
         </div>
 
@@ -162,7 +173,9 @@ export default function OrderDetailsPage() {
                 >
                   {isCompleted ? <FiCheckCircle /> : idx + 1}
                 </div>
-                <p className={`mt-3 text-xs font-bold capitalize ${isCurrent ? "text-primary" : "text-foreground"}`}>
+                <p
+                  className={`mt-3 text-xs font-bold capitalize ${isCurrent ? "text-primary" : "text-foreground"}`}
+                >
                   {step.label}
                 </p>
                 <p className="text-[10px] text-muted mt-0.5 leading-tight">{step.desc}</p>
@@ -183,11 +196,18 @@ export default function OrderDetailsPage() {
 
             <div className="divide-y divide-border/60">
               {(order.items || []).map((item: any, index: number) => (
-                <div key={index} className="py-4 first:pt-0 last:pb-0 flex items-center justify-between gap-4">
+                <div
+                  key={index}
+                  className="py-4 first:pt-0 last:pb-0 flex items-center justify-between gap-4"
+                >
                   <div className="flex-1">
-                    <h3 className="font-bold text-sm text-foreground">{item.title || `Item #${index + 1}`}</h3>
+                    <h3 className="font-bold text-sm text-foreground">
+                      {item.title || `Item #${index + 1}`}
+                    </h3>
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted">
-                      <span>Quantity: <strong className="text-foreground">{item.quantity}</strong></span>
+                      <span>
+                        Quantity: <strong className="text-foreground">{item.quantity}</strong>
+                      </span>
                       <span>Unit Price: ৳{item.price?.toLocaleString()}</span>
                     </div>
                   </div>
@@ -217,10 +237,15 @@ export default function OrderDetailsPage() {
                 <FiDollarSign className="text-emerald-500" /> Payment Details
               </h3>
               <p className="text-sm font-medium text-foreground capitalize">
-                Method: <strong>{order.paymentMethod ? order.paymentMethod.toUpperCase() : "COD"}</strong>
+                Method:{" "}
+                <strong>{order.paymentMethod ? order.paymentMethod.toUpperCase() : "COD"}</strong>
               </p>
               <p className="text-xs text-muted mt-1">
-                Payment Status: <strong className="text-emerald-500 uppercase">{order.paymentStatus || (order.status === "delivered" ? "Paid" : "Pending Verification")}</strong>
+                Payment Status:{" "}
+                <strong className="text-emerald-500 uppercase">
+                  {order.paymentStatus ||
+                    (order.status === "delivered" ? "Paid" : "Pending Verification")}
+                </strong>
               </p>
             </div>
           </div>
@@ -234,7 +259,9 @@ export default function OrderDetailsPage() {
             <div className="space-y-2.5 text-xs">
               <div className="flex justify-between text-muted">
                 <span>Subtotal</span>
-                <span className="text-foreground font-semibold">৳{order.subtotal?.toLocaleString() || "0"}</span>
+                <span className="text-foreground font-semibold">
+                  ৳{order.subtotal?.toLocaleString() || "0"}
+                </span>
               </div>
               {order.discount > 0 && (
                 <div className="flex justify-between text-emerald-500 font-semibold">
@@ -244,18 +271,25 @@ export default function OrderDetailsPage() {
               )}
               <div className="flex justify-between text-muted">
                 <span>Shipping & Handling</span>
-                <span className="text-emerald-500 font-semibold">FREE</span>
+                <span className="text-foreground font-semibold">
+                  {order.deliveryFee === 0
+                    ? "FREE"
+                    : `৳${order.deliveryFee?.toLocaleString() || "0"}`}
+                </span>
               </div>
               <div className="flex justify-between items-center text-base font-extrabold text-foreground border-t border-border pt-3 mt-2">
                 <span>Total Amount</span>
-                <span className="text-primary text-lg font-black">৳{order.totalAmount?.toLocaleString() || "0"}</span>
+                <span className="text-primary text-lg font-black">
+                  ৳{order.totalAmount?.toLocaleString() || "0"}
+                </span>
               </div>
             </div>
 
             <div className="mt-6 p-3.5 rounded-xl bg-primary/5 border border-primary/20 text-xs text-muted flex items-start gap-2.5">
               <FiShield className="text-primary text-base shrink-0 mt-0.5" />
               <span>
-                All orders are protected by ShopNest 7-Day Hassle-Free Return & Replacement Guarantee.
+                All orders are protected by ShopNest 7-Day Hassle-Free Return & Replacement
+                Guarantee.
               </span>
             </div>
           </div>

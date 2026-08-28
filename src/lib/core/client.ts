@@ -1,6 +1,15 @@
 import { ApiError } from "./errors";
 
 function getBaseUrl(): string {
+  // Browser requests must stay same-origin. Better Auth stores the session in
+  // an HttpOnly cookie for the Next.js app's origin; pointing the browser at
+  // the Express host directly means that cookie is not sent (especially when
+  // the two apps are on different domains). next.config.ts proxies this path
+  // to Express while preserving the incoming cookie header.
+  if (typeof window !== "undefined") {
+    return "/api/v1";
+  }
+
   let url = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
   url = url.trim().replace(/\/$/, "");
   if (url.startsWith("http") && !url.includes("/api/v1")) {
