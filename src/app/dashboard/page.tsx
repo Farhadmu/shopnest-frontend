@@ -230,7 +230,7 @@ export default function CustomerDashboard() {
       <div className="mb-6 flex flex-wrap items-center gap-2 border-b border-border pb-3">
         {[
           { id: "overview", label: "📊 Overview", count: null },
-          { id: "journey", label: "🚀 Shopping Journey", count: journeyData ? `${journeyData.journey.journeyProgress}%` : null },
+          { id: "journey", label: "🚀 Shopping Journey", count: journeyData?.journey ? `${journeyData.journey.journeyProgress}%` : null },
           { id: "budget", label: "💰 Budget Planner", count: null },
           { id: "goals", label: "🎯 Goals", count: goals.length || null },
           { id: "lifecycle", label: "🛡️ Lifecycles", count: lifecycles.length || null },
@@ -383,15 +383,15 @@ export default function CustomerDashboard() {
                 <div>
                   <span className="text-[10px] font-extrabold uppercase tracking-widest text-primary">Active Discovery Path</span>
                   <h3 className="text-lg font-black text-text capitalize">
-                    {journeyData?.journey.category || "Electronics & Gaming"} Setup Path
+                    {journeyData?.journey?.category || "Electronics & Gaming"} Setup Path
                   </h3>
                   <p className="mt-1 text-xs text-muted">
-                    Stage: <span className="font-bold text-text uppercase">{journeyData?.journey.currentStage.replace(/_/g, " ")}</span>
+                    Stage: <span className="font-bold text-text uppercase">{(journeyData?.journey?.currentStage || "discovery").replace(/_/g, " ")}</span>
                   </p>
                 </div>
                 <div className="rounded-2xl border border-primary/30 bg-surface px-4 py-2 text-center shadow-xs">
                   <p className="text-[10px] font-bold text-muted uppercase">Journey Progress</p>
-                  <p className="text-2xl font-black text-primary">{journeyData?.journey.journeyProgress || 45}%</p>
+                  <p className="text-2xl font-black text-primary">{journeyData?.journey?.journeyProgress || 45}%</p>
                 </div>
               </div>
 
@@ -399,7 +399,7 @@ export default function CustomerDashboard() {
               <div className="mt-4 h-2.5 w-full overflow-hidden rounded-full bg-surface">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all duration-700"
-                  style={{ width: `${journeyData?.journey.journeyProgress || 45}%` }}
+                  style={{ width: `${journeyData?.journey?.journeyProgress || 45}%` }}
                 />
               </div>
             </div>
@@ -408,10 +408,10 @@ export default function CustomerDashboard() {
             <div className="grid gap-3 sm:grid-cols-5 text-center text-xs font-bold">
               {[
                 { stage: "Discovery", desc: "Exploring Categories", passed: true },
-                { stage: "Evaluation", desc: "Comparing Specs", passed: (journeyData?.journey.journeyProgress || 0) >= 40 },
-                { stage: "Intent", desc: "Saved to Wishlist", passed: (journeyData?.journey.journeyProgress || 0) >= 60 },
-                { stage: "Ready to Buy", desc: "Added to Cart", passed: (journeyData?.journey.journeyProgress || 0) >= 80 },
-                { stage: "Completed", desc: "Delivered Order", passed: (journeyData?.journey.journeyProgress || 0) === 100 },
+                { stage: "Evaluation", desc: "Comparing Specs", passed: (journeyData?.journey?.journeyProgress || 0) >= 40 },
+                { stage: "Intent", desc: "Saved to Wishlist", passed: (journeyData?.journey?.journeyProgress || 0) >= 60 },
+                { stage: "Ready to Buy", desc: "Added to Cart", passed: (journeyData?.journey?.journeyProgress || 0) >= 80 },
+                { stage: "Completed", desc: "Delivered Order", passed: (journeyData?.journey?.journeyProgress || 0) === 100 },
               ].map((s, idx) => (
                 <div
                   key={idx}
