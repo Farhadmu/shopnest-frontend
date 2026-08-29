@@ -24,6 +24,16 @@
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
   --radius-xl: 1.25rem;
+
+  /* Aliases for direct variable access */
+  --background: #f3f5f9;
+  --surface: #ffffff;
+  --surface-muted: #e9edf4;
+  --text: #111827;
+  --muted: #64748b;
+  --border: #dbe1ea;
+  --primary: #5b5cf0;
+  --accent: #8b5cf6;
 }
 
 .dark {
