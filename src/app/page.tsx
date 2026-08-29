@@ -14,7 +14,6 @@ import FinalCtaSection from "@/components/home/FinalCtaSection";
 import { defaultBannerData } from "@/lib/constants/banner";
 import AiIntelligenceSection from "@/components/home/AiIntelligenceSection";
 import TrendingSection from "@/components/home/Trending/TrendingSection";
-import Hero from "@/components/home/HeroBanner";
 
 export default function HomePage() {
 
