@@ -1,18 +1,67 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   BannerCategory,
   BannerSectionData,
+  FALLBACK_CATEGORIES,
   HeroSlide,
   PromoCard as PromoCardType,
-} from "@/lib/banner/BannerData";
+} from "@/lib/constants/banner";
 import { getCategories } from "@/lib/api/categories";
 
-const AUTO_ADVANCE_MS = 6000;
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const CATEGORY_CYCLE_MS = 3000;
+const HERO_ADVANCE_MS   = 6000;
+
+// ---------------------------------------------------------------------------
+// Zone-specific Framer Motion variants
+// Each zone has distinct motion + staggered delay for a cascading feel.
+// Springs instead of tweens — elements decelerate like real objects.
+// ---------------------------------------------------------------------------
+
+/** Shared spring config — snappy arrival, soft settle */
+const spring = { type: "spring" as const, stiffness: 260, damping: 25 };
+
+/** Hero — subtle scale + fade, no directional slide (centrepiece gravity) */
+const heroVariants = {
+  enter:  { opacity: 0, scale: 1.02 },
+  center: { opacity: 1, scale: 1    },
+  exit:   { opacity: 0, scale: 0.98 },
+};
+
+/** Bottom cards — float up from below */
+const bottomVariants = {
+  enter:  { opacity: 0, y: 16 },
+  center: { opacity: 1, y: 0  },
+  exit:   { opacity: 0, y: -8 },
+};
+
+/** Side cards — glide in from the right edge */
+const sideVariants = {
+  enter:  { opacity: 0, x: 24 },
+  center: { opacity: 1, x: 0  },
+  exit:   { opacity: 0, x: -12 },
+};
+
+// Staggered transitions — hero leads, bottom follows, side arrives last
+const heroTransition   = { ...spring, delay: 0    };
+const bottomTransition = { ...spring, delay: 0.08 };
+const sideTransition   = { ...spring, delay: 0.15 };
+
+// Exit animations use a short tween so outgoing content doesn't linger
+const exitTransition = { duration: 0.2, ease: "easeIn" as const };
+
+// ---------------------------------------------------------------------------
+// PromoCard
+// ---------------------------------------------------------------------------
 
 function PromoCard({
   card,
@@ -31,7 +80,7 @@ function PromoCard({
         card.bgClassName ?? "bg-secondary"
       } ${className}`}
     >
-      {/* Background image, full width/height */}
+      {/* Background image */}
       <div className="absolute inset-0">
         <Image
           src={card.image}
@@ -41,8 +90,11 @@ function PromoCard({
           className="object-cover"
           priority={false}
         />
-        {/* Overlay so text stays readable over any image */}
-        <div className={`absolute inset-0 ${isLight ? "bg-secondary/50" : "bg-surface/70"}`} />
+        <div
+          className={`absolute inset-0 ${
+            isLight ? "bg-secondary/50" : "bg-surface/70"
+          }`}
+        />
       </div>
 
       <div className="relative z-10 max-w-[85%] sm:max-w-[75%]">
@@ -64,24 +116,34 @@ function PromoCard({
           {card.highlight && (
             <>
               {" "}
-              <span className={isLight ? "text-warm" : "text-primary"}>{card.highlight}</span>
+              <span className={isLight ? "text-warm" : "text-primary"}>
+                {card.highlight}
+              </span>
             </>
           )}
         </h3>
 
         {card.description && (
           <p
-            className={`mt-1 text-[11px] sm:text-xs ${isLight ? "text-surface/80" : "text-muted"}`}
+            className={`mt-1 text-[11px] sm:text-xs ${
+              isLight ? "text-surface/80" : "text-muted"
+            }`}
           >
             {card.description}
           </p>
         )}
 
         {card.price && (
-          <p className={`mt-1 text-[11px] sm:text-xs ${isLight ? "text-surface/80" : "text-text"}`}>
+          <p
+            className={`mt-1 text-[11px] sm:text-xs ${
+              isLight ? "text-surface/80" : "text-text"
+            }`}
+          >
             {card.title.toLowerCase().includes("from") ? "" : "FROM "}
             <span
-              className={`text-sm font-bold sm:text-base ${isLight ? "text-success" : "text-primary"}`}
+              className={`text-sm font-bold sm:text-base ${
+                isLight ? "text-success" : "text-primary"
+              }`}
             >
               {card.price}
             </span>
@@ -116,15 +178,23 @@ function PromoCard({
   );
 }
 
+// ---------------------------------------------------------------------------
+// HeroCarousel (unchanged internally — driven by its own auto-advance)
+// ---------------------------------------------------------------------------
+
 function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   const [active, setActive] = useState(0);
   const total = slides.length;
 
   useEffect(() => {
+    setActive(0); // reset when slides change (category switch)
+  }, [slides]);
+
+  useEffect(() => {
     if (total <= 1) return;
     const timer = setInterval(() => {
       setActive((prev) => (prev + 1) % total);
-    }, AUTO_ADVANCE_MS);
+    }, HERO_ADVANCE_MS);
     return () => clearInterval(timer);
   }, [total]);
 
@@ -132,7 +202,6 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
 
   const slide = slides[active];
   const isLight = slide.textTheme !== "dark";
-
   const goTo = (index: number) => setActive((index + total) % total);
 
   return (
@@ -141,7 +210,6 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
         slide.bgClassName ?? "bg-muted-bg"
       }`}
     >
-      {/* Background image, full width/height */}
       <div className="absolute inset-0">
         <Image
           src={slide.image}
@@ -151,8 +219,11 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           className="object-cover"
           priority
         />
-        {/* Overlay so text stays readable over any image */}
-        <div className={`absolute inset-0 ${isLight ? "bg-secondary/50" : "bg-surface/70"}`} />
+        <div
+          className={`absolute inset-0 ${
+            isLight ? "bg-secondary/50" : "bg-surface/70"
+          }`}
+        />
       </div>
 
       <div className="relative z-10 flex h-full flex-col justify-center gap-2 max-w-[85%] p-5 sm:max-w-[70%] sm:gap-3 sm:p-6 lg:max-w-[55%] lg:p-8">
@@ -174,7 +245,9 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
         )}
         {slide.description && (
           <p
-            className={`mt-1 text-xs leading-relaxed sm:text-sm ${isLight ? "text-surface/80" : "text-muted"}`}
+            className={`mt-1 text-xs leading-relaxed sm:text-sm ${
+              isLight ? "text-surface/80" : "text-muted"
+            }`}
           >
             {slide.description}
           </p>
@@ -220,19 +293,118 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// CategorySidebar
+// ---------------------------------------------------------------------------
+
+function CategorySidebar({
+  categories,
+  activeIdx,
+  loading,
+  saleLabel,
+  onSelect,
+}: {
+  categories: BannerCategory[];
+  activeIdx: number;
+  loading: boolean;
+  saleLabel?: string;
+  onSelect: (idx: number) => void;
+}) {
+  // Scroll active item into view on mobile horizontal list
+  const listRef = useRef<HTMLUListElement>(null);
+  useEffect(() => {
+    if (!listRef.current) return;
+    const li = listRef.current.children[activeIdx] as HTMLElement | undefined;
+    li?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [activeIdx]);
+
+  return (
+    <aside className="col-span-2 rounded-xl border border-border bg-surface p-4 sm:col-span-4 sm:p-5 lg:col-span-2">
+      {saleLabel && (
+        <p className="mb-3 text-sm font-bold text-error">{saleLabel}</p>
+      )}
+
+      {loading ? (
+        <ul className="space-y-3">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <li key={n} className="h-4 w-24 animate-pulse rounded bg-muted-bg" />
+          ))}
+        </ul>
+      ) : categories.length === 0 ? (
+        <p className="text-sm text-muted">No categories found.</p>
+      ) : (
+        <ul
+          ref={listRef}
+          className="flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:overflow-visible lg:pb-0"
+        >
+          {categories.map((cat, idx) => {
+            const isActive = idx === activeIdx;
+            return (
+              <li key={cat.id} className="shrink-0 lg:shrink">
+                <button
+                  type="button"
+                  onClick={() => onSelect(idx)}
+                  className={`relative w-full whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-primary text-surface"
+                      : "text-text hover:bg-muted-bg hover:text-primary"
+                  }`}
+                >
+                  {cat.label}
+
+                  {/* Progress bar — only on active item */}
+                  {isActive && (
+                    <motion.span
+                      key={`progress-${idx}`}          // re-mount → restarts animation
+                      className="absolute bottom-0 left-0 h-[3px] rounded-b-lg bg-surface/40"
+                      initial={{ width: "0%" }}
+                      animate={{ width: "100%" }}
+                      transition={{ duration: CATEGORY_CYCLE_MS / 1000, ease: "linear" }}
+                    />
+                  )}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </aside>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// BannerSection — orchestrates everything
+// ---------------------------------------------------------------------------
+
 export default function BannerSection({ data }: { data: BannerSectionData }) {
   const { saleLabel, heroSlides, sideCards, bottomCards } = data;
 
-  const [categories, setCategories] = useState<BannerCategory[]>(data.categories ?? []);
+  // --- Category state ---
+  const [categories, setCategories] = useState<BannerCategory[]>(
+    data.categories ?? FALLBACK_CATEGORIES
+  );
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
+  // --- Active category index ---
+  const [activeIdx, setActiveIdx] = useState(0);
+  const isPaused = useRef(false);
+  const isVisible = useRef(true);
+  const sectionRef = useRef<HTMLElement>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Fetch live categories from API, keep static card-set data attached
   useEffect(() => {
     let cancelled = false;
     getCategories()
       .then((cats) => {
         if (cancelled) return;
+        // Map API cats → BannerCategory, cycling through FALLBACK card sets
+        // so each live category has cards to display
         setCategories(
-          cats.map((c) => ({
+          cats.map((c, i) => ({
+            // Pull card sets from the fallback list (cycles through 4 sets)
+            ...(FALLBACK_CATEGORIES[i % FALLBACK_CATEGORIES.length] ?? FALLBACK_CATEGORIES[0]),
+            // Override identity fields with live API values
             id: c.id,
             label: c.name,
             href: `/products?category=${encodeURIComponent(c.name)}`,
@@ -240,78 +412,144 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
         );
       })
       .catch(() => {
-        if (!cancelled) setCategories(data.categories ?? []);
+        if (!cancelled) setCategories(data.categories ?? FALLBACK_CATEGORIES);
       })
       .finally(() => {
         if (!cancelled) setCategoriesLoading(false);
       });
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Keep categories length in a ref so the interval callback never goes stale
+  const categoriesLenRef = useRef(categories.length);
+  categoriesLenRef.current = categories.length;
+
+  // Auto-cycle timer — stable across renders, only recreated on mount
+  const startTimer = useRef(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      if (!isPaused.current && isVisible.current && categoriesLenRef.current > 0) {
+        setActiveIdx((prev) => (prev + 1) % categoriesLenRef.current);
+      }
+    }, CATEGORY_CYCLE_MS);
+  }).current;
+
+  useEffect(() => {
+    startTimer();
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [startTimer]);
+
+  // Pause auto-cycle when the banner scrolls out of view
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { isVisible.current = entry.isIntersecting; },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const handleSelectCategory = (idx: number) => {
+    setActiveIdx(idx);
+    startTimer(); // reset timer on manual select
+  };
+
+  // Derive active card data — fall back to top-level data if category has none
+  const activeCat = categories[activeIdx];
+  const activeHeroSlides  = activeCat?.heroSlides  ?? heroSlides;
+  const activeSideCards   = activeCat?.sideCards   ?? sideCards;
+  const activeBottomCards = activeCat?.bottomCards ?? bottomCards;
+
+  // Unique key drives AnimatePresence exit → enter cycle
+  const animationKey = activeCat?.id ?? `idx-${activeIdx}`;
+
   return (
-    <section className="grid grid-cols-2 gap-4 pb-8 sm:grid-cols-4 lg:grid-cols-12">
-      {/* Categories sidebar */}
-      <aside className="col-span-2 rounded-xl border border-border bg-surface p-4 sm:col-span-4 sm:p-5 lg:col-span-2">
-        {saleLabel && <p className="mb-3 text-sm font-bold text-error">{saleLabel}</p>}
-        {categoriesLoading ? (
-          <ul className="space-y-3">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <li key={n} className="h-4 w-24 animate-pulse rounded bg-muted-bg" />
-            ))}
-          </ul>
-        ) : categories.length === 0 ? (
-          <p className="text-sm text-muted">No categories found.</p>
-        ) : (
-          <ul className="flex gap-4 overflow-x-auto pb-1 lg:block lg:space-y-3 lg:overflow-visible lg:pb-0">
-            {categories.map((cat) => (
-              <li key={cat.id} className="shrink-0 lg:shrink">
-                <Link
-                  href={cat.href}
-                  className="whitespace-nowrap text-sm font-medium text-text hover:text-primary"
-                >
-                  {cat.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </aside>
+    <section
+      ref={sectionRef}
+      className="grid grid-cols-2 gap-4 pb-8 sm:grid-cols-4 lg:grid-cols-12"
+      onMouseEnter={() => { isPaused.current = true; }}
+      onMouseLeave={() => { isPaused.current = false; }}
+    >
+      {/* ── Left: Category sidebar ── */}
+      <CategorySidebar
+        categories={categories}
+        activeIdx={activeIdx}
+        loading={categoriesLoading}
+        saleLabel={saleLabel}
+        onSelect={handleSelectCategory}
+      />
 
-      {/* Hero + bottom cards */}
+      {/* ── Centre: Hero + bottom cards ── */}
       <div className="col-span-2 flex flex-col gap-4 sm:col-span-4 lg:col-span-7">
-        <div className="flex-1">
-          <HeroCarousel slides={heroSlides} />
-        </div>
+        {/* Hero — scale + fade (leads the cascade) */}
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.div
+            key={`hero-${animationKey}`}
+            variants={heroVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={heroTransition}
+            style={{ willChange: "transform, opacity" }}
+            className="flex-1"
+          >
+            <HeroCarousel slides={activeHeroSlides} />
+          </motion.div>
+        </AnimatePresence>
 
-        {bottomCards.length > 0 && (
-          <div className="grid grid-cols-2 gap-4">
-            {bottomCards.map((card) => (
+        {/* Bottom cards — float up (follows hero with 80ms delay) */}
+        {activeBottomCards.length > 0 && (
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.div
+              key={`bottom-${animationKey}`}
+              variants={bottomVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={bottomTransition}
+              style={{ willChange: "transform, opacity" }}
+              className="grid grid-cols-2 gap-4"
+            >
+              {activeBottomCards.map((card) => (
+                <PromoCard
+                  key={card.id}
+                  card={card}
+                  imageSizes="(max-width: 1024px) 50vw, 25vw"
+                  className="min-h-28 sm:min-h-36"
+                />
+              ))}
+            </motion.div>
+          </AnimatePresence>
+        )}
+      </div>
+
+      {/* ── Right: Side cards ── */}
+      {/* Side cards — glide from right (arrives last, 150ms after hero) */}
+      {activeSideCards.length > 0 && (
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.div
+            key={`side-${animationKey}`}
+            variants={sideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={sideTransition}
+            style={{ willChange: "transform, opacity" }}
+            className="col-span-2 grid grid-cols-2 gap-4 sm:col-span-4 lg:col-span-3 lg:flex lg:flex-col"
+          >
+            {activeSideCards.map((card) => (
               <PromoCard
                 key={card.id}
                 card={card}
                 imageSizes="(max-width: 1024px) 50vw, 25vw"
-                className="min-h-28 sm:min-h-36"
+                className="min-h-36 sm:min-h-48 lg:flex-1"
               />
             ))}
-          </div>
-        )}
-      </div>
-
-      {/* Right rail */}
-      {sideCards.length > 0 && (
-        <div className="col-span-2 grid grid-cols-2 gap-4 sm:col-span-4 lg:col-span-3 lg:flex lg:flex-col">
-          {sideCards.map((card) => (
-            <PromoCard
-              key={card.id}
-              card={card}
-              imageSizes="(max-width: 1024px) 50vw, 25vw"
-              className="min-h-36 sm:min-h-48 lg:flex-1"
-            />
-          ))}
-        </div>
+          </motion.div>
+        </AnimatePresence>
       )}
     </section>
   );
