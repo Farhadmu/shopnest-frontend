@@ -65,7 +65,9 @@ function CheckoutForm() {
 
   // Coupon
   const [couponInput, setCouponInput] = useState(initialCoupon);
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(
+    null
+  );
   const [couponError, setCouponError] = useState<string | null>(null);
   const [isApplying, setIsApplying] = useState(false);
 
@@ -127,7 +129,10 @@ function CheckoutForm() {
       return;
     }
 
-    if ((paymentMethod === "bkash" || paymentMethod === "nagad" || paymentMethod === "rocket") && !mfsNumber.trim()) {
+    if (
+      (paymentMethod === "bkash" || paymentMethod === "nagad" || paymentMethod === "rocket") &&
+      !mfsNumber.trim()
+    ) {
       setSubmitError(`Please enter your ${paymentMethod.toUpperCase()} mobile account number.`);
       return;
     }
@@ -140,6 +145,7 @@ function CheckoutForm() {
     try {
       const order = await createOrder({
         shippingAddress: fullShippingAddress,
+        division,
         paymentMethod: paymentMethod,
         couponCode: appliedCoupon?.code,
       });
@@ -166,8 +172,13 @@ function CheckoutForm() {
           <FiShoppingBag />
         </div>
         <h2 className="text-2xl font-bold text-foreground mb-2">Your Shopping Cart is Empty</h2>
-        <p className="text-muted text-sm mb-6">Discover thousands of verified products from top sellers across Bangladesh.</p>
-        <Link href="/products" className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-medium rounded-xl hover:bg-primary-hover transition-colors">
+        <p className="text-muted text-sm mb-6">
+          Discover thousands of verified products from top sellers across Bangladesh.
+        </p>
+        <Link
+          href="/products"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-medium rounded-xl hover:bg-primary-hover transition-colors"
+        >
           Browse Products <FiArrowRight />
         </Link>
       </div>
@@ -176,7 +187,7 @@ function CheckoutForm() {
 
   const subtotal = cart.subtotal;
   const discount = appliedCoupon?.discount ?? 0;
-  const shippingFee = subtotal > 2000 ? 0 : 60; // Free delivery over ৳2,000
+  const shippingFee = division === "Dhaka" ? 60 : 120;
   const total = Math.max(0, subtotal - discount + shippingFee);
 
   return (
@@ -184,8 +195,12 @@ function CheckoutForm() {
       {/* Header */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-6">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Secure Checkout</h1>
-          <p className="text-sm text-muted mt-1">Review your order, enter delivery details, and select your payment method.</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+            Secure Checkout
+          </h1>
+          <p className="text-sm text-muted mt-1">
+            Review your order, enter delivery details, and select your payment method.
+          </p>
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full text-xs font-semibold w-fit">
           <FiShield className="text-sm" /> 256-Bit SSL Encrypted & Verified
@@ -210,7 +225,9 @@ function CheckoutForm() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-foreground mb-1.5">
-                  <span className="flex items-center gap-1"><FiUser /> Full Name *</span>
+                  <span className="flex items-center gap-1">
+                    <FiUser /> Full Name *
+                  </span>
                 </label>
                 <input
                   type="text"
@@ -223,7 +240,9 @@ function CheckoutForm() {
 
               <div>
                 <label className="block text-xs font-semibold text-foreground mb-1.5">
-                  <span className="flex items-center gap-1"><FiPhone /> Mobile Number (+880) *</span>
+                  <span className="flex items-center gap-1">
+                    <FiPhone /> Mobile Number (+880) *
+                  </span>
                 </label>
                 <input
                   type="tel"
@@ -236,7 +255,9 @@ function CheckoutForm() {
 
               <div>
                 <label className="block text-xs font-semibold text-foreground mb-1.5">
-                  <span className="flex items-center gap-1"><FiMapPin /> Division *</span>
+                  <span className="flex items-center gap-1">
+                    <FiMapPin /> Division *
+                  </span>
                 </label>
                 <select
                   value={division}
@@ -244,7 +265,9 @@ function CheckoutForm() {
                   className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
                 >
                   {BD_DIVISIONS.map((d) => (
-                    <option key={d} value={d}>{d} Division</option>
+                    <option key={d} value={d}>
+                      {d} Division
+                    </option>
                   ))}
                 </select>
               </div>
@@ -298,7 +321,9 @@ function CheckoutForm() {
               </div>
               <div>
                 <h2 className="text-lg font-bold text-foreground">Select Payment Method</h2>
-                <p className="text-xs text-muted">Choose your preferred safe & instant payment option.</p>
+                <p className="text-xs text-muted">
+                  Choose your preferred safe & instant payment option.
+                </p>
               </div>
             </div>
 
@@ -322,8 +347,12 @@ function CheckoutForm() {
                       <p className="text-xs text-muted">Pay in cash upon doorstep delivery</p>
                     </div>
                   </div>
-                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${paymentMethod === "cod" ? "border-primary bg-primary" : "border-muted"}`}>
-                    {paymentMethod === "cod" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  <div
+                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${paymentMethod === "cod" ? "border-primary bg-primary" : "border-muted"}`}
+                  >
+                    {paymentMethod === "cod" && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                    )}
                   </div>
                 </div>
               </div>
@@ -347,8 +376,12 @@ function CheckoutForm() {
                       <p className="text-xs text-muted">Instant mobile wallet checkout</p>
                     </div>
                   </div>
-                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${paymentMethod === "bkash" ? "border-[#D12053] bg-[#D12053]" : "border-muted"}`}>
-                    {paymentMethod === "bkash" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  <div
+                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${paymentMethod === "bkash" ? "border-[#D12053] bg-[#D12053]" : "border-muted"}`}
+                  >
+                    {paymentMethod === "bkash" && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                    )}
                   </div>
                 </div>
               </div>
@@ -372,8 +405,12 @@ function CheckoutForm() {
                       <p className="text-xs text-muted">Govt Post Office digital payment</p>
                     </div>
                   </div>
-                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${paymentMethod === "nagad" ? "border-[#F7941D] bg-[#F7941D]" : "border-muted"}`}>
-                    {paymentMethod === "nagad" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  <div
+                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${paymentMethod === "nagad" ? "border-[#F7941D] bg-[#F7941D]" : "border-muted"}`}
+                  >
+                    {paymentMethod === "nagad" && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                    )}
                   </div>
                 </div>
               </div>
@@ -397,23 +434,33 @@ function CheckoutForm() {
                       <p className="text-xs text-muted">Visa, Mastercard, AMEX</p>
                     </div>
                   </div>
-                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${paymentMethod === "card" ? "border-primary bg-primary" : "border-muted"}`}>
-                    {paymentMethod === "card" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  <div
+                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${paymentMethod === "card" ? "border-primary bg-primary" : "border-muted"}`}
+                  >
+                    {paymentMethod === "card" && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                    )}
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Dynamic Payment Details Prompt */}
-            {(paymentMethod === "bkash" || paymentMethod === "nagad" || paymentMethod === "rocket") && (
+            {(paymentMethod === "bkash" ||
+              paymentMethod === "nagad" ||
+              paymentMethod === "rocket") && (
               <div className="p-4 rounded-xl bg-background border border-border space-y-3">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-foreground">Merchant Account: <strong className="text-primary">+8801700-000000</strong></span>
+                  <span className="font-semibold text-foreground">
+                    Merchant Account: <strong className="text-primary">+8801700-000000</strong>
+                  </span>
                   <span className="text-muted">Type: Merchant / Payment</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-muted mb-1">{paymentMethod.toUpperCase()} Account Number *</label>
+                    <label className="block text-xs text-muted mb-1">
+                      {paymentMethod.toUpperCase()} Account Number *
+                    </label>
                     <input
                       type="tel"
                       placeholder="01XXXXXXXXX"
@@ -423,7 +470,9 @@ function CheckoutForm() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-muted mb-1">Transaction ID (TrxID) (Optional)</label>
+                    <label className="block text-xs text-muted mb-1">
+                      Transaction ID (TrxID) (Optional)
+                    </label>
                     <input
                       type="text"
                       placeholder="e.g. 9J4K82L1A"
@@ -487,9 +536,13 @@ function CheckoutForm() {
                 <div key={idx} className="flex items-center justify-between pt-2.5 text-xs">
                   <div className="flex-1 pr-3">
                     <p className="font-semibold text-foreground line-clamp-1">{item.title}</p>
-                    <p className="text-muted">Qty: {item.quantity} × {formatCurrency(item.price)}</p>
+                    <p className="text-muted">
+                      Qty: {item.quantity} × {formatCurrency(item.price)}
+                    </p>
                   </div>
-                  <span className="font-bold text-foreground">{formatCurrency(item.price * item.quantity)}</span>
+                  <span className="font-bold text-foreground">
+                    {formatCurrency(item.price * item.quantity)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -503,7 +556,9 @@ function CheckoutForm() {
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs">
                   <div>
                     <strong>{appliedCoupon.code}</strong> applied
-                    <p className="text-[10px] text-muted">-{formatCurrency(appliedCoupon.discount)} discount</p>
+                    <p className="text-[10px] text-muted">
+                      -{formatCurrency(appliedCoupon.discount)} discount
+                    </p>
                   </div>
                   <button
                     type="button"
@@ -552,7 +607,7 @@ function CheckoutForm() {
               )}
               <div className="flex justify-between text-muted">
                 <span>Shipping & Delivery Fee</span>
-                <span>{shippingFee === 0 ? <strong className="text-emerald-500">FREE</strong> : formatCurrency(shippingFee)}</span>
+                <span>{formatCurrency(shippingFee)}</span>
               </div>
               <div className="flex justify-between items-center text-base font-extrabold text-foreground border-t border-border pt-3 mt-2">
                 <span>Grand Total</span>
@@ -582,8 +637,12 @@ function CheckoutForm() {
             </Button>
 
             <div className="mt-4 flex items-center justify-center gap-4 text-[11px] text-muted">
-              <span className="flex items-center gap-1"><FiCheckCircle className="text-emerald-500" /> Buyer Protection</span>
-              <span className="flex items-center gap-1"><FiTruck className="text-primary" /> Fast Delivery</span>
+              <span className="flex items-center gap-1">
+                <FiCheckCircle className="text-emerald-500" /> Buyer Protection
+              </span>
+              <span className="flex items-center gap-1">
+                <FiTruck className="text-primary" /> Fast Delivery
+              </span>
             </div>
           </div>
         </div>
