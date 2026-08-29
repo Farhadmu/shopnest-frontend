@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import { IconType } from "react-icons";
 import {
   FaBars,
   FaTimes,
@@ -26,6 +27,21 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { useSession, signOut } from "@/lib/auth-client";
 import { getCart } from "@/lib/api/cart";
 
+// Types for navigation structures
+interface NavItem {
+  href: string;
+  label: string;
+}
+
+interface DropdownItem {
+  icon: IconType | string;
+  label: string;
+  href: string;
+  isPrimary?: boolean;
+}
+
+type UserRole = "customer" | "seller" | "admin" | "guest";
+
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
@@ -46,21 +62,35 @@ export const Navbar: React.FC = () => {
       }
     | undefined;
 
-  const role = user?.role || (user ? "customer" : "guest");
+  const role: UserRole = user?.role || (user ? "customer" : "guest");
   const isAuthenticated = !!user;
 
-  // Sync cart item count
+  // Sync cart item count cleanly without triggering synchronous setState warnings
   useEffect(() => {
+    let isMounted = true;
+
     if (isAuthenticated) {
       getCart()
         .then((c) => {
-          const totalQty = (c?.items || []).reduce((acc, item) => acc + (item.quantity || 1), 0);
+          if (!isMounted) return;
+          const totalQty = (c?.items || []).reduce(
+            (acc, item) => acc + (item.quantity || 1),
+            0
+          );
           setCartCount(totalQty);
         })
-        .catch(() => setCartCount(0));
+        .catch(() => {
+          if (isMounted) setCartCount(0);
+        });
     } else {
-      setCartCount(0);
+      Promise.resolve().then(() => {
+        if (isMounted) setCartCount(0);
+      });
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [isAuthenticated, pathname]);
 
   // Close dropdown on outside click
@@ -93,41 +123,72 @@ export const Navbar: React.FC = () => {
     setMobileMenuOpen(false);
   };
 
-  // Compute navigation links based on user role (clean & minimal to give maximum room to search bar)
-  const getNavLinks = () => {
-    if (!isAuthenticated) {
-      return [
-        { href: "/products", label: "Shop" },
-        { href: "/ai-advisor", label: "AI Advisor" },
-        { href: "/stores", label: "Stores" },
-      ];
-    }
-
-    if (role === "seller") {
-      return [
-        { href: "/products", label: "Shop" },
-        { href: "/seller/dashboard", label: "Seller Hub" },
-        { href: "/seller/orders", label: "Orders" },
-      ];
-    }
-
-    if (role === "admin") {
-      return [
-        { href: "/products", label: "Shop" },
-        { href: "/admin/dashboard", label: "Admin Control" },
-        { href: "/admin/orders", label: "Orders" },
-      ];
-    }
-
-    // Default Customer Role
-    return [
+  // Main Header Links Array
+  const mainNavItems: Record<UserRole, NavItem[]> = {
+    guest: [
+      { href: "/products", label: "Shop" },
+      { href: "/ai-advisor", label: "AI Advisor" },
+      { href: "/stores", label: "Stores" },
+    ],
+    seller: [
+      { href: "/products", label: "Shop" },
+      { href: "/seller/dashboard", label: "Seller Hub" },
+      { href: "/seller/orders", label: "Orders" },
+    ],
+    admin: [
+      { href: "/products", label: "Shop" },
+      { href: "/admin/dashboard", label: "Admin Control" },
+      { href: "/admin/orders", label: "Orders" },
+    ],
+    customer: [
       { href: "/products", label: "Shop" },
       { href: "/ai-advisor", label: "AI Advisor" },
       { href: "/orders", label: "My Orders" },
-    ];
+    ],
   };
 
-  const navLinks = getNavLinks();
+  // User Dropdown Items Config Array
+  const userDropdownItems: Record<Exclude<UserRole, "guest">, DropdownItem[]> = {
+    customer: [
+      { icon: "📊", label: "Customer Dashboard", href: "/dashboard" },
+      { icon: "📈", label: "Spending Analytics", href: "/customer/analytics" },
+      { icon: FaShieldAlt, label: "Security Center", href: "/customer/security" },
+      { icon: FaBox, label: "Orders & Tracking", href: "/orders" },
+      { icon: FaShoppingBag, label: "Smart Cart", href: "/cart" },
+      { icon: FaHeart, label: "Wishlist", href: "/wishlist" },
+      { icon: FaRobot, label: "AI Shopping Advisor", href: "/ai-advisor" },
+      { icon: FaUser, label: "Profile Settings", href: "/profile" },
+      { icon: FaStore, label: "Become a Seller", href: "/seller/dashboard", isPrimary: true },
+    ],
+    seller: [
+      { icon: FaStore, label: "Seller Overview", href: "/seller/dashboard" },
+      { icon: "📈", label: "Sales Analytics", href: "/seller/analytics" },
+      { icon: "🔮", label: "Sales Forecast", href: "/seller/forecast" },
+      { icon: "📦", label: "Smart Inventory", href: "/seller/inventory" },
+      { icon: "🩺", label: "Store Health", href: "/seller/store-health" },
+      { icon: "👥", label: "Customer Insights", href: "/seller/customers" },
+      { icon: FaBox, label: "Product Management", href: "/seller/products" },
+      { icon: FaPlus, label: "Add New Product", href: "/seller/products/add" },
+      { icon: "🚚", label: "Order Fulfillment", href: "/seller/orders" },
+      { icon: FaRobot, label: "AI Seller Tools", href: "/seller/ai-tools" },
+      { icon: FaCog, label: "Store Settings", href: "/seller/store-settings" },
+    ],
+    admin: [
+      { icon: FaShieldAlt, label: "Command Center", href: "/admin/dashboard" },
+      { icon: "📈", label: "Platform Analytics", href: "/admin/analytics" },
+      { icon: FaShieldAlt, label: "Security Center", href: "/admin/security" },
+      { icon: "🚨", label: "Risk & Fraud Detection", href: "/admin/risk" },
+      { icon: "📑", label: "Incident Management", href: "/admin/incidents" },
+      { icon: "📜", label: "Governance Audit Logs", href: "/admin/audit-logs" },
+      { icon: FaUser, label: "User Management", href: "/admin/users" },
+      { icon: FaStore, label: "Seller Verification", href: "/admin/sellers" },
+      { icon: FaBox, label: "Product Moderation", href: "/admin/products" },
+      { icon: "📦", label: "Order Operations", href: "/admin/orders" },
+    ],
+  };
+
+  const navLinks = isAuthenticated ? mainNavItems[role] : mainNavItems.guest;
+  const dropdownLinks = isAuthenticated && role !== "guest" ? userDropdownItems[role] || [] : [];
 
   const getDashboardHref = () => {
     if (role === "admin") return "/admin/dashboard";
@@ -157,53 +218,82 @@ export const Navbar: React.FC = () => {
     );
   };
 
+  const renderDropdownItems = () =>
+    dropdownLinks.map((item: DropdownItem) => {
+      const Icon = item.icon;
+      return (
+        <Link
+          key={item.href}
+          href={item.href}
+          onClick={() => setUserDropdownOpen(false)}
+          className={`flex items-center gap-2.5 rounded-lg p-2.5 transition ${
+            item.isPrimary
+              ? "text-primary hover:bg-primary/10"
+              : "text-text hover:bg-primary/10 hover:text-primary"
+          }`}
+        >
+          {typeof Icon === "string" ? (
+            <span className="text-sm">{Icon}</span>
+          ) : (
+            <Icon className="text-muted" size={13} />
+          )}
+          {item.label}
+        </Link>
+      );
+    });
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/80 bg-background/90 backdrop-blur-xl">
-      <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
-        <div className="flex min-h-16 items-center gap-3 lg:gap-5">
-          {/* Logo */}
-          <Link
-            href="/"
-            className="group flex shrink-0 items-center gap-2.5"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            <div className="relative grid h-10 w-10 place-items-center overflow-hidden rounded-xl bg-gradient-to-br from-primary to-violet-500 shadow-lg shadow-primary/20">
-              <Image
-                src="/shopnest-logo.png"
-                width={40}
-                height={40}
-                alt="ShopNest"
-                className="h-10 w-10 object-contain"
-              />
-            </div>
-            <span className="hidden bg-gradient-to-r from-text via-primary to-violet-500 bg-clip-text text-xl font-black tracking-tight text-transparent sm:inline">
-              {APP_NAME}
-            </span>
-          </Link>
+      <div className="mx-auto max-w-360 px-4 sm:px-6 lg:px-8">
+        <div className="flex min-h-16 items-center justify-between gap-3 lg:gap-5">
+          {/* Left: Logo & Search */}
+          <div className="flex items-center gap-3 lg:gap-5">
+            <Link
+              href="/"
+              className="group flex shrink-0 items-center gap-2.5"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <div className="relative grid h-10 w-10 place-items-center overflow-hidden rounded-xl dark:bg-linear-to-br from-primary to-violet-500 shadow-lg shadow-primary/20">
+                <Image
+                  src="/shopnest-logo.png"
+                  width={40}
+                  height={40}
+                  alt="ShopNest"
+                  className="h-10 w-10 object-contain"
+                />
+              </div>
+              <span className="hidden bg-linear-to-r from-text via-primary to-violet-500 bg-clip-text text-xl font-black tracking-tight text-transparent sm:inline">
+                {APP_NAME}
+              </span>
+            </Link>
 
-          {/* Search Bar (Spacious and prominent across all screen sizes) */}
-          <form
-            onSubmit={submitSearch}
-            className="flex min-w-0 flex-1 max-w-xl md:max-w-2xl"
-          >
-            <div className="group flex h-11 w-full items-center rounded-xl border border-border bg-surface px-3.5 transition focus-within:border-primary/60 focus-within:ring-4 focus-within:ring-primary/10">
-              <FaSearch className="shrink-0 text-muted" size={14} />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search products, categories, stores..."
-                className="min-w-0 flex-1 bg-transparent px-3 text-sm text-text outline-none placeholder:text-muted"
-                aria-label="Search ShopNest"
-              />
-              <kbd className="hidden rounded-md border border-border bg-muted-bg px-2 py-1 text-[10px] font-semibold text-muted lg:inline">
-                ⌘ K
-              </kbd>
-            </div>
-          </form>
+            {/* Expand-on-Hover Search Bar (Desktop) */}
+            <form
+              onSubmit={submitSearch}
+              className="hidden md:flex shrink-0 items-center"
+            >
+              <div className="group relative flex h-11 w-11 items-center overflow-hidden rounded-xl border border-border bg-surface transition-all duration-300 ease-in-out hover:w-80 focus-within:w-80 focus-within:border-primary/60 focus-within:ring-4 focus-within:ring-primary/10 pr-3">
+                <button
+                  type="submit"
+                  aria-label="Search"
+                  className="grid h-11 w-11 shrink-0 place-items-center text-muted transition-colors hover:text-primary"
+                >
+                  <FaSearch size={14} />
+                </button>
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search products, stores..."
+                  className="w-full bg-transparent pr-3 text-sm text-text outline-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100 placeholder:text-muted"
+                  aria-label="Search ShopNest"
+                />
+              </div>
+            </form>
+          </div>
 
-          {/* Navigation Links */}
-          <nav className="hidden items-center gap-1.5 lg:flex">
-            {navLinks.map((item) => {
+          {/* Center: Main Navigation Links */}
+          <nav className="hidden items-center gap-1.5 lg:flex mx-auto">
+            {navLinks.map((item: NavItem) => {
               const active =
                 pathname === item.href ||
                 (item.href !== "/" && pathname.startsWith(`${item.href}/`));
@@ -224,8 +314,7 @@ export const Navbar: React.FC = () => {
           </nav>
 
           {/* Right Action Buttons */}
-          <div className="ml-auto flex shrink-0 items-center gap-2">
-            {/* Dashboard Shortcut for logged in users */}
+          <div className="flex shrink-0 items-center gap-2">
             {isAuthenticated && (
               <Link
                 href={getDashboardHref()}
@@ -235,7 +324,6 @@ export const Navbar: React.FC = () => {
               </Link>
             )}
 
-            {/* Wishlist */}
             <Link
               href="/wishlist"
               aria-label="Wishlist"
@@ -245,7 +333,6 @@ export const Navbar: React.FC = () => {
               <FaHeart size={14} />
             </Link>
 
-            {/* Cart with Live Badge */}
             <Link
               href="/cart"
               aria-label="Cart"
@@ -260,13 +347,9 @@ export const Navbar: React.FC = () => {
               )}
             </Link>
 
-            {/* Notifications */}
             <NotificationBell />
-
-            {/* Theme Toggle */}
             <ThemeToggle compact />
 
-            {/* Authenticated User Menu vs Guest Log In / Get Started */}
             {isAuthenticated ? (
               <div className="relative" ref={dropdownRef}>
                 <button
@@ -274,19 +357,17 @@ export const Navbar: React.FC = () => {
                   onClick={() => setUserDropdownOpen((v) => !v)}
                   className="flex h-10 items-center gap-2 rounded-xl border border-border bg-surface p-1.5 transition hover:border-primary/50 hover:bg-muted-bg"
                 >
-                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-primary to-violet-600 text-xs font-black text-white">
+                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-linear-to-br from-primary to-violet-600 text-xs font-black text-white">
                     {user?.name ? user.name.charAt(0).toUpperCase() : <FaUser size={12} />}
                   </div>
-                  <span className="hidden max-w-[100px] truncate text-xs font-bold text-text sm:inline">
+                  <span className="hidden max-w-25 truncate text-xs font-bold text-text sm:inline">
                     {user?.name || "Account"}
                   </span>
                   <FaChevronDown size={10} className="text-muted" />
                 </button>
 
-                {/* Profile Dropdown Popup */}
                 {userDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-border bg-surface p-2 shadow-2xl shadow-black/10 backdrop-blur-xl animate-in fade-in zoom-in-95">
-                    {/* User Header */}
                     <div className="mb-2 rounded-xl bg-muted-bg p-3">
                       <div className="flex items-center justify-between gap-2">
                         <p className="truncate text-sm font-black text-text">
@@ -297,237 +378,12 @@ export const Navbar: React.FC = () => {
                       <p className="truncate text-xs text-muted">{user?.email}</p>
                     </div>
 
-                    {/* Role-Specific Links */}
                     <div className="grid gap-0.5 text-xs font-bold">
-                      {role === "customer" && (
-                        <>
-                          <Link
-                            href="/dashboard"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <span className="text-sm">📊</span> Customer Dashboard
-                          </Link>
-                          <Link
-                            href="/customer/analytics"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <span className="text-sm">📈</span> Spending Analytics
-                          </Link>
-                          <Link
-                            href="/customer/security"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <FaShieldAlt className="text-muted" size={13} /> Security Center
-                          </Link>
-                          <Link
-                            href="/orders"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <FaBox className="text-muted" size={13} /> Orders & Tracking
-                          </Link>
-                          <Link
-                            href="/cart"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <FaShoppingBag className="text-muted" size={13} /> Smart Cart
-                          </Link>
-                          <Link
-                            href="/wishlist"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <FaHeart className="text-muted" size={13} /> Wishlist
-                          </Link>
-                          <Link
-                            href="/ai-advisor"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <FaRobot className="text-muted" size={13} /> AI Shopping Advisor
-                          </Link>
-                          <Link
-                            href="/profile"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <FaUser className="text-muted" size={13} /> Profile Settings
-                          </Link>
-                          <Link
-                            href="/seller/dashboard"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-primary transition hover:bg-primary/10"
-                          >
-                            <FaStore size={13} /> Become a Seller
-                          </Link>
-                        </>
-                      )}
-
-                      {role === "seller" && (
-                        <>
-                          <Link
-                            href="/seller/dashboard"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <FaStore className="text-muted" size={13} /> Seller Overview
-                          </Link>
-                          <Link
-                            href="/seller/analytics"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <span className="text-sm">📈</span> Sales Analytics
-                          </Link>
-                          <Link
-                            href="/seller/forecast"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <span className="text-sm">🔮</span> Sales Forecast
-                          </Link>
-                          <Link
-                            href="/seller/inventory"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <span className="text-sm">📦</span> Smart Inventory
-                          </Link>
-                          <Link
-                            href="/seller/store-health"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <span className="text-sm">🩺</span> Store Health
-                          </Link>
-                          <Link
-                            href="/seller/customers"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <span className="text-sm">👥</span> Customer Insights
-                          </Link>
-                          <Link
-                            href="/seller/products"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <FaBox className="text-muted" size={13} /> Product Management
-                          </Link>
-                          <Link
-                            href="/seller/products/add"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <FaPlus className="text-muted" size={13} /> Add New Product
-                          </Link>
-                          <Link
-                            href="/seller/orders"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <span className="text-sm">🚚</span> Order Fulfillment
-                          </Link>
-                          <Link
-                            href="/seller/ai-tools"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <FaRobot className="text-muted" size={13} /> AI Seller Tools
-                          </Link>
-                          <Link
-                            href="/seller/store-settings"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <FaCog className="text-muted" size={13} /> Store Settings
-                          </Link>
-                        </>
-                      )}
-
-                      {role === "admin" && (
-                        <>
-                          <Link
-                            href="/admin/dashboard"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <FaShieldAlt className="text-muted" size={13} /> Command Center
-                          </Link>
-                          <Link
-                            href="/admin/analytics"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <span className="text-sm">📈</span> Platform Analytics
-                          </Link>
-                          <Link
-                            href="/admin/security"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <FaShieldAlt className="text-muted" size={13} /> Security Center
-                          </Link>
-                          <Link
-                            href="/admin/risk"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <span className="text-sm">🚨</span> Risk & Fraud Detection
-                          </Link>
-                          <Link
-                            href="/admin/incidents"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <span className="text-sm">📑</span> Incident Management
-                          </Link>
-                          <Link
-                            href="/admin/audit-logs"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <span className="text-sm">📜</span> Governance Audit Logs
-                          </Link>
-                          <Link
-                            href="/admin/users"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <FaUser className="text-muted" size={13} /> User Management
-                          </Link>
-                          <Link
-                            href="/admin/sellers"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <FaStore className="text-muted" size={13} /> Seller Verification
-                          </Link>
-                          <Link
-                            href="/admin/products"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <FaBox className="text-muted" size={13} /> Product Moderation
-                          </Link>
-                          <Link
-                            href="/admin/orders"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 rounded-lg p-2.5 text-text transition hover:bg-primary/10 hover:text-primary"
-                          >
-                            <span className="text-sm">📦</span> Order Operations
-                          </Link>
-                        </>
-                      )}
+                      {renderDropdownItems()}
                     </div>
 
                     <div className="my-2 border-t border-border" />
 
-                    {/* Logout Button */}
                     <button
                       type="button"
                       onClick={handleSignOut}
@@ -539,7 +395,6 @@ export const Navbar: React.FC = () => {
                 )}
               </div>
             ) : (
-              /* Guest Log in and Get started */
               <>
                 <Link
                   href="/login"
@@ -556,7 +411,6 @@ export const Navbar: React.FC = () => {
               </>
             )}
 
-            {/* Mobile Menu Button */}
             <button
               type="button"
               onClick={() => setMobileMenuOpen((v) => !v)}
@@ -595,7 +449,7 @@ export const Navbar: React.FC = () => {
                 </div>
               )}
 
-              {navLinks.map((item) => (
+              {navLinks.map((item: NavItem) => (
                 <Link
                   key={item.href}
                   href={item.href}
