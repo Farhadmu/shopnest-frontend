@@ -24,6 +24,7 @@ const SAMPLE_SEARCH_IMAGES = [
 
 export default function VisualSearchPage() {
   const [imageUrl, setImageUrl] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [result, setResult] = useState<VisualSearchResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,14 +32,14 @@ export default function VisualSearchPage() {
   const handleSearch = async (urlToSearch?: string) => {
     const targetUrl = (urlToSearch || imageUrl).trim();
     if (!targetUrl) {
-      setError("Please provide or select an image URL to analyze.");
+      setError("Please provide an image URL to search.");
       return;
     }
 
     setSearching(true);
     setError(null);
     try {
-      const data = await visualSearchAI(targetUrl);
+      const data = await visualSearchAI(targetUrl, searchQuery);
       setResult(data);
     } catch (err: any) {
       setError(err?.message || "Visual search failed. Please try a different image.");
@@ -84,6 +85,22 @@ export default function VisualSearchPage() {
               <FiSearch /> {searching ? "Analyzing..." : "Find Matches"}
             </button>
           </div>
+          <p className="mt-2 text-[11px] text-muted">
+            Tip: Add a description below to improve search results
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-foreground mb-1.5 flex items-center gap-1.5">
+            <FiSearch className="text-primary" /> Describe What You See (Optional)
+          </label>
+          <input
+            type="text"
+            placeholder="e.g., wireless headphones, gaming laptop, running shoes"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+          />
         </div>
 
         {/* Sample Quick Try Buttons */}
