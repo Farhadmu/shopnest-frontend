@@ -191,8 +191,8 @@ export const Navbar: React.FC = () => {
   const dropdownLinks = isAuthenticated && role !== "guest" ? userDropdownItems[role] || [] : [];
 
   const getDashboardHref = () => {
-    if (role === "admin") return "/admin/dashboard";
-    if (role === "seller") return "/seller/dashboard";
+    if (role === "admin") return "/dashboard/admin";
+    if (role === "seller") return "/dashboard/seller";
     return "/dashboard/user";
   };
 
