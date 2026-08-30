@@ -61,9 +61,8 @@ export function DashboardShell({
                     key={item.href}
                     href={item.href}
                     onClick={() => setMobileDrawerOpen(false)}
-                    className={`flex items-center gap-3 rounded-xl p-2.5 transition ${
-                      isActive ? "bg-primary/10 text-primary font-black" : "text-text hover:bg-muted-bg"
-                    }`}
+                    className={`flex items-center gap-3 rounded-xl p-2.5 transition ${isActive ? "bg-primary/10 text-primary font-black" : "text-text hover:bg-muted-bg"
+                      }`}
                   >
                     <span className="text-lg">{item.icon}</span>
                     <div className="min-w-0 flex-1">
@@ -92,9 +91,8 @@ export function DashboardShell({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`group rounded-xl p-3 transition ${
-                    isActive ? "bg-primary/10 text-primary" : "hover:bg-muted-bg"
-                  }`}
+                  className={`group rounded-xl p-3 transition ${isActive ? "bg-primary/10 text-primary" : "hover:bg-muted-bg"
+                    }`}
                 >
                   <div className="flex items-start gap-3">
                     <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-base">

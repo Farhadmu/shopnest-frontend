@@ -11,13 +11,13 @@ export default function SupportPage() {
         </p>
         <div className="mt-7 flex flex-wrap gap-3">
           <Link
-            href="/orders"
+            href="/dashboard/user/orders"
             className="rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white"
           >
             My orders
           </Link>
           <Link
-            href="/ai-advisor"
+            href="/dashboard/user/ai-advisor"
             className="rounded-xl border border-border bg-muted-bg px-4 py-3 text-sm font-bold"
           >
             AI Advisor
