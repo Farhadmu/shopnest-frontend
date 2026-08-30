@@ -43,3 +43,11 @@ export async function createOrder(data: {
 }) {
   return clientMutation<Order>("/orders", "POST", data);
 }
+
+export async function cancelOrder(id: string) {
+  return clientMutation(`/orders/${id}/cancel`, "PATCH");
+}
+
+export async function requestReturn(id: string, data: { reason: string }) {
+  return clientMutation(`/orders/${id}/return`, "POST", data);
+}
