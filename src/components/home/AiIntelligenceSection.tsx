@@ -262,7 +262,7 @@ export default function AiIntelligenceSection() {
             {/* AI Advisor Buttons */}
             <div className="flex flex-wrap items-center gap-3 sm:gap-4 pt-2">
               <Link
-                href="/ai-advisor"
+                href="/dashboard/user/ai-advisor"
                 className="group/btn inline-flex items-center gap-2.5 rounded-xl bg-primary px-6 py-3.5 text-sm font-bold text-surface shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-primary/35"
               >
                 <Sparkles className="w-4 h-4 animate-pulse" />
@@ -296,7 +296,7 @@ export default function AiIntelligenceSection() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Link href="/ai-advisor" className="hidden sm:inline-flex items-center gap-1 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1.5 text-xs font-bold text-primary hover:bg-primary hover:text-surface transition-all">
+                <Link href="/dashboard/user/ai-advisor" className="hidden sm:inline-flex items-center gap-1 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1.5 text-xs font-bold text-primary hover:bg-primary hover:text-surface transition-all">
                   <span>Full Screen</span><ExternalLink className="w-3 h-3" />
                 </Link>
                 <button type="button" onClick={() => { setIsAuto(true); setMessages([]); setStep(0); }} title="Restart" className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-surface text-muted hover:text-text">
@@ -338,7 +338,7 @@ export default function AiIntelligenceSection() {
                         <p className="mt-2 rounded-lg bg-primary/5 p-2 text-[11px] text-muted border border-primary/10"><strong className="text-primary font-bold">Why it wins: </strong>{m.product.why}</p>
                         <div className="mt-2.5 flex items-center gap-2">
                           <Link href="/products" className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary py-2 text-xs font-bold text-surface hover:bg-primary-hover"><ShoppingBag className="w-3.5 h-3.5" /> Select</Link>
-                          <Link href="/ai-advisor" className="inline-flex items-center justify-center gap-1 rounded-xl border border-border bg-muted-bg px-3 py-2 text-xs font-bold text-text hover:border-primary/40">Details <ExternalLink className="w-3 h-3" /></Link>
+                          <Link href="/dashboard/user/ai-advisor" className="inline-flex items-center justify-center gap-1 rounded-xl border border-border bg-muted-bg px-3 py-2 text-xs font-bold text-text hover:border-primary/40">Details <ExternalLink className="w-3 h-3" /></Link>
                         </div>
                       </div>
                     )}

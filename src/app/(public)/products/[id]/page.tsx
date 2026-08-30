@@ -154,9 +154,9 @@ export default function ProductDetails() {
 
     try {
       await addToCart(product.id, quantity);
-      router.push("/checkout");
+      router.push("/dashboard/user/checkout");
     } catch {
-      router.push("/cart");
+      router.push("/dashboard/user/cart");
     }
   };
 

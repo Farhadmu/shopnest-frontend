@@ -127,63 +127,63 @@ export const Navbar: React.FC = () => {
   const mainNavItems: Record<UserRole, NavItem[]> = {
     guest: [
       { href: "/products", label: "Shop" },
-      { href: "/ai-advisor", label: "AI Advisor" },
+      { href: "/dashboard/user/ai-advisor", label: "AI Advisor" },
       { href: "/stores", label: "Stores" },
     ],
     seller: [
       { href: "/products", label: "Shop" },
-      { href: "/seller/dashboard", label: "Seller Hub" },
-      { href: "/seller/orders", label: "Orders" },
+      { href: "/dashboard/seller/dashboard", label: "Seller Hub" },
+      { href: "/dashboard/seller/orders", label: "Orders" },
     ],
     admin: [
       { href: "/products", label: "Shop" },
-      { href: "/admin/dashboard", label: "Admin Control" },
-      { href: "/admin/orders", label: "Orders" },
+      { href: "/dashboard/admin/dashboard", label: "Admin Control" },
+      { href: "/dashboard/admin/orders", label: "Orders" },
     ],
     customer: [
       { href: "/products", label: "Shop" },
-      { href: "/ai-advisor", label: "AI Advisor" },
-      { href: "/orders", label: "My Orders" },
+      { href: "/dashboard/user/ai-advisor", label: "AI Advisor" },
+      { href: "/dashboard/user/orders", label: "My Orders" },
     ],
   };
 
   // User Dropdown Items Config Array
   const userDropdownItems: Record<Exclude<UserRole, "guest">, DropdownItem[]> = {
     customer: [
-      { icon: "📊", label: "Customer Dashboard", href: "/dashboard" },
-      { icon: "📈", label: "Spending Analytics", href: "/customer/analytics" },
-      { icon: FaShieldAlt, label: "Security Center", href: "/customer/security" },
-      { icon: FaBox, label: "Orders & Tracking", href: "/orders" },
-      { icon: FaShoppingBag, label: "Smart Cart", href: "/cart" },
-      { icon: FaHeart, label: "Wishlist", href: "/wishlist" },
-      { icon: FaRobot, label: "AI Shopping Advisor", href: "/ai-advisor" },
-      { icon: FaUser, label: "Profile Settings", href: "/profile" },
-      { icon: FaStore, label: "Become a Seller", href: "/seller/dashboard", isPrimary: true },
+      { icon: "📊", label: "Customer Dashboard", href: "/dashboard/user" },
+      { icon: "📈", label: "Spending Analytics", href: "/dashboard/user/analytics" },
+      { icon: FaShieldAlt, label: "Security Center", href: "/dashboard/user/security" },
+      { icon: FaBox, label: "Orders & Tracking", href: "/dashboard/user/orders" },
+      { icon: FaShoppingBag, label: "Smart Cart", href: "/dashboard/user/cart" },
+      { icon: FaHeart, label: "Wishlist", href: "/dashboard/user/wishlist" },
+      { icon: FaRobot, label: "AI Shopping Advisor", href: "/dashboard/user/ai-advisor" },
+      { icon: FaUser, label: "Profile Settings", href: "/dashboard/user/profile" },
+      { icon: FaStore, label: "Become a Seller", href: "/dashboard/seller/dashboard", isPrimary: true },
     ],
     seller: [
-      { icon: FaStore, label: "Seller Overview", href: "/seller/dashboard" },
-      { icon: "📈", label: "Sales Analytics", href: "/seller/analytics" },
-      { icon: "🔮", label: "Sales Forecast", href: "/seller/forecast" },
-      { icon: "📦", label: "Smart Inventory", href: "/seller/inventory" },
-      { icon: "🩺", label: "Store Health", href: "/seller/store-health" },
-      { icon: "👥", label: "Customer Insights", href: "/seller/customers" },
-      { icon: FaBox, label: "Product Management", href: "/seller/products" },
-      { icon: FaPlus, label: "Add New Product", href: "/seller/products/add" },
-      { icon: "🚚", label: "Order Fulfillment", href: "/seller/orders" },
-      { icon: FaRobot, label: "AI Seller Tools", href: "/seller/ai-tools" },
-      { icon: FaCog, label: "Store Settings", href: "/seller/store-settings" },
+      { icon: FaStore, label: "Seller Overview", href: "/dashboard/seller/dashboard" },
+      { icon: "📈", label: "Sales Analytics", href: "/dashboard/seller/analytics" },
+      { icon: "🔮", label: "Sales Forecast", href: "/dashboard/seller/forecast" },
+      { icon: "📦", label: "Smart Inventory", href: "/dashboard/seller/inventory" },
+      { icon: "🩺", label: "Store Health", href: "/dashboard/seller/store-health" },
+      { icon: "👥", label: "Customer Insights", href: "/dashboard/seller/customers" },
+      { icon: FaBox, label: "Product Management", href: "/dashboard/seller/products" },
+      { icon: FaPlus, label: "Add New Product", href: "/dashboard/seller/products/add" },
+      { icon: "🚚", label: "Order Fulfillment", href: "/dashboard/seller/orders" },
+      { icon: FaRobot, label: "AI Seller Tools", href: "/dashboard/seller/ai-tools" },
+      { icon: FaCog, label: "Store Settings", href: "/dashboard/seller/store-settings" },
     ],
     admin: [
-      { icon: FaShieldAlt, label: "Command Center", href: "/admin/dashboard" },
-      { icon: "📈", label: "Platform Analytics", href: "/admin/analytics" },
-      { icon: FaShieldAlt, label: "Security Center", href: "/admin/security" },
-      { icon: "🚨", label: "Risk & Fraud Detection", href: "/admin/risk" },
-      { icon: "📑", label: "Incident Management", href: "/admin/incidents" },
-      { icon: "📜", label: "Governance Audit Logs", href: "/admin/audit-logs" },
-      { icon: FaUser, label: "User Management", href: "/admin/users" },
-      { icon: FaStore, label: "Seller Verification", href: "/admin/sellers" },
-      { icon: FaBox, label: "Product Moderation", href: "/admin/products" },
-      { icon: "📦", label: "Order Operations", href: "/admin/orders" },
+      { icon: FaShieldAlt, label: "Command Center", href: "/dashboard/admin/dashboard" },
+      { icon: "📈", label: "Platform Analytics", href: "/dashboard/admin/analytics" },
+      { icon: FaShieldAlt, label: "Security Center", href: "/dashboard/admin/security" },
+      { icon: "🚨", label: "Risk & Fraud Detection", href: "/dashboard/admin/risk" },
+      { icon: "📑", label: "Incident Management", href: "/dashboard/admin/incidents" },
+      { icon: "📜", label: "Governance Audit Logs", href: "/dashboard/admin/audit-logs" },
+      { icon: FaUser, label: "User Management", href: "/dashboard/admin/users" },
+      { icon: FaStore, label: "Seller Verification", href: "/dashboard/admin/sellers" },
+      { icon: FaBox, label: "Product Moderation", href: "/dashboard/admin/products" },
+      { icon: "📦", label: "Order Operations", href: "/dashboard/admin/orders" },
     ],
   };
 
@@ -193,7 +193,7 @@ export const Navbar: React.FC = () => {
   const getDashboardHref = () => {
     if (role === "admin") return "/admin/dashboard";
     if (role === "seller") return "/seller/dashboard";
-    return "/dashboard";
+    return "/dashboard/user";
   };
 
   const getRoleBadge = () => {
@@ -325,7 +325,7 @@ export const Navbar: React.FC = () => {
             )}
 
             <Link
-              href="/wishlist"
+              href="/dashboard/user/wishlist"
               aria-label="Wishlist"
               title="Wishlist"
               className="hidden h-10 w-10 place-items-center rounded-xl border border-border bg-surface text-muted transition hover:border-primary/40 hover:text-primary sm:grid"
@@ -334,7 +334,7 @@ export const Navbar: React.FC = () => {
             </Link>
 
             <Link
-              href="/cart"
+              href="/dashboard/user/cart"
               aria-label="Cart"
               title="Shopping Cart"
               className="relative grid h-10 w-10 place-items-center rounded-xl border border-border bg-surface text-muted transition hover:border-primary/40 hover:text-primary"
