@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { motion } from "motion/react";
 import { 
   FaChevronRight, 
   FaLaptop, 
@@ -126,6 +125,23 @@ export default function ShopByCategory() {
 
   return (
     <section className="py-12 overflow-hidden">
+      {/* Custom CSS for Marquee Hover Pause */}
+      <style jsx>{`
+        @keyframes marquee {
+          0% { transform: translateX(0%); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+          display: flex;
+          width: max-content;
+          animation: marquee 25s linear infinite;
+        }
+     
+        .animate-marquee:hover {
+          animation-play-state: paused;
+        }
+      `}</style>
+
       {/* Section Header */}
       <div className="mb-8 flex items-end justify-between px-4 sm:px-0">
         <div className="relative">
@@ -185,17 +201,9 @@ export default function ShopByCategory() {
           <div className="pointer-events-none absolute left-0 top-0 z-20 h-full w-12 bg-gradient-to-r from-white to-transparent dark:from-slate-950 dark:to-transparent" />
           <div className="pointer-events-none absolute right-0 top-0 z-20 h-full w-12 bg-gradient-to-l from-white to-transparent dark:from-slate-950 dark:to-transparent" />
 
-          {/* Infinite Moving Container */}
-          <motion.div
-            className="flex gap-4 py-2"
-            animate={{ x: ["0%", "-50%"] }}
-            transition={{
-              duration: 25,
-              repeat: Infinity,
-              ease: "linear",
-            }}
-          >
-            {/* Duplicate categories array to make the infinite loop seamless */}
+          {/* Infinite Moving Container using CSS Marquee */}
+          <div className="animate-marquee gap-4 py-2">
+            {/* Duplicate categories array for seamless infinite scroll */}
             {[...categories, ...categories].map((cat, i) => (
               <div key={`${cat.id}-${i}`} className="w-[200px] sm:w-[220px] flex-shrink-0">
                 <Link href={`/products?category=${encodeURIComponent(cat.name)}`}>
@@ -240,7 +248,7 @@ export default function ShopByCategory() {
                 </Link>
               </div>
             ))}
-          </motion.div>
+          </div>
         </div>
       )}
     </section>

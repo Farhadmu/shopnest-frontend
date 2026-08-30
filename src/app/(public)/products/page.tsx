@@ -241,9 +241,9 @@ function ProductsContent() {
 
     try {
       await addToCart(product.id, 1);
-      router.push("/checkout");
+      router.push("/dashboard/user/checkout");
     } catch {
-      router.push("/cart");
+      router.push("/dashboard/user/cart");
     }
   };
 

@@ -135,7 +135,7 @@ export default function TrendingSection() {
 
       // Go to cart
       setTimeout(() => {
-        router.push("/cart");
+        router.push("/dashboard/user/cart");
       }, 500);
     } catch (err) {
       showToast(
