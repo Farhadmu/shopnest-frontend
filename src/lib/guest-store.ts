@@ -188,42 +188,46 @@ export function clearGuestWishlist(): void {
 /**
  * Synchronizes any items saved in localStorage into the backend database.
  * Call this immediately after a user successfully logs in.
+ * Clears localStorage cart and wishlist data once synced.
  */
 export async function syncGuestDataToServer(): Promise<{ cartSynced: number; wishlistSynced: number }> {
   let cartSynced = 0;
   let wishlistSynced = 0;
 
   try {
-    // 1. Sync cart items
+    // 1. Sync cart items to database
     const guestCart = getGuestCart();
-    if (guestCart.items.length > 0) {
+    if (guestCart?.items && guestCart.items.length > 0) {
       for (const item of guestCart.items) {
         try {
           await addToCart(item.productId, item.quantity);
           cartSynced++;
         } catch (err) {
-          console.warn(`Failed to sync cart item ${item.productId}:`, err);
+          console.warn(`Failed to sync cart item ${item.productId} to database:`, err);
         }
       }
-      clearGuestCart();
     }
 
-    // 2. Sync wishlist items
+    // 2. Sync wishlist items to database
     const guestWishlist = getGuestWishlist();
-    if (guestWishlist.length > 0) {
+    if (guestWishlist && guestWishlist.length > 0) {
       for (const item of guestWishlist) {
         try {
           await addToWishlist(item.productId);
           wishlistSynced++;
         } catch (err) {
-          console.warn(`Failed to sync wishlist item ${item.productId}:`, err);
+          console.warn(`Failed to sync wishlist item ${item.productId} to database:`, err);
         }
       }
-      clearGuestWishlist();
     }
   } catch (err) {
     console.error("Error during guest data sync to server:", err);
+  } finally {
+    // Always clear localStorage cart and wishlist after syncing to real database
+    clearGuestCart();
+    clearGuestWishlist();
   }
 
   return { cartSynced, wishlistSynced };
 }
+

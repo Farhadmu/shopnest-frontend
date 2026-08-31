@@ -26,7 +26,13 @@ import { NotificationBell } from "@/components/layout/NotificationBell";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { useSession, signOut } from "@/lib/auth-client";
 import { getCart } from "@/lib/api/cart";
-import { getGuestCart } from "@/lib/guest-store";
+import {
+  getGuestCart,
+  getGuestWishlist,
+  syncGuestDataToServer,
+  clearGuestCart,
+  clearGuestWishlist,
+} from "@/lib/guest-store";
 
 // Types for navigation structures
 interface NavItem {
@@ -72,6 +78,28 @@ export const Navbar: React.FC = () => {
 
     const updateCount = () => {
       if (isAuthenticated) {
+        // If user is authenticated and any guest items linger in localStorage, sync and clear
+        const localCart = getGuestCart();
+        const localWishlist = getGuestWishlist();
+        if ((localCart?.items && localCart.items.length > 0) || (localWishlist && localWishlist.length > 0)) {
+          syncGuestDataToServer().finally(() => {
+            if (!isMounted) return;
+            getCart()
+              .then((c) => {
+                if (!isMounted) return;
+                const totalQty = (c?.items || []).reduce(
+                  (acc, item) => acc + (item.quantity || 1),
+                  0
+                );
+                setCartCount(totalQty);
+              })
+              .catch(() => {
+                if (isMounted) setCartCount(0);
+              });
+          });
+          return;
+        }
+
         getCart()
           .then((c) => {
             if (!isMounted) return;

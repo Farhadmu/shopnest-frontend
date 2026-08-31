@@ -19,7 +19,12 @@ import {
 import { getProducts, Product } from "@/lib/api/products";
 import { addToCart } from "@/lib/api/cart";
 import { addToWishlist } from "@/lib/api/wishlist";
-import { addGuestCartItem, addGuestWishlistItem } from "@/lib/guest-store";
+import {
+  addGuestCartItem,
+  addGuestWishlistItem,
+  clearGuestCart,
+  clearGuestWishlist,
+} from "@/lib/guest-store";
 import { useSession } from "@/lib/auth-client";
 
 function ProductsContent() {
@@ -181,6 +186,7 @@ function ProductsContent() {
 
     try {
       await addToCart(product.id, 1);
+      clearGuestCart();
 
       setAddedMap((prev) => ({
         ...prev,
@@ -236,6 +242,7 @@ function ProductsContent() {
 
     try {
       await addToWishlist(product.id);
+      clearGuestWishlist();
 
       setWishlistMap((prev) => ({
         ...prev,

@@ -14,7 +14,12 @@ import {
 import { getProducts, Product } from "@/lib/api/products";
 import { addToCart } from "@/lib/api/cart";
 import { addToWishlist } from "@/lib/api/wishlist";
-import { addGuestCartItem, addGuestWishlistItem } from "@/lib/guest-store";
+import {
+  addGuestCartItem,
+  addGuestWishlistItem,
+  clearGuestCart,
+  clearGuestWishlist,
+} from "@/lib/guest-store";
 import { useSession } from "@/lib/auth-client";
 
 import TrendingCard from "./TrendingCard";
@@ -141,6 +146,7 @@ export default function TrendingSection() {
 
     try {
       await addToCart(product.id, 1);
+      clearGuestCart();
 
       setAddedMap((prev) => ({
         ...prev,
@@ -192,6 +198,7 @@ export default function TrendingSection() {
 
     try {
       await addToWishlist(product.id);
+      clearGuestWishlist();
 
       showToast(
         `Saved "${product.title}" to wishlist! ❤️`
