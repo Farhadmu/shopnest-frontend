@@ -6,7 +6,7 @@ import { generateBudgetPlan, BudgetPlanResult } from "@/lib/api/customer-intelli
 /** Drives the Smart AI Budget Planner form + generated result. */
 export function useBudgetPlanner() {
   const [budgetInput, setBudgetInput] = useState(50000);
-  const [budgetPurpose, setBudgetPurpose] = useState("gaming");
+  const [budgetPurpose, setBudgetPurpose] = useState("");
   const [budgetPlan, setBudgetPlan] = useState<BudgetPlanResult | null>(null);
   const [loading, setLoading] = useState(false);
 
