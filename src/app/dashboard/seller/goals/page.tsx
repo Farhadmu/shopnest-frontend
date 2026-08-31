@@ -64,9 +64,9 @@ export default function SellerGoalsPage() {
 
         {/* Stats */}
         <div className="grid gap-4 sm:grid-cols-3">
-          <StatCard icon="🎯" value={String(activeGoals)} label="Active Goals" note="In progress" color="blue" />
-          <StatCard icon="✅" value={String(achievedGoals)} label="Achieved" note="Completed" color="green" />
-          <StatCard icon="📊" value={String(goals.length)} label="Total Goals" note="All goals" color="purple" />
+          <StatCard icon="🎯" value={String(activeGoals)} label="Active Goals" note="In progress" color="default" />
+          <StatCard icon="✅" value={String(achievedGoals)} label="Achieved" note="Completed" color="success" />
+          <StatCard icon="📊" value={String(goals.length)} label="Total Goals" note="All goals" color="accent" />
         </div>
 
         {/* Create Goal Button */}

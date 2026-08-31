@@ -128,7 +128,7 @@ export default function SellerAnalyticsPage() {
             </p>
             <LineAreaChart
               data={lineChartData.length > 0 ? lineChartData : [{ label: "W1", value: 38000 }, { label: "W2", value: 48000 }]}
-              color="#059669"
+              color="var(--color-chart-2)"
               height={260}
             />
           </Panel>
@@ -136,7 +136,7 @@ export default function SellerAnalyticsPage() {
           <Panel
             title="Order Volume Trajectory"
             action={
-              <span className="rounded-lg bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+              <span className="rounded-lg bg-success/10 px-2.5 py-1 text-xs font-bold text-success">
                 Order Count
               </span>
             }
@@ -146,7 +146,7 @@ export default function SellerAnalyticsPage() {
             </p>
             <BarChart
               data={barChartData.length > 0 ? barChartData : [{ label: "W1", value: 22 }, { label: "W2", value: 30 }]}
-              color="#3b82f6"
+              color="var(--color-chart-1)"
               height={260}
             />
           </Panel>
@@ -165,7 +165,7 @@ export default function SellerAnalyticsPage() {
                   {(data?.categoryPerformance || []).map((cat) => (
                     <div key={cat.category} className="flex items-center justify-between rounded-xl bg-muted-bg p-2.5 text-xs">
                       <span className="font-bold text-text">{cat.category}</span>
-                      <span className="font-black text-emerald-600 dark:text-emerald-400">
+                      <span className="font-black text-success">
                         {formatCurrency(cat.revenue)} ({cat.share}%)
                       </span>
                     </div>
@@ -194,9 +194,9 @@ export default function SellerAnalyticsPage() {
                         <td className="py-3 font-bold text-text max-w-[220px] truncate">{prod.title}</td>
                         <td className="py-3 font-semibold text-text">{formatCurrency(prod.price)}</td>
                         <td className="py-3 font-black text-primary">{prod.sold} units</td>
-                        <td className="py-3 font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(prod.revenue)}</td>
+                        <td className="py-3 font-black text-success">{formatCurrency(prod.revenue)}</td>
                         <td className="py-3">
-                          <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 font-bold text-emerald-600 dark:text-emerald-400">
+                          <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 font-bold text-success">
                             {prod.conversion}
                           </span>
                         </td>
@@ -213,7 +213,7 @@ export default function SellerAnalyticsPage() {
         <Panel
           title="Catalog Optimization & Attention Required"
           action={
-            <span className="rounded-lg bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-600 dark:text-amber-400">
+            <span className="rounded-lg bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-warning">
               Actionable Growth Leads
             </span>
           }
