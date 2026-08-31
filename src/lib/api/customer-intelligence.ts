@@ -301,3 +301,27 @@ export async function getCustomerActivityTimeline() {
   return clientFetch<CustomerActivityItem[]>("/customer/activity-timeline");
 }
 
+// 16. CROSS-DEVICE RECENTLY VIEWED + SMART RECOMMENDATIONS
+export interface CustomerProductSuggestion {
+  id: string;
+  title: string;
+  price: number;
+  discountPrice?: number;
+  images?: string[];
+  ratingAvg?: number;
+  category?: string;
+  viewedAt?: string;
+}
+
+export async function recordRecentlyViewedProduct(productId: string) {
+  return clientMutation<{ productId: string }>("/customer/recently-viewed", "POST", { productId });
+}
+
+export async function getRecentlyViewedProducts() {
+  return clientFetch<CustomerProductSuggestion[]>("/customer/recently-viewed");
+}
+
+export async function getSmartRecommendations() {
+  return clientFetch<CustomerProductSuggestion[]>("/customer/recommendations");
+}
+

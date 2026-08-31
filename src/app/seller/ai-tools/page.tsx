@@ -1,0 +1,86 @@
+"use client";
+import { useState } from "react";
+import { clientMutation } from "@/lib/core/client";
+export default function SellerAITools() {
+  const [name, setName] = useState("");
+  const [features, setFeatures] = useState("");
+  const [result, setResult] = useState("");
+  const [loading, setLoading] = useState(false);
+  const generate = async () => {
+    if (!name.trim()) return;
+    setLoading(true);
+    setResult("");
+    try {
+      const r: any = await clientMutation("/ai/product-description", "POST", {
+        productName: name,
+        category: "General",
+        features: features
+          .split(",")
+          .map((v) => v.trim())
+          .filter(Boolean),
+      });
+      setResult(r?.data?.description || r?.description || JSON.stringify(r, null, 2));
+    } catch (e) {
+      setResult(e instanceof Error ? e.message : "AI request failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+  return (
+    <div className="grid gap-5">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[.2em] text-primary">
+          AI commerce studio
+        </p>
+        <h1 className="mt-1 text-3xl font-black">Seller AI Tools</h1>
+        <p className="mt-2 text-sm text-muted">
+          Generate product copy and use AI-assisted workflows to reduce listing effort.
+        </p>
+      </div>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <section className="rounded-2xl border border-border bg-surface p-6">
+          <h2 className="font-black">AI Product Content Generator</h2>
+          <div className="mt-4 grid gap-3">
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Product name"
+              className="rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
+            />
+            <textarea
+              value={features}
+              onChange={(e) => setFeatures(e.target.value)}
+              placeholder="Main features, target audience, material, benefits..."
+              rows={6}
+              className="rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
+            />
+            <button
+              onClick={generate}
+              disabled={loading}
+              className="rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
+            >
+              {loading ? "Generating…" : "Generate description"}
+            </button>
+          </div>
+        </section>
+        <section className="rounded-2xl border border-border bg-surface p-6">
+          <h2 className="font-black">AI workspace</h2>
+          <div className="mt-4 grid gap-3">
+            <a href="/ai-advisor" className="rounded-xl border border-border p-4 font-bold">
+              Shopping assistant →
+            </a>
+            <div className="rounded-xl bg-muted-bg p-4 text-sm text-muted">
+              Pricing assistant and review intelligence are designed to use the same
+              provider/fallback architecture as the platform AI module.
+            </div>
+          </div>
+          {result && (
+            <pre className="mt-4 max-h-72 overflow-auto whitespace-pre-wrap rounded-xl bg-slate-950 p-4 text-xs text-slate-100">
+              {result}
+            </pre>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}

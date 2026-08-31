@@ -98,8 +98,8 @@ export interface VisualSearchResult {
   }>;
 }
 
-export async function visualSearchAI(imageUrl: string) {
-  return clientMutation<VisualSearchResult>("/ai/visual-search", "POST", { imageUrl });
+export async function visualSearchAI(imageUrl: string, searchQuery?: string) {
+  return clientMutation<VisualSearchResult>("/ai/visual-search", "POST", { imageUrl, searchQuery });
 }
 
 export interface ReviewSummaryResult {

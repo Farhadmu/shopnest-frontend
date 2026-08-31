@@ -21,18 +21,22 @@ export const userDashboardLinks: DashboardLink[] = [
 ];
 
 export const sellerDashboardLinks: DashboardLink[] = [
-  { label: "Seller Overview", href: "/dashboard/seller", icon: "🏪", description: "Store performance snapshot." },
+  { label: "Command Center", href: "/dashboard/seller/command-center", icon: "📊", description: "Real-time KPI dashboard." },
   { label: "Sales Analytics", href: "/dashboard/seller/analytics", icon: "📈", description: "Revenue & sales breakdown." },
+  { label: "Product Performance", href: "/dashboard/seller/product-performance", icon: "🏆", description: "Product-wise sales & revenue." },
   { label: "Sales Forecast", href: "/dashboard/seller/forecast", icon: "🔮", description: "AI demand forecasting." },
   { label: "Smart Inventory", href: "/dashboard/seller/inventory", icon: "📦", description: "Stock levels & restock alerts." },
+  { label: "Orders", href: "/dashboard/seller/orders", icon: "🚚", description: "Order fulfillment." },
+  { label: "Customers", href: "/dashboard/seller/customers", icon: "👥", description: "Buyer behavior analytics." },
+  { label: "Coupons", href: "/dashboard/seller/coupons", icon: "🏷️", description: "Discount campaigns." },
   { label: "Store Health", href: "/dashboard/seller/store-health", icon: "🩺", description: "Store performance diagnostics." },
-  { label: "Customer Insights", href: "/dashboard/seller/customers", icon: "👥", description: "Buyer behavior analytics." },
+  { label: "Trust Score", href: "/dashboard/seller/trust-score", icon: "⭐", description: "Seller reputation score." },
+  { label: "Risk Indicators", href: "/dashboard/seller/risk-indicators", icon: "⚠️", description: "Fraud & anomaly detection." },
+  { label: "Goals", href: "/dashboard/seller/goals", icon: "🎯", description: "Business targets & progress." },
   { label: "Products", href: "/dashboard/seller/products", icon: "🧾", description: "Manage product catalog." },
   { label: "Add Product", href: "/dashboard/seller/products/add", icon: "➕", description: "List a new product." },
-  { label: "Orders", href: "/dashboard/seller/orders", icon: "🚚", description: "Order fulfillment." },
-  { label: "Coupons", href: "/dashboard/seller/coupons", icon: "🏷️", description: "Discount campaigns." },
   { label: "AI Seller Tools", href: "/dashboard/seller/ai-tools", icon: "🤖", description: "AI listing & pricing tools." },
-  { label: "Trust Score", href: "/dashboard/seller/trust-score", icon: "⭐", description: "Seller reputation score." },
+  { label: "Security Center", href: "/dashboard/seller/security", icon: "🔐", description: "Sessions & security events." },
   { label: "Notifications", href: "/dashboard/seller/notifications", icon: "🔔", description: "Order & store alerts." },
   { label: "Store Settings", href: "/dashboard/seller/store-settings", icon: "⚙️", description: "Store profile & preferences." },
 ];
