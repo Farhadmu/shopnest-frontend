@@ -4,7 +4,12 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useSession } from "@/lib/auth-client";
 import { getWishlist, removeFromWishlist, WishlistItem } from "@/lib/api/wishlist";
-import { getGuestWishlist, removeGuestWishlistItem } from "@/lib/guest-store";
+import {
+  getGuestWishlist,
+  removeGuestWishlistItem,
+  clearGuestWishlist,
+  syncGuestDataToServer,
+} from "@/lib/guest-store";
 import { LoadingState } from "@/components/common/LoadingState";
 
 export default function WishlistPage() {
@@ -24,15 +29,21 @@ export default function WishlistPage() {
     }
 
     // Logged-in mode
-    getWishlist()
-      .then((data) => {
-        setItems(data);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        setItems([]);
-        setIsLoading(false);
-      });
+    const guestItems = getGuestWishlist();
+    const syncPromise = guestItems.length > 0 ? syncGuestDataToServer() : Promise.resolve();
+
+    syncPromise.finally(() => {
+      clearGuestWishlist();
+      getWishlist()
+        .then((data) => {
+          setItems(data);
+          setIsLoading(false);
+        })
+        .catch(() => {
+          setItems([]);
+          setIsLoading(false);
+        });
+    });
   }, [session]);
 
   useEffect(() => {
@@ -63,6 +74,7 @@ export default function WishlistPage() {
 
     try {
       await removeFromWishlist(productId);
+      clearGuestWishlist();
       load();
     } catch {
       // Ignore error

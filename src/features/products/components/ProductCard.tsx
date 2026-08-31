@@ -11,7 +11,12 @@ import { addToWishlist } from "@/lib/api/wishlist";
 import { useSession } from "@/lib/auth-client";
 import { ProductCardData } from "../types";
 
-import { addGuestCartItem, addGuestWishlistItem } from "@/lib/guest-store";
+import {
+  addGuestCartItem,
+  addGuestWishlistItem,
+  clearGuestCart,
+  clearGuestWishlist,
+} from "@/lib/guest-store";
 
 export interface ProductCardProps {
   product: ProductCardData;
@@ -53,6 +58,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }
 
     try {
       await addToCart(product.id, 1);
+      clearGuestCart();
       setIsAdded(true);
       setTimeout(() => setIsAdded(false), 2000);
     } catch {
@@ -80,6 +86,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }
 
     try {
       await addToWishlist(product.id);
+      clearGuestWishlist();
       setIsWishlist(true);
       setTimeout(() => setIsWishlist(false), 2000);
     } catch {
