@@ -161,7 +161,7 @@ export const Navbar: React.FC = () => {
       { icon: FaStore, label: "Become a Seller", href: "/dashboard/seller/dashboard", isPrimary: true },
     ],
     seller: [
-      { icon: FaStore, label: "Seller Overview", href: "/dashboard/seller/dashboard" },
+      { icon: FaStore, label: "Seller Overview", href: "/dashboard/seller" },
       { icon: "📈", label: "Sales Analytics", href: "/dashboard/seller/analytics" },
       { icon: "🔮", label: "Sales Forecast", href: "/dashboard/seller/forecast" },
       { icon: "📦", label: "Smart Inventory", href: "/dashboard/seller/inventory" },
@@ -174,7 +174,7 @@ export const Navbar: React.FC = () => {
       { icon: FaCog, label: "Store Settings", href: "/dashboard/seller/store-settings" },
     ],
     admin: [
-      { icon: FaShieldAlt, label: "Command Center", href: "/dashboard/admin/dashboard" },
+      { icon: FaShieldAlt, label: "Command Center", href: "/dashboard/admin" },
       { icon: "📈", label: "Platform Analytics", href: "/dashboard/admin/analytics" },
       { icon: FaShieldAlt, label: "Security Center", href: "/dashboard/admin/security" },
       { icon: "🚨", label: "Risk & Fraud Detection", href: "/dashboard/admin/risk" },
