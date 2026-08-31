@@ -19,6 +19,7 @@ import {
 import { getProducts, Product } from "@/lib/api/products";
 import { addToCart } from "@/lib/api/cart";
 import { addToWishlist } from "@/lib/api/wishlist";
+import { addGuestCartItem, addGuestWishlistItem } from "@/lib/guest-store";
 import { useSession } from "@/lib/auth-client";
 
 function ProductsContent() {
@@ -148,12 +149,27 @@ function ProductsContent() {
     e.stopPropagation();
 
     if (!session?.user) {
-      showToast(
-        "Please log in to add items to your cart",
-        "error"
-      );
+      addGuestCartItem({
+        productId: product.id,
+        price: product.price,
+        title: product.title,
+        images: product.images,
+        category: product.category,
+      });
 
-      router.push("/login");
+      setAddedMap((prev) => ({
+        ...prev,
+        [product.id]: true,
+      }));
+
+      showToast(`Added "${product.title}" to cart! 🛒`);
+
+      setTimeout(() => {
+        setAddedMap((prev) => ({
+          ...prev,
+          [product.id]: false,
+        }));
+      }, 2000);
       return;
     }
 
@@ -195,12 +211,20 @@ function ProductsContent() {
     e.stopPropagation();
 
     if (!session?.user) {
-      showToast(
-        "Please log in to save items to wishlist",
-        "error"
-      );
+      addGuestWishlistItem({
+        productId: product.id,
+        title: product.title,
+        price: product.price,
+        images: product.images,
+        category: product.category,
+      });
 
-      router.push("/login");
+      setWishlistMap((prev) => ({
+        ...prev,
+        [product.id]: true,
+      }));
+
+      showToast(`Saved "${product.title}" to wishlist! ❤️`);
       return;
     }
 
@@ -235,7 +259,14 @@ function ProductsContent() {
     e.stopPropagation();
 
     if (!session?.user) {
-      router.push("/login");
+      addGuestCartItem({
+        productId: product.id,
+        price: product.price,
+        title: product.title,
+        images: product.images,
+        category: product.category,
+      });
+      router.push(`/login?next=${encodeURIComponent("/dashboard/user/checkout")}`);
       return;
     }
 
@@ -243,7 +274,7 @@ function ProductsContent() {
       await addToCart(product.id, 1);
       router.push("/dashboard/user/checkout");
     } catch {
-      router.push("/dashboard/user/cart");
+      router.push("/cart");
     }
   };
 
