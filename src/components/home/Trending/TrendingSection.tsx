@@ -14,6 +14,7 @@ import {
 import { getProducts, Product } from "@/lib/api/products";
 import { addToCart } from "@/lib/api/cart";
 import { addToWishlist } from "@/lib/api/wishlist";
+import { addGuestCartItem, addGuestWishlistItem } from "@/lib/guest-store";
 import { useSession } from "@/lib/auth-client";
 
 import TrendingCard from "./TrendingCard";
@@ -115,9 +116,26 @@ export default function TrendingSection() {
     e.preventDefault();
     e.stopPropagation();
 
-    // Not logged in
+    // Guest mode
     if (!session?.user) {
-      router.push("/login");
+      addGuestCartItem({
+        productId: product.id,
+        price: product.price,
+        title: product.title,
+        images: product.images,
+        category: product.category,
+      });
+
+      setAddedMap((prev) => ({
+        ...prev,
+        [product.id]: true,
+      }));
+
+      showToast(`Added "${product.title}" to cart! 🛒`);
+
+      setTimeout(() => {
+        router.push("/cart");
+      }, 500);
       return;
     }
 
@@ -135,7 +153,7 @@ export default function TrendingSection() {
 
       // Go to cart
       setTimeout(() => {
-        router.push("/dashboard/user/cart");
+        router.push("/cart");
       }, 500);
     } catch (err) {
       showToast(
@@ -158,9 +176,17 @@ export default function TrendingSection() {
     e.preventDefault();
     e.stopPropagation();
 
-    // Not logged in
+    // Guest mode
     if (!session?.user) {
-      router.push("/login");
+      addGuestWishlistItem({
+        productId: product.id,
+        title: product.title,
+        price: product.price,
+        images: product.images,
+        category: product.category,
+      });
+
+      showToast(`Saved "${product.title}" to wishlist! ❤️`);
       return;
     }
 

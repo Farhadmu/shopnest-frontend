@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "@/lib/auth-client";
 import {
   FaTrash,
   FaArrowRight,
@@ -24,6 +25,12 @@ import {
   CartItem,
 } from "@/lib/api/cart";
 
+import {
+  getGuestCart,
+  updateGuestCartItemQuantity,
+  removeGuestCartItem,
+} from "@/lib/guest-store";
+
 import { validateCoupon } from "@/lib/api/coupons";
 import { getErrorMessage } from "@/lib/core/errors";
 import { formatCurrency } from "@/lib/utils";
@@ -37,6 +44,7 @@ interface AppliedCoupon {
 
 export default function CartPage() {
   const router = useRouter();
+  const { data: session, isPending } = useSession();
 
   // Cart State
   const [cart, setCart] = useState<Cart | null>(null);
@@ -55,12 +63,20 @@ export default function CartPage() {
     useState<string | null>(null);
 
   // =========================
-  // Load Cart
+  // Load Cart (Guest or DB)
   // =========================
 
   const loadCart = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+
+    if (!session?.user) {
+      // Guest mode from localStorage
+      const localCart = getGuestCart();
+      setCart(localCart);
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const data = await getCart();
@@ -70,11 +86,26 @@ export default function CartPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [session]);
 
   useEffect(() => {
-    loadCart();
-  }, [loadCart]);
+    if (!isPending) {
+      loadCart();
+    }
+  }, [isPending, loadCart]);
+
+  // Listen for guest cart updates across tabs/components
+  useEffect(() => {
+    if (!session?.user) {
+      const handleGuestCartUpdate = () => {
+        setCart(getGuestCart());
+      };
+      window.addEventListener("guest_cart_updated", handleGuestCartUpdate);
+      return () => {
+        window.removeEventListener("guest_cart_updated", handleGuestCartUpdate);
+      };
+    }
+  }, [session]);
 
   // =========================
   // Merge Duplicate Products
@@ -120,12 +151,18 @@ export default function CartPage() {
     setError(null);
 
     try {
-      const updatedCart = await updateCartItem(
-        productId,
-        quantity
-      );
-
-      setCart(updatedCart);
+      if (!session?.user) {
+        // Guest mode
+        const updated = updateGuestCartItemQuantity(productId, quantity);
+        setCart(updated);
+      } else {
+        // Logged in mode
+        const updatedCart = await updateCartItem(
+          productId,
+          quantity
+        );
+        setCart(updatedCart);
+      }
 
       // Cart changed, so coupon must be applied again.
       if (appliedCoupon) {
@@ -153,9 +190,15 @@ export default function CartPage() {
     setError(null);
 
     try {
-      const updatedCart = await removeCartItem(productId);
-
-      setCart(updatedCart);
+      if (!session?.user) {
+        // Guest mode
+        const updated = removeGuestCartItem(productId);
+        setCart(updated);
+      } else {
+        // Logged in mode
+        const updatedCart = await removeCartItem(productId);
+        setCart(updatedCart);
+      }
 
       // Remove applied coupon when cart changes.
       if (appliedCoupon) {
@@ -213,10 +256,27 @@ export default function CartPage() {
   };
 
   // =========================
+  // Proceed to Checkout Handler
+  // =========================
+
+  const handleProceedToCheckout = () => {
+    if (!session?.user) {
+      router.push(`/login?next=${encodeURIComponent("/dashboard/user/checkout")}`);
+      return;
+    }
+
+    const checkoutUrl = appliedCoupon
+      ? `/dashboard/user/checkout?coupon=${encodeURIComponent(appliedCoupon.code)}`
+      : "/dashboard/user/checkout";
+
+    router.push(checkoutUrl);
+  };
+
+  // =========================
   // Loading
   // =========================
 
-  if (isLoading) {
+  if (isPending || isLoading) {
     return (
       <LoadingState message="Loading your shopping cart..." />
     );
@@ -258,7 +318,7 @@ export default function CartPage() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-primary/15 px-3.5 py-1 text-xs font-black uppercase tracking-widest text-primary shadow-sm backdrop-blur-md">
               <FaShoppingBag className="text-xs" />
-              Secure Bag
+              Secure Bag {!session?.user && "(Guest Mode)"}
             </div>
 
             <h1 className="mt-3 text-3xl font-black tracking-tight text-text sm:text-4xl">
@@ -266,7 +326,9 @@ export default function CartPage() {
             </h1>
 
             <p className="mt-1 text-sm text-muted">
-              Review your items and apply exclusive promo codes before checkout.
+              {!session?.user
+                ? "Your items are saved locally on this browser. Log in when checking out to keep them permanently!"
+                : "Review your items and apply exclusive promo codes before checkout."}
             </p>
           </div>
 
@@ -383,7 +445,7 @@ export default function CartPage() {
                               item.quantity - 1
                             )
                           }
-                          className="grid h-8 w-8 place-items-center rounded-xl text-sm font-bold text-text transition hover:bg-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                          className="grid h-8 w-8 place-items-center rounded-xl text-sm font-bold text-text transition hover:bg-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
                         >
                           -
                         </button>
@@ -403,7 +465,7 @@ export default function CartPage() {
                               item.quantity + 1
                             )
                           }
-                          className="grid h-8 w-8 place-items-center rounded-xl text-sm font-bold text-text transition hover:bg-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                          className="grid h-8 w-8 place-items-center rounded-xl text-sm font-bold text-text transition hover:bg-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
                         >
                           +
                         </button>
@@ -427,7 +489,7 @@ export default function CartPage() {
                           handleRemove(item.productId)
                         }
                         title="Remove item"
-                        className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-error/20 bg-error/10 text-error shadow-sm transition-all duration-300 hover:scale-105 hover:bg-error hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                        className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-error/20 bg-error/10 text-error shadow-sm transition-all duration-300 hover:scale-105 hover:bg-error hover:text-white disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
                       >
                         <FaTrash size={12} />
                       </button>
@@ -477,7 +539,7 @@ export default function CartPage() {
                     <button
                       type="button"
                       onClick={handleRemoveCoupon}
-                      className="text-xs font-bold text-error transition hover:underline"
+                      className="text-xs font-bold text-error transition hover:underline cursor-pointer"
                     >
                       Remove
                     </button>
@@ -513,7 +575,7 @@ export default function CartPage() {
                           isApplying ||
                           !couponInput.trim()
                         }
-                        className="rounded-2xl bg-primary px-5 py-3 text-xs font-black text-white shadow-lg shadow-primary/25 transition-all hover:scale-105 hover:bg-primary-hover disabled:opacity-50 disabled:hover:scale-100"
+                        className="rounded-2xl bg-primary px-5 py-3 text-xs font-black text-white shadow-lg shadow-primary/25 transition-all hover:scale-105 hover:bg-primary-hover disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
                       >
                         {isApplying ? "..." : "Apply"}
                       </button>
@@ -598,18 +660,10 @@ export default function CartPage() {
 
                 {/* Checkout */}
 
-                <Link
-                  href={{
-                    pathname:
-                      "/dashboard/user/checkout",
-                    query: appliedCoupon
-                      ? {
-                          coupon:
-                            appliedCoupon.code,
-                        }
-                      : undefined,
-                  }}
-                  className="group mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-center text-sm font-black text-white shadow-xl shadow-primary/30 transition-all duration-300 hover:scale-[1.02] hover:bg-primary-hover hover:shadow-primary/50"
+                <button
+                  type="button"
+                  onClick={handleProceedToCheckout}
+                  className="group mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-center text-sm font-black text-white shadow-xl shadow-primary/30 transition-all duration-300 hover:scale-[1.02] hover:bg-primary-hover hover:shadow-primary/50 cursor-pointer"
                 >
                   Proceed to Checkout
 
@@ -617,7 +671,7 @@ export default function CartPage() {
                     size={12}
                     className="transition-transform duration-300 group-hover:translate-x-1"
                   />
-                </Link>
+                </button>
 
                 {/* Security */}
 
@@ -626,7 +680,7 @@ export default function CartPage() {
                   <FaShieldAlt className="text-sm text-emerald-500" />
 
                   <span>
-                    SSL Encrypted & Verified Buyer Protection
+                    SSL Encrypted &amp; Verified Buyer Protection
                   </span>
 
                 </div>

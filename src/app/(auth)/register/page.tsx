@@ -171,6 +171,9 @@ const Eye = ({ show, onToggle }: { show: boolean; onToggle: () => void }) => (
   </button>
 );
 
+import { useSearchParams } from "next/navigation";
+import { syncGuestDataToServer } from "@/lib/guest-store";
+
 /* ─── Types ──────────────────────────────────────────────────────────────────── */
 type Role = "customer" | "seller";
 
@@ -178,6 +181,14 @@ type Role = "customer" | "seller";
    Register Page Component
 ═══════════════════════════════════════════════════════════════════════════════ */
 export default function RegisterPage() {
+  return (
+    <React.Suspense fallback={<div className="min-h-screen bg-surface dark:bg-background" />}>
+      <RegisterForm />
+    </React.Suspense>
+  );
+}
+
+function RegisterForm() {
   const [role, setRole] = useState<Role>("customer");
   const [fullName, setFullName] = useState("");
   const [shopName, setShopName] = useState("");
@@ -192,6 +203,8 @@ export default function RegisterPage() {
   const [socialLoading, setSocialLoading] = useState<"google" | "facebook" | null>(null);
   const [error, setError] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") || "/";
 
   const pwOk = cf !== "" && pw === cf;
   const pwBad = cf !== "" && pw !== cf;
@@ -214,7 +227,7 @@ export default function RegisterPage() {
         name: fullName.trim(),
         email: email.trim().toLowerCase(),
         password: pw,
-        callbackURL: "/",
+        callbackURL: next,
         // @ts-expect-error – role is a custom field in auth.ts
         role,
       });
@@ -222,7 +235,9 @@ export default function RegisterPage() {
         setError(res.error.message || "Registration failed.");
         return;
       }
-      router.replace("/");
+      // Sync guest cart & wishlist to database
+      await syncGuestDataToServer();
+      router.replace(next);
       router.refresh();
     } catch (err) {
       console.error("Sign up error:", err);
@@ -237,9 +252,10 @@ export default function RegisterPage() {
     setError("");
     setSocialLoading("google");
     try {
+      const callbackURL = `/sync?next=${encodeURIComponent(next)}`;
       const res = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/",
+        callbackURL,
       });
       if (res?.error) {
         setError(res.error.message || "Failed to sign in with Google.");
@@ -257,9 +273,10 @@ export default function RegisterPage() {
     setError("");
     setSocialLoading("facebook");
     try {
+      const callbackURL = `/sync?next=${encodeURIComponent(next)}`;
       const res = await authClient.signIn.social({
         provider: "facebook",
-        callbackURL: "/",
+        callbackURL,
       });
       if (res?.error) {
         setError(res.error.message || "Failed to sign in with Facebook.");

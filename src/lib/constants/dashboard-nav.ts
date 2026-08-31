@@ -15,8 +15,8 @@ export const userDashboardLinks: DashboardLink[] = [
   { label: "Security Center", href: "/dashboard/user/security", icon: "🔐", description: "Active sessions & security score." },
   { label: "Notifications", href: "/dashboard/user/notifications", icon: "🔔", description: "Order updates & alerts." },
   { label: "My Orders", href: "/dashboard/user/orders", icon: "📦", description: "Order timeline & delivery status." },
-  { label: "Smart Cart", href: "/dashboard/user/cart", icon: "🛍️", description: "Live cart and checkout." },
-  { label: "Wishlist", href: "/dashboard/user/wishlist", icon: "❤️", description: "Saved favorite items." },
+  { label: "Smart Cart", href: "/cart", icon: "🛍️", description: "Live cart and checkout." },
+  { label: "Wishlist", href: "/wishlist", icon: "❤️", description: "Saved favorite items." },
   { label: "AI Advisor", href: "/dashboard/user/ai-advisor", icon: "🤖", description: "AI commerce shopping assistant." },
 ];
 

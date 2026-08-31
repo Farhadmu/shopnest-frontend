@@ -17,6 +17,7 @@ import {
 import { getProductById, Product } from "@/lib/api/products";
 import { addToCart } from "@/lib/api/cart";
 import { addToWishlist } from "@/lib/api/wishlist";
+import { addGuestCartItem, addGuestWishlistItem } from "@/lib/guest-store";
 import { useSession } from "@/lib/auth-client";
 import {
   getPriceHistory,
@@ -110,9 +111,19 @@ export default function ProductDetails() {
 
   const handleAddToCart = async () => {
     if (!product) return;
+
     if (!session?.user) {
-      showToast("Please log in to add items to your cart", "error");
-      router.push("/login");
+      addGuestCartItem({
+        productId: product.id,
+        quantity,
+        price: product.discountPrice ?? product.price,
+        title: product.title,
+        images: product.images,
+        category: product.category,
+      });
+      setIsAdded(true);
+      showToast(`Added ${quantity} × "${product.title}" to cart! 🛒`);
+      setTimeout(() => setIsAdded(false), 2500);
       return;
     }
 
@@ -126,26 +137,19 @@ export default function ProductDetails() {
     }
   };
 
-  const handleBuyNow = async () => {
-    if (!product) return;
-    if (!session?.user) {
-      showToast("Please log in to proceed to checkout", "error");
-      router.push("/login");
-      return;
-    }
-
-    try {
-      await addToCart(product.id, quantity);
-      router.push("/checkout");
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : "Failed to proceed to checkout", "error");
-    }
-  };
-
   const handleAddBundleToCart = async () => {
-    if (!bundleData || !session?.user) {
-      showToast("Please log in to add bundle to cart", "error");
-      router.push("/login");
+    if (!bundleData) return;
+
+    if (!session?.user) {
+      for (const item of bundleData.items) {
+        addGuestCartItem({
+          productId: item.productId,
+          quantity: 1,
+          price: item.price,
+          title: item.title,
+        });
+      }
+      showToast(`⚡ Added complete ${bundleData.bundleName} (${bundleData.items.length} items) to cart!`);
       return;
     }
 
@@ -164,9 +168,16 @@ export default function ProductDetails() {
 
   const handleAddToWishlist = async () => {
     if (!product) return;
+
     if (!session?.user) {
-      showToast("Please log in to save to wishlist", "error");
-      router.push("/login");
+      addGuestWishlistItem({
+        productId: product.id,
+        title: product.title,
+        price: product.discountPrice ?? product.price,
+        images: product.images,
+        category: product.category,
+      });
+      showToast(`Added "${product.title}" to wishlist! ♡`);
       return;
     }
 
@@ -175,6 +186,30 @@ export default function ProductDetails() {
       showToast(`Added "${product.title}" to wishlist! ♡`);
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to add to wishlist", "error");
+    }
+  };
+
+  const handleBuyNow = async () => {
+    if (!product) return;
+
+    if (!session?.user) {
+      addGuestCartItem({
+        productId: product.id,
+        quantity,
+        price: product.discountPrice ?? product.price,
+        title: product.title,
+        images: product.images,
+        category: product.category,
+      });
+      router.push(`/login?next=${encodeURIComponent("/dashboard/user/checkout")}`);
+      return;
+    }
+
+    try {
+      await addToCart(product.id, quantity);
+      router.push("/dashboard/user/checkout");
+    } catch {
+      router.push("/cart");
     }
   };
 

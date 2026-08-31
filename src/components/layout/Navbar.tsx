@@ -26,6 +26,7 @@ import { NotificationBell } from "@/components/layout/NotificationBell";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { useSession, signOut } from "@/lib/auth-client";
 import { getCart } from "@/lib/api/cart";
+import { getGuestCart } from "@/lib/guest-store";
 
 // Types for navigation structures
 interface NavItem {
@@ -69,27 +70,48 @@ export const Navbar: React.FC = () => {
   useEffect(() => {
     let isMounted = true;
 
-    if (isAuthenticated) {
-      getCart()
-        .then((c) => {
-          if (!isMounted) return;
-          const totalQty = (c?.items || []).reduce(
-            (acc, item) => acc + (item.quantity || 1),
-            0
-          );
-          setCartCount(totalQty);
-        })
-        .catch(() => {
-          if (isMounted) setCartCount(0);
-        });
-    } else {
-      Promise.resolve().then(() => {
-        if (isMounted) setCartCount(0);
-      });
-    }
+    const updateCount = () => {
+      if (isAuthenticated) {
+        getCart()
+          .then((c) => {
+            if (!isMounted) return;
+            const totalQty = (c?.items || []).reduce(
+              (acc, item) => acc + (item.quantity || 1),
+              0
+            );
+            setCartCount(totalQty);
+          })
+          .catch(() => {
+            if (isMounted) setCartCount(0);
+          });
+      } else {
+        const guestCart = getGuestCart();
+        const totalQty = (guestCart?.items || []).reduce(
+          (acc, item) => acc + (item.quantity || 1),
+          0
+        );
+        if (isMounted) setCartCount(totalQty);
+      }
+    };
+
+    updateCount();
+
+    const handleGuestUpdate = () => {
+      if (!isAuthenticated) {
+        const guestCart = getGuestCart();
+        const totalQty = (guestCart?.items || []).reduce(
+          (acc, item) => acc + (item.quantity || 1),
+          0
+        );
+        if (isMounted) setCartCount(totalQty);
+      }
+    };
+
+    window.addEventListener("guest_cart_updated", handleGuestUpdate);
 
     return () => {
       isMounted = false;
+      window.removeEventListener("guest_cart_updated", handleGuestUpdate);
     };
   }, [isAuthenticated, pathname]);
 
@@ -126,18 +148,16 @@ export const Navbar: React.FC = () => {
   // Main Header Links Array
   const mainNavItems: Record<UserRole, NavItem[]> = {
     guest: [
-      { href: "/products", label: "Shop" },
+      { href: "/products", label: "Products" },
       { href: "/dashboard/user/ai-advisor", label: "AI Advisor" },
       { href: "/stores", label: "Stores" },
     ],
     seller: [
       { href: "/products", label: "Shop" },
-      { href: "/dashboard/seller/dashboard", label: "Seller Hub" },
       { href: "/dashboard/seller/orders", label: "Orders" },
     ],
     admin: [
       { href: "/products", label: "Shop" },
-      { href: "/dashboard/admin/dashboard", label: "Admin Control" },
       { href: "/dashboard/admin/orders", label: "Orders" },
     ],
     customer: [
@@ -154,8 +174,8 @@ export const Navbar: React.FC = () => {
       { icon: "📈", label: "Spending Analytics", href: "/dashboard/user/analytics" },
       { icon: FaShieldAlt, label: "Security Center", href: "/dashboard/user/security" },
       { icon: FaBox, label: "Orders & Tracking", href: "/dashboard/user/orders" },
-      { icon: FaShoppingBag, label: "Smart Cart", href: "/dashboard/user/cart" },
-      { icon: FaHeart, label: "Wishlist", href: "/dashboard/user/wishlist" },
+      { icon: FaShoppingBag, label: "Smart Cart", href: "/cart" },
+      { icon: FaHeart, label: "Wishlist", href: "/wishlist" },
       { icon: FaRobot, label: "AI Shopping Advisor", href: "/dashboard/user/ai-advisor" },
       { icon: FaUser, label: "Profile Settings", href: "/dashboard/user/profile" },
       { icon: FaStore, label: "Become a Seller", href: "/dashboard/seller/dashboard", isPrimary: true },
@@ -325,7 +345,7 @@ export const Navbar: React.FC = () => {
             )}
 
             <Link
-              href="/dashboard/user/wishlist"
+              href="/wishlist"
               aria-label="Wishlist"
               title="Wishlist"
               className="hidden h-10 w-10 place-items-center rounded-xl border border-border bg-surface text-muted transition hover:border-primary/40 hover:text-primary sm:grid"
@@ -334,7 +354,7 @@ export const Navbar: React.FC = () => {
             </Link>
 
             <Link
-              href="/dashboard/user/cart"
+              href="/cart"
               aria-label="Cart"
               title="Shopping Cart"
               className="relative grid h-10 w-10 place-items-center rounded-xl border border-border bg-surface text-muted transition hover:border-primary/40 hover:text-primary"

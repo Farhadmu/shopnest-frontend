@@ -11,6 +11,8 @@ import { addToWishlist } from "@/lib/api/wishlist";
 import { useSession } from "@/lib/auth-client";
 import { ProductCardData } from "../types";
 
+import { addGuestCartItem, addGuestWishlistItem } from "@/lib/guest-store";
+
 export interface ProductCardProps {
   product: ProductCardData;
   onAddToCart?: (productId: string) => void;
@@ -36,7 +38,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }
     }
 
     if (!session?.user) {
-      router.push("/login");
+      // Guest mode
+      addGuestCartItem({
+        productId: product.id,
+        price: product.price,
+        title: product.title,
+        image: product.imageUrl,
+        category: product.category,
+      });
+      setIsAdded(true);
+      setTimeout(() => setIsAdded(false), 2000);
       return;
     }
 
@@ -54,7 +65,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }
     e.stopPropagation();
 
     if (!session?.user) {
-      router.push("/login");
+      // Guest mode
+      addGuestWishlistItem({
+        productId: product.id,
+        price: product.price,
+        title: product.title,
+        image: product.imageUrl,
+        category: product.category,
+      });
+      setIsWishlist(true);
+      setTimeout(() => setIsWishlist(false), 2000);
       return;
     }
 

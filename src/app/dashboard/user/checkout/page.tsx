@@ -10,6 +10,7 @@ import { getErrorMessage } from "@/lib/core/errors";
 import { formatCurrency } from "@/lib/utils";
 import { LoadingState } from "@/components/common/LoadingState";
 import { ErrorState } from "@/components/common/ErrorState";
+import { useSession } from "@/lib/auth-client";
 import Link from "next/link";
 import {
   FiShield,
@@ -41,7 +42,15 @@ type PaymentMethodType = "cod" | "bkash" | "nagad" | "rocket" | "card";
 function CheckoutForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session, isPending } = useSession();
   const initialCoupon = searchParams.get("coupon") ?? "";
+
+  // Auth guard: check session
+  useEffect(() => {
+    if (!isPending && !session?.user) {
+      router.replace(`/login?next=${encodeURIComponent("/dashboard/user/checkout")}`);
+    }
+  }, [isPending, session, router]);
 
   const [cart, setCart] = useState<Cart | null>(null);
   const [isLoading, setIsLoading] = useState(true);
