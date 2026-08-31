@@ -17,7 +17,12 @@ import {
 import { getProductById, Product } from "@/lib/api/products";
 import { addToCart } from "@/lib/api/cart";
 import { addToWishlist } from "@/lib/api/wishlist";
-import { addGuestCartItem, addGuestWishlistItem } from "@/lib/guest-store";
+import {
+  addGuestCartItem,
+  addGuestWishlistItem,
+  clearGuestCart,
+  clearGuestWishlist,
+} from "@/lib/guest-store";
 import { useSession } from "@/lib/auth-client";
 import {
   getPriceHistory,
@@ -129,6 +134,7 @@ export default function ProductDetails() {
 
     try {
       await addToCart(product.id, quantity);
+      clearGuestCart();
       setIsAdded(true);
       showToast(`Added ${quantity} × "${product.title}" to cart! 🛒`);
       setTimeout(() => setIsAdded(false), 2500);
@@ -158,6 +164,7 @@ export default function ProductDetails() {
       for (const item of bundleData.items) {
         await addToCart(item.productId, 1);
       }
+      clearGuestCart();
       showToast(`⚡ Added complete ${bundleData.bundleName} (${bundleData.items.length} items) to cart!`);
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to add bundle", "error");
@@ -183,6 +190,7 @@ export default function ProductDetails() {
 
     try {
       await addToWishlist(product.id);
+      clearGuestWishlist();
       showToast(`Added "${product.title}" to wishlist! ♡`);
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to add to wishlist", "error");

@@ -29,6 +29,8 @@ import {
   getGuestCart,
   updateGuestCartItemQuantity,
   removeGuestCartItem,
+  clearGuestCart,
+  syncGuestDataToServer,
 } from "@/lib/guest-store";
 
 import { validateCoupon } from "@/lib/api/coupons";
@@ -79,6 +81,13 @@ export default function CartPage() {
     }
 
     try {
+      // If user is authenticated, sync any pending guest items & clear localStorage
+      const localCart = getGuestCart();
+      if (localCart?.items?.length > 0) {
+        await syncGuestDataToServer();
+      } else {
+        clearGuestCart();
+      }
       const data = await getCart();
       setCart(data);
     } catch (err) {
@@ -161,6 +170,7 @@ export default function CartPage() {
           productId,
           quantity
         );
+        clearGuestCart();
         setCart(updatedCart);
       }
 
@@ -197,6 +207,7 @@ export default function CartPage() {
       } else {
         // Logged in mode
         const updatedCart = await removeCartItem(productId);
+        clearGuestCart();
         setCart(updatedCart);
       }
 
