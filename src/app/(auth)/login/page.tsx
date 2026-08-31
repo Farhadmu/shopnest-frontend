@@ -152,8 +152,19 @@ const letterReveal = {
   }),
 };
 
+import { useSearchParams } from "next/navigation";
+import { syncGuestDataToServer } from "@/lib/guest-store";
+
 /* ─── Main Login Page Component ───────────────────────────────────────────── */
 export default function LoginPage() {
+  return (
+    <React.Suspense fallback={<div className="min-h-screen bg-surface dark:bg-background" />}>
+      <LoginForm />
+    </React.Suspense>
+  );
+}
+
+function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -162,6 +173,8 @@ export default function LoginPage() {
   const [socialLoading, setSocialLoading] = useState<"google" | "facebook" | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") || "/";
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -173,13 +186,15 @@ export default function LoginPage() {
         email: email.trim().toLowerCase(),
         password,
         rememberMe,
-        callbackURL: "/",
+        callbackURL: next,
       });
       if (result.error) {
         setErrorMsg(result.error.message || "Invalid email or password.");
         return;
       }
-      router.replace("/");
+      // Sync guest cart & wishlist to database
+      await syncGuestDataToServer();
+      router.replace(next);
       router.refresh();
     } catch (err) {
       console.error("Sign in error:", err);
@@ -194,9 +209,10 @@ export default function LoginPage() {
     setErrorMsg("");
     setSocialLoading("google");
     try {
+      const callbackURL = `/sync?next=${encodeURIComponent(next)}`;
       const res = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/",
+        callbackURL,
       });
       if (res?.error) {
         setErrorMsg(res.error.message || "Failed to sign in with Google.");
@@ -214,9 +230,10 @@ export default function LoginPage() {
     setErrorMsg("");
     setSocialLoading("facebook");
     try {
+      const callbackURL = `/sync?next=${encodeURIComponent(next)}`;
       const res = await authClient.signIn.social({
         provider: "facebook",
-        callbackURL: "/",
+        callbackURL,
       });
       if (res?.error) {
         setErrorMsg(res.error.message || "Failed to sign in with Facebook.");

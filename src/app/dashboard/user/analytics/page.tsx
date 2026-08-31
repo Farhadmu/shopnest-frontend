@@ -240,7 +240,7 @@ export default function CustomerAnalyticsPage() {
           title="Wishlist Price-Drop Opportunities"
           action={
             <Link
-              href="/dashboard/user/wishlist"
+              href="/wishlist"
               className="flex items-center gap-1 text-xs font-bold text-primary hover:underline"
             >
               View Full Wishlist <FaArrowRight size={10} />
