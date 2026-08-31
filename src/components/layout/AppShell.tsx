@@ -4,6 +4,7 @@ import React from "react";
 import { usePathname } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 
 const AUTH_ROUTES = ["/login", "/register", "/forgot-password", "/reset-password"];
 
@@ -21,13 +22,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-background text-text">
+    <div className="min-h-screen bg-background text-text pb-16 md:pb-0">
       <Navbar />
       {/* 🟢 Clean Max-Width setup without default 'container' class */}
       <main className="mx-auto w-full max-w-360 flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         {children}
       </main>
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 }

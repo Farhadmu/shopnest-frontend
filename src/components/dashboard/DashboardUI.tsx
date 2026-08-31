@@ -142,13 +142,27 @@ export function StatCard({
   value,
   note,
   trend,
+  color = "default",
 }: {
   icon: string;
   label: string;
   value: string | number;
   note: string;
   trend?: string;
+  color?: "default" | "green" | "blue" | "purple" | "amber" | "red" | "emerald" | "indigo";
 }) {
+  const colorMap: Record<string, { bg: string; text: string; badge: string }> = {
+    default: { bg: "bg-primary/10", text: "text-primary", badge: "bg-primary/10 text-primary" },
+    green: { bg: "bg-emerald-500/10", text: "text-emerald-600 dark:text-emerald-400", badge: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
+    blue: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", badge: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
+    purple: { bg: "bg-purple-500/10", text: "text-purple-600 dark:text-purple-400", badge: "bg-purple-500/10 text-purple-600 dark:text-purple-400" },
+    amber: { bg: "bg-amber-500/10", text: "text-amber-600 dark:text-amber-400", badge: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
+    red: { bg: "bg-red-500/10", text: "text-red-600 dark:text-red-400", badge: "bg-red-500/10 text-red-600 dark:text-red-400" },
+    emerald: { bg: "bg-emerald-500/10", text: "text-emerald-600 dark:text-emerald-400", badge: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
+    indigo: { bg: "bg-indigo-500/10", text: "text-indigo-600 dark:text-indigo-400", badge: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400" },
+  };
+  const colors = colorMap[color] || colorMap.default;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -156,19 +170,19 @@ export function StatCard({
       className="rounded-2xl border border-border bg-surface p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
     >
       <div className="flex items-start justify-between gap-3">
-        <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-lg">{icon}</span>
+        <span className={`grid h-10 w-10 place-items-center rounded-xl text-lg ${colors.bg}`}>{icon}</span>
         {trend ? (
-          <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400">
+          <span className={`rounded-md px-2 py-0.5 text-[10px] font-black uppercase ${colors.badge}`}>
             {trend}
           </span>
         ) : (
-          <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-primary">
+          <span className={`rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${colors.badge}`}>
             Live
           </span>
         )}
       </div>
       <p className="mt-4 text-xs font-semibold text-muted">{label}</p>
-      <p className="mt-1 text-2xl font-black text-text">{value}</p>
+      <p className={`mt-1 text-2xl font-black ${colors.text}`}>{value}</p>
       <p className="mt-1 text-xs text-muted">{note}</p>
     </motion.div>
   );

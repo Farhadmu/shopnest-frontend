@@ -35,6 +35,13 @@ import {
 import { LineAreaChart } from "@/components/analytics/LineAreaChart";
 import { GaugeMeter } from "@/components/analytics/GaugeMeter";
 import { AiCommerceCopilot } from "@/components/ai/AiCommerceCopilot";
+import { recordRecentlyViewed, RecentlyViewed, SmartRecommendations } from "@/components/products/RecentlyViewed";
+import { ProductReviews } from "@/components/reviews/ProductReviews";
+import { ProductTrustSection } from "@/components/products/ProductTrustSection";
+import { PriceHistoryChart } from "@/components/products/PriceHistoryChart";
+import { ProductQASection } from "@/components/products/ProductQASection";
+import { ProductReportModal } from "@/components/products/ProductReportModal";
+import { subscribeStockAlert } from "@/lib/api/customer-intelligence-features";
 
 export default function ProductDetails() {
   const params = useParams<{ id: string }>();
@@ -44,6 +51,8 @@ export default function ProductDetails() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
   const [isAdded, setIsAdded] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [stockNotified, setStockNotified] = useState(false);
 
   // Intelligence State
   const [priceHistory, setPriceHistory] = useState<PriceHistoryData | null>(null);
@@ -63,7 +72,15 @@ export default function ProductDetails() {
         .then((p) => {
           setProduct(p);
           if (p) {
-            // Fetch product intelligence in parallel
+            recordRecentlyViewed({
+              id: p.id,
+              title: p.title,
+              price: p.discountPrice ?? p.price,
+              image: p.images?.[0],
+              rating: p.ratingAvg,
+              category: p.category,
+            });
+
             Promise.all([
               getPriceHistory(p.id).catch(() => null),
               getPurchaseDecisionScore(p.id).catch(() => null),
@@ -109,6 +126,22 @@ export default function ProductDetails() {
     }
   };
 
+  const handleBuyNow = async () => {
+    if (!product) return;
+    if (!session?.user) {
+      showToast("Please log in to proceed to checkout", "error");
+      router.push("/login");
+      return;
+    }
+
+    try {
+      await addToCart(product.id, quantity);
+      router.push("/checkout");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to proceed to checkout", "error");
+    }
+  };
+
   const handleAddBundleToCart = async () => {
     if (!bundleData || !session?.user) {
       showToast("Please log in to add bundle to cart", "error");
@@ -142,21 +175,6 @@ export default function ProductDetails() {
       showToast(`Added "${product.title}" to wishlist! ♡`);
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to add to wishlist", "error");
-    }
-  };
-
-  const handleBuyNow = async () => {
-    if (!product) return;
-    if (!session?.user) {
-      router.push("/login");
-      return;
-    }
-
-    try {
-      await addToCart(product.id, quantity);
-      router.push("/dashboard/user/checkout");
-    } catch {
-      router.push("/dashboard/user/cart");
     }
   };
 
@@ -197,7 +215,7 @@ export default function ProductDetails() {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl pb-16">
+    <div className="mobile-product-page mx-auto max-w-6xl">
       {/* Toast Alert */}
       {toast && (
         <div
@@ -226,6 +244,7 @@ export default function ProductDetails() {
         <div className="flex flex-col gap-4">
           <div className="relative grid min-h-[380px] w-full place-items-center overflow-hidden rounded-3xl border border-border bg-surface shadow-sm sm:min-h-[460px]">
             {product.images?.[0] ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img src={product.images[0]} alt={product.title} className="h-full w-full object-cover" />
             ) : (
               <span className="text-8xl select-none">🛍️</span>
@@ -627,6 +646,78 @@ export default function ProductDetails() {
           )}
         </div>
       </div>
+
+      {/* 30 Advanced Customer Extension Sections */}
+      {product && (
+        <div className="space-y-6">
+          {/* ShopNest Trust & Integrity Report + Fake Discount Alert + Value Score */}
+          <ProductTrustSection productId={product.id} />
+
+          {/* 30-Day Price History Timeline & Price Drop Alerts */}
+          <PriceHistoryChart
+            productId={product.id}
+            currentPrice={product.discountPrice ?? product.price}
+          />
+
+          {/* Product Q&A with Seller & AI Badges */}
+          <ProductQASection productId={product.id} />
+
+          {/* Report Problem Link */}
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-card border border-border text-xs">
+            <span className="text-muted">Notice an issue with this product information, photo, or seller?</span>
+            <button
+              type="button"
+              onClick={() => setShowReportModal(true)}
+              className="text-red-500 hover:text-red-600 font-bold hover:underline"
+            >
+              🚩 Report Product Problem
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Recently Viewed Products */}
+      {product && <RecentlyViewed currentProductId={product.id} />}
+      {product && <SmartRecommendations currentProductId={product.id} />}
+      {product && <ProductReviews productId={product.id} />}
+
+      {/* Product Problem Report Modal */}
+      {product && (
+        <ProductReportModal
+          productId={product.id}
+          productTitle={product.title}
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+        />
+      )}
+
+      {/* Mobile Fixed Sticky Action Bar */}
+      {product && (
+        <div className="mobile-action-dock md:hidden fixed left-0 right-0 z-40 bg-card/95 backdrop-blur-xl border-t border-border/80 px-4 py-2.5 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] flex items-center justify-between gap-3 safe-area-pb">
+          <div>
+            <span className="text-[10px] text-muted block uppercase font-bold">Total</span>
+            <span className="text-sm font-black text-primary">
+              ৳{((product.discountPrice ?? product.price) * quantity).toLocaleString()}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 flex-1 justify-end">
+            <button
+              onClick={handleAddToCart}
+              disabled={product.stock <= 0}
+              className="px-3.5 py-2 bg-primary/15 hover:bg-primary/25 text-primary text-xs font-bold rounded-xl border border-primary/30 flex items-center gap-1.5 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <FaShoppingBag /> Add
+            </button>
+            <button
+              onClick={handleBuyNow}
+              disabled={product.stock <= 0}
+              className="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl shadow-md shadow-primary/20 flex items-center gap-1.5 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <FaBolt /> {product.stock <= 0 ? "Out of stock" : "Buy Now"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Universal Floating AI Copilot */}
       <AiCommerceCopilot role="customer" />
