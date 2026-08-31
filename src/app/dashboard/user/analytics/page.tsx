@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Panel, StatCard } from "@/components/dashboard/DashboardUI";
+import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
+import { userDashboardLinks } from "@/lib/constants/dashboard-nav";
 import {
   getSpendingAnalytics,
   SpendingAnalyticsData,
@@ -102,30 +103,13 @@ export default function CustomerAnalyticsPage() {
   const totalPotentialSavings = wishlist?.totalPotentialSavings ?? 0;
 
   return (
-    <div className="min-h-[calc(100vh-7rem)] overflow-x-hidden bg-background px-2 py-3 sm:px-4 lg:px-6">
-      <div className="mx-auto max-w-7xl">
-        <header className="mb-5 rounded-3xl border border-border bg-surface p-4 shadow-sm sm:p-6">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-            <div className="min-w-0">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Customer dashboard</p>
-              <h1 className="mt-2 text-2xl font-black tracking-tight text-text sm:text-3xl">
-                Personal Shopping & Spending Insights
-              </h1>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
-                Deep telemetry on your shopping patterns, monthly budgets, wishlist price drop opportunities, personalized perks, and activity timeline.
-              </p>
-            </div>
-            <Link
-              href="/products"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-bold text-text transition hover:border-primary/40 hover:text-primary sm:w-auto"
-            >
-              <span>Continue shopping</span>
-              <FaArrowRight size={11} />
-            </Link>
-          </div>
-        </header>
-
-        <div className="grid gap-5">
+    <DashboardShell
+      role="Customer"
+      title="Personal Shopping & Spending Insights"
+      subtitle="Deep telemetry on your shopping patterns, monthly budgets, wishlist price drop opportunities, personalized perks, and activity timeline."
+      links={userDashboardLinks}
+    >
+      <div className="grid gap-5">
           {/* KPI Cards */}
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
@@ -440,8 +424,7 @@ export default function CustomerAnalyticsPage() {
             </div>
           </Panel>
         </div>
-        </div>
       </div>
-    </div>
+    </DashboardShell>
   );
 }
