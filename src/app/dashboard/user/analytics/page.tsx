@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
-import { userDashboardLinks } from "@/lib/constants/dashboard-nav";
+import { Panel, StatCard } from "@/components/dashboard/DashboardUI";
 import {
   getSpendingAnalytics,
   SpendingAnalyticsData,
@@ -19,10 +18,9 @@ import {
   CustomerActivityItem,
 } from "@/lib/api/customer-intelligence";
 import { LineAreaChart } from "@/components/analytics/LineAreaChart";
-import { BarChart } from "@/components/analytics/BarChart";
 import { DonutChart } from "@/components/analytics/DonutChart";
 import { formatCurrency } from "@/lib/utils";
-import { FaBookmark, FaTrash, FaSearch, FaTag, FaHeart, FaHistory, FaCheck, FaArrowRight } from "react-icons/fa";
+import { FaBookmark, FaTrash, FaSearch, FaTag, FaHeart, FaCheck, FaArrowRight } from "react-icons/fa";
 
 export default function CustomerAnalyticsPage() {
   const [spending, setSpending] = useState<SpendingAnalyticsData | null>(null);
@@ -30,15 +28,15 @@ export default function CustomerAnalyticsPage() {
   const [searches, setSearches] = useState<SavedSearchItem[]>([]);
   const [offers, setOffers] = useState<PersonalizedOfferItem[]>([]);
   const [timeline, setTimeline] = useState<CustomerActivityItem[]>([]);
-  const [loading, setLoading] = useState(true);
 
   // New Search Form State
   const [newQuery, setNewQuery] = useState("");
   const [newCategory, setNewCategory] = useState("Electronics");
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  const loadData = () => {
-    setLoading(true);
+  useEffect(() => {
+    let active = true;
+
     Promise.all([
       getSpendingAnalytics().catch(() => null),
       getWishlistAnalytics().catch(() => null),
@@ -47,17 +45,17 @@ export default function CustomerAnalyticsPage() {
       getCustomerActivityTimeline().catch(() => []),
     ])
       .then(([spendRes, wishRes, searchRes, offerRes, timeRes]) => {
+        if (!active) return;
         if (spendRes) setSpending(spendRes);
         if (wishRes) setWishlist(wishRes);
         if (searchRes) setSearches(searchRes);
         if (offerRes) setOffers(offerRes);
         if (timeRes) setTimeline(timeRes);
-      })
-      .finally(() => setLoading(false));
-  };
+      });
 
-  useEffect(() => {
-    loadData();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleSaveSearch = async (e: React.FormEvent) => {
@@ -92,102 +90,150 @@ export default function CustomerAnalyticsPage() {
     value: m.amount,
   }));
 
-  const barChartData = (spending?.categorySpending || []).map((c) => ({
-    label: c.category,
-    value: c.amount,
-  }));
-
   const donutChartData = (spending?.categorySpending || []).map((c) => ({
     label: c.category,
     value: c.amount,
   }));
 
+  const totalSpend = spending?.overview?.totalSpend ?? 0;
+  const monthlySpend = spending?.overview?.monthlySpend ?? 0;
+  const avgOrderValue = spending?.overview?.avgOrderValue ?? 0;
+  const orderCount = spending?.overview?.orderCount ?? 0;
+  const totalPotentialSavings = wishlist?.totalPotentialSavings ?? 0;
+
   return (
-    <DashboardShell
-      role="Customer"
-      title="Personal Shopping & Spending Insights"
-      subtitle="Deep telemetry on your shopping patterns, monthly budgets, wishlist price drop opportunities, personalized perks, and activity timeline."
-      links={userDashboardLinks}
-    >
-      <div className="grid gap-6">
-        {/* KPI Cards */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="min-h-[calc(100vh-7rem)] overflow-x-hidden bg-background px-2 py-3 sm:px-4 lg:px-6">
+      <div className="mx-auto max-w-7xl">
+        <header className="mb-5 rounded-3xl border border-border bg-surface p-4 shadow-sm sm:p-6">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+            <div className="min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Customer dashboard</p>
+              <h1 className="mt-2 text-2xl font-black tracking-tight text-text sm:text-3xl">
+                Personal Shopping & Spending Insights
+              </h1>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
+                Deep telemetry on your shopping patterns, monthly budgets, wishlist price drop opportunities, personalized perks, and activity timeline.
+              </p>
+            </div>
+            <Link
+              href="/products"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-bold text-text transition hover:border-primary/40 hover:text-primary sm:w-auto"
+            >
+              <span>Continue shopping</span>
+              <FaArrowRight size={11} />
+            </Link>
+          </div>
+        </header>
+
+        <div className="grid gap-5">
+          {/* KPI Cards */}
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             icon="💳"
             label="Total Lifetime Spend"
-            value={formatCurrency(spending?.overview.totalSpend || 48250)}
-            note={`${spending?.overview.orderCount || 6} completed orders`}
-            trend="Active"
+            value={formatCurrency(totalSpend)}
+            note={`${orderCount} completed order${orderCount === 1 ? "" : "s"}`}
+            trend={totalSpend > 0 ? "Active" : "No spend"}
           />
           <StatCard
             icon="📅"
             label="Current Month Spend"
-            value={formatCurrency(spending?.overview.monthlySpend || 8400)}
-            note="Budget benchmark on track"
-            trend="+12% MoM"
+            value={formatCurrency(monthlySpend)}
+            note={monthlySpend > 0 ? "Budget benchmark on track" : "No orders this month yet"}
+            trend={monthlySpend > 0 ? "+12% MoM" : "Waiting"}
           />
           <StatCard
             icon="🏷️"
             label="Avg Order Value (AOV)"
-            value={formatCurrency(spending?.overview.avgOrderValue || 8041)}
-            note={spending?.overview.orderFrequency || "1.4 orders / mo"}
+            value={formatCurrency(avgOrderValue)}
+            note={spending?.overview?.orderFrequency || "0 orders / month"}
           />
           <StatCard
             icon="🎯"
             label="Potential Wishlist Savings"
-            value={formatCurrency(wishlist?.totalPotentialSavings || 3400)}
-            note={`${wishlist?.priceDropOpportunities.length || 0} price drops detected`}
-            trend="Deal Alert"
+            value={formatCurrency(totalPotentialSavings)}
+            note={`${wishlist?.priceDropOpportunities?.length || 0} price drop${(wishlist?.priceDropOpportunities?.length || 0) === 1 ? "" : "s"} detected`}
+            trend={totalPotentialSavings > 0 ? "Deal Alert" : "No deals"}
           />
         </div>
 
         {/* Spending Analytics Charts */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-5 grid-cols-1 xl:grid-cols-2">
           <Panel
             title="Monthly Spending Trajectory"
             action={
               <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
-                6 Months History
+                {lineChartData.length > 0 ? `${lineChartData.length} Months` : "No data"}
               </span>
             }
           >
             <p className="mb-4 text-xs text-muted">
               Monthly expenditure breakdown showing spending velocity and trendline.
             </p>
-            <LineAreaChart
-              data={lineChartData.length > 0 ? lineChartData : [{ label: "Jan", value: 5000 }, { label: "Feb", value: 8000 }]}
-              color="#6366f1"
-              height={260}
-            />
+            {lineChartData.length > 0 ? (
+              <LineAreaChart data={lineChartData} color="#6366f1" height={260} />
+            ) : (
+              <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-border bg-muted-bg/40 text-sm text-muted">
+                No spending data yet. Start shopping to unlock your trend chart.
+              </div>
+            )}
           </Panel>
 
           <Panel
             title="Category Spend Distribution"
             action={
               <span className="rounded-lg bg-purple-500/10 px-2.5 py-1 text-xs font-bold text-purple-600 dark:text-purple-400">
-                Top Categories
+                {donutChartData.length > 0 ? "Top Categories" : "No data"}
               </span>
             }
           >
             <p className="mb-4 text-xs text-muted">
               Visual share of your budget allocated across different product verticals.
             </p>
-            <div className="grid grid-cols-1 items-center gap-4 sm:grid-cols-2">
-              <DonutChart
-                data={donutChartData.length > 0 ? donutChartData : [{ label: "Electronics", value: 45 }, { label: "Fashion", value: 25 }]}
-                size={220}
-              />
-              <div className="grid gap-2">
-                {(spending?.categorySpending || []).map((cat) => (
-                  <div key={cat.category} className="flex items-center justify-between rounded-xl bg-muted-bg p-2.5 text-xs">
-                    <span className="font-bold text-text">{cat.category}</span>
-                    <span className="font-black text-primary">{formatCurrency(cat.amount)} ({cat.percentage}%)</span>
-                  </div>
-                ))}
+            {donutChartData.length > 0 ? (
+              <div className="grid grid-cols-1 items-center gap-4 sm:grid-cols-2">
+                <DonutChart data={donutChartData} size={220} />
+                <div className="grid gap-2">
+                  {(spending?.categorySpending || []).map((cat) => (
+                    <div key={cat.category} className="flex items-center justify-between rounded-xl bg-muted-bg p-2.5 text-xs">
+                      <span className="font-bold text-text">{cat.category}</span>
+                      <span className="font-black text-primary">{formatCurrency(cat.amount)} ({cat.percentage}%)</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-border bg-muted-bg/40 text-sm text-muted">
+                Category analytics will appear after your first purchase.
+              </div>
+            )}
           </Panel>
         </div>
+
+        <Panel title="Most Purchased Products" action={<span className="rounded-lg bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-600 dark:text-amber-400">{spending?.mostPurchasedProducts?.length || 0} Items</span>}>
+          {spending?.mostPurchasedProducts && spending.mostPurchasedProducts.length > 0 ? (
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+              {spending.mostPurchasedProducts.map((product) => (
+                <div key={product.id} className="rounded-2xl border border-border bg-muted-bg/60 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted">{product.category}</p>
+                  <h3 className="mt-2 line-clamp-2 text-sm font-black text-text">{product.title}</h3>
+                  <div className="mt-3 flex items-center justify-between text-xs">
+                    <span className="text-muted">Purchased</span>
+                    <span className="font-black text-primary">{product.purchases}x</span>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-xs">
+                    <span className="text-muted">Spend</span>
+                    <span className="font-bold text-text">{formatCurrency(product.totalSpent)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-border bg-muted-bg/40 p-8 text-center text-sm text-muted">
+              No purchased products yet. Once you place orders, your top products will appear here.
+            </div>
+          )}
+        </Panel>
 
         {/* Wishlist Analytics & Price Drop Alerts */}
         <Panel
@@ -234,7 +280,7 @@ export default function CustomerAnalyticsPage() {
             {(wishlist?.priceDropOpportunities || []).length === 0 && (
               <div className="col-span-full rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted">
                 <FaHeart className="mx-auto mb-2 text-muted" size={24} />
-                No active price drops right now. Add more items to your wishlist to get notified!
+                No active price drops right now. Add more items to your wishlist to get notified.
               </div>
             )}
           </div>
@@ -249,62 +295,68 @@ export default function CustomerAnalyticsPage() {
             </span>
           }
         >
-          <div className="grid gap-4 sm:grid-cols-3">
-            {offers.map((offer) => (
-              <div
-                key={offer.id}
-                className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-surface to-muted-bg p-5 shadow-sm"
-              >
-                <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-primary/10 blur-xl" />
-                <div>
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="flex items-center gap-1 text-xs font-black uppercase text-primary">
-                      <FaTag size={10} /> {offer.discountPercent}% OFF
-                    </span>
-                    <span className="text-[10px] text-muted">Exp: {new Date(offer.expiresAt).toLocaleDateString()}</span>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {offers.length > 0 ? (
+              offers.map((offer) => (
+                <div
+                  key={offer.id}
+                  className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-surface to-muted-bg p-5 shadow-sm"
+                >
+                  <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-primary/10 blur-xl" />
+                  <div>
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="flex items-center gap-1 text-xs font-black uppercase text-primary">
+                        <FaTag size={10} /> {offer.discountPercent}% OFF
+                      </span>
+                      <span className="text-[10px] text-muted">Exp: {new Date(offer.expiresAt).toLocaleDateString()}</span>
+                    </div>
+                    <h3 className="font-extrabold text-text">{offer.title}</h3>
+                    <p className="mt-1 text-xs leading-5 text-muted">{offer.description}</p>
                   </div>
-                  <h3 className="font-extrabold text-text">{offer.title}</h3>
-                  <p className="mt-1 text-xs leading-5 text-muted">{offer.description}</p>
-                </div>
 
-                <div className="mt-4 flex items-center justify-between gap-2 border-t border-border/80 pt-3">
-                  <span className="rounded-lg bg-surface px-2.5 py-1 text-xs font-mono font-black text-text border border-border">
-                    {offer.code}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleCopyOffer(offer.code)}
-                    className="flex items-center gap-1 rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-white transition hover:bg-primary-hover"
-                  >
-                    {copiedCode === offer.code ? (
-                      <>
-                        <FaCheck size={10} /> Copied!
-                      </>
-                    ) : (
-                      "Apply Code"
-                    )}
-                  </button>
+                  <div className="mt-4 flex items-center justify-between gap-2 border-t border-border/80 pt-3">
+                    <span className="rounded-lg bg-surface px-2.5 py-1 text-xs font-mono font-black text-text border border-border">
+                      {offer.code}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyOffer(offer.code)}
+                      className="flex items-center gap-1 rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-white transition hover:bg-primary-hover"
+                    >
+                      {copiedCode === offer.code ? (
+                        <>
+                          <FaCheck size={10} /> Copied!
+                        </>
+                      ) : (
+                        "Apply Code"
+                      )}
+                    </button>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="col-span-full rounded-2xl border border-dashed border-border bg-muted-bg/40 p-8 text-center text-sm text-muted">
+                No personalized offers available right now. Keep shopping to unlock exclusive rewards.
               </div>
-            ))}
+            )}
           </div>
         </Panel>
 
         {/* Saved Searches & Shopping Timeline */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 grid-cols-1 xl:grid-cols-2">
           {/* Saved Searches */}
           <Panel title="Saved Searches">
-            <form onSubmit={handleSaveSearch} className="mb-4 flex gap-2">
+            <form onSubmit={handleSaveSearch} className="mb-4 flex flex-col gap-2 sm:flex-row">
               <input
                 value={newQuery}
                 onChange={(e) => setNewQuery(e.target.value)}
                 placeholder="Save search (e.g., Ultra-wide Monitor)..."
-                className="flex-1 rounded-xl border border-border bg-surface px-3 py-2 text-xs text-text outline-none focus:border-primary"
+                className="w-full flex-1 rounded-xl border border-border bg-surface px-3 py-2 text-xs text-text outline-none focus:border-primary"
               />
               <select
                 value={newCategory}
                 onChange={(e) => setNewCategory(e.target.value)}
-                className="rounded-xl border border-border bg-surface px-3 py-2 text-xs text-text outline-none focus:border-primary"
+                className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-xs text-text outline-none focus:border-primary sm:w-auto"
               >
                 <option value="Electronics">Electronics</option>
                 <option value="Fashion">Fashion</option>
@@ -313,70 +365,83 @@ export default function CustomerAnalyticsPage() {
               </select>
               <button
                 type="submit"
-                className="flex items-center gap-1 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white transition hover:bg-primary-hover"
+                className="flex items-center justify-center gap-1 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white transition hover:bg-primary-hover sm:w-auto"
               >
                 <FaBookmark size={10} /> Save
               </button>
             </form>
 
             <div className="grid gap-2">
-              {searches.map((s) => (
-                <div
-                  key={s.id}
-                  className="flex items-center justify-between rounded-xl border border-border bg-surface p-3 transition hover:border-primary/40"
-                >
-                  <Link
-                    href={`/products?search=${encodeURIComponent(s.query)}`}
-                    className="flex items-center gap-2.5 text-xs font-bold text-text hover:text-primary"
+              {searches.length > 0 ? (
+                searches.map((s) => (
+                  <div
+                    key={s.id}
+                    className="flex items-center justify-between rounded-xl border border-border bg-surface p-3 transition hover:border-primary/40"
                   >
-                    <FaSearch size={11} className="text-muted" />
-                    <span>{s.query}</span>
-                    {s.category && (
-                      <span className="rounded-md bg-muted-bg px-2 py-0.5 text-[10px] text-muted">
-                        {s.category}
-                      </span>
-                    )}
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteSearch(s.id)}
-                    className="p-1 text-muted transition hover:text-error"
-                    title="Remove saved search"
-                  >
-                    <FaTrash size={11} />
-                  </button>
+                    <Link
+                      href={`/products?search=${encodeURIComponent(s.query)}`}
+                      className="flex items-center gap-2.5 text-xs font-bold text-text hover:text-primary"
+                    >
+                      <FaSearch size={11} className="text-muted" />
+                      <span>{s.query}</span>
+                      {s.category && (
+                        <span className="rounded-md bg-muted-bg px-2 py-0.5 text-[10px] text-muted">
+                          {s.category}
+                        </span>
+                      )}
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSearch(s.id)}
+                      className="p-1 text-muted transition hover:text-error"
+                      title="Remove saved search"
+                    >
+                      <FaTrash size={11} />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-xl border border-dashed border-border bg-muted-bg/40 p-4 text-center text-xs text-muted">
+                  Save a product search to track your favorite shopping filters here.
                 </div>
-              ))}
+              )}
             </div>
           </Panel>
 
           {/* Shopping Activity Timeline */}
           <Panel title="Shopping Activity Timeline">
             <div className="space-y-3">
-              {timeline.map((act) => (
-                <div key={act.id} className="flex items-start gap-3 rounded-xl bg-muted-bg/60 p-3 text-xs">
-                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-xs">
-                    {act.activityType === "order"
-                      ? "📦"
-                      : act.activityType === "wishlist_add"
-                      ? "❤️"
-                      : act.activityType === "search"
-                      ? "🔍"
-                      : act.activityType === "review"
-                      ? "⭐"
-                      : "🛡️"}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold text-text">{act.title}</p>
-                    {act.details && <p className="mt-0.5 text-[11px] text-muted">{act.details}</p>}
-                    <p className="mt-1 text-[10px] text-muted/80">{new Date(act.createdAt).toLocaleString()}</p>
+              {timeline.length > 0 ? (
+                timeline.map((act) => (
+                  <div key={act.id} className="flex items-start gap-3 rounded-xl bg-muted-bg/60 p-3 text-xs">
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-xs">
+                      {act.activityType === "order"
+                        ? "📦"
+                        : act.activityType === "wishlist_add"
+                        ? "❤️"
+                        : act.activityType === "search"
+                        ? "🔍"
+                        : act.activityType === "review"
+                        ? "⭐"
+                        : "🛡️"}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-text">{act.title}</p>
+                      {act.details && <p className="mt-0.5 text-[11px] text-muted">{act.details}</p>}
+                      <p className="mt-1 text-[10px] text-muted/80">{new Date(act.createdAt).toLocaleString()}</p>
+                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="rounded-xl border border-dashed border-border bg-muted-bg/40 p-4 text-center text-xs text-muted">
+                  Your shopping activity timeline is empty right now.
                 </div>
-              ))}
+              )}
             </div>
           </Panel>
         </div>
+        </div>
       </div>
-    </DashboardShell>
+    </div>
   );
 }
