@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
+import { PersonalCommerceAssistant } from "@/components/ai/PersonalCommerceAssistant";
 
 const AUTH_ROUTES = ["/login", "/register", "/forgot-password", "/reset-password"];
 
@@ -30,6 +31,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </main>
       <Footer />
       <MobileBottomNav />
+      <PersonalCommerceAssistant />
     </div>
   );
 }
