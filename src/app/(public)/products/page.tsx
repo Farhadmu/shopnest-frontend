@@ -64,6 +64,12 @@ function ProductsContent() {
     "Sports",
     "Books",
     "Gadgets",
+    "Gifts & Lifestyle",
+    "Furniture & Decor",
+    "pet Supplies",
+    "Computers & Accessories",
+    "Grocery",
+    "Toys & kids",
   ];
 
   const sortOptions = [
