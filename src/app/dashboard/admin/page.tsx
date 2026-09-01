@@ -333,28 +333,79 @@ export default function AdminDashboard() {
       {/* TAB 5: REVENUE LEAKAGE DETECTOR */}
       {activeTab === "leakage" && (
         <div className="space-y-6">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              icon="💰"
+              label="Total Revenue"
+              value={`৳${(leakageData?.totalRevenue || 0).toLocaleString()}`}
+              note={`${leakageData?.orderSummary.total || 0} total orders`}
+              color="default"
+            />
+            <StatCard
+              icon="⚠️"
+              label="Potential Leakage"
+              value={leakageData?.leakageFormatted || "৳0"}
+              note={leakageData?.leakagePercentage ? `${leakageData.leakagePercentage}% of revenue` : "No leakage"}
+              color="error"
+            />
+            <StatCard
+              icon="📉"
+              label="Cancelled Value"
+              value={`৳${(leakageData?.leakageCategories.find((c) => c.type === "Cancelled Orders")?.amount || 0).toLocaleString()}`}
+              note={`${leakageData?.orderSummary.cancelled || 0} cancelled orders`}
+              color="warning"
+            />
+            <StatCard
+              icon="🔄"
+              label="Refund Value"
+              value={`৳${(leakageData?.leakageCategories.find((c) => c.type.includes("Refund"))?.amount || 0).toLocaleString()}`}
+              note={`${leakageData?.orderSummary.refunded || 0} refunded orders`}
+              color="default"
+            />
+          </div>
+
           <Panel title="💸 Revenue Leakage & Financial Audit Detector">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-error/10 border border-error/30 p-5">
               <div>
                 <span className="text-[10px] font-extrabold uppercase tracking-widest text-error">Total Potential Leakage</span>
-                <h3 className="text-2xl font-black text-error">{leakageData?.leakageFormatted || "৳170K"}</h3>
-                <p className="mt-1 text-xs text-muted">Recovered this month: {leakageData?.recoveredThisMonth || "৳240,000"}</p>
+                <h3 className="text-2xl font-black text-error">{leakageData?.leakageFormatted || "৳0"}</h3>
+                <p className="mt-1 text-xs text-muted">
+                  {leakageData?.leakagePercentage ? `${leakageData.leakagePercentage}% of total revenue` : "No financial leakage detected"}
+                </p>
               </div>
               <p className="max-w-md text-xs text-text font-medium">
-                🛡️ {leakageData?.automatedRemediation || "Atomic locks deployed on coupon checkout to prevent parallel redemption leaks."}
+                🛡️ {leakageData?.automatedRemediation || "No automated remediation required."}
               </p>
             </div>
 
             <div className="space-y-3">
-              {leakageData?.leakageCategories.map((leak, i) => (
-                <div key={i} className="flex items-center justify-between rounded-2xl border border-border bg-surface p-4 text-xs">
-                  <div>
-                    <span className="font-bold text-text">{leak.type}</span>
-                    <p className="text-[11px] text-muted mt-0.5">{leak.details}</p>
+              {leakageData?.leakageCategories && leakageData.leakageCategories.length > 0 ? (
+                leakageData.leakageCategories.map((leak, i) => (
+                  <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 text-xs">
+                    <div className="flex items-center gap-3">
+                      <span className={`rounded-md px-2 py-0.5 text-[10px] font-black uppercase ${
+                        leak.severity === "high" ? "bg-error/15 text-error" :
+                        leak.severity === "medium" ? "bg-warning/15 text-warning" :
+                        "bg-success/15 text-success"
+                      }`}>
+                        {leak.severity}
+                      </span>
+                      <div>
+                        <span className="font-bold text-text">{leak.type}</span>
+                        <p className="text-[11px] text-muted mt-0.5">{leak.details}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-base font-black text-error">৳{leak.amount.toLocaleString()}</span>
+                      <p className="text-[10px] text-muted">{leak.count} transaction(s)</p>
+                    </div>
                   </div>
-                  <span className="text-base font-black text-error">৳{leak.amount.toLocaleString()}</span>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-dashed border-border bg-muted-bg/40 p-8 text-center text-sm text-muted">
+                  No financial leakage detected from the currently available transaction data.
                 </div>
-              ))}
+              )}
             </div>
           </Panel>
         </div>
@@ -363,49 +414,109 @@ export default function AdminDashboard() {
       {/* TAB 6: SELLER RISK RANKING */}
       {activeTab === "seller_risk" && (
         <div className="space-y-6">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-5">
+            <StatCard
+              icon="🏪"
+              label="Total Sellers"
+              value={String(riskData?.totalSellers || 0)}
+              note="All registered sellers"
+              color="default"
+            />
+            <StatCard
+              icon="✅"
+              label="Low Risk"
+              value={String(riskData?.riskDistribution.low.count || 0)}
+              note={`${riskData?.riskDistribution.low.percentage || 0}% of sellers`}
+              color="success"
+            />
+            <StatCard
+              icon="⚠️"
+              label="Medium Risk"
+              value={String(riskData?.riskDistribution.medium.count || 0)}
+              note={`${riskData?.riskDistribution.medium.percentage || 0}% of sellers`}
+              color="warning"
+            />
+            <StatCard
+              icon="🔴"
+              label="High Risk"
+              value={String(riskData?.riskDistribution.high.count || 0)}
+              note={`${riskData?.riskDistribution.high.percentage || 0}% of sellers`}
+              color="error"
+            />
+            <StatCard
+              icon="🚨"
+              label="Critical"
+              value={String(riskData?.riskDistribution.critical.count || 0)}
+              note={`${riskData?.riskDistribution.critical.percentage || 0}% of sellers`}
+              color="error"
+            />
+          </div>
+
           <Panel title="🛡️ Seller Risk Ranking & Moderation Matrix">
-            <div className="grid gap-4 sm:grid-cols-4 text-center text-xs">
-              <div className="rounded-2xl border border-success/30 bg-success/10 p-4">
-                <p className="text-[10px] font-bold text-success uppercase">Low Risk</p>
-                <p className="text-xl font-black text-success">{riskData?.riskDistribution.low.count || 4120}</p>
-                <p className="text-[10px] text-muted mt-1">{riskData?.riskDistribution.low.percentage}%</p>
-              </div>
-              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
-                <p className="text-[10px] font-bold text-amber-600 uppercase">Medium Risk</p>
-                <p className="text-xl font-black text-amber-600">{riskData?.riskDistribution.medium.count || 580}</p>
-                <p className="text-[10px] text-muted mt-1">{riskData?.riskDistribution.medium.percentage}%</p>
-              </div>
-              <div className="rounded-2xl border border-orange-500/30 bg-orange-500/10 p-4">
-                <p className="text-[10px] font-bold text-orange-600 uppercase">High Risk</p>
-                <p className="text-xl font-black text-orange-600">{riskData?.riskDistribution.high.count || 121}</p>
-                <p className="text-[10px] text-muted mt-1">{riskData?.riskDistribution.high.percentage}%</p>
-              </div>
-              <div className="rounded-2xl border border-error/30 bg-error/10 p-4">
-                <p className="text-[10px] font-bold text-error uppercase">Critical</p>
-                <p className="text-xl font-black text-error">{riskData?.riskDistribution.critical.count || 18}</p>
-                <p className="text-[10px] text-muted mt-1">{riskData?.riskDistribution.critical.percentage}%</p>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-muted">Average Risk Score:</span>
+                <span className={`text-sm font-black ${
+                  (riskData?.averageRiskScore || 0) >= 50 ? "text-error" :
+                  (riskData?.averageRiskScore || 0) >= 25 ? "text-warning" : "text-success"
+                }`}>
+                  {riskData?.averageRiskScore || 0}/100
+                </span>
               </div>
             </div>
 
-            <div className="mt-6 space-y-3">
-              <h4 className="text-xs font-bold uppercase text-muted">Flagged Merchants Requiring Review</h4>
-              {riskData?.flaggedSellers.map((flg, i) => (
-                <div key={i} className="flex items-center justify-between rounded-2xl border border-border p-4 text-xs">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-text">{flg.storeName}</span>
-                      <span className="rounded-md bg-error/20 text-error px-2 py-0.5 text-[10px] font-extrabold">
-                        {flg.riskLevel}
-                      </span>
+            {riskData?.allSellers && riskData.allSellers.length > 0 ? (
+              <div className="space-y-3">
+                {riskData.allSellers.slice(0, 10).map((seller, i) => (
+                  <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-border p-4 text-xs">
+                    <div className="flex items-center gap-3">
+                      <div className={`grid h-10 w-10 place-items-center rounded-xl text-sm font-black ${
+                        seller.riskLevel === "critical" ? "bg-error/15 text-error" :
+                        seller.riskLevel === "high" ? "bg-orange-500/15 text-orange-600" :
+                        seller.riskLevel === "medium" ? "bg-warning/15 text-warning" :
+                        "bg-success/15 text-success"
+                      }`}>
+                        {seller.riskScore}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-text">{seller.storeName}</span>
+                          <span className={`rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase ${
+                            seller.riskLevel === "critical" ? "bg-error/20 text-error" :
+                            seller.riskLevel === "high" ? "bg-orange-500/20 text-orange-600" :
+                            seller.riskLevel === "medium" ? "bg-warning/20 text-warning" :
+                            "bg-success/20 text-success"
+                          }`}>
+                            {seller.riskLevel}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-muted mt-0.5">
+                          {seller.riskFactors[0] || "No major risk factors"}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-[11px] text-muted mt-1">{flg.reason}</p>
+                    <div className="flex items-center gap-4 text-right">
+                      <div>
+                        <p className="text-[10px] text-muted">Orders</p>
+                        <p className="font-black text-text">{seller.totalOrders}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted">Cancel %</p>
+                        <p className={`font-black ${seller.cancellationRate > 10 ? "text-error" : "text-text"}`}>{seller.cancellationRate}%</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted">Rating</p>
+                        <p className="font-black text-text">{seller.rating.toFixed(1)}</p>
+                      </div>
+                    </div>
                   </div>
-                  <span className="rounded-xl border border-border px-3 py-1.5 text-[11px] font-bold text-text">
-                    {flg.actionRequired}
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-border bg-muted-bg/40 p-8 text-center text-sm text-muted">
+                No seller data available for risk analysis.
+              </div>
+            )}
           </Panel>
         </div>
       )}

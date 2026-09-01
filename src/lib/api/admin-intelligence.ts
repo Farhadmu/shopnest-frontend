@@ -63,16 +63,46 @@ export interface MarketplaceHealthData {
 }
 
 export interface RevenueLeakageData {
+  totalRevenue: number;
   totalPotentialLeakage: number;
   leakageFormatted: string;
+  leakagePercentage: number;
   recoveredThisMonth: string;
   leakageCategories: Array<{
     type: string;
     amount: number;
+    count: number;
     severity: string;
     details: string;
   }>;
+  orderSummary: {
+    total: number;
+    completed: number;
+    cancelled: number;
+    refunded: number;
+  };
   automatedRemediation: string;
+}
+
+export interface SellerRiskItem {
+  sellerId: string;
+  storeId: string;
+  storeName: string;
+  rating: number;
+  trustScore: number;
+  totalOrders: number;
+  completedOrders: number;
+  cancelledOrders: number;
+  returnedOrders: number;
+  cancellationRate: number;
+  returnRate: number;
+  totalProducts: number;
+  rejectedProducts: number;
+  riskScore: number;
+  riskLevel: "low" | "medium" | "high" | "critical";
+  riskFactors: string[];
+  status: string;
+  lastActivity: string;
 }
 
 export interface SellerRiskData {
@@ -82,12 +112,18 @@ export interface SellerRiskData {
     high: { count: number; percentage: number; label: string };
     critical: { count: number; percentage: number; label: string };
   };
+  averageRiskScore: number;
+  totalSellers: number;
   flaggedSellers: Array<{
+    sellerId: string;
+    storeId: string;
     storeName: string;
-    reason: string;
+    riskScore: number;
     riskLevel: string;
+    reason: string;
     actionRequired: string;
   }>;
+  allSellers: SellerRiskItem[];
 }
 
 export interface MarketplaceForecastData {
