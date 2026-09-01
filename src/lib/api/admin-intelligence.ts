@@ -249,6 +249,7 @@ export interface RiskEventItem {
 }
 
 export interface RiskMatrixData {
+  range: string;
   overallPlatformRiskScore: number;
   overallRiskLevel: string;
   riskDistribution: {
@@ -268,8 +269,72 @@ export interface RiskMatrixData {
   events: RiskEventItem[];
 }
 
-export async function getRiskMatrix() {
-  return clientFetch<RiskMatrixData>("/admin/risk-matrix");
+export async function getRiskMatrix(range: string = "30d") {
+  return clientFetch<RiskMatrixData>(`/admin/risk-matrix?range=${range}`);
+}
+
+// 37b. SUSPICIOUS ORDERS
+export interface SuspiciousOrderItem {
+  orderId: string;
+  userId: string;
+  totalAmount: number;
+  paymentStatus: string;
+  status: string;
+  riskScore: number;
+  riskLevel: string;
+  reasons: string[];
+  createdAt: string;
+}
+
+export interface SuspiciousOrdersData {
+  orders: SuspiciousOrderItem[];
+  pagination: { total: number; page: number; limit: number; totalPages: number };
+}
+
+export async function getSuspiciousOrders(params?: { range?: string; page?: number; limit?: number }) {
+  const query = new URLSearchParams();
+  if (params?.range) query.append("range", params.range);
+  if (params?.page) query.append("page", String(params.page));
+  if (params?.limit) query.append("limit", String(params.limit));
+  const qStr = query.toString();
+  return clientFetch<SuspiciousOrdersData>(`/admin/suspicious-orders${qStr ? `?${qStr}` : ""}`);
+}
+
+// 37c. FINANCIAL RISK
+export interface FinancialRiskData {
+  totalTransactionValue: number;
+  cancelledOrderValue: number;
+  refundedAmount: number;
+  returnedOrderValue: number;
+  potentialExposure: number;
+  exposurePercentage: number;
+}
+
+export async function getFinancialRisk() {
+  return clientFetch<FinancialRiskData>("/admin/financial-risk");
+}
+
+// 37d. FRAUD ALERTS
+export interface FraudAlertItem {
+  id: string;
+  type: string;
+  entityName: string;
+  entityId: string;
+  riskLevel: string;
+  riskScore: number;
+  reason: string;
+  detectedAt: string;
+  status: string;
+}
+
+export interface FraudAlertsData {
+  alerts: FraudAlertItem[];
+  total: number;
+  byRiskLevel: { critical: number; high: number; medium: number; low: number };
+}
+
+export async function getFraudAlerts(range: string = "30d") {
+  return clientFetch<FraudAlertsData>(`/admin/fraud-alerts?range=${range}`);
 }
 
 // 38. SECURITY INCIDENT MANAGEMENT
