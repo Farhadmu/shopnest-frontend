@@ -30,11 +30,12 @@ import { LineAreaChart } from "@/components/analytics/LineAreaChart";
 import { BarChart } from "@/components/analytics/BarChart";
 import { DonutChart } from "@/components/analytics/DonutChart";
 import { AiCommerceCopilot } from "@/components/ai/AiCommerceCopilot";
+import AdminCopilotInline from "@/components/ai/AdminCopilotInline";
 import { formatCurrency } from "@/lib/utils";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<
-    "command_center" | "map" | "anomalies" | "health_index" | "leakage" | "seller_risk" | "forecasting" | "categories" | "telemetry"
+    "command_center" | "map" | "anomalies" | "health_index" | "leakage" | "seller_risk" | "forecasting" | "categories" | "telemetry" | "copilot"
   >("command_center");
 
   // State
@@ -101,6 +102,7 @@ export default function AdminDashboard() {
           { id: "forecasting", label: "🔮 Forecasts" },
           { id: "categories", label: "📑 Categories" },
           { id: "telemetry", label: "⏱️ Telemetry" },
+          { id: "copilot", label: "🤖 AI Copilot" },
         ].map((t) => (
           <button
             key={t.id}
@@ -625,6 +627,11 @@ export default function AdminDashboard() {
             </div>
           </Panel>
         </div>
+      )}
+
+      {/* TAB 10: AI COPILOT */}
+      {activeTab === "copilot" && (
+        <AdminCopilotInline />
       )}
 
       {/* Floating AI Admin Marketplace Copilot */}
