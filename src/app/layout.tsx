@@ -21,8 +21,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="flex min-h-screen flex-col bg-background text-text" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
+      <body className="flex min-h-screen flex-col bg-background text-text">
         <ThemeBootstrap />
         <AppHeroUIProvider>
           <AppShell>{children}</AppShell>
