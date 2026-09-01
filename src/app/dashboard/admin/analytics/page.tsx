@@ -8,7 +8,6 @@ import { LineAreaChart } from "@/components/analytics/LineAreaChart";
 import { BarChart } from "@/components/analytics/BarChart";
 import { DonutChart } from "@/components/analytics/DonutChart";
 import { formatCurrency } from "@/lib/utils";
-import { FaGlobe, FaUsers, FaStore, FaShoppingBag, FaDollarSign } from "react-icons/fa";
 
 export default function AdminAnalyticsPage() {
   const [range, setRange] = useState<"7d" | "30d" | "3m" | "6m" | "1y">("30d");
@@ -90,11 +89,17 @@ export default function AdminAnalyticsPage() {
         </div>
 
         {loading ? (
-          <div className="flex h-64 items-center justify-center rounded-2xl border border-border bg-surface">
-            <div className="flex flex-col items-center gap-3">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-              <span className="text-sm font-bold text-muted">Loading analytics...</span>
-            </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="animate-pulse rounded-2xl border border-border bg-surface p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="h-10 w-10 rounded-xl bg-muted-bg" />
+                  <div className="h-4 w-24 rounded-lg bg-muted-bg" />
+                </div>
+                <div className="h-8 w-32 rounded-lg bg-muted-bg mb-2" />
+                <div className="h-3 w-20 rounded-lg bg-muted-bg" />
+              </div>
+            ))}
           </div>
         ) : !data ? (
           <EmptyState
@@ -156,11 +161,12 @@ export default function AdminAnalyticsPage() {
                     height={260}
                   />
                 ) : (
-                  <EmptyState
-                    icon="📈"
-                    title="No Revenue Data"
-                    description="No orders found in this time period."
-                  />
+                  <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-border">
+                    <div className="text-center">
+                      <span className="text-2xl">📈</span>
+                      <p className="mt-2 text-xs text-muted">No revenue data for this period</p>
+                    </div>
+                  </div>
                 )}
               </Panel>
 
@@ -182,11 +188,12 @@ export default function AdminAnalyticsPage() {
                     height={260}
                   />
                 ) : (
-                  <EmptyState
-                    icon="📦"
-                    title="No Order Data"
-                    description="No orders found in this time period."
-                  />
+                  <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-border">
+                    <div className="text-center">
+                      <span className="text-2xl">📦</span>
+                      <p className="mt-2 text-xs text-muted">No order data for this period</p>
+                    </div>
+                  </div>
                 )}
               </Panel>
             </div>
@@ -205,20 +212,24 @@ export default function AdminAnalyticsPage() {
                         <div className="mt-4 grid w-full gap-2 text-xs">
                           {data.categoryPerformance.map((cat) => (
                             <div key={cat.category} className="flex items-center justify-between rounded-xl bg-muted-bg p-2.5">
-                              <span className="font-bold text-text">{cat.category}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: `var(--color-chart-${Math.min(data.categoryPerformance.indexOf(cat) + 1, 5)})` }} />
+                                <span className="font-bold text-text">{cat.category}</span>
+                              </div>
                               <span className="font-black text-primary">
-                                {formatCurrency(cat.revenue)} ({cat.share}%)
+                                {cat.share}%
                               </span>
                             </div>
                           ))}
                         </div>
                       </>
                     ) : (
-                      <EmptyState
-                        icon="🏷️"
-                        title="No Category Data"
-                        description="No categorized orders found."
-                      />
+                      <div className="flex h-48 items-center justify-center">
+                        <div className="text-center">
+                          <span className="text-2xl">🏷️</span>
+                          <p className="mt-2 text-xs text-muted">No category data available</p>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </Panel>
@@ -242,25 +253,43 @@ export default function AdminAnalyticsPage() {
                         <tbody className="divide-y divide-border/60">
                           {data.topSellersRanking.map((sel) => (
                             <tr key={sel.rank} className="transition hover:bg-muted-bg/50">
-                              <td className="py-3 font-black text-primary">#{sel.rank}</td>
+                              <td className="py-3">
+                                <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black ${
+                                  sel.rank === 1 ? "bg-amber-500/20 text-amber-600" :
+                                  sel.rank === 2 ? "bg-gray-400/20 text-gray-500" :
+                                  sel.rank === 3 ? "bg-orange-500/20 text-orange-600" :
+                                  "bg-muted-bg text-muted"
+                                }`}>
+                                  {sel.rank}
+                                </span>
+                              </td>
                               <td className="py-3 font-extrabold text-text">{sel.name}</td>
                               <td className="py-3 font-black text-emerald-600 dark:text-emerald-400">
                                 {formatCurrency(sel.gmv)}
                               </td>
                               <td className="py-3 font-semibold text-text">{sel.orders.toLocaleString()}</td>
                               <td className="py-3 font-bold text-amber-500">★ {sel.rating}</td>
-                              <td className="py-3 text-muted">{sel.returnRate}%</td>
+                              <td className="py-3">
+                                <span className={`rounded-md px-2 py-0.5 font-bold ${
+                                  sel.returnRate > 10 ? "bg-error/10 text-error" :
+                                  sel.returnRate > 5 ? "bg-warning/10 text-warning" :
+                                  "bg-success/10 text-success"
+                                }`}>
+                                  {sel.returnRate}%
+                                </span>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
                   ) : (
-                    <EmptyState
-                      icon="🏪"
-                      title="No Seller Data"
-                      description="No seller rankings available for this period."
-                    />
+                    <div className="flex h-48 items-center justify-center">
+                      <div className="text-center">
+                        <span className="text-2xl">🏪</span>
+                        <p className="mt-2 text-xs text-muted">No seller rankings available</p>
+                      </div>
+                    </div>
                   )}
                 </Panel>
               </div>
