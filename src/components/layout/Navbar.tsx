@@ -25,6 +25,7 @@ import { APP_NAME } from "@/lib/constants";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { useSession, signOut } from "@/lib/auth-client";
+import { useCartDrawer } from "@/context/CartDrawerContext";
 import { getCart } from "@/lib/api/cart";
 import {
   getGuestCart,
@@ -52,6 +53,7 @@ type UserRole = "customer" | "seller" | "admin" | "guest";
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
+  const { openCart, itemCount: drawerItemCount } = useCartDrawer();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -269,6 +271,29 @@ export const Navbar: React.FC = () => {
   const renderDropdownItems = () =>
     dropdownLinks.map((item: DropdownItem) => {
       const Icon = item.icon;
+      const isCartLink = item.href === "/cart";
+
+      if (isCartLink) {
+        return (
+          <button
+            key={item.href}
+            type="button"
+            onClick={() => {
+              setUserDropdownOpen(false);
+              openCart();
+            }}
+            className="flex w-full items-center gap-2.5 rounded-lg p-2.5 text-left text-text transition hover:bg-primary/10 hover:text-primary cursor-pointer"
+          >
+            {typeof Icon === "string" ? (
+              <span className="text-sm">{Icon}</span>
+            ) : (
+              <Icon className="text-muted" size={13} />
+            )}
+            <span>{item.label}</span>
+          </button>
+        );
+      }
+
       return (
         <Link
           key={item.href}
@@ -381,19 +406,22 @@ export const Navbar: React.FC = () => {
               <FaHeart size={14} />
             </Link>
 
-            <Link
-              href="/cart"
-              aria-label="Cart"
+            <button
+              type="button"
+              onClick={openCart}
+              aria-label={`Shopping Cart (${drawerItemCount || cartCount} items)`}
               title="Shopping Cart"
-              className="relative grid h-10 w-10 place-items-center rounded-xl border border-border bg-surface text-muted transition hover:border-primary/40 hover:text-primary"
+              className="relative grid h-10 w-10 place-items-center rounded-xl border border-border bg-surface text-muted transition hover:border-primary/40 hover:text-primary cursor-pointer active:scale-95"
             >
               <FaShoppingBag size={14} />
-              {cartCount > 0 && (
-                <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-black text-white shadow-sm">
-                  {cartCount > 99 ? "99+" : cartCount}
+              {(drawerItemCount || cartCount) > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#7C3AED] px-1 text-[11px] font-black text-white shadow-sm shadow-purple-500/25 animate-in zoom-in">
+                  {(drawerItemCount || cartCount) > 99
+                    ? "99+"
+                    : drawerItemCount || cartCount}
                 </span>
               )}
-            </Link>
+            </button>
 
             <NotificationBell />
             <ThemeToggle compact />
