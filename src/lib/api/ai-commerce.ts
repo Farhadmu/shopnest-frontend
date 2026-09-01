@@ -14,15 +14,22 @@ export interface IntentDetectionResult {
     recipient: string;
     detectedBudget: string;
     categoryFocus: string;
+    rawQuery?: string;
   };
   matchingProducts: Array<{
     id: string;
+    _id?: string;
     title: string;
+    description?: string;
     price: number;
     discountPrice?: number;
     category: string;
     images: string[];
     ratingAvg: number;
+    ratingCount?: number;
+    stock?: number;
+    sold?: number;
+    tags?: string[];
   }>;
   recommendationSummary: string;
 }

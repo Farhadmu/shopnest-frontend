@@ -116,9 +116,9 @@ export default function SellerRiskIndicators() {
 
         {/* Risk Score */}
         <div className="grid gap-4 sm:grid-cols-3">
-          <StatCard icon="🛡️" value={`${riskScore}/100`} label="Risk Score" note="Higher is better" color={riskScore >= 80 ? "green" : riskScore >= 50 ? "amber" : "red"} />
-          <StatCard icon="⚠️" value={String(risks.filter((r) => r.severity === "high").length)} label="High Risk" note="Critical issues" color="red" />
-          <StatCard icon="📊" value={String(risks.length)} label="Total Alerts" note="All alerts" color="blue" />
+          <StatCard icon="🛡️" value={`${riskScore}/100`} label="Risk Score" note="Higher is better" color={riskScore >= 80 ? "success" : riskScore >= 50 ? "warning" : "error"} />
+          <StatCard icon="⚠️" value={String(risks.filter((r) => r.severity === "high").length)} label="High Risk" note="Critical issues" color="error" />
+          <StatCard icon="📊" value={String(risks.length)} label="Total Alerts" note="All alerts" color="default" />
         </div>
 
         {/* Risk Indicators */}

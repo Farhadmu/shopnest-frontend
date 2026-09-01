@@ -100,3 +100,29 @@ export function LoadingTable({ rows = 5, cols = 4 }: { rows?: number; cols?: num
     </div>
   );
 }
+
+export function FallbackIndicator({ message = "Showing rule-based response. AI assistant is currently unavailable." }: { message?: string }) {
+  return (
+    <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 mb-4">
+      <span className="text-amber-500 text-sm mt-0.5">⚡</span>
+      <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">{message}</p>
+    </div>
+  );
+}
+
+export function AiBadge({ isFallback }: { isFallback?: boolean }) {
+  if (isFallback) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400">
+        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+        Rule-based
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400">
+      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+      AI
+    </span>
+  );
+}

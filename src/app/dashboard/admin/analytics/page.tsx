@@ -130,7 +130,7 @@ export default function AdminAnalyticsPage() {
             </p>
             <LineAreaChart
               data={lineChartData.length > 0 ? lineChartData : [{ label: "W1", value: 9800000 }, { label: "W2", value: 12800000 }]}
-              color="#6366f1"
+              color="var(--color-chart-1)"
               height={260}
             />
           </Panel>
@@ -138,7 +138,7 @@ export default function AdminAnalyticsPage() {
           <Panel
             title="Order Fulfillment Intake"
             action={
-              <span className="rounded-lg bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+              <span className="rounded-lg bg-success/10 px-2.5 py-1 text-xs font-bold text-success">
                 Order Volumes
               </span>
             }
@@ -148,7 +148,7 @@ export default function AdminAnalyticsPage() {
             </p>
             <BarChart
               data={barChartData.length > 0 ? barChartData : [{ label: "W1", value: 4850 }, { label: "W2", value: 6350 }]}
-              color="#10b981"
+              color="var(--color-chart-2)"
               height={260}
             />
           </Panel>

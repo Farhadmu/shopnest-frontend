@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { FiCpu, FiSend, FiUser, FiZap, FiX, FiHelpCircle } from "react-icons/fi";
 import { askPersonalCommerceAssistant } from "@/lib/api/customer-intelligence-features";
+import { AiBadge } from "@/components/dashboard/DashboardStates";
 
 interface Message {
   role: "user" | "assistant";
@@ -79,8 +80,11 @@ export function PersonalCommerceAssistant() {
                   <FiCpu />
                 </div>
                 <div>
-                  <h4 className="text-sm font-extrabold text-foreground">Personal Commerce Assistant</h4>
-                  <span className="text-[10px] text-emerald-500 font-semibold flex items-center gap-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-extrabold text-text">Personal Commerce Assistant</h4>
+                    <AiBadge />
+                  </div>
+                  <span className="text-[10px] text-success font-semibold flex items-center gap-1">
                     ● Authorized Scoped Access
                   </span>
                 </div>
@@ -110,12 +114,12 @@ export function PersonalCommerceAssistant() {
                     className={`p-3.5 rounded-2xl max-w-[82%] leading-relaxed ${
                       m.role === "user"
                         ? "bg-primary text-white shadow-md shadow-primary/20 rounded-br-none"
-                        : "bg-surface border border-border/80 text-foreground rounded-bl-none"
+                        : "bg-surface border border-border/80 text-text rounded-bl-none"
                     }`}
                   >
                     <p className="whitespace-pre-wrap">{m.content}</p>
                     {m.isFallback && (
-                      <span className="text-[9px] text-muted block mt-1.5 italic">
+                      <span className="text-[9px] text-warning block mt-1.5 italic">
                         ⚡ Verified offline response
                       </span>
                     )}

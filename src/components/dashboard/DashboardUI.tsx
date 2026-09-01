@@ -94,17 +94,15 @@ export function StatCard({
   value: string | number;
   note: string;
   trend?: string;
-  color?: "default" | "green" | "blue" | "purple" | "amber" | "red" | "emerald" | "indigo";
+  color?: "default" | "success" | "warning" | "error" | "accent" | "secondary";
 }) {
   const colorMap: Record<string, { bg: string; text: string; badge: string }> = {
     default: { bg: "bg-primary/10", text: "text-primary", badge: "bg-primary/10 text-primary" },
-    green: { bg: "bg-emerald-500/10", text: "text-emerald-600 dark:text-emerald-400", badge: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
-    blue: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", badge: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
-    purple: { bg: "bg-purple-500/10", text: "text-purple-600 dark:text-purple-400", badge: "bg-purple-500/10 text-purple-600 dark:text-purple-400" },
-    amber: { bg: "bg-amber-500/10", text: "text-amber-600 dark:text-amber-400", badge: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
-    red: { bg: "bg-red-500/10", text: "text-red-600 dark:text-red-400", badge: "bg-red-500/10 text-red-600 dark:text-red-400" },
-    emerald: { bg: "bg-emerald-500/10", text: "text-emerald-600 dark:text-emerald-400", badge: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
-    indigo: { bg: "bg-indigo-500/10", text: "text-indigo-600 dark:text-indigo-400", badge: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400" },
+    success: { bg: "bg-success/10", text: "text-success", badge: "bg-success/10 text-success" },
+    warning: { bg: "bg-warning/10", text: "text-warning", badge: "bg-warning/10 text-warning" },
+    error: { bg: "bg-error/10", text: "text-error", badge: "bg-error/10 text-error" },
+    accent: { bg: "bg-accent/10", text: "text-accent", badge: "bg-accent/10 text-accent" },
+    secondary: { bg: "bg-secondary/10", text: "text-secondary", badge: "bg-secondary/10 text-secondary" },
   };
   const colors = colorMap[color] || colorMap.default;
 
