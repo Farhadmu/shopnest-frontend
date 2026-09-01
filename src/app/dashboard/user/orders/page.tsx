@@ -51,10 +51,26 @@ export default function OrdersPage() {
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
         {[
           { key: "all", label: "All Orders", count: orders.length },
-          { key: "pending", label: "Pending", count: orders.filter((o) => o.status === "pending").length },
-          { key: "processing", label: "Processing", count: orders.filter((o) => o.status === "processing").length },
-          { key: "shipped", label: "Shipped", count: orders.filter((o) => o.status === "shipped").length },
-          { key: "delivered", label: "Delivered", count: orders.filter((o) => o.status === "delivered").length },
+          {
+            key: "pending",
+            label: "Pending",
+            count: orders.filter((o) => o.status === "pending").length,
+          },
+          {
+            key: "processing",
+            label: "Processing",
+            count: orders.filter((o) => o.status === "processing").length,
+          },
+          {
+            key: "shipped",
+            label: "Shipped",
+            count: orders.filter((o) => o.status === "shipped").length,
+          },
+          {
+            key: "delivered",
+            label: "Delivered",
+            count: orders.filter((o) => o.status === "delivered").length,
+          },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -122,15 +138,18 @@ export default function OrdersPage() {
                           o.status === "delivered"
                             ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
                             : o.status === "cancelled"
-                            ? "bg-red-500/10 text-red-500 border border-red-500/20"
-                            : "bg-primary/10 text-primary border border-primary/20"
+                              ? "bg-red-500/10 text-red-500 border border-red-500/20"
+                              : "bg-primary/10 text-primary border border-primary/20"
                         }`}
                       >
                         {o.status.replaceAll("_", " ")}
                       </span>
                     </div>
                     <p className="text-xs text-muted mt-0.5">
-                      {new Date(o.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
+                      {new Date(o.createdAt).toLocaleString("en-US", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}
                     </p>
                   </div>
                 </div>

@@ -49,7 +49,11 @@ export interface CommerceMemoryData {
   };
 }
 
-export async function askCommerceCopilot(query: string, role: string, context?: Record<string, unknown>) {
+export async function askCommerceCopilot(
+  query: string,
+  role: string,
+  context?: Record<string, unknown>
+) {
   return clientMutation<CopilotResponse>("/ai/copilot", "POST", { query, role, context });
 }
 
@@ -116,4 +120,3 @@ export interface ReviewSummaryResult {
 export async function getReviewSummaryAI(productId: string) {
   return clientMutation<ReviewSummaryResult>("/ai/review-summary", "POST", { productId });
 }
-
