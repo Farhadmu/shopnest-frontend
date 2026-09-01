@@ -124,3 +124,25 @@ export async function getReviewSummaryAI(productId: string) {
   return clientMutation<ReviewSummaryResult>("/ai/review-summary", "POST", { productId });
 }
 
+// Enhanced Copilot API (v2)
+export interface AdminCopilotResponse {
+  role: string;
+  query: string;
+  answer: string;
+  data: any;
+  suggestedActions: Array<{ label: string; action: string; targetUrl?: string }>;
+  isFallback: boolean;
+}
+
+export async function askAdminCopilot(query: string, range: string = "30d") {
+  return clientMutation<AdminCopilotResponse>("/ai/copilot-v2/admin", "POST", { query, range });
+}
+
+export async function askSellerCopilot(query: string) {
+  return clientMutation<AdminCopilotResponse>("/ai/copilot-v2/seller", "POST", { query });
+}
+
+export async function askCustomerCopilot(query: string) {
+  return clientMutation<AdminCopilotResponse>("/ai/copilot-v2/customer", "POST", { query });
+}
+
