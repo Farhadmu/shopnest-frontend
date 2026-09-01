@@ -18,6 +18,7 @@ export const userDashboardLinks: DashboardLink[] = [
   { label: "Smart Cart", href: "/cart", icon: "🛍️", description: "Live cart and checkout." },
   { label: "Wishlist", href: "/wishlist", icon: "❤️", description: "Saved favorite items." },
   { label: "AI Advisor", href: "/dashboard/user/ai-advisor", icon: "🤖", description: "AI commerce shopping assistant." },
+  { label: "Profile & Settings", href: "/dashboard/user/profile", icon: "👤", description: "Account identity and settings." },
 ];
 
 export const sellerDashboardLinks: DashboardLink[] = [
