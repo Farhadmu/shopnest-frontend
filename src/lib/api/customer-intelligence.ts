@@ -325,3 +325,62 @@ export async function getSmartRecommendations() {
   return clientFetch<CustomerProductSuggestion[]>("/customer/recommendations");
 }
 
+// COMPREHENSIVE SPENDING ANALYTICS
+export interface ComprehensiveSpendingAnalytics {
+  totalSpent: number;
+  totalOrders: number;
+  completedOrders: number;
+  cancelledOrders: number;
+  returnedOrders: number;
+  averageOrderValue: number;
+  totalSavings: number;
+  productDiscountSavings: number;
+  couponSavings: number;
+  highestSpendingMonth: { month: string; amount: number } | null;
+  monthlySpending: Array<{ month: string; fullKey: string; amount: number; orders: number; year: number; monthIndex: number }>;
+  weeklySpending: Array<{ day: string; amount: number }>;
+  categorySpending: Array<{ category: string; amount: number; percentage: number }>;
+  sellerSpending: Array<{ sellerId: string; name: string; amount: number; orders: number }>;
+  spendingTrend: "increasing" | "decreasing" | "stable";
+  spendingTrendPercent: number;
+  insights: string[];
+  budget: { monthlyBudget: number; spent: number } | null;
+}
+
+export async function getComprehensiveSpendingAnalytics(range?: string) {
+  const query = range && range !== "all" ? `?range=${range}` : "";
+  return clientFetch<ComprehensiveSpendingAnalytics>(`/customer/spending/analytics${query}`);
+}
+
+export interface BudgetTrackerData {
+  monthlyBudget: number;
+  spent: number;
+  remaining: number;
+  percentage: number;
+  status: "under" | "near" | "exceeded";
+  updatedAt: string;
+}
+
+export async function getBudgetTracker() {
+  return clientFetch<BudgetTrackerData>("/customer/spending/budget");
+}
+
+export async function updateBudget(monthlyBudget: number) {
+  return clientMutation<BudgetTrackerData>("/customer/spending/budget", "POST", { monthlyBudget });
+}
+
+export async function exportSpendingReport(range?: string) {
+  const query = range && range !== "all" ? `?range=${range}` : "";
+  const res = await fetch(`/api/v1/customer/spending/report/export${query}`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to export report");
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `spending-report-${range || "all"}.csv`;
+  a.click();
+  window.URL.revokeObjectURL(url);
+}
+
