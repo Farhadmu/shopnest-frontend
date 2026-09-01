@@ -30,6 +30,7 @@ export default function AdminSellers() {
       subtitle="Approve trustworthy stores and keep the marketplace healthy."
       role="Administrator"
       links={adminDashboardLinks}
+      showContinueShopping={false}
     >
       <Panel title="Pending Applications">
         {loading ? (
