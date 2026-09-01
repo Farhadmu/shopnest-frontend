@@ -75,6 +75,7 @@ export default function AdminIncidentsPage() {
       title="Security Incident Triage & Lifecycle Management"
       subtitle="Investigate security anomalies, document internal investigation notes, adjust severity tiers, and resolve active incidents."
       links={adminDashboardLinks}
+      showContinueShopping={false}
     >
       <div className="grid gap-6">
         {/* Filter Controls */}

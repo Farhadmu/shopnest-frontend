@@ -25,6 +25,7 @@ export default function AdminRiskPage() {
       title="Rule-Based Fraud & Platform Risk Intelligence"
       subtitle="Proactive behavioral anomaly detection, risk score indexing, credential stuffing alerts, and transaction verification rules."
       links={adminDashboardLinks}
+      showContinueShopping={false}
     >
       <div className="grid gap-6">
         {/* Compliance Notice */}

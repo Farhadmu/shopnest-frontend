@@ -15,11 +15,13 @@ export function DashboardHeader({
   subtitle,
   role,
   action,
+  hideContinueShopping = false,
 }: {
   title: string;
   subtitle?: string;
   role?: string;
   action?: ReactNode;
+  hideContinueShopping?: boolean;
 }) {
   return (
     <div className="mb-6 rounded-2xl border border-border bg-surface p-5 shadow-xs sm:p-7">
@@ -37,7 +39,7 @@ export function DashboardHeader({
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{subtitle}</p>
           )}
         </div>
-        {action || (
+        {action || (!hideContinueShopping && (
           <Link
             href="/products"
             className="flex items-center gap-1.5 rounded-xl border border-border bg-background px-4 py-2.5 text-xs font-bold text-text transition hover:border-primary/40 hover:text-primary shrink-0 w-fit"
@@ -45,7 +47,7 @@ export function DashboardHeader({
             <span>Continue shopping</span>
             <FaArrowRight size={10} />
           </Link>
-        )}
+        ))}
       </div>
     </div>
   );
@@ -58,6 +60,7 @@ export function DashboardShell({
   links,
   action,
   children,
+  showContinueShopping = true,
 }: {
   title?: string;
   subtitle?: string;
@@ -65,6 +68,7 @@ export function DashboardShell({
   links?: DashboardLink[];
   action?: ReactNode;
   children: ReactNode;
+  showContinueShopping?: boolean;
 }) {
   return (
     <div className="space-y-6">
@@ -74,6 +78,7 @@ export function DashboardShell({
           subtitle={subtitle}
           role={role}
           action={action}
+          hideContinueShopping={!showContinueShopping}
         />
       )}
       {children}

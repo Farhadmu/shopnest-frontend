@@ -38,6 +38,7 @@ export default function AdminAuditLogsPage() {
       title="Platform Security & Governance Audit Log"
       subtitle="Immutable audit trail of administrator approvals, merchant modifications, product moderations, system rate-limiting actions, and access policies."
       links={adminDashboardLinks}
+      showContinueShopping={false}
     >
       <div className="grid gap-6">
         {/* Search & Filter Bar */}

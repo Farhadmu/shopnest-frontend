@@ -26,6 +26,7 @@ export default function AdminNotificationsPage() {
       title="Platform Operations & Incident Notifications"
       subtitle="Critical marketplace alerts: seller onboarding requests, product moderation flags, security telemetry warnings, and refund approvals."
       links={adminDashboardLinks}
+      showContinueShopping={false}
     >
       <Panel
         title="Admin Notifications Feed"

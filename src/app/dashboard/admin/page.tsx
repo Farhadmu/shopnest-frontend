@@ -86,6 +86,7 @@ export default function AdminDashboard() {
       title="Executive Marketplace Control Center"
       subtitle="Complete platform oversight: real-time telemetry, geographic map, anomaly audits, revenue leakage tracking, seller risk matrix, and macro forecasting."
       links={adminDashboardLinks}
+      showContinueShopping={false}
     >
       {/* Interactive Tabs */}
       <div className="mb-6 flex flex-wrap items-center gap-2 border-b border-border pb-3">
@@ -292,7 +293,7 @@ export default function AdminDashboard() {
       {activeTab === "health_index" && (
         <div className="space-y-6">
           <Panel title="📊 Marketplace Health Index (Multi-Pillar)">
-            <div className="grid gap-6 lg:grid-cols-[1fr_1.5fr] items-center">
+            <div className="grid gap-6 grid-cols-1 lg:grid-cols-[1fr_1.5fr] items-center">
               <GaugeMeter score={healthData?.overallHealth || 94} title="Composite Platform Health" size={190} type="health" />
 
               <div className="space-y-3">

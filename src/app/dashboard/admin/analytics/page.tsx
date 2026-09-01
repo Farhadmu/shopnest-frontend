@@ -48,6 +48,7 @@ export default function AdminAnalyticsPage() {
       title="Macro Platform Growth & Commerce Analytics"
       subtitle="Nationwide marketplace GMV velocity, order trajectories, user and seller onboarding rates, and category distribution."
       links={adminDashboardLinks}
+      showContinueShopping={false}
     >
       <div className="grid gap-6">
         {/* Date Filter Bar */}
