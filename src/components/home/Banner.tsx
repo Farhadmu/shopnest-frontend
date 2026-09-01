@@ -20,44 +20,35 @@ import { getCategories } from "@/lib/api/categories";
 
 const CATEGORY_CYCLE_MS = 3000;
 const HERO_ADVANCE_MS   = 6000;
+const MAX_CATEGORIES    = 10;
 
 // ---------------------------------------------------------------------------
 // Zone-specific Framer Motion variants
-// Each zone has distinct motion + staggered delay for a cascading feel.
-// Springs instead of tweens — elements decelerate like real objects.
 // ---------------------------------------------------------------------------
 
-/** Shared spring config — snappy arrival, soft settle */
 const spring = { type: "spring" as const, stiffness: 260, damping: 25 };
 
-/** Hero — subtle scale + fade, no directional slide (centrepiece gravity) */
 const heroVariants = {
   enter:  { opacity: 0, scale: 1.02 },
   center: { opacity: 1, scale: 1    },
   exit:   { opacity: 0, scale: 0.98 },
 };
 
-/** Bottom cards — float up from below */
 const bottomVariants = {
   enter:  { opacity: 0, y: 16 },
   center: { opacity: 1, y: 0  },
   exit:   { opacity: 0, y: -8 },
 };
 
-/** Side cards — glide in from the right edge */
 const sideVariants = {
   enter:  { opacity: 0, x: 24 },
   center: { opacity: 1, x: 0  },
   exit:   { opacity: 0, x: -12 },
 };
 
-// Staggered transitions — hero leads, bottom follows, side arrives last
 const heroTransition   = { ...spring, delay: 0    };
 const bottomTransition = { ...spring, delay: 0.08 };
 const sideTransition   = { ...spring, delay: 0.15 };
-
-// Exit animations use a short tween so outgoing content doesn't linger
-const exitTransition = { duration: 0.2, ease: "easeIn" as const };
 
 // ---------------------------------------------------------------------------
 // PromoCard
@@ -80,7 +71,6 @@ function PromoCard({
         card.bgClassName ?? "bg-secondary"
       } ${className}`}
     >
-      {/* Background image */}
       <div className="absolute inset-0">
         <Image
           src={card.image}
@@ -179,7 +169,7 @@ function PromoCard({
 }
 
 // ---------------------------------------------------------------------------
-// HeroCarousel (unchanged internally — driven by its own auto-advance)
+// HeroCarousel
 // ---------------------------------------------------------------------------
 
 function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
@@ -187,7 +177,7 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   const total = slides.length;
 
   useEffect(() => {
-    setActive(0); // reset when slides change (category switch)
+    setActive(0);
   }, [slides]);
 
   useEffect(() => {
@@ -310,7 +300,6 @@ function CategorySidebar({
   saleLabel?: string;
   onSelect: (idx: number) => void;
 }) {
-  // Scroll active item into view on mobile horizontal list
   const listRef = useRef<HTMLUListElement>(null);
   useEffect(() => {
     if (!listRef.current) return;
@@ -326,7 +315,7 @@ function CategorySidebar({
 
       {loading ? (
         <ul className="space-y-3">
-          {[1, 2, 3, 4, 5].map((n) => (
+          {[...Array(MAX_CATEGORIES)].map((_, n) => (
             <li key={n} className="h-4 w-24 animate-pulse rounded bg-muted-bg" />
           ))}
         </ul>
@@ -343,19 +332,19 @@ function CategorySidebar({
               <li key={cat.id} className="shrink-0 lg:shrink">
                 <button
                   type="button"
+                  title={cat.label}
                   onClick={() => onSelect(idx)}
-                  className={`relative w-full whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
+                  className={`relative w-full rounded-lg px-2.5 py-2 text-left text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
                     isActive
                       ? "bg-primary text-surface"
                       : "text-text hover:bg-muted-bg hover:text-primary"
                   }`}
                 >
-                  {cat.label}
+                  <span className="block truncate pr-1">{cat.label}</span>
 
-                  {/* Progress bar — only on active item */}
                   {isActive && (
                     <motion.span
-                      key={`progress-${idx}`}          // re-mount → restarts animation
+                      key={`progress-${idx}`}
                       className="absolute bottom-0 left-0 h-[3px] rounded-b-lg bg-surface/40"
                       initial={{ width: "0%" }}
                       animate={{ width: "100%" }}
@@ -373,38 +362,32 @@ function CategorySidebar({
 }
 
 // ---------------------------------------------------------------------------
-// BannerSection — orchestrates everything
+// BannerSection
 // ---------------------------------------------------------------------------
 
 export default function BannerSection({ data }: { data: BannerSectionData }) {
   const { saleLabel, heroSlides, sideCards, bottomCards } = data;
 
-  // --- Category state ---
-  const [categories, setCategories] = useState<BannerCategory[]>(
-    data.categories ?? FALLBACK_CATEGORIES
+  const [categories, setCategories] = useState<BannerCategory[]>(() =>
+    (data.categories ?? FALLBACK_CATEGORIES).slice(0, MAX_CATEGORIES)
   );
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
-  // --- Active category index ---
   const [activeIdx, setActiveIdx] = useState(0);
   const isPaused = useRef(false);
   const isVisible = useRef(true);
   const sectionRef = useRef<HTMLElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Fetch live categories from API, keep static card-set data attached
   useEffect(() => {
     let cancelled = false;
     getCategories()
       .then((cats) => {
         if (cancelled) return;
-        // Map API cats → BannerCategory, cycling through FALLBACK card sets
-        // so each live category has cards to display
+        const slicedCats = cats.slice(0, MAX_CATEGORIES);
         setCategories(
-          cats.map((c, i) => ({
-            // Pull card sets from the fallback list (cycles through 4 sets)
+          slicedCats.map((c, i) => ({
             ...(FALLBACK_CATEGORIES[i % FALLBACK_CATEGORIES.length] ?? FALLBACK_CATEGORIES[0]),
-            // Override identity fields with live API values
             id: c.id,
             label: c.name,
             href: `/products?category=${encodeURIComponent(c.name)}`,
@@ -412,7 +395,9 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
         );
       })
       .catch(() => {
-        if (!cancelled) setCategories(data.categories ?? FALLBACK_CATEGORIES);
+        if (!cancelled) {
+          setCategories((data.categories ?? FALLBACK_CATEGORIES).slice(0, MAX_CATEGORIES));
+        }
       })
       .finally(() => {
         if (!cancelled) setCategoriesLoading(false);
@@ -421,11 +406,9 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Keep categories length in a ref so the interval callback never goes stale
   const categoriesLenRef = useRef(categories.length);
   categoriesLenRef.current = categories.length;
 
-  // Auto-cycle timer — stable across renders, only recreated on mount
   const startTimer = useRef(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
@@ -440,7 +423,6 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [startTimer]);
 
-  // Pause auto-cycle when the banner scrolls out of view
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
@@ -454,16 +436,14 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
 
   const handleSelectCategory = (idx: number) => {
     setActiveIdx(idx);
-    startTimer(); // reset timer on manual select
+    startTimer();
   };
 
-  // Derive active card data — fall back to top-level data if category has none
   const activeCat = categories[activeIdx];
   const activeHeroSlides  = activeCat?.heroSlides  ?? heroSlides;
   const activeSideCards   = activeCat?.sideCards   ?? sideCards;
   const activeBottomCards = activeCat?.bottomCards ?? bottomCards;
 
-  // Unique key drives AnimatePresence exit → enter cycle
   const animationKey = activeCat?.id ?? `idx-${activeIdx}`;
 
   return (
@@ -484,7 +464,6 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
 
       {/* ── Centre: Hero + bottom cards ── */}
       <div className="col-span-2 flex flex-col gap-4 sm:col-span-4 lg:col-span-7">
-        {/* Hero — scale + fade (leads the cascade) */}
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.div
             key={`hero-${animationKey}`}
@@ -500,7 +479,6 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
           </motion.div>
         </AnimatePresence>
 
-        {/* Bottom cards — float up (follows hero with 80ms delay) */}
         {activeBottomCards.length > 0 && (
           <AnimatePresence mode="popLayout" initial={false}>
             <motion.div
@@ -527,7 +505,6 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
       </div>
 
       {/* ── Right: Side cards ── */}
-      {/* Side cards — glide from right (arrives last, 150ms after hero) */}
       {activeSideCards.length > 0 && (
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.div
