@@ -2,17 +2,21 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { 
-  FaChevronRight, 
-  FaLaptop, 
-  FaTshirt, 
-  FaBook, 
-  FaHome, 
-  FaMobileAlt, 
-  FaRunning, 
-  FaBicycle, 
+import {
+  FaChevronRight,
+  FaMobileAlt,
+  FaTshirt,
+  FaHome,
   FaPumpSoap,
-  FaBoxes
+  FaRunning,
+  FaBook,
+  FaLaptop,
+  FaGift,
+  FaCouch,
+  FaPaw,
+  FaDesktop,
+  FaShoppingBasket,
+  FaGamepad,
 } from "react-icons/fa";
 import { getCategories } from "@/lib/api/categories";
 
@@ -20,70 +24,121 @@ const STYLES = [
   {
     color:
       "from-amber-500/30 via-orange-500/15 to-transparent dark:from-amber-500/15 dark:via-orange-500/10 dark:to-transparent",
-    borderHover: "hover:border-amber-400/80 dark:hover:border-amber-500/50",
+    borderHover:
+      "hover:border-amber-400/80 dark:hover:border-amber-500/50",
     shadowHover: "hover:shadow-amber-500/20",
-    iconBg: "bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400",
-    textHover: "group-hover:text-amber-600 dark:group-hover:text-amber-400",
+    iconBg:
+      "bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400",
+    textHover:
+      "group-hover:text-amber-600 dark:group-hover:text-amber-400",
     barColor: "from-amber-500 to-orange-500",
   },
   {
     color:
       "from-pink-500/30 via-rose-500/15 to-transparent dark:from-pink-500/15 dark:via-rose-500/10 dark:to-transparent",
-    borderHover: "hover:border-pink-400/80 dark:hover:border-pink-500/50",
+    borderHover:
+      "hover:border-pink-400/80 dark:hover:border-pink-500/50",
     shadowHover: "hover:shadow-pink-500/20",
-    iconBg: "bg-pink-100 text-pink-600 dark:bg-pink-500/20 dark:text-pink-400",
-    textHover: "group-hover:text-pink-600 dark:group-hover:text-pink-400",
+    iconBg:
+      "bg-pink-100 text-pink-600 dark:bg-pink-500/20 dark:text-pink-400",
+    textHover:
+      "group-hover:text-pink-600 dark:group-hover:text-pink-400",
     barColor: "from-pink-500 to-rose-500",
   },
   {
     color:
       "from-emerald-500/30 via-teal-500/15 to-transparent dark:from-emerald-500/15 dark:via-teal-500/10 dark:to-transparent",
-    borderHover: "hover:border-emerald-400/80 dark:hover:border-emerald-500/50",
+    borderHover:
+      "hover:border-emerald-400/80 dark:hover:border-emerald-500/50",
     shadowHover: "hover:shadow-emerald-500/20",
-    iconBg: "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",
-    textHover: "group-hover:text-emerald-600 dark:group-hover:text-emerald-400",
+    iconBg:
+      "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",
+    textHover:
+      "group-hover:text-emerald-600 dark:group-hover:text-emerald-400",
     barColor: "from-emerald-500 to-teal-500",
   },
   {
     color:
       "from-purple-500/30 via-indigo-500/15 to-transparent dark:from-purple-500/15 dark:via-indigo-500/10 dark:to-transparent",
-    borderHover: "hover:border-purple-400/80 dark:hover:border-purple-500/50",
+    borderHover:
+      "hover:border-purple-400/80 dark:hover:border-purple-500/50",
     shadowHover: "hover:shadow-purple-500/20",
-    iconBg: "bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400",
-    textHover: "group-hover:text-purple-600 dark:group-hover:text-purple-400",
+    iconBg:
+      "bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400",
+    textHover:
+      "group-hover:text-purple-600 dark:group-hover:text-purple-400",
     barColor: "from-purple-500 to-indigo-500",
   },
   {
     color:
       "from-blue-500/30 via-cyan-500/15 to-transparent dark:from-blue-500/15 dark:via-cyan-500/10 dark:to-transparent",
-    borderHover: "hover:border-blue-400/80 dark:hover:border-blue-500/50",
+    borderHover:
+      "hover:border-blue-400/80 dark:hover:border-blue-500/50",
     shadowHover: "hover:shadow-blue-500/20",
-    iconBg: "bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400",
-    textHover: "group-hover:text-blue-600 dark:group-hover:text-blue-400",
+    iconBg:
+      "bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400",
+    textHover:
+      "group-hover:text-blue-600 dark:group-hover:text-blue-400",
     barColor: "from-blue-500 to-cyan-500",
   },
   {
     color:
       "from-violet-500/30 via-fuchsia-500/15 to-transparent dark:from-violet-500/15 dark:via-fuchsia-500/10 dark:to-transparent",
-    borderHover: "hover:border-violet-400/80 dark:hover:border-violet-500/50",
+    borderHover:
+      "hover:border-violet-400/80 dark:hover:border-violet-500/50",
     shadowHover: "hover:shadow-violet-500/20",
-    iconBg: "bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-400",
-    textHover: "group-hover:text-violet-600 dark:group-hover:text-violet-400",
+    iconBg:
+      "bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-400",
+    textHover:
+      "group-hover:text-violet-600 dark:group-hover:text-violet-400",
     barColor: "from-violet-500 to-fuchsia-500",
   },
 ];
 
 const getCategoryIcon = (name: string) => {
-  const lowerName = name.toLowerCase();
-  if (lowerName.includes("beauty")) return <FaPumpSoap size={20} />;
-  if (lowerName.includes("book")) return <FaBook size={20} />;
-  if (lowerName.includes("electronic")) return <FaLaptop size={20} />;
-  if (lowerName.includes("fashion") || lowerName.includes("cloth")) return <FaTshirt size={20} />;
-  if (lowerName.includes("home") || lowerName.includes("kitchen")) return <FaHome size={20} />;
-  if (lowerName.includes("mobile") || lowerName.includes("phone")) return <FaMobileAlt size={20} />;
-  if (lowerName.includes("sport")) return <FaRunning size={20} />;
-  if (lowerName.includes("cycle") || lowerName.includes("bike")) return <FaBicycle size={20} />;
-  return <FaBoxes size={20} />;
+  switch (name.toLowerCase()) {
+    case "electronics":
+      return <FaMobileAlt size={20} />;
+
+    case "fashion":
+      return <FaTshirt size={20} />;
+
+    case "home & kitchen":
+      return <FaHome size={20} />;
+
+    case "beauty":
+      return <FaPumpSoap size={20} />;
+
+    case "sports":
+      return <FaRunning size={20} />;
+
+    case "books":
+      return <FaBook size={20} />;
+
+    case "gadgets":
+      return <FaLaptop size={20} />;
+
+    case "gifts & lifestyle":
+      return <FaGift size={20} />;
+
+    case "furniture & decor":
+      return <FaCouch size={20} />;
+
+    case "pet supplies":
+      return <FaPaw size={20} />;
+
+    case "computers & accessories":
+      return <FaDesktop size={20} />;
+
+    case "grocery":
+      return <FaShoppingBasket size={20} />;
+
+    case "toys & kids":
+      return <FaGamepad size={20} />;
+
+    default:
+      return <FaGift size={20} />;
+  }
 };
 
 type DisplayCategory = {
@@ -99,16 +154,18 @@ export default function ShopByCategory() {
 
   useEffect(() => {
     let cancelled = false;
+
     getCategories()
       .then((cats) => {
         if (cancelled) return;
+
         setCategories(
           cats.map((c, i) => ({
             id: c.id,
             name: c.name,
             desc: "Explore this category",
             icon: getCategoryIcon(c.name),
-            ...STYLES[i % STYLES.length], 
+            ...STYLES[i % STYLES.length],
           }))
         );
       })
@@ -118,6 +175,7 @@ export default function ShopByCategory() {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+
     return () => {
       cancelled = true;
     };
@@ -128,15 +186,21 @@ export default function ShopByCategory() {
       {/* Custom CSS for Marquee Hover Pause */}
       <style jsx>{`
         @keyframes marquee {
-          0% { transform: translateX(0%); }
-          100% { transform: translateX(-50%); }
+          0% {
+            transform: translateX(0%);
+          }
+
+          100% {
+            transform: translateX(-50%);
+          }
         }
+
         .animate-marquee {
           display: flex;
           width: max-content;
           animation: marquee 25s linear infinite;
         }
-     
+
         .animate-marquee:hover {
           animation-play-state: paused;
         }
@@ -147,9 +211,11 @@ export default function ShopByCategory() {
         <div className="relative">
           <div className="mb-3 flex items-center gap-2">
             <span className="h-[2px] w-8 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500" />
+
             <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-indigo-600 dark:text-indigo-400">
               Discover Categories
             </span>
+
             <span className="h-[2px] w-8 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500" />
           </div>
 
@@ -158,6 +224,7 @@ export default function ShopByCategory() {
               Shop{" "}
               <span className="relative bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 bg-clip-text text-transparent">
                 by category
+
                 <span className="absolute -right-4 -top-1 h-2 w-2 rounded-full bg-violet-500 shadow-[0_0_14px_rgba(139,92,246,0.9)] animate-pulse" />
               </span>
             </h2>
@@ -173,6 +240,7 @@ export default function ShopByCategory() {
           className="group hidden items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50/70 px-4 py-2 text-sm font-bold text-indigo-600 transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-500 hover:bg-indigo-600 hover:text-white sm:flex dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-400 dark:hover:bg-indigo-500 dark:hover:text-white"
         >
           <span>View all</span>
+
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-indigo-600 transition-all duration-300 group-hover:translate-x-0.5 dark:bg-slate-800 dark:text-indigo-400 dark:group-hover:bg-white">
             <FaChevronRight size={9} />
           </span>
@@ -197,24 +265,33 @@ export default function ShopByCategory() {
         </div>
       ) : (
         <div className="relative w-full overflow-hidden flex">
-          {/* Fade Overlay left & right */}
+          {/* Fade Overlay left */}
           <div className="pointer-events-none absolute left-0 top-0 z-20 h-full w-12 bg-gradient-to-r from-white to-transparent dark:from-slate-950 dark:to-transparent" />
+
+          {/* Fade Overlay right */}
           <div className="pointer-events-none absolute right-0 top-0 z-20 h-full w-12 bg-gradient-to-l from-white to-transparent dark:from-slate-950 dark:to-transparent" />
 
-          {/* Infinite Moving Container using CSS Marquee */}
+          {/* Infinite Moving Container */}
           <div className="animate-marquee gap-4 py-2">
-            {/* Duplicate categories array for seamless infinite scroll */}
             {[...categories, ...categories].map((cat, i) => (
-              <div key={`${cat.id}-${i}`} className="w-[200px] sm:w-[220px] flex-shrink-0">
-                <Link href={`/products?category=${encodeURIComponent(cat.name)}`}>
+              <div
+                key={`${cat.id}-${i}`}
+                className="w-[200px] sm:w-[220px] flex-shrink-0"
+              >
+                <Link
+                  href={`/products?category=${encodeURIComponent(cat.name)}`}
+                >
                   <div
                     className={`
                       group relative flex h-[170px] flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 backdrop-blur-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/80
-                      ${cat.borderHover} ${cat.shadowHover}
+                      ${cat.borderHover}
+                      ${cat.shadowHover}
                     `}
                   >
                     {/* Background Gradient */}
-                    <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br transition-opacity duration-500 opacity-60 group-hover:opacity-100 ${cat.color}`} />
+                    <div
+                      className={`pointer-events-none absolute inset-0 bg-gradient-to-br transition-opacity duration-500 opacity-60 group-hover:opacity-100 ${cat.color}`}
+                    />
 
                     {/* Soft Glow */}
                     <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-white/30 opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100 dark:bg-white/10" />
@@ -224,7 +301,8 @@ export default function ShopByCategory() {
                       {/* Icon */}
                       <div
                         className={`
-                          mb-3 flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-500 group-hover:rotate-3 group-hover:scale-110 group-hover:shadow-lg
+                          mb-3 flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-500
+                          group-hover:rotate-3 group-hover:scale-110 group-hover:shadow-lg
                           ${cat.iconBg}
                         `}
                       >
@@ -232,7 +310,13 @@ export default function ShopByCategory() {
                       </div>
 
                       {/* Category Name */}
-                      <p className={`text-sm font-extrabold tracking-wide text-slate-900 transition-colors duration-300 dark:text-white truncate ${cat.textHover}`}>
+                      <p
+                        className={`
+                          text-sm font-extrabold tracking-wide text-slate-900
+                          transition-colors duration-300 dark:text-white truncate
+                          ${cat.textHover}
+                        `}
+                      >
                         {cat.name}
                       </p>
 
@@ -243,7 +327,14 @@ export default function ShopByCategory() {
                     </div>
 
                     {/* Bottom Color Bar */}
-                    <div className={`absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r transition-all duration-300 group-hover:h-1.5 ${cat.barColor}`} />
+                    <div
+                      className={`
+                        absolute bottom-0 left-0 h-1 w-full
+                        bg-gradient-to-r transition-all duration-300
+                        group-hover:h-1.5
+                        ${cat.barColor}
+                      `}
+                    />
                   </div>
                 </Link>
               </div>
