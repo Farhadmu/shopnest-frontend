@@ -17,7 +17,7 @@ export default function SupportPage() {
             My orders
           </Link>
           <Link
-            href="/dashboard/user/ai-advisor"
+            href="/ai-advisor"
             className="rounded-xl border border-border bg-muted-bg px-4 py-3 text-sm font-bold"
           >
             AI Advisor
