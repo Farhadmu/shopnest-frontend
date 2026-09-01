@@ -74,9 +74,9 @@ export default function SellerSecurityCenter() {
 
         {/* Security Score */}
         <div className="grid gap-4 sm:grid-cols-3">
-          <StatCard icon="🛡️" value={`${securityScore}/100`} label="Security Score" note="Account security" color="green" />
-          <StatCard icon="📱" value={String(sessions.filter((s) => s.status === "active").length)} label="Active Sessions" note="Logged in devices" color="blue" />
-          <StatCard icon="🔔" value={String(events.length)} label="Security Events" note="Recent events" color="amber" />
+          <StatCard icon="🛡️" value={`${securityScore}/100`} label="Security Score" note="Account security" color="success" />
+          <StatCard icon="📱" value={String(sessions.filter((s) => s.status === "active").length)} label="Active Sessions" note="Logged in devices" color="default" />
+          <StatCard icon="🔔" value={String(events.length)} label="Security Events" note="Recent events" color="warning" />
         </div>
 
         {/* Active Sessions */}

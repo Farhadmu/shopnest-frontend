@@ -38,7 +38,7 @@ export default function TrustScorePage() {
   useEffect(() => { loadData(); }, [loadData]);
 
   const score = data?.trustScore || 0;
-  const scoreColor = score >= 80 ? "green" : score >= 50 ? "amber" : "red";
+  const scoreColor = score >= 80 ? "success" : score >= 50 ? "warning" : "error";
   const scoreLabel = score >= 80 ? "Excellent" : score >= 60 ? "Good" : score >= 40 ? "Fair" : "Needs Improvement";
 
   return (
@@ -53,9 +53,9 @@ export default function TrustScorePage() {
           <>
             <div className="grid gap-4 sm:grid-cols-4">
               <StatCard icon="⭐" value={`${data.trustScore}/100`} label="Trust Score" note={scoreLabel} color={scoreColor} />
-              <StatCard icon="📦" value={`${(data.factors.fulfillmentRate * 100).toFixed(0)}%`} label="Fulfillment Rate" note="Orders delivered" color="blue" />
-              <StatCard icon="⭐" value={data.factors.avgRating.toFixed(1)} label="Avg Rating" note="From reviews" color="amber" />
-              <StatCard icon="📅" value={`${data.factors.accountAgeDays} days`} label="Account Age" note="On platform" color="purple" />
+              <StatCard icon="📦" value={`${(data.factors.fulfillmentRate * 100).toFixed(0)}%`} label="Fulfillment Rate" note="Orders delivered" color="default" />
+              <StatCard icon="⭐" value={data.factors.avgRating.toFixed(1)} label="Avg Rating" note="From reviews" color="warning" />
+              <StatCard icon="📅" value={`${data.factors.accountAgeDays} days`} label="Account Age" note="On platform" color="accent" />
             </div>
 
             {/* Score Breakdown */}

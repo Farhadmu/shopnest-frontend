@@ -115,12 +115,12 @@ export default function SellerCommandCenter() {
             <LoadingGrid count={6} />
           ) : metrics ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-              <StatCard icon="💰" value={`৳${metrics.totalRevenue.toLocaleString()}`} label="Total Revenue" note="From delivered orders" color="green" />
-              <StatCard icon="📦" value={String(metrics.totalOrders)} label="Total Orders" note="All time" color="blue" />
-              <StatCard icon="🛍️" value={String(metrics.productsSold)} label="Products Sold" note="Units dispatched" color="purple" />
-              <StatCard icon="📋" value={String(metrics.activeProducts)} label="Active Products" note="Live in store" color="indigo" />
-              <StatCard icon="⏳" value={String(metrics.pendingOrders)} label="Pending Orders" note="Awaiting processing" color="amber" />
-              <StatCard icon="🚚" value={String(metrics.deliveredOrders)} label="Delivered" note="Successfully completed" color="emerald" />
+              <StatCard icon="💰" value={`৳${metrics.totalRevenue.toLocaleString()}`} label="Total Revenue" note="From delivered orders" color="success" />
+              <StatCard icon="📦" value={String(metrics.totalOrders)} label="Total Orders" note="All time" color="default" />
+              <StatCard icon="🛍️" value={String(metrics.productsSold)} label="Products Sold" note="Units dispatched" color="accent" />
+              <StatCard icon="📋" value={String(metrics.activeProducts)} label="Active Products" note="Live in store" color="secondary" />
+              <StatCard icon="⏳" value={String(metrics.pendingOrders)} label="Pending Orders" note="Awaiting processing" color="warning" />
+              <StatCard icon="🚚" value={String(metrics.deliveredOrders)} label="Delivered" note="Successfully completed" color="success" />
             </div>
           ) : (
             <EmptyState icon="📊" title="No data available" description="Start selling to see your metrics here." />
@@ -134,10 +134,10 @@ export default function SellerCommandCenter() {
             <LoadingGrid count={4} />
           ) : metrics ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard icon="⏳" value={String(metrics.pendingOrders)} label="Pending" note="Awaiting processing" color="amber" />
-              <StatCard icon="⚙️" value={String(metrics.processingOrders)} label="Processing" note="In progress" color="blue" />
-              <StatCard icon="✅" value={String(metrics.deliveredOrders)} label="Delivered" note="Completed" color="green" />
-              <StatCard icon="❌" value={String(metrics.cancelledOrders)} label="Cancelled" note="Order cancelled" color="red" />
+              <StatCard icon="⏳" value={String(metrics.pendingOrders)} label="Pending" note="Awaiting processing" color="warning" />
+              <StatCard icon="⚙️" value={String(metrics.processingOrders)} label="Processing" note="In progress" color="default" />
+              <StatCard icon="✅" value={String(metrics.deliveredOrders)} label="Delivered" note="Completed" color="success" />
+              <StatCard icon="❌" value={String(metrics.cancelledOrders)} label="Cancelled" note="Order cancelled" color="error" />
             </div>
           ) : null}
         </section>
@@ -165,10 +165,10 @@ export default function SellerCommandCenter() {
             <LoadingGrid count={4} />
           ) : inventoryData?.summary ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard icon="📦" value={String(inventoryData.summary.totalItems || 0)} label="Total Items" note="Active products" color="blue" />
-              <StatCard icon="⚠️" value={String(inventoryData.summary.lowStockCount || 0)} label="Low Stock" note="Needs restock" color="amber" />
-              <StatCard icon="🚫" value={String(inventoryData.summary.outOfStockCount || 0)} label="Out of Stock" note="Unavailable" color="red" />
-              <StatCard icon="✅" value={String(inventoryData.summary.healthyStockCount || 0)} label="Healthy Stock" note="Adequate stock" color="green" />
+              <StatCard icon="📦" value={String(inventoryData.summary.totalItems || 0)} label="Total Items" note="Active products" color="default" />
+              <StatCard icon="⚠️" value={String(inventoryData.summary.lowStockCount || 0)} label="Low Stock" note="Needs restock" color="warning" />
+              <StatCard icon="🚫" value={String(inventoryData.summary.outOfStockCount || 0)} label="Out of Stock" note="Unavailable" color="error" />
+              <StatCard icon="✅" value={String(inventoryData.summary.healthyStockCount || 0)} label="Healthy Stock" note="Adequate stock" color="success" />
             </div>
           ) : (
             <EmptyState icon="📦" title="No inventory data" description="Add products to see inventory insights." />
@@ -182,9 +182,9 @@ export default function SellerCommandCenter() {
             <LoadingGrid count={3} />
           ) : customerData?.overview ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <StatCard icon="👥" value={String(customerData.overview.totalCustomers || 0)} label="Total Customers" note="All buyers" color="blue" />
-              <StatCard icon="🔄" value={`${customerData.overview.repeatPurchaseRate || 0}%`} label="Repeat Rate" note="Returning buyers" color="green" />
-              <StatCard icon="💳" value={`৳${(customerData.overview.averageLifetimeValue || 0).toLocaleString()}`} label="Avg Lifetime Value" note="Per customer" color="purple" />
+              <StatCard icon="👥" value={String(customerData.overview.totalCustomers || 0)} label="Total Customers" note="All buyers" color="default" />
+              <StatCard icon="🔄" value={`${customerData.overview.repeatPurchaseRate || 0}%`} label="Repeat Rate" note="Returning buyers" color="success" />
+              <StatCard icon="💳" value={`৳${(customerData.overview.averageLifetimeValue || 0).toLocaleString()}`} label="Avg Lifetime Value" note="Per customer" color="accent" />
             </div>
           ) : (
             <EmptyState icon="👥" title="No customer data" description="Customer insights will appear after your first sales." />
@@ -196,10 +196,10 @@ export default function SellerCommandCenter() {
           <section>
             <h2 className="text-lg font-bold text-text mb-4">Profit Overview</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard icon="💵" value={`৳${(profitData.summary.revenue || 0).toLocaleString()}`} label="Revenue" note="Gross revenue" color="green" />
-              <StatCard icon="🏷️" value={`৳${(profitData.summary.totalDiscounts || 0).toLocaleString()}`} label="Discounts" note="Total discounts" color="amber" />
-              <StatCard icon="📊" value={`৳${(profitData.summary.grossProfit || 0).toLocaleString()}`} label="Gross Profit" note="After COGS" color="blue" />
-              <StatCard icon="📈" value={`${profitData.summary.netMarginPercent || 0}%`} label="Net Margin" note="Profit margin" color="purple" />
+              <StatCard icon="💵" value={`৳${(profitData.summary.revenue || 0).toLocaleString()}`} label="Revenue" note="Gross revenue" color="success" />
+              <StatCard icon="🏷️" value={`৳${(profitData.summary.totalDiscounts || 0).toLocaleString()}`} label="Discounts" note="Total discounts" color="warning" />
+              <StatCard icon="📊" value={`৳${(profitData.summary.grossProfit || 0).toLocaleString()}`} label="Gross Profit" note="After COGS" color="default" />
+              <StatCard icon="📈" value={`${profitData.summary.netMarginPercent || 0}%`} label="Net Margin" note="Profit margin" color="accent" />
             </div>
           </section>
         )}

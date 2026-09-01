@@ -40,7 +40,9 @@ export const auth = betterAuth({
     "https://shopnest-frontend-six.vercel.app",
     "https://*.vercel.app",
     "http://localhost:3000",
+    "http://localhost:3001",
     "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
     baseURL,
   ].filter((v): v is string => Boolean(v)),
   emailAndPassword: {

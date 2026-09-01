@@ -63,7 +63,7 @@ export default function SellerProducts() {
           </p>
         </div>
         <Link
-          href="/dashboard/seller/products/add"
+          href="/seller/products/add"
           className="inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-black text-white shadow-lg shadow-primary/25 transition hover:bg-primary-hover"
         >
           <FaPlus size={12} /> Add New Product
@@ -103,7 +103,7 @@ export default function SellerProducts() {
               Start listing products on ShopNest to begin receiving orders.
             </p>
             <Link
-              href="/dashboard/seller/products/add"
+              href="/seller/products/add"
               className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20"
             >
               <FaPlus size={12} /> Add First Product
@@ -152,7 +152,7 @@ export default function SellerProducts() {
 
                 <div className="flex items-center gap-2 sm:self-center">
                   <Link
-                    href={`/dashboard/seller/products/add?edit=${p.id}`}
+                    href={`/seller/products/add?edit=${p.id}`}
                     className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3.5 py-2 text-xs font-bold text-text transition hover:border-primary hover:text-primary"
                   >
                     <FaEdit size={12} /> Edit

@@ -206,7 +206,7 @@ export function DashboardSidebarLayout({
           </div>
 
           {/* Navigation Links Scroll Area */}
-          <nav className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-border hover:scrollbar-thumb-primary/40">
+          <nav className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar">
             {links.map((item) => {
               const isActive = isLinkActive(item.href);
               return (

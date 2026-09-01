@@ -11,10 +11,12 @@ import {
   syncGuestDataToServer,
 } from "@/lib/guest-store";
 import { LoadingState } from "@/components/common/LoadingState";
+import { SmartWishlistGroups } from "@/components/wishlist/SmartWishlistGroups";
 
 export default function WishlistPage() {
   const { data: session, isPending } = useSession();
   const [items, setItems] = useState<WishlistItem[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const load = useCallback(() => {
@@ -110,6 +112,11 @@ export default function WishlistPage() {
               ? "Saved locally on this device. Sign in anytime to sync your wishlist across all devices."
               : "Your saved products for future purchase."}
           </p>
+        </div>
+
+        {/* Smart Wishlist Collections / Custom Folders */}
+        <div className="mb-8 p-6 rounded-3xl bg-card border border-border/80 shadow-sm">
+          <SmartWishlistGroups selectedGroupId={selectedGroup} onSelectGroup={setSelectedGroup} />
         </div>
 
         {items.length === 0 ? (

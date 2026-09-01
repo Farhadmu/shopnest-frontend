@@ -1,429 +1,447 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useEffect, useState, useCallback } from "react";
 import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
 import { userDashboardLinks } from "@/lib/constants/dashboard-nav";
 import {
-  getSpendingAnalytics,
-  SpendingAnalyticsData,
-  getWishlistAnalytics,
-  WishlistAnalyticsData,
-  getSavedSearches,
-  SavedSearchItem,
-  createSavedSearch,
-  deleteSavedSearch,
-  getPersonalizedOffers,
-  PersonalizedOfferItem,
-  getCustomerActivityTimeline,
-  CustomerActivityItem,
+  getComprehensiveSpendingAnalytics,
+  getBudgetTracker,
+  updateBudget,
+  exportSpendingReport,
+  ComprehensiveSpendingAnalytics,
+  BudgetTrackerData,
 } from "@/lib/api/customer-intelligence";
 import { LineAreaChart } from "@/components/analytics/LineAreaChart";
+import { BarChart } from "@/components/analytics/BarChart";
 import { DonutChart } from "@/components/analytics/DonutChart";
 import { formatCurrency } from "@/lib/utils";
-import { FaBookmark, FaTrash, FaSearch, FaTag, FaHeart, FaCheck, FaArrowRight } from "react-icons/fa";
+import { LoadingCard, LoadingGrid, ErrorState, EmptyState } from "@/components/dashboard/DashboardStates";
+import { FiDownload, FiTrendingUp, FiTrendingDown, FiMinus, FiEdit3, FiCheck, FiX } from "react-icons/fi";
 
-export default function CustomerAnalyticsPage() {
-  const [spending, setSpending] = useState<SpendingAnalyticsData | null>(null);
-  const [wishlist, setWishlist] = useState<WishlistAnalyticsData | null>(null);
-  const [searches, setSearches] = useState<SavedSearchItem[]>([]);
-  const [offers, setOffers] = useState<PersonalizedOfferItem[]>([]);
-  const [timeline, setTimeline] = useState<CustomerActivityItem[]>([]);
+const DATE_RANGES = [
+  { value: "all", label: "All Time" },
+  { value: "this_week", label: "This Week" },
+  { value: "this_month", label: "This Month" },
+  { value: "last_month", label: "Last Month" },
+  { value: "last_3_months", label: "Last 3 Months" },
+  { value: "last_6_months", label: "Last 6 Months" },
+  { value: "last_12_months", label: "Last 12 Months" },
+  { value: "this_year", label: "This Year" },
+];
 
-  // New Search Form State
-  const [newQuery, setNewQuery] = useState("");
-  const [newCategory, setNewCategory] = useState("Electronics");
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+export default function SpendingAnalyticsPage() {
+  const [analytics, setAnalytics] = useState<ComprehensiveSpendingAnalytics | null>(null);
+  const [budget, setBudget] = useState<BudgetTrackerData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [range, setRange] = useState("all");
+  const [showBudgetEdit, setShowBudgetEdit] = useState(false);
+  const [budgetInput, setBudgetInput] = useState("");
+  const [savingBudget, setSavingBudget] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [analyticsRes, budgetRes] = await Promise.all([
+        getComprehensiveSpendingAnalytics(range).catch(() => null),
+        getBudgetTracker().catch(() => null),
+      ]);
+      if (analyticsRes) setAnalytics(analyticsRes);
+      if (budgetRes) setBudget(budgetRes);
+      if (!analyticsRes && !budgetRes) {
+        setError("Failed to load spending analytics");
+      }
+    } catch {
+      setError("Failed to load spending analytics");
+    } finally {
+      setLoading(false);
+    }
+  }, [range]);
 
   useEffect(() => {
-    let active = true;
+    fetchData();
+  }, [fetchData]);
 
-    Promise.all([
-      getSpendingAnalytics().catch(() => null),
-      getWishlistAnalytics().catch(() => null),
-      getSavedSearches().catch(() => []),
-      getPersonalizedOffers().catch(() => []),
-      getCustomerActivityTimeline().catch(() => []),
-    ])
-      .then(([spendRes, wishRes, searchRes, offerRes, timeRes]) => {
-        if (!active) return;
-        if (spendRes) setSpending(spendRes);
-        if (wishRes) setWishlist(wishRes);
-        if (searchRes) setSearches(searchRes);
-        if (offerRes) setOffers(offerRes);
-        if (timeRes) setTimeline(timeRes);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const handleSaveSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newQuery.trim()) return;
+  const handleBudgetSave = async () => {
+    const value = parseFloat(budgetInput);
+    if (isNaN(value) || value < 0) return;
+    setSavingBudget(true);
     try {
-      await createSavedSearch({ query: newQuery.trim(), category: newCategory });
-      setNewQuery("");
-      getSavedSearches().then(setSearches);
+      const updated = await updateBudget(value);
+      setBudget(updated);
+      setShowBudgetEdit(false);
+      setBudgetInput("");
+      fetchData();
     } catch {
       // handled
+    } finally {
+      setSavingBudget(false);
     }
   };
 
-  const handleDeleteSearch = async (id: string) => {
-    try {
-      await deleteSavedSearch(id);
-      setSearches((prev) => prev.filter((s) => s.id !== id));
-    } catch {
-      // handled
-    }
+  const handleExport = () => {
+    exportSpendingReport(range);
   };
 
-  const handleCopyOffer = (code: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedCode(code);
-    setTimeout(() => setCopiedCode(null), 2500);
-  };
-
-  const lineChartData = (spending?.monthlySpending || []).map((m) => ({
+  const monthlyChartData = (analytics?.monthlySpending || []).map((m) => ({
     label: m.month,
     value: m.amount,
   }));
 
-  const donutChartData = (spending?.categorySpending || []).map((c) => ({
+  const weeklyChartData = (analytics?.weeklySpending || []).map((w) => ({
+    label: w.day,
+    value: w.amount,
+  }));
+
+  const categoryChartData = (analytics?.categorySpending || []).map((c) => ({
     label: c.category,
     value: c.amount,
   }));
 
-  const totalSpend = spending?.overview?.totalSpend ?? 0;
-  const monthlySpend = spending?.overview?.monthlySpend ?? 0;
-  const avgOrderValue = spending?.overview?.avgOrderValue ?? 0;
-  const orderCount = spending?.overview?.orderCount ?? 0;
-  const totalPotentialSavings = wishlist?.totalPotentialSavings ?? 0;
+  const sellerChartData = (analytics?.sellerSpending || []).map((s) => ({
+    label: s.name,
+    value: s.amount,
+  }));
+
+  const trendIcon = analytics?.spendingTrend === "increasing" ? <FiTrendingUp className="text-error" /> : analytics?.spendingTrend === "decreasing" ? <FiTrendingDown className="text-success" /> : <FiMinus className="text-warning" />;
 
   return (
     <DashboardShell
       role="Customer"
-      title="Personal Shopping & Spending Insights"
-      subtitle="Deep telemetry on your shopping patterns, monthly budgets, wishlist price drop opportunities, personalized perks, and activity timeline."
+      title="Spending Analytics"
+      subtitle="Comprehensive insights into your spending patterns, trends, and budget tracking."
       links={userDashboardLinks}
     >
-      <div className="grid gap-5">
-          {/* KPI Cards */}
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard
-            icon="💳"
-            label="Total Lifetime Spend"
-            value={formatCurrency(totalSpend)}
-            note={`${orderCount} completed order${orderCount === 1 ? "" : "s"}`}
-            trend={totalSpend > 0 ? "Active" : "No spend"}
-          />
-          <StatCard
-            icon="📅"
-            label="Current Month Spend"
-            value={formatCurrency(monthlySpend)}
-            note={monthlySpend > 0 ? "Budget benchmark on track" : "No orders this month yet"}
-            trend={monthlySpend > 0 ? "+12% MoM" : "Waiting"}
-          />
-          <StatCard
-            icon="🏷️"
-            label="Avg Order Value (AOV)"
-            value={formatCurrency(avgOrderValue)}
-            note={spending?.overview?.orderFrequency || "0 orders / month"}
-          />
-          <StatCard
-            icon="🎯"
-            label="Potential Wishlist Savings"
-            value={formatCurrency(totalPotentialSavings)}
-            note={`${wishlist?.priceDropOpportunities?.length || 0} price drop${(wishlist?.priceDropOpportunities?.length || 0) === 1 ? "" : "s"} detected`}
-            trend={totalPotentialSavings > 0 ? "Deal Alert" : "No deals"}
-          />
-        </div>
+      <div className="grid gap-6">
+        {error && <ErrorState message={error} onRetry={fetchData} />}
 
-        {/* Spending Analytics Charts */}
-        <div className="grid gap-5 grid-cols-1 xl:grid-cols-2">
-          <Panel
-            title="Monthly Spending Trajectory"
-            action={
-              <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
-                {lineChartData.length > 0 ? `${lineChartData.length} Months` : "No data"}
-              </span>
-            }
-          >
-            <p className="mb-4 text-xs text-muted">
-              Monthly expenditure breakdown showing spending velocity and trendline.
-            </p>
-            {lineChartData.length > 0 ? (
-              <LineAreaChart data={lineChartData} color="#6366f1" height={260} />
-            ) : (
-              <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-border bg-muted-bg/40 text-sm text-muted">
-                No spending data yet. Start shopping to unlock your trend chart.
-              </div>
-            )}
-          </Panel>
-
-          <Panel
-            title="Category Spend Distribution"
-            action={
-              <span className="rounded-lg bg-purple-500/10 px-2.5 py-1 text-xs font-bold text-purple-600 dark:text-purple-400">
-                {donutChartData.length > 0 ? "Top Categories" : "No data"}
-              </span>
-            }
-          >
-            <p className="mb-4 text-xs text-muted">
-              Visual share of your budget allocated across different product verticals.
-            </p>
-            {donutChartData.length > 0 ? (
-              <div className="grid grid-cols-1 items-center gap-4 sm:grid-cols-2">
-                <DonutChart data={donutChartData} size={220} />
-                <div className="grid gap-2">
-                  {(spending?.categorySpending || []).map((cat) => (
-                    <div key={cat.category} className="flex items-center justify-between rounded-xl bg-muted-bg p-2.5 text-xs">
-                      <span className="font-bold text-text">{cat.category}</span>
-                      <span className="font-black text-primary">{formatCurrency(cat.amount)} ({cat.percentage}%)</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-border bg-muted-bg/40 text-sm text-muted">
-                Category analytics will appear after your first purchase.
-              </div>
-            )}
-          </Panel>
-        </div>
-
-        <Panel title="Most Purchased Products" action={<span className="rounded-lg bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-600 dark:text-amber-400">{spending?.mostPurchasedProducts?.length || 0} Items</span>}>
-          {spending?.mostPurchasedProducts && spending.mostPurchasedProducts.length > 0 ? (
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-              {spending.mostPurchasedProducts.map((product) => (
-                <div key={product.id} className="rounded-2xl border border-border bg-muted-bg/60 p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted">{product.category}</p>
-                  <h3 className="mt-2 line-clamp-2 text-sm font-black text-text">{product.title}</h3>
-                  <div className="mt-3 flex items-center justify-between text-xs">
-                    <span className="text-muted">Purchased</span>
-                    <span className="font-black text-primary">{product.purchases}x</span>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between text-xs">
-                    <span className="text-muted">Spend</span>
-                    <span className="font-bold text-text">{formatCurrency(product.totalSpent)}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-border bg-muted-bg/40 p-8 text-center text-sm text-muted">
-              No purchased products yet. Once you place orders, your top products will appear here.
-            </div>
-          )}
-        </Panel>
-
-        {/* Wishlist Analytics & Price Drop Alerts */}
-        <Panel
-          title="Wishlist Price-Drop Opportunities"
-          action={
-            <Link
-              href="/wishlist"
-              className="flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+        {/* Date Range Filter */}
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-3 sm:p-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold uppercase text-muted">Period:</span>
+            <select
+              value={range}
+              onChange={(e) => setRange(e.target.value)}
+              className="rounded-xl border border-border bg-muted-bg px-3 py-1.5 text-xs font-bold text-text outline-none focus:border-primary"
             >
-              View Full Wishlist <FaArrowRight size={10} />
-            </Link>
-          }
-        >
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {(wishlist?.priceDropOpportunities || []).map((item) => (
-              <div
-                key={item.id}
-                className="flex flex-col justify-between rounded-2xl border border-border bg-muted-bg/50 p-4 transition hover:border-primary/40 hover:shadow-md"
-              >
-                <div>
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="rounded-md bg-rose-500/15 px-2 py-0.5 text-[10px] font-black uppercase text-rose-600 dark:text-rose-400">
-                      Save {formatCurrency(item.priceDrop)} ({item.priceDropPercent}%)
-                    </span>
-                    <span className="text-xs text-muted">{item.category}</span>
-                  </div>
-                  <h3 className="line-clamp-2 text-sm font-black text-text">{item.title}</h3>
-                </div>
-
-                <div className="mt-4 flex items-end justify-between">
-                  <div>
-                    <p className="text-[10px] text-muted line-through">{formatCurrency(item.originalPrice)}</p>
-                    <p className="text-lg font-black text-primary">{formatCurrency(item.currentPrice)}</p>
-                  </div>
-                  <Link
-                    href={`/products/${item.id}`}
-                    className="rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-white transition hover:bg-primary-hover"
-                  >
-                    Grab Deal
-                  </Link>
-                </div>
-              </div>
-            ))}
-            {(wishlist?.priceDropOpportunities || []).length === 0 && (
-              <div className="col-span-full rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted">
-                <FaHeart className="mx-auto mb-2 text-muted" size={24} />
-                No active price drops right now. Add more items to your wishlist to get notified.
-              </div>
-            )}
+              {DATE_RANGES.map((r) => (
+                <option key={r.value} value={r.value}>{r.label}</option>
+              ))}
+            </select>
           </div>
-        </Panel>
-
-        {/* Personalized Offers & Rewards */}
-        <Panel
-          title="Personalized Offers & Exclusive Perks"
-          action={
-            <span className="rounded-lg bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-              {offers.length} Active Rewards
-            </span>
-          }
-        >
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {offers.length > 0 ? (
-              offers.map((offer) => (
-                <div
-                  key={offer.id}
-                  className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-surface to-muted-bg p-5 shadow-sm"
-                >
-                  <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-primary/10 blur-xl" />
-                  <div>
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="flex items-center gap-1 text-xs font-black uppercase text-primary">
-                        <FaTag size={10} /> {offer.discountPercent}% OFF
-                      </span>
-                      <span className="text-[10px] text-muted">Exp: {new Date(offer.expiresAt).toLocaleDateString()}</span>
-                    </div>
-                    <h3 className="font-extrabold text-text">{offer.title}</h3>
-                    <p className="mt-1 text-xs leading-5 text-muted">{offer.description}</p>
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-between gap-2 border-t border-border/80 pt-3">
-                    <span className="rounded-lg bg-surface px-2.5 py-1 text-xs font-mono font-black text-text border border-border">
-                      {offer.code}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleCopyOffer(offer.code)}
-                      className="flex items-center gap-1 rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-white transition hover:bg-primary-hover"
-                    >
-                      {copiedCode === offer.code ? (
-                        <>
-                          <FaCheck size={10} /> Copied!
-                        </>
-                      ) : (
-                        "Apply Code"
-                      )}
-                    </button>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="col-span-full rounded-2xl border border-dashed border-border bg-muted-bg/40 p-8 text-center text-sm text-muted">
-                No personalized offers available right now. Keep shopping to unlock exclusive rewards.
-              </div>
-            )}
-          </div>
-        </Panel>
-
-        {/* Saved Searches & Shopping Timeline */}
-        <div className="grid gap-6 grid-cols-1 xl:grid-cols-2">
-          {/* Saved Searches */}
-          <Panel title="Saved Searches">
-            <form onSubmit={handleSaveSearch} className="mb-4 flex flex-col gap-2 sm:flex-row">
-              <input
-                value={newQuery}
-                onChange={(e) => setNewQuery(e.target.value)}
-                placeholder="Save search (e.g., Ultra-wide Monitor)..."
-                className="w-full flex-1 rounded-xl border border-border bg-surface px-3 py-2 text-xs text-text outline-none focus:border-primary"
-              />
-              <select
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-xs text-text outline-none focus:border-primary sm:w-auto"
-              >
-                <option value="Electronics">Electronics</option>
-                <option value="Fashion">Fashion</option>
-                <option value="Home & Living">Home & Living</option>
-                <option value="Beauty">Beauty</option>
-              </select>
-              <button
-                type="submit"
-                className="flex items-center justify-center gap-1 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white transition hover:bg-primary-hover sm:w-auto"
-              >
-                <FaBookmark size={10} /> Save
-              </button>
-            </form>
-
-            <div className="grid gap-2">
-              {searches.length > 0 ? (
-                searches.map((s) => (
-                  <div
-                    key={s.id}
-                    className="flex items-center justify-between rounded-xl border border-border bg-surface p-3 transition hover:border-primary/40"
-                  >
-                    <Link
-                      href={`/products?search=${encodeURIComponent(s.query)}`}
-                      className="flex items-center gap-2.5 text-xs font-bold text-text hover:text-primary"
-                    >
-                      <FaSearch size={11} className="text-muted" />
-                      <span>{s.query}</span>
-                      {s.category && (
-                        <span className="rounded-md bg-muted-bg px-2 py-0.5 text-[10px] text-muted">
-                          {s.category}
-                        </span>
-                      )}
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteSearch(s.id)}
-                      className="p-1 text-muted transition hover:text-error"
-                      title="Remove saved search"
-                    >
-                      <FaTrash size={11} />
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-xl border border-dashed border-border bg-muted-bg/40 p-4 text-center text-xs text-muted">
-                  Save a product search to track your favorite shopping filters here.
-                </div>
-              )}
-            </div>
-          </Panel>
-
-          {/* Shopping Activity Timeline */}
-          <Panel title="Shopping Activity Timeline">
-            <div className="space-y-3">
-              {timeline.length > 0 ? (
-                timeline.map((act) => (
-                  <div key={act.id} className="flex items-start gap-3 rounded-xl bg-muted-bg/60 p-3 text-xs">
-                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-xs">
-                      {act.activityType === "order"
-                        ? "📦"
-                        : act.activityType === "wishlist_add"
-                        ? "❤️"
-                        : act.activityType === "search"
-                        ? "🔍"
-                        : act.activityType === "review"
-                        ? "⭐"
-                        : "🛡️"}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-bold text-text">{act.title}</p>
-                      {act.details && <p className="mt-0.5 text-[11px] text-muted">{act.details}</p>}
-                      <p className="mt-1 text-[10px] text-muted/80">{new Date(act.createdAt).toLocaleString()}</p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-xl border border-dashed border-border bg-muted-bg/40 p-4 text-center text-xs text-muted">
-                  Your shopping activity timeline is empty right now.
-                </div>
-              )}
-            </div>
-          </Panel>
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-bold text-text transition hover:border-primary/40 hover:text-primary"
+          >
+            <FiDownload size={12} /> Export CSV
+          </button>
         </div>
+
+        {/* KPI Cards */}
+        {loading ? (
+          <LoadingGrid count={4} />
+        ) : analytics ? (
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              icon="💳"
+              label="Total Spent"
+              value={formatCurrency(analytics.totalSpent)}
+              note={`${analytics.completedOrders} valid orders`}
+              color="default"
+            />
+            <StatCard
+              icon="📦"
+              label="Total Orders"
+              value={String(analytics.totalOrders)}
+              note={`${analytics.completedOrders} completed`}
+              color="default"
+            />
+            <StatCard
+              icon="📊"
+              label="Average Order Value"
+              value={formatCurrency(analytics.averageOrderValue)}
+              note={`From ${analytics.completedOrders} orders`}
+              color="default"
+            />
+            <StatCard
+              icon="💰"
+              label="Total Savings"
+              value={formatCurrency(analytics.totalSavings)}
+              note={`Coupon: ${formatCurrency(analytics.couponSavings)}`}
+              color="success"
+            />
+          </div>
+        ) : null}
+
+        {/* Spending Overview Charts */}
+        {loading ? (
+          <LoadingGrid count={2} height="h-72" />
+        ) : analytics ? (
+          <>
+            {/* Monthly & Weekly Spending */}
+            <div className="grid gap-6 grid-cols-1 xl:grid-cols-2">
+              <Panel
+                title="Monthly Spending"
+                action={
+                  <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
+                    {monthlyChartData.length > 0 ? `${monthlyChartData.length} Months` : "No data"}
+                  </span>
+                }
+              >
+                {monthlyChartData.length > 0 ? (
+                  <LineAreaChart data={monthlyChartData} color="var(--color-chart-1)" height={260} />
+                ) : (
+                  <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-border bg-muted-bg/40 text-sm text-muted">
+                    No spending data for this period
+                  </div>
+                )}
+              </Panel>
+
+              <Panel
+                title="Weekly Spending Pattern"
+                action={
+                  <span className="rounded-lg bg-accent/10 px-2.5 py-1 text-xs font-bold text-accent">
+                    By Day
+                  </span>
+                }
+              >
+                {weeklyChartData.some((d) => d.value > 0) ? (
+                  <BarChart data={weeklyChartData} color="var(--color-chart-4)" height={260} />
+                ) : (
+                  <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-border bg-muted-bg/40 text-sm text-muted">
+                    No weekly data available
+                  </div>
+                )}
+              </Panel>
+            </div>
+
+            {/* Category & Seller Spending */}
+            <div className="grid gap-6 grid-cols-1 xl:grid-cols-2">
+              <Panel
+                title="Category Spending"
+                action={
+                  <span className="rounded-lg bg-accent/10 px-2.5 py-1 text-xs font-bold text-accent">
+                    {categoryChartData.length} Categories
+                  </span>
+                }
+              >
+                {categoryChartData.length > 0 ? (
+                  <div className="grid grid-cols-1 items-center gap-4 sm:grid-cols-2">
+                    <DonutChart data={categoryChartData} size={200} />
+                    <div className="grid gap-2">
+                      {analytics.categorySpending.slice(0, 6).map((cat) => (
+                        <div key={cat.category} className="flex items-center justify-between rounded-xl bg-muted-bg p-2.5 text-xs">
+                          <span className="font-bold text-text truncate max-w-[120px]">{cat.category}</span>
+                          <span className="font-black text-primary">{formatCurrency(cat.amount)} ({cat.percentage}%)</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-border bg-muted-bg/40 text-sm text-muted">
+                    No category data available
+                  </div>
+                )}
+              </Panel>
+
+              <Panel
+                title="Seller Spending"
+                action={
+                  <span className="rounded-lg bg-success/10 px-2.5 py-1 text-xs font-bold text-success">
+                    {sellerChartData.length} Sellers
+                  </span>
+                }
+              >
+                {sellerChartData.length > 0 ? (
+                  <div className="space-y-3">
+                    {analytics.sellerSpending.slice(0, 5).map((seller) => (
+                      <div key={seller.sellerId} className="rounded-xl border border-border bg-muted-bg/50 p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-bold text-text text-sm">{seller.name}</span>
+                          <span className="font-black text-primary">{formatCurrency(seller.amount)}</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-muted-bg overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-primary transition-all"
+                            style={{ width: `${Math.min(100, (seller.amount / (analytics.sellerSpending[0]?.amount || 1)) * 100)}%` }}
+                          />
+                        </div>
+                        <p className="mt-1 text-[10px] text-muted">{seller.orders} order{seller.orders !== 1 ? "s" : ""}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-border bg-muted-bg/40 text-sm text-muted">
+                    No seller data available
+                  </div>
+                )}
+              </Panel>
+            </div>
+
+            {/* Smart Insights & Budget */}
+            <div className="grid gap-6 grid-cols-1 xl:grid-cols-2">
+              <Panel
+                title="Smart Spending Insights"
+                action={
+                  <span className="rounded-lg bg-warning/10 px-2.5 py-1 text-xs font-bold text-warning">
+                    {analytics.insights.length} Insights
+                  </span>
+                }
+              >
+                {analytics.insights.length > 0 ? (
+                  <div className="space-y-3">
+                    {analytics.insights.map((insight, i) => (
+                      <div key={i} className="flex items-start gap-3 rounded-xl bg-muted-bg/60 p-3">
+                        <span className="mt-0.5 text-lg">
+                          {insight.includes("more") ? "📈" : insight.includes("less") ? "📉" : insight.includes("saved") ? "💰" : insight.includes("category") ? "📦" : "💡"}
+                        </span>
+                        <p className="text-xs leading-relaxed text-text">{insight}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-border bg-muted-bg/40 p-6 text-center text-sm text-muted">
+                    More insights will appear as you shop
+                  </div>
+                )}
+
+                {analytics.highestSpendingMonth && (
+                  <div className="mt-4 rounded-xl bg-primary/5 border border-primary/20 p-4">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Highest Spending Month</p>
+                    <p className="mt-1 text-lg font-black text-text">{analytics.highestSpendingMonth.month}</p>
+                    <p className="text-sm font-bold text-primary">{formatCurrency(analytics.highestSpendingMonth.amount)}</p>
+                  </div>
+                )}
+
+                {analytics.spendingTrendPercent !== 0 && (
+                  <div className="mt-3 flex items-center gap-2 rounded-xl bg-muted-bg p-3">
+                    {trendIcon}
+                    <span className="text-xs font-bold text-text">
+                      Spending is {analytics.spendingTrend} by {Math.abs(analytics.spendingTrendPercent)}% vs last month
+                    </span>
+                  </div>
+                )}
+              </Panel>
+
+              <Panel
+                title="Monthly Budget Tracker"
+                action={
+                  <button
+                    onClick={() => setShowBudgetEdit(!showBudgetEdit)}
+                    className="flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+                  >
+                    <FiEdit3 size={10} /> {showBudgetEdit ? "Cancel" : "Edit Budget"}
+                  </button>
+                }
+              >
+                {showBudgetEdit ? (
+                  <div className="space-y-3">
+                    <label className="text-xs font-bold text-muted">Set Monthly Budget (৳)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={budgetInput}
+                        onChange={(e) => setBudgetInput(e.target.value)}
+                        placeholder={budget?.monthlyBudget?.toString() || "10000"}
+                        className="flex-1 rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text outline-none focus:border-primary"
+                      />
+                      <button
+                        onClick={handleBudgetSave}
+                        disabled={savingBudget}
+                        className="flex items-center gap-1 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white transition hover:bg-primary-hover disabled:opacity-50"
+                      >
+                        <FiCheck size={12} /> Save
+                      </button>
+                    </div>
+                  </div>
+                ) : budget ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="rounded-xl bg-muted-bg p-3 text-center">
+                        <p className="text-[10px] font-bold uppercase text-muted">Budget</p>
+                        <p className="mt-1 text-sm font-black text-text">{formatCurrency(budget.monthlyBudget)}</p>
+                      </div>
+                      <div className="rounded-xl bg-muted-bg p-3 text-center">
+                        <p className="text-[10px] font-bold uppercase text-muted">Spent</p>
+                        <p className="mt-1 text-sm font-black text-primary">{formatCurrency(budget.spent)}</p>
+                      </div>
+                      <div className="rounded-xl bg-muted-bg p-3 text-center">
+                        <p className="text-[10px] font-bold uppercase text-muted">Remaining</p>
+                        <p className={`mt-1 text-sm font-black ${budget.status === "exceeded" ? "text-error" : "text-success"}`}>{formatCurrency(budget.remaining)}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold text-muted">Progress</span>
+                        <span className={`text-xs font-black ${budget.status === "exceeded" ? "text-error" : budget.status === "near" ? "text-warning" : "text-success"}`}>
+                          {budget.percentage}%
+                        </span>
+                      </div>
+                      <div className="h-3 rounded-full bg-muted-bg overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${budget.status === "exceeded" ? "bg-error" : budget.status === "near" ? "bg-warning" : "bg-success"}`}
+                          style={{ width: `${Math.min(100, budget.percentage)}%` }}
+                        />
+                      </div>
+                      <p className="mt-2 text-xs text-muted">
+                        {budget.status === "exceeded"
+                          ? "⚠️ You have exceeded your monthly budget!"
+                          : budget.status === "near"
+                          ? "⚡ You are near your budget limit."
+                          : `✅ You have used ${budget.percentage}% of your monthly budget.`}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-border bg-muted-bg/40 p-6 text-center text-sm text-muted">
+                    Set a monthly budget to track your spending
+                  </div>
+                )}
+              </Panel>
+            </div>
+
+            {/* Order Summary */}
+            <Panel title="Order Summary">
+              {loading ? (
+                <LoadingCard height="h-24" />
+              ) : analytics ? (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="rounded-xl bg-muted-bg p-4 text-center">
+                    <p className="text-2xl font-black text-text">{analytics.totalOrders}</p>
+                    <p className="text-xs font-bold text-muted">Total Orders</p>
+                  </div>
+                  <div className="rounded-xl bg-success/10 p-4 text-center">
+                    <p className="text-2xl font-black text-success">{analytics.completedOrders}</p>
+                    <p className="text-xs font-bold text-muted">Completed</p>
+                  </div>
+                  <div className="rounded-xl bg-error/10 p-4 text-center">
+                    <p className="text-2xl font-black text-error">{analytics.cancelledOrders}</p>
+                    <p className="text-xs font-bold text-muted">Cancelled</p>
+                  </div>
+                  <div className="rounded-xl bg-warning/10 p-4 text-center">
+                    <p className="text-2xl font-black text-warning">{analytics.returnedOrders}</p>
+                    <p className="text-xs font-bold text-muted">Returned/Refunded</p>
+                  </div>
+                </div>
+              ) : null}
+            </Panel>
+          </>
+        ) : !error ? (
+          <EmptyState
+            icon="📊"
+            title="No spending data yet"
+            description="Start shopping on ShopNest to see your spending insights here."
+            action={
+              <a
+                href="/products"
+                className="inline-flex items-center gap-1 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white transition hover:bg-primary-hover"
+              >
+                Explore Products
+              </a>
+            }
+          />
+        ) : null}
       </div>
     </DashboardShell>
   );
