@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
+import { DashboardShell, Panel, StatCard, EmptyState } from "@/components/dashboard/DashboardUI";
 import { adminDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { getPlatformAnalytics, PlatformAnalyticsData } from "@/lib/api/admin-intelligence";
 import { LineAreaChart } from "@/components/analytics/LineAreaChart";
@@ -41,6 +41,11 @@ export default function AdminAnalyticsPage() {
     label: c.category,
     value: c.revenue,
   }));
+
+  const formatGrowth = (value: number | string) => {
+    if (typeof value === "string") return value;
+    return value >= 0 ? `+${value}%` : `${value}%`;
+  };
 
   return (
     <DashboardShell
@@ -84,131 +89,184 @@ export default function AdminAnalyticsPage() {
           </div>
         </div>
 
-        {/* Macro KPI Cards */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            icon="🌐"
-            label="Gross Merchandise Value"
-            value={formatCurrency(data?.kpis.totalRevenue || 42800000)}
-            note="Platform GMV total"
-            trend={data?.kpis.revenueGrowth || "+24.8% YoY"}
+        {loading ? (
+          <div className="flex h-64 items-center justify-center rounded-2xl border border-border bg-surface">
+            <div className="flex flex-col items-center gap-3">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              <span className="text-sm font-bold text-muted">Loading analytics...</span>
+            </div>
+          </div>
+        ) : !data ? (
+          <EmptyState
+            icon="📊"
+            title="No Analytics Data"
+            description="Unable to load platform analytics. Please try again later."
           />
-          <StatCard
-            icon="👥"
-            label="Total Active Shoppers"
-            value={(data?.kpis.totalUsers || 128420).toLocaleString()}
-            note="Registered customer accounts"
-            trend={data?.kpis.userGrowth || "+18.2% YoY"}
-          />
-          <StatCard
-            icon="🏪"
-            label="Verified Active Sellers"
-            value={(data?.kpis.totalSellers || 4821).toLocaleString()}
-            note="Active merchant storefronts"
-            trend={data?.kpis.sellerGrowth || "+14.6% YoY"}
-          />
-          <StatCard
-            icon="📦"
-            label="Marketplace Orders"
-            value={(data?.kpis.totalOrders || 21482).toLocaleString()}
-            note="Total processed checkouts"
-            trend={data?.kpis.orderGrowth || "+21.4% YoY"}
-          />
-        </div>
+        ) : (
+          <>
+            {/* Macro KPI Cards */}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <StatCard
+                icon="🌐"
+                label="Gross Merchandise Value"
+                value={formatCurrency(data.kpis.totalRevenue)}
+                note="Platform GMV total"
+                trend={formatGrowth(data.kpis.revenueGrowth)}
+              />
+              <StatCard
+                icon="👥"
+                label="Total Active Shoppers"
+                value={data.kpis.totalUsers.toLocaleString()}
+                note="Registered customer accounts"
+                trend={data.kpis.userGrowth}
+              />
+              <StatCard
+                icon="🏪"
+                label="Verified Active Sellers"
+                value={data.kpis.totalSellers.toLocaleString()}
+                note="Active merchant storefronts"
+                trend={data.kpis.sellerGrowth}
+              />
+              <StatCard
+                icon="📦"
+                label="Marketplace Orders"
+                value={data.kpis.totalOrders.toLocaleString()}
+                note="Total processed checkouts"
+                trend={data.kpis.orderGrowth}
+              />
+            </div>
 
-        {/* Macro Growth Charts */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Panel
-            title="Marketplace GMV Progression"
-            action={
-              <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
-                National GMV (৳)
-              </span>
-            }
-          >
-            <p className="mb-4 text-xs text-muted">
-              Aggregate transaction volume processed across all vendor storefronts.
-            </p>
-            <LineAreaChart
-              data={lineChartData.length > 0 ? lineChartData : [{ label: "W1", value: 9800000 }, { label: "W2", value: 12800000 }]}
-              color="var(--color-chart-1)"
-              height={260}
-            />
-          </Panel>
+            {/* Macro Growth Charts */}
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Panel
+                title="Marketplace GMV Progression"
+                action={
+                  <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
+                    National GMV (৳)
+                  </span>
+                }
+              >
+                <p className="mb-4 text-xs text-muted">
+                  Aggregate transaction volume processed across all vendor storefronts.
+                </p>
+                {lineChartData.length > 0 ? (
+                  <LineAreaChart
+                    data={lineChartData}
+                    color="var(--color-chart-1)"
+                    height={260}
+                  />
+                ) : (
+                  <EmptyState
+                    icon="📈"
+                    title="No Revenue Data"
+                    description="No orders found in this time period."
+                  />
+                )}
+              </Panel>
 
-          <Panel
-            title="Order Fulfillment Intake"
-            action={
-              <span className="rounded-lg bg-success/10 px-2.5 py-1 text-xs font-bold text-success">
-                Order Volumes
-              </span>
-            }
-          >
-            <p className="mb-4 text-xs text-muted">
-              Order count distribution across divisional fulfillment corridors.
-            </p>
-            <BarChart
-              data={barChartData.length > 0 ? barChartData : [{ label: "W1", value: 4850 }, { label: "W2", value: 6350 }]}
-              color="var(--color-chart-2)"
-              height={260}
-            />
-          </Panel>
-        </div>
+              <Panel
+                title="Order Fulfillment Intake"
+                action={
+                  <span className="rounded-lg bg-success/10 px-2.5 py-1 text-xs font-bold text-success">
+                    Order Volumes
+                  </span>
+                }
+              >
+                <p className="mb-4 text-xs text-muted">
+                  Order count distribution across divisional fulfillment corridors.
+                </p>
+                {barChartData.length > 0 ? (
+                  <BarChart
+                    data={barChartData}
+                    color="var(--color-chart-2)"
+                    height={260}
+                  />
+                ) : (
+                  <EmptyState
+                    icon="📦"
+                    title="No Order Data"
+                    description="No orders found in this time period."
+                  />
+                )}
+              </Panel>
+            </div>
 
-        {/* Category Distribution & Top Sellers Ranking */}
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-1">
-            <Panel title="Marketplace Category Share">
-              <div className="flex flex-col items-center">
-                <DonutChart
-                  data={donutChartData.length > 0 ? donutChartData : [{ label: "Tech", value: 44 }, { label: "Fashion", value: 26 }]}
-                  size={200}
-                />
-                <div className="mt-4 grid w-full gap-2 text-xs">
-                  {(data?.categoryPerformance || []).map((cat) => (
-                    <div key={cat.category} className="flex items-center justify-between rounded-xl bg-muted-bg p-2.5">
-                      <span className="font-bold text-text">{cat.category}</span>
-                      <span className="font-black text-primary">
-                        {formatCurrency(cat.revenue)} ({cat.share}%)
-                      </span>
+            {/* Category Distribution & Top Sellers Ranking */}
+            <div className="grid gap-6 lg:grid-cols-3">
+              <div className="lg:col-span-1">
+                <Panel title="Marketplace Category Share">
+                  <div className="flex flex-col items-center">
+                    {donutChartData.length > 0 ? (
+                      <>
+                        <DonutChart
+                          data={donutChartData}
+                          size={200}
+                        />
+                        <div className="mt-4 grid w-full gap-2 text-xs">
+                          {data.categoryPerformance.map((cat) => (
+                            <div key={cat.category} className="flex items-center justify-between rounded-xl bg-muted-bg p-2.5">
+                              <span className="font-bold text-text">{cat.category}</span>
+                              <span className="font-black text-primary">
+                                {formatCurrency(cat.revenue)} ({cat.share}%)
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <EmptyState
+                        icon="🏷️"
+                        title="No Category Data"
+                        description="No categorized orders found."
+                      />
+                    )}
+                  </div>
+                </Panel>
+              </div>
+
+              <div className="lg:col-span-2">
+                <Panel title="Top Verified Seller Rankings">
+                  {data.topSellersRanking.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead>
+                          <tr className="border-b border-border text-muted">
+                            <th className="pb-3 font-bold">Rank</th>
+                            <th className="pb-3 font-bold">Merchant Name</th>
+                            <th className="pb-3 font-bold">Processed GMV</th>
+                            <th className="pb-3 font-bold">Orders</th>
+                            <th className="pb-3 font-bold">Rating</th>
+                            <th className="pb-3 font-bold">Return Rate</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/60">
+                          {data.topSellersRanking.map((sel) => (
+                            <tr key={sel.rank} className="transition hover:bg-muted-bg/50">
+                              <td className="py-3 font-black text-primary">#{sel.rank}</td>
+                              <td className="py-3 font-extrabold text-text">{sel.name}</td>
+                              <td className="py-3 font-black text-emerald-600 dark:text-emerald-400">
+                                {formatCurrency(sel.gmv)}
+                              </td>
+                              <td className="py-3 font-semibold text-text">{sel.orders.toLocaleString()}</td>
+                              <td className="py-3 font-bold text-amber-500">★ {sel.rating}</td>
+                              <td className="py-3 text-muted">{sel.returnRate}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                  ))}
-                </div>
+                  ) : (
+                    <EmptyState
+                      icon="🏪"
+                      title="No Seller Data"
+                      description="No seller rankings available for this period."
+                    />
+                  )}
+                </Panel>
               </div>
-            </Panel>
-          </div>
-
-          <div className="lg:col-span-2">
-            <Panel title="Top Verified Seller Rankings">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-border text-muted">
-                      <th className="pb-3 font-bold">Rank</th>
-                      <th className="pb-3 font-bold">Merchant Name</th>
-                      <th className="pb-3 font-bold">Processed GMV</th>
-                      <th className="pb-3 font-bold">Orders</th>
-                      <th className="pb-3 font-bold">Rating</th>
-                      <th className="pb-3 font-bold">Return Rate</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
-                    {(data?.topSellersRanking || []).map((sel) => (
-                      <tr key={sel.rank} className="transition hover:bg-muted-bg/50">
-                        <td className="py-3 font-black text-primary">#{sel.rank}</td>
-                        <td className="py-3 font-extrabold text-text">{sel.name}</td>
-                        <td className="py-3 font-black text-emerald-600 dark:text-emerald-400">{sel.gmv}</td>
-                        <td className="py-3 font-semibold text-text">{sel.orders.toLocaleString()}</td>
-                        <td className="py-3 font-bold text-amber-500">★ {sel.rating}</td>
-                        <td className="py-3 text-muted">{sel.returnRate}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Panel>
-          </div>
-        </div>
+            </div>
+          </>
+        )}
       </div>
     </DashboardShell>
   );
