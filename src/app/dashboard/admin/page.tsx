@@ -30,6 +30,7 @@ import { LineAreaChart } from "@/components/analytics/LineAreaChart";
 import { BarChart } from "@/components/analytics/BarChart";
 import { DonutChart } from "@/components/analytics/DonutChart";
 import { AiCommerceCopilot } from "@/components/ai/AiCommerceCopilot";
+import { formatCurrency } from "@/lib/utils";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<
@@ -560,11 +561,11 @@ export default function AdminDashboard() {
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-text text-sm">{cat.name}</span>
                       <span className="rounded-md bg-success/15 text-success px-2 py-0.5 text-[10px] font-black">
-                        {cat.growthRate}
+                        {cat.growthRate >= 0 ? `+${cat.growthRate}%` : `${cat.growthRate}%`}
                       </span>
                     </div>
                     <p className="text-[11px] text-muted mt-1">
-                      {cat.orderVolume} • {cat.activeSellers} Active Sellers • Avg Order: {cat.avgOrderValue}
+                      {cat.activeSellers} Active Sellers • Avg Order: {formatCurrency(cat.avgOrderValue)}
                     </p>
                   </div>
 

@@ -140,14 +140,20 @@ export interface MarketplaceForecastData {
 export interface CategoryIntelligenceData {
   categories: Array<{
     name: string;
-    growthRate: string;
-    revenueShare: number;
-    orderVolume: string;
+    products: number;
     activeSellers: number;
-    avgOrderValue: string;
+    orders: number;
+    unitsSold: number;
+    revenue: number;
+    avgOrderValue: number;
+    revenueShare: number;
+    growthRate: number;
+    avgRating: number;
+    ratingCount: number;
   }>;
   topPerformer: string;
   fastestExpandingCatalog: string;
+  totalRevenue: number;
 }
 
 export interface SystemTelemetryData {
@@ -212,7 +218,7 @@ export interface PlatformAnalyticsData {
   range: string;
   kpis: {
     totalRevenue: number;
-    revenueGrowth: string;
+    revenueGrowth: number;
     totalUsers: number;
     userGrowth: string;
     totalSellers: number;
@@ -221,8 +227,8 @@ export interface PlatformAnalyticsData {
     orderGrowth: string;
   };
   timeline: Array<{ label: string; revenue: number; orders: number; users: number; sellers: number }>;
-  categoryPerformance: Array<{ category: string; revenue: number; share: number; growth: string }>;
-  topSellersRanking: Array<{ rank: number; name: string; gmv: string; orders: number; rating: number; returnRate: string }>;
+  categoryPerformance: Array<{ category: string; revenue: number; share: number; orders: number }>;
+  topSellersRanking: Array<{ rank: number; storeId: string; name: string; gmv: number; gmvFormatted: string; orders: number; rating: number; returnRate: number; products: number }>;
 }
 
 export async function getPlatformAnalytics(range: string = "30d") {
