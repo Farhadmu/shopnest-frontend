@@ -34,7 +34,7 @@ export default function CustomerOverviewPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="e.g. 'I need something for my brother's birthday under 5000 tk'"
-              className="flex-1 rounded-xl bg-background px-4 py-3 text-xs text-text placeholder:text-muted focus:border-primary focus:outline-none"
+              className="flex-1 rounded-xl border border-border bg-background px-4 py-3 text-xs text-text placeholder:text-muted focus:border-primary focus:outline-none"
             />
             <button
               type="submit"

@@ -102,7 +102,7 @@ function ProductsContent() {
           : undefined,
     })
       .then((data) => {
-        const sorted = [...data];
+        let sorted = [...data];
 
         if (sortBy === "Price: Low to High") {
           sorted.sort(

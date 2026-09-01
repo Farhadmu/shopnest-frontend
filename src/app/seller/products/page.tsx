@@ -111,65 +111,61 @@ export default function SellerProducts() {
           </div>
         ) : (
           <div className="grid gap-3">
-            {filteredItems.map((p) => {
-              const pid = (p as any)._id || p.id;
-              const catName = typeof p.category === "object" && p.category !== null ? (p.category as any).name : p.category;
-              return (
-                <div
-                  key={pid}
-                  className="group flex flex-col gap-4 rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:border-primary/40 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl bg-muted-bg text-2xl">
-                      {p.images?.[0] ? (
-                        <img src={p.images[0]} alt={p.title} className="h-full w-full object-cover" />
-                      ) : (
-                        "🛍️"
-                      )}
-                    </div>
-                    <div>
-                      <span className="rounded-md bg-muted-bg px-2 py-0.5 text-[10px] font-bold uppercase text-muted">
-                        {catName}
-                      </span>
-                      <h3 className="mt-1 text-base font-black text-text group-hover:text-primary">
-                        {p.title}
-                      </h3>
-                      <p className="mt-0.5 text-xs text-muted">
-                        <span className="font-black text-text">৳{p.price.toLocaleString()}</span>
-                        {p.discountPrice && (
-                          <span className="ml-1.5 text-[11px] text-muted line-through">
-                            ৳{p.discountPrice.toLocaleString()}
-                          </span>
-                        )}
-                        {" · "}
-                        <span
-                          className={
-                            p.stock > 5 ? "text-emerald-600 font-bold" : "text-amber-600 font-bold"
-                          }
-                        >
-                          {p.stock} in stock
-                        </span>
-                      </p>
-                    </div>
+            {filteredItems.map((p) => (
+              <div
+                key={p.id}
+                className="group flex flex-col gap-4 rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:border-primary/40 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl bg-muted-bg text-2xl">
+                    {p.images?.[0] ? (
+                      <img src={p.images[0]} alt={p.title} className="h-full w-full object-cover" />
+                    ) : (
+                      "🛍️"
+                    )}
                   </div>
-
-                  <div className="flex items-center gap-2 sm:self-center">
-                    <Link
-                      href={`/seller/products/add?edit=${pid}`}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3.5 py-2 text-xs font-bold text-text transition hover:border-primary hover:text-primary"
-                    >
-                      <FaEdit size={12} /> Edit
-                    </Link>
-                    <button
-                      onClick={() => handleDelete(pid, p.title)}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-error/30 bg-error/10 px-3.5 py-2 text-xs font-bold text-error transition hover:bg-error hover:text-white"
-                    >
-                      <FaTrash size={12} /> Delete
-                    </button>
+                  <div>
+                    <span className="rounded-md bg-muted-bg px-2 py-0.5 text-[10px] font-bold uppercase text-muted">
+                      {p.category}
+                    </span>
+                    <h3 className="mt-1 text-base font-black text-text group-hover:text-primary">
+                      {p.title}
+                    </h3>
+                    <p className="mt-0.5 text-xs text-muted">
+                      <span className="font-black text-text">৳{p.price.toLocaleString()}</span>
+                      {p.discountPrice && (
+                        <span className="ml-1.5 text-[11px] text-muted line-through">
+                          ৳{p.discountPrice.toLocaleString()}
+                        </span>
+                      )}
+                      {" · "}
+                      <span
+                        className={
+                          p.stock > 5 ? "text-emerald-600 font-bold" : "text-amber-600 font-bold"
+                        }
+                      >
+                        {p.stock} in stock
+                      </span>
+                    </p>
                   </div>
                 </div>
-              );
-            })}
+
+                <div className="flex items-center gap-2 sm:self-center">
+                  <Link
+                    href={`/seller/products/add?edit=${p.id}`}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3.5 py-2 text-xs font-bold text-text transition hover:border-primary hover:text-primary"
+                  >
+                    <FaEdit size={12} /> Edit
+                  </Link>
+                  <button
+                    onClick={() => handleDelete(p.id, p.title)}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-error/30 bg-error/10 px-3.5 py-2 text-xs font-bold text-error transition hover:bg-error hover:text-white"
+                  >
+                    <FaTrash size={12} /> Delete
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
