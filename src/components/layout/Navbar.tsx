@@ -177,7 +177,7 @@ export const Navbar: React.FC = () => {
   const mainNavItems: Record<UserRole, NavItem[]> = {
     guest: [
       { href: "/products", label: "Products" },
-      { href: "/dashboard/user/ai-advisor", label: "AI Advisor" },
+      { href: "/ai-advisor", label: "AI Advisor" },
       { href: "/stores", label: "Stores" },
     ],
     seller: [

@@ -152,7 +152,7 @@ export default function SellerProducts() {
 
                 <div className="flex items-center gap-2 sm:self-center">
                   <Link
-                    href={`/seller/products/add?edit=${p.id}`}
+                    href={`/dashboard/seller/products/add?edit=${p.id}`}
                     className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3.5 py-2 text-xs font-bold text-text transition hover:border-primary hover:text-primary"
                   >
                     <FaEdit size={12} /> Edit
