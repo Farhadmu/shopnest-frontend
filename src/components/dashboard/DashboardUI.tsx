@@ -6,132 +6,77 @@ import { motion, AnimatePresence } from "motion/react";
 import { usePathname } from "next/navigation";
 import { FaBars, FaTimes, FaArrowRight } from "react-icons/fa";
 
+export { DashboardSidebarLayout } from "./DashboardLayout";
+
 export type DashboardLink = { label: string; href: string; icon: string; description: string };
+
+export function DashboardHeader({
+  title,
+  subtitle,
+  role,
+  action,
+}: {
+  title: string;
+  subtitle?: string;
+  role?: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="mb-6 rounded-2xl border border-border bg-surface p-5 shadow-xs sm:p-7">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          {role && (
+            <p className="text-xs font-bold uppercase tracking-[.2em] text-primary">
+              {role} dashboard
+            </p>
+          )}
+          <h1 className="mt-1 text-2xl font-black tracking-tight text-text sm:text-3xl">
+            {title}
+          </h1>
+          {subtitle && (
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{subtitle}</p>
+          )}
+        </div>
+        {action || (
+          <Link
+            href="/products"
+            className="flex items-center gap-1.5 rounded-xl border border-border bg-background px-4 py-2.5 text-xs font-bold text-text transition hover:border-primary/40 hover:text-primary shrink-0 w-fit"
+          >
+            <span>Continue shopping</span>
+            <FaArrowRight size={10} />
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function DashboardShell({
   title,
   subtitle,
   role,
   links,
+  action,
   children,
 }: {
-  title: string;
-  subtitle: string;
-  role: string;
-  links: DashboardLink[];
+  title?: string;
+  subtitle?: string;
+  role?: string;
+  links?: DashboardLink[];
+  action?: ReactNode;
   children: ReactNode;
 }) {
-  const pathname = usePathname();
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-
   return (
-    <div className="min-h-[calc(100vh-9rem)] py-2">
-      {/* Mobile Drawer Trigger Bar */}
-      <div className="mb-4 flex items-center justify-between rounded-2xl border border-border bg-surface p-3 lg:hidden">
-        <div className="flex items-center gap-2">
-          <span className="rounded-lg bg-primary/10 px-2 py-0.5 text-xs font-black uppercase text-primary">
-            {role}
-          </span>
-          <span className="text-sm font-black text-text">Dashboard Navigation</span>
-        </div>
-        <button
-          type="button"
-          onClick={() => setMobileDrawerOpen((v) => !v)}
-          className="flex items-center gap-1.5 rounded-xl border border-border bg-muted-bg px-3 py-1.5 text-xs font-bold text-text transition hover:border-primary/40"
-        >
-          {mobileDrawerOpen ? <FaTimes size={12} /> : <FaBars size={12} />}
-          <span>{mobileDrawerOpen ? "Close" : "Menu"}</span>
-        </button>
-      </div>
-
-      {/* Mobile Drawer Content */}
-      <AnimatePresence>
-        {mobileDrawerOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mb-5 overflow-hidden rounded-2xl border border-border bg-surface p-3 lg:hidden"
-          >
-            <div className="grid gap-1">
-              {links.map((item) => {
-                const isActive = pathname === item.href || (item.href !== "#" && pathname.startsWith(item.href));
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setMobileDrawerOpen(false)}
-                    className={`flex items-center gap-3 rounded-xl p-2.5 transition ${isActive ? "bg-primary/10 text-primary font-black" : "text-text hover:bg-muted-bg"
-                      }`}
-                  >
-                    <span className="text-lg">{item.icon}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold">{item.label}</p>
-                      <p className="truncate text-[10px] text-muted">{item.description}</p>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-        {/* Desktop Sticky Sidebar */}
-        <aside className="hidden rounded-2xl border border-border bg-surface p-3 shadow-sm lg:sticky lg:top-24 lg:block lg:h-fit">
-          <div className="mb-4 rounded-xl bg-gradient-to-br from-primary/15 via-accent/10 to-transparent p-4">
-            <p className="text-[10px] font-bold uppercase tracking-[.2em] text-primary">ShopNest</p>
-            <p className="mt-1 text-lg font-black text-text">{role} Hub</p>
-          </div>
-          <nav className="grid gap-1">
-            {links.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`group rounded-xl p-3 transition ${isActive ? "bg-primary/10 text-primary" : "hover:bg-muted-bg"
-                    }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-base">
-                      {item.icon}
-                    </span>
-                    <span className="min-w-0">
-                      <span className={`block text-sm font-bold ${isActive ? "text-primary" : "text-text"}`}>
-                        {item.label}
-                      </span>
-                      <span className="mt-0.5 block text-[11px] leading-4 text-muted">{item.description}</span>
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
-          </nav>
-        </aside>
-
-        {/* Main Content Area */}
-        <main className="min-w-0">
-          <div className="mb-5 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-7">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[.2em] text-primary">{role} dashboard</p>
-                <h1 className="mt-2 text-2xl font-black tracking-tight text-text sm:text-3xl">{title}</h1>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{subtitle}</p>
-              </div>
-              <Link
-                href="/products"
-                className="flex items-center gap-1.5 rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-bold text-text transition hover:border-primary/40 hover:text-primary"
-              >
-                <span>Continue shopping</span>
-                <FaArrowRight size={11} />
-              </Link>
-            </div>
-          </div>
-          {children}
-        </main>
-      </div>
+    <div className="space-y-6">
+      {title && (
+        <DashboardHeader
+          title={title}
+          subtitle={subtitle}
+          role={role}
+          action={action}
+        />
+      )}
+      {children}
     </div>
   );
 }
