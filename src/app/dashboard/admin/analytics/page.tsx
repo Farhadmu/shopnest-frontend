@@ -1,9 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DashboardShell, Panel, StatCard, EmptyState } from "@/components/dashboard/DashboardUI";
+import {
+  DashboardShell,
+  Panel,
+  StatCard,
+  EmptyState,
+} from "@/components/dashboard/DashboardUI";
 import { adminDashboardLinks } from "@/lib/constants/dashboard-nav";
-import { getPlatformAnalytics, PlatformAnalyticsData } from "@/lib/api/admin-intelligence";
+import {
+  getPlatformAnalytics,
+  PlatformAnalyticsData,
+} from "@/lib/api/admin-intelligence";
 import { LineAreaChart } from "@/components/analytics/LineAreaChart";
 import { BarChart } from "@/components/analytics/BarChart";
 import { DonutChart } from "@/components/analytics/DonutChart";
@@ -16,6 +24,7 @@ export default function AdminAnalyticsPage() {
 
   const loadData = (selectedRange: string) => {
     setLoading(true);
+
     getPlatformAnalytics(selectedRange)
       .then(setData)
       .catch(() => null)
@@ -36,13 +45,9 @@ export default function AdminAnalyticsPage() {
     value: t.orders,
   }));
 
-  const donutChartData = (data?.categoryPerformance || []).map((c) => ({
-    label: c.category,
-    value: c.revenue,
-  }));
-
   const formatGrowth = (value: number | string) => {
     if (typeof value === "string") return value;
+
     return value >= 0 ? `+${value}%` : `${value}%`;
   };
 
@@ -58,7 +63,10 @@ export default function AdminAnalyticsPage() {
         {/* Date Filter Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-3 sm:p-4">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-black uppercase text-muted">Platform Horizon:</span>
+            <span className="text-xs font-black uppercase text-muted">
+              Platform Horizon:
+            </span>
+
             <span className="rounded-lg bg-primary/10 px-2 py-0.5 text-xs font-black text-primary">
               {range.toUpperCase()} Selected
             </span>
@@ -71,7 +79,9 @@ export default function AdminAnalyticsPage() {
                 type="button"
                 onClick={() => setRange(r)}
                 className={`rounded-lg px-3 py-1.5 transition ${
-                  range === r ? "bg-primary text-white shadow-sm" : "text-muted hover:text-text"
+                  range === r
+                    ? "bg-primary text-white shadow-sm"
+                    : "text-muted hover:text-text"
                 }`}
               >
                 {r === "7d"
@@ -88,20 +98,26 @@ export default function AdminAnalyticsPage() {
           </div>
         </div>
 
+        {/* Loading State */}
         {loading ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="animate-pulse rounded-2xl border border-border bg-surface p-5">
-                <div className="flex items-center gap-3 mb-4">
+              <div
+                key={i}
+                className="animate-pulse rounded-2xl border border-border bg-surface p-5"
+              >
+                <div className="mb-4 flex items-center gap-3">
                   <div className="h-10 w-10 rounded-xl bg-muted-bg" />
                   <div className="h-4 w-24 rounded-lg bg-muted-bg" />
                 </div>
-                <div className="h-8 w-32 rounded-lg bg-muted-bg mb-2" />
+
+                <div className="mb-2 h-8 w-32 rounded-lg bg-muted-bg" />
                 <div className="h-3 w-20 rounded-lg bg-muted-bg" />
               </div>
             ))}
           </div>
         ) : !data ? (
+          /* Empty State */
           <EmptyState
             icon="📊"
             title="No Analytics Data"
@@ -118,6 +134,7 @@ export default function AdminAnalyticsPage() {
                 note="Platform GMV total"
                 trend={formatGrowth(data.kpis.revenueGrowth)}
               />
+
               <StatCard
                 icon="👥"
                 label="Total Active Shoppers"
@@ -125,6 +142,7 @@ export default function AdminAnalyticsPage() {
                 note="Registered customer accounts"
                 trend={data.kpis.userGrowth}
               />
+
               <StatCard
                 icon="🏪"
                 label="Verified Active Sellers"
@@ -132,6 +150,7 @@ export default function AdminAnalyticsPage() {
                 note="Active merchant storefronts"
                 trend={data.kpis.sellerGrowth}
               />
+
               <StatCard
                 icon="📦"
                 label="Marketplace Orders"
@@ -143,6 +162,7 @@ export default function AdminAnalyticsPage() {
 
             {/* Macro Growth Charts */}
             <div className="grid gap-6 lg:grid-cols-2">
+              {/* GMV Chart */}
               <Panel
                 title="Marketplace GMV Progression"
                 action={
@@ -152,8 +172,10 @@ export default function AdminAnalyticsPage() {
                 }
               >
                 <p className="mb-4 text-xs text-muted">
-                  Aggregate transaction volume processed across all vendor storefronts.
+                  Aggregate transaction volume processed across all vendor
+                  storefronts.
                 </p>
+
                 {lineChartData.length > 0 ? (
                   <LineAreaChart
                     data={lineChartData}
@@ -164,12 +186,15 @@ export default function AdminAnalyticsPage() {
                   <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-border">
                     <div className="text-center">
                       <span className="text-2xl">📈</span>
-                      <p className="mt-2 text-xs text-muted">No revenue data for this period</p>
+                      <p className="mt-2 text-xs text-muted">
+                        No revenue data for this period
+                      </p>
                     </div>
                   </div>
                 )}
               </Panel>
 
+              {/* Orders Chart */}
               <Panel
                 title="Order Fulfillment Intake"
                 action={
@@ -179,8 +204,9 @@ export default function AdminAnalyticsPage() {
                 }
               >
                 <p className="mb-4 text-xs text-muted">
-                  Order count distribution across divisional fulfillment corridors.
+                  Order volume trends across the selected time period.
                 </p>
+
                 {barChartData.length > 0 ? (
                   <BarChart
                     data={barChartData}
@@ -191,7 +217,9 @@ export default function AdminAnalyticsPage() {
                   <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-border">
                     <div className="text-center">
                       <span className="text-2xl">📦</span>
-                      <p className="mt-2 text-xs text-muted">No order data for this period</p>
+                      <p className="mt-2 text-xs text-muted">
+                        No order data for this period
+                      </p>
                     </div>
                   </div>
                 )}
@@ -200,34 +228,75 @@ export default function AdminAnalyticsPage() {
 
             {/* Category Distribution & Top Sellers Ranking */}
             <div className="grid gap-6 lg:grid-cols-3">
-              <div className="lg:col-span-1">
+              {/* Marketplace Category Share */}
+              <div className="min-w-0 lg:col-span-1">
                 <Panel title="Marketplace Category Share">
-                  <div className="flex flex-col items-center">
-                    {donutChartData.length > 0 ? (
+                  <div className="flex w-full min-w-0 flex-col items-center">
+                    {data.categoryPerformance && data.categoryPerformance.length > 0 ? (
                       <>
-                        <DonutChart
-                          data={donutChartData}
-                          size={200}
-                        />
-                        <div className="mt-4 grid w-full gap-2 text-xs">
-                          {data.categoryPerformance.map((cat) => (
-                            <div key={cat.category} className="flex items-center justify-between rounded-xl bg-muted-bg p-2.5">
-                              <div className="flex items-center gap-2">
-                                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: `var(--color-chart-${Math.min(data.categoryPerformance.indexOf(cat) + 1, 5)})` }} />
-                                <span className="font-bold text-text">{cat.category}</span>
+                        {/* Responsive Donut Chart Container */}
+                        <div className="relative flex w-full items-center justify-center py-2">
+                          <DonutChart
+                            data={data.categoryPerformance.map((c) => ({
+                              label: c.category,
+                              value: c.revenue,
+                            }))}
+                            size={180}
+                          />
+                        </div>
+
+                        {/* Category List */}
+                        <div className="mt-4 grid w-full min-w-0 gap-2 text-xs">
+                          {data.categoryPerformance.map((cat, index) => {
+                            const totalRevenue = data.categoryPerformance.reduce(
+                              (sum, item) => sum + item.revenue,
+                              0
+                            );
+                            const percentage =
+                              totalRevenue > 0
+                                ? ((cat.revenue / totalRevenue) * 100).toFixed(1)
+                                : "0";
+
+                            return (
+                              <div
+                                key={cat.category}
+                                className="flex min-w-0 items-center justify-between gap-2 rounded-xl bg-muted-bg p-2.5"
+                              >
+                                <div className="flex min-w-0 items-center gap-2">
+                                  <span
+                                    className="h-2.5 w-2.5 shrink-0 rounded-full"
+                                    style={{
+                                      backgroundColor: `var(--color-chart-${Math.min(
+                                        index + 1,
+                                        5
+                                      )})`,
+                                    }}
+                                  />
+                                  <span className="truncate font-bold text-text">
+                                    {cat.category}
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                  <span className="text-[11px] text-muted">
+                                    ৳{cat.revenue.toLocaleString()}
+                                  </span>
+                                  <span className="shrink-0 font-black text-primary">
+                                    {percentage}%
+                                  </span>
+                                </div>
                               </div>
-                              <span className="font-black text-primary">
-                                {cat.share}%
-                              </span>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </>
                     ) : (
                       <div className="flex h-48 items-center justify-center">
                         <div className="text-center">
                           <span className="text-2xl">🏷️</span>
-                          <p className="mt-2 text-xs text-muted">No category data available</p>
+                          <p className="mt-2 text-xs text-muted">
+                            No category data available
+                          </p>
                         </div>
                       </div>
                     )}
@@ -235,7 +304,8 @@ export default function AdminAnalyticsPage() {
                 </Panel>
               </div>
 
-              <div className="lg:col-span-2">
+              {/* Top Sellers Ranking */}
+              <div className="min-w-0 lg:col-span-2">
                 <Panel title="Top Verified Seller Rankings">
                   {data.topSellersRanking.length > 0 ? (
                     <div className="overflow-x-auto">
@@ -244,37 +314,69 @@ export default function AdminAnalyticsPage() {
                           <tr className="border-b border-border text-muted">
                             <th className="pb-3 font-bold">Rank</th>
                             <th className="pb-3 font-bold">Merchant Name</th>
-                            <th className="pb-3 font-bold">Processed GMV</th>
+                            <th className="pb-3 font-bold">
+                              Processed GMV
+                            </th>
                             <th className="pb-3 font-bold">Orders</th>
                             <th className="pb-3 font-bold">Rating</th>
                             <th className="pb-3 font-bold">Return Rate</th>
                           </tr>
                         </thead>
+
                         <tbody className="divide-y divide-border/60">
                           {data.topSellersRanking.map((sel) => (
-                            <tr key={sel.rank} className="transition hover:bg-muted-bg/50">
+                            <tr
+                              key={sel.rank}
+                              className="transition hover:bg-muted-bg/50"
+                            >
+                              {/* Rank */}
                               <td className="py-3">
-                                <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black ${
-                                  sel.rank === 1 ? "bg-amber-500/20 text-amber-600" :
-                                  sel.rank === 2 ? "bg-gray-400/20 text-gray-500" :
-                                  sel.rank === 3 ? "bg-orange-500/20 text-orange-600" :
-                                  "bg-muted-bg text-muted"
-                                }`}>
+                                <span
+                                  className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black ${
+                                    sel.rank === 1
+                                      ? "bg-amber-500/20 text-amber-600"
+                                      : sel.rank === 2
+                                        ? "bg-gray-400/20 text-gray-500"
+                                        : sel.rank === 3
+                                          ? "bg-orange-500/20 text-orange-600"
+                                          : "bg-muted-bg text-muted"
+                                  }`}
+                                >
                                   {sel.rank}
                                 </span>
                               </td>
-                              <td className="py-3 font-extrabold text-text">{sel.name}</td>
+
+                              {/* Merchant Name */}
+                              <td className="py-3 font-extrabold text-text">
+                                {sel.name}
+                              </td>
+
+                              {/* GMV */}
                               <td className="py-3 font-black text-emerald-600 dark:text-emerald-400">
                                 {formatCurrency(sel.gmv)}
                               </td>
-                              <td className="py-3 font-semibold text-text">{sel.orders.toLocaleString()}</td>
-                              <td className="py-3 font-bold text-amber-500">★ {sel.rating}</td>
+
+                              {/* Orders */}
+                              <td className="py-3 font-semibold text-text">
+                                {sel.orders.toLocaleString()}
+                              </td>
+
+                              {/* Rating */}
+                              <td className="py-3 font-bold text-amber-500">
+                                ★ {sel.rating}
+                              </td>
+
+                              {/* Return Rate */}
                               <td className="py-3">
-                                <span className={`rounded-md px-2 py-0.5 font-bold ${
-                                  sel.returnRate > 10 ? "bg-error/10 text-error" :
-                                  sel.returnRate > 5 ? "bg-warning/10 text-warning" :
-                                  "bg-success/10 text-success"
-                                }`}>
+                                <span
+                                  className={`rounded-md px-2 py-0.5 font-bold ${
+                                    sel.returnRate > 10
+                                      ? "bg-error/10 text-error"
+                                      : sel.returnRate > 5
+                                        ? "bg-warning/10 text-warning"
+                                        : "bg-success/10 text-success"
+                                  }`}
+                                >
                                   {sel.returnRate}%
                                 </span>
                               </td>
@@ -287,7 +389,9 @@ export default function AdminAnalyticsPage() {
                     <div className="flex h-48 items-center justify-center">
                       <div className="text-center">
                         <span className="text-2xl">🏪</span>
-                        <p className="mt-2 text-xs text-muted">No seller rankings available</p>
+                        <p className="mt-2 text-xs text-muted">
+                          No seller rankings available
+                        </p>
                       </div>
                     </div>
                   )}
