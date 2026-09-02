@@ -44,7 +44,6 @@ export const sellerDashboardLinks: DashboardLink[] = [
 
 export const adminDashboardLinks: DashboardLink[] = [
   { label: "Command Center", href: "/dashboard/admin", icon: "🛡️", description: "Platform-wide overview." },
-  { label: "Marketplace Copilot", href: "/dashboard/admin/copilot", icon: "🤖", description: "AI-powered marketplace intelligence." },
   { label: "Platform Analytics", href: "/dashboard/admin/analytics", icon: "📈", description: "Marketplace-wide metrics." },
   { label: "Security Center", href: "/dashboard/admin/security", icon: "🔐", description: "Platform security posture." },
   { label: "Risk & Fraud", href: "/dashboard/admin/risk", icon: "🚨", description: "Fraud & anomaly detection." },
