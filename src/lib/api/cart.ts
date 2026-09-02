@@ -1,4 +1,5 @@
 import { clientFetch, clientMutation } from "@/lib/core/client";
+import { notifyCommerceUpdated } from "@/lib/commerce-events";
 
 export interface CartItem {
   productId: string;
@@ -23,7 +24,7 @@ export async function addToCart(
   productId: string,
   quantity: number = 1
 ) {
-  return clientMutation<Cart>(
+  const res = await clientMutation<Cart>(
     "/cart/items",
     "POST",
     {
@@ -31,24 +32,30 @@ export async function addToCart(
       quantity,
     }
   );
+  notifyCommerceUpdated();
+  return res;
 }
 
 export async function updateCartItem(
   productId: string,
   quantity: number
 ) {
-  return clientMutation<Cart>(
+  const res = await clientMutation<Cart>(
     `/cart/items/${productId}`,
     "PATCH",
     {
       quantity,
     }
   );
+  notifyCommerceUpdated();
+  return res;
 }
 
 export async function removeCartItem(productId: string) {
-  return clientMutation<Cart>(
+  const res = await clientMutation<Cart>(
     `/cart/items/${productId}`,
     "DELETE"
   );
-}
+  notifyCommerceUpdated();
+  return res;
+}
