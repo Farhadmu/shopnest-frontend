@@ -1,27 +1,25 @@
-import { clientFetch, clientMutation } from "@/lib/core/client";
+﻿import { clientFetch, clientMutation } from "@/lib/core/client";
 
-// Updated types to match new backend response format
 export interface SellerHealthData {
   storeName: string;
-  overallHealth: number | null;
-  hasEnoughData: boolean;
+  overallHealth: number;
   metrics: {
-    customerSatisfaction: { score: number | null; unit: string; status: string };
-    deliveryReliability: { score: number | null; unit: string; status: string };
-    returnRate: { score: number | null; unit: string; status: string };
+    customerSatisfaction: { score: number; unit: string; target: number; status: string };
+    responseRate: { score: number; unit: string; target: number; status: string };
+    deliveryReliability: { score: number; unit: string; target: number; status: string };
+    productQuality: { score: number; unit: string; target: number; status: string };
+    returnRate: { score: number; unit: string; target: number; status: string };
   };
   recommendations: string[];
 }
 
 export interface SalesForecastData {
-  storeId?: string;
-  period?: string;
-  hasEnoughData: boolean;
-  message?: string;
-  expectedRevenue: number | null;
-  expectedOrders: number | null;
-  confidenceScore: number | null;
-  growthRateProjected?: string | null;
+  storeId: string;
+  period: string;
+  expectedRevenue: number;
+  expectedOrders: number;
+  confidenceScore: number;
+  growthRateProjected: string;
   forecastDaily: Array<{
     day: number;
     date: string;
@@ -30,105 +28,93 @@ export interface SalesForecastData {
     upperBand: number;
     expectedOrders: number;
   }>;
-  limitations?: string;
+  limitations: string;
 }
 
 export interface DemandHeatmapData {
-  hasEnoughData: boolean;
-  message?: string;
   timeframe: string;
+  categories: string[];
+  days: string[];
   heatmapData: Array<{
-    division: string;
-    orders: number;
-    revenue: number;
-    intensity: number;
+    category: string;
+    days: Array<{ day: string; intensity: number; level: string; orderVolume: number }>;
   }>;
-  totalOrders?: number;
-  topDivision?: string | null;
+  peakDays: string;
+  topCategory: string;
 }
 
 export interface GrowthSimulationResult {
-  currentBaseline: {
-    avgPrice: number;
-    monthlyOrders: number;
-    monthlyRevenue: number;
-  };
-  simulatedScenario: {
-    newPrice: number;
-    adSpend: number;
-    inventoryExpansion: number;
-  };
+  scenario: { currentPrice: number; newPrice: number; adSpend: number; inventoryExpansion: number };
   projectedImpact: {
     salesVolumeChange: string;
     revenueChange: string;
-    estimatedOrdersChange: number;
+    grossMarginImpact: string;
+    estimatedExtraOrders: number;
   };
-  isSimulation: boolean;
-  disclaimer: string;
+  strategicInsight: string;
 }
 
 export interface CampaignSimulationResult {
-  hasEnoughData: boolean;
-  message?: string;
-  campaignName?: string;
-  discountPercent?: number;
-  durationDays?: number;
-  currentBaseline?: {
-    avgDailyOrders: number;
-    avgOrderValue: number;
-  };
-  simulation?: {
-    estimatedOrders: number;
-    grossRevenue: number;
-    discountCost: number;
-    netRevenue: number;
-  };
-  isSimulation?: boolean;
-  disclaimer?: string;
+  campaignName: string;
+  discountPercent: number;
+  durationDays: number;
+  targetSegment: string;
+  estimatedReach: string;
+  estimatedConversionRate: string;
+  expectedOrders: string;
+  grossRevenue: string;
+  discountCost: string;
+  netRevenue: string;
+  recommendedDuration: string;
+  riskScore: string;
 }
 
 export interface CustomerSegmentsData {
-  hasEnoughData: boolean;
-  message?: string;
   totalCustomersTracked: number;
-  totalOrders?: number;
   segments: Array<{
     name: string;
-    count: number;
     percentage: number;
-    description: string;
+    customerCount: number;
+    avgOrderValue: string;
+    repeatFrequency: string;
+    recommendedAction: string;
   }>;
 }
 
 export interface ChurnPredictorData {
-  hasEnoughData: boolean;
-  message?: string;
   riskTiers: {
-    highRisk: { count: number; percentage: number; description: string };
-    mediumRisk: { count: number; percentage: number; description: string };
-    lowRisk: { count: number; percentage: number; description: string };
+    highRisk: { percentage: number; count: number; description: string };
+    mediumRisk: { percentage: number; count: number; description: string };
+    lowRisk: { percentage: number; count: number; description: string };
   };
-  inactiveThresholdDays?: number;
+  retentionTriggers: Array<{
+    trigger: string;
+    targetCount: number;
+    projectedWinBack: string;
+  }>;
 }
 
 export interface ProfitabilityData {
-  hasEnoughData: boolean;
-  message?: string;
-  revenue: number;
-  orderCount?: number;
-  hasCostData: boolean;
-  summary?: {
+  summary: {
     revenue: number;
-    totalCost: number;
+    cogs: number;
+    deliveryCost: number;
+    marketingCost: number;
+    returnLosses: number;
     grossProfit: number;
+    estimatedNetProfit: number;
     netMarginPercent: string;
   };
-  productCount?: number;
+  topProfitableProducts: Array<{
+    title: string;
+    revenue: number;
+    marginPercent: number;
+    netProfit: number;
+  }>;
 }
 
 export interface SellerGoalItem {
   id: string;
-  _id?: string;
   title: string;
   metricType: string;
   targetValue: number;
@@ -142,7 +128,6 @@ export interface SellerGoalItem {
 
 export interface AbExperimentData {
   id: string;
-  _id?: string;
   productId: string;
   productTitle: string;
   testType: string;
@@ -167,11 +152,11 @@ export async function getDemandHeatmap(timeframe = "30d") {
   return clientFetch<DemandHeatmapData>(`/sellers/demand-heatmap?timeframe=${timeframe}`);
 }
 
-export async function simulateGrowthScenario(data: { currentPrice?: number; newPrice?: number; adSpend?: number; inventoryExpansion?: number }) {
+export async function simulateGrowthScenario(data: { currentPrice: number; newPrice: number; adSpend: number; inventoryExpansion: number }) {
   return clientMutation<GrowthSimulationResult>("/sellers/simulator/growth", "POST", data);
 }
 
-export async function simulateCampaign(data: { campaignName?: string; discountPercent?: number; durationDays?: number }) {
+export async function simulateCampaign(data: { campaignName: string; discountPercent: number; durationDays: number; targetSegment: string }) {
   return clientMutation<CampaignSimulationResult>("/sellers/simulator/campaign", "POST", data);
 }
 
@@ -191,7 +176,7 @@ export async function getSellerGoals() {
   return clientFetch<SellerGoalItem[]>("/sellers/goals");
 }
 
-export async function createSellerGoal(data: { title: string; metricType: string; targetValue: number; unit?: string; deadline: string; period?: string }) {
+export async function createSellerGoal(data: Partial<SellerGoalItem>) {
   return clientMutation<SellerGoalItem>("/sellers/goals", "POST", data);
 }
 
@@ -210,16 +195,18 @@ export async function createAbExperiment(data: { productId: string; productTitle
 // 21. ADVANCED SELLER ANALYTICS
 export interface SellerAnalyticsData {
   range: string;
-  hasEnoughData: boolean;
   kpis: {
     totalRevenue: number;
     totalOrders: number;
     productsSold: number;
+    conversionRate: number;
+    customerGrowth: string;
     avgOrderValue: number;
   };
-  trendPoints: Array<{ label: string; revenue: number; orders: number }>;
-  topProducts: Array<{ id: string; title: string; price: number; sold: number; revenue: number }>;
-  productCount: number;
+  trendPoints: Array<{ label: string; revenue: number; orders: number; visitors: number }>;
+  topProducts: Array<{ id: string; title: string; price: number; sold: number; revenue: number; conversion: string }>;
+  lowPerformingProducts: Array<{ id: string; title: string; price: number; stock: number; sold: number; views: number; issue: string; action: string }>;
+  categoryPerformance: Array<{ category: string; revenue: number; share: number; growth: string }>;
 }
 
 export async function getSellerAnalytics(range: string = "30d") {
@@ -228,14 +215,13 @@ export async function getSellerAnalytics(range: string = "30d") {
 
 // 22. SMART INVENTORY INTELLIGENCE
 export interface InventoryIntelligenceData {
-  hasEnoughData: boolean;
-  message?: string;
-  inventoryHealthScore: number | null;
+  inventoryHealthScore: number;
   summary: {
     totalItems: number;
     healthyStockCount: number;
     lowStockCount: number;
     outOfStockCount: number;
+    overstockCount: number;
   };
   items: Array<{
     id: string;
@@ -243,11 +229,13 @@ export interface InventoryIntelligenceData {
     currentStock: number;
     price: number;
     category: string;
-    sold: number;
+    demandTrend: string;
     stockOutRisk: "Critical" | "High" | "Medium" | "Low";
     restockPriority: string;
-    estimatedDaysRemaining: number | null;
+    velocity: string;
+    estimatedDaysRemaining: number;
   }>;
+  alerts: string[];
 }
 
 export async function getInventoryIntelligence() {
@@ -256,18 +244,19 @@ export async function getInventoryIntelligence() {
 
 // 23. CUSTOMER INSIGHTS & RETENTION
 export interface CustomerInsightsData {
-  hasEnoughData: boolean;
-  message?: string;
   overview: {
     totalCustomers: number;
-    totalOrders: number;
-    totalRevenue: number;
+    newCustomers: number;
     returningCustomers: number;
-    repeatPurchaseRate: number;
-    averageOrderValue: number;
+    repeatPurchaseRate: string;
+    customerSatisfaction: string;
+    averageLifetimeValue: string;
   };
+  topCustomerSegments: Array<{ segment: string; count: number; avgSpend: string; ltv: string }>;
+  recentActivity: Array<{ customer: string; action: string; time: string; amount: string }>;
 }
 
 export async function getCustomerInsights() {
   return clientFetch<CustomerInsightsData>("/sellers/customer-insights");
 }
+
