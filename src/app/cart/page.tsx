@@ -1,275 +1,102 @@
 "use client";
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import {
-  FaTrash,
   FaArrowRight,
   FaShieldAlt,
   FaTicketAlt,
   FaShoppingBag,
 } from "react-icons/fa";
 
-import {
-  getCart,
-  removeCartItem,
-  updateCartItem,
-  Cart,
-  CartItem,
-} from "@/lib/api/cart";
-
-import {
-  getGuestCart,
-  updateGuestCartItemQuantity,
-  removeGuestCartItem,
-  clearGuestCart,
-  syncGuestDataToServer,
-} from "@/lib/guest-store";
-
-import { validateCoupon } from "@/lib/api/coupons";
-import { getErrorMessage } from "@/lib/core/errors";
+import { AnimatePresence } from "framer-motion";
+import { useCartDrawer } from "@/context/CartDrawerContext";
+import { CartItemCard } from "@/components/cart/CartItemCard";
 import { formatCurrency } from "@/lib/utils";
 import { LoadingState } from "@/components/common/LoadingState";
 import { EmptyState } from "@/components/common/EmptyState";
-
-interface AppliedCoupon {
-  code: string;
-  discount: number;
-}
 
 export default function CartPage() {
   const router = useRouter();
   const { data: session, isPending } = useSession();
 
-  // Cart State
-  const [cart, setCart] = useState<Cart | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Shared Cart State from Context
+  const {
+    items: cartItems,
+    itemCount,
+    subtotal,
+    discount,
+    total,
+    appliedCoupon,
+    isLoading,
+    isUpdating,
+    error,
+    couponError: contextCouponError,
+    updateQuantity,
+    removeItem,
+    applyCoupon,
+    removeCoupon,
+    moveToWishlist,
+  } = useCartDrawer();
 
-  // Coupon State
+  // Coupon Input State
   const [couponInput, setCouponInput] = useState("");
   const [isApplying, setIsApplying] = useState(false);
-  const [couponError, setCouponError] = useState<string | null>(null);
-  const [appliedCoupon, setAppliedCoupon] =
-    useState<AppliedCoupon | null>(null);
+  const [localCouponError, setLocalCouponError] = useState<string | null>(null);
 
   // Product Update State
-  const [updatingProductId, setUpdatingProductId] =
-    useState<string | null>(null);
+  const [updatingProductId, setUpdatingProductId] = useState<string | null>(null);
 
-  // =========================
-  // Load Cart (Guest or DB)
-  // =========================
-
-  const loadCart = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    if (!session?.user) {
-      // Guest mode from localStorage
-      const localCart = getGuestCart();
-      setCart(localCart);
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      // If user is authenticated, sync any pending guest items & clear localStorage
-      const localCart = getGuestCart();
-      if (localCart?.items?.length > 0) {
-        await syncGuestDataToServer();
-      } else {
-        clearGuestCart();
-      }
-      const data = await getCart();
-      setCart(data);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [session]);
-
-  useEffect(() => {
-    if (!isPending) {
-      loadCart();
-    }
-  }, [isPending, loadCart]);
-
-  // Listen for guest cart updates across tabs/components
-  useEffect(() => {
-    if (!session?.user) {
-      const handleGuestCartUpdate = () => {
-        setCart(getGuestCart());
-      };
-      window.addEventListener("guest_cart_updated", handleGuestCartUpdate);
-      return () => {
-        window.removeEventListener("guest_cart_updated", handleGuestCartUpdate);
-      };
-    }
-  }, [session]);
-
-  // =========================
-  // Merge Duplicate Products
-  // =========================
-
-  const cartItems = useMemo<CartItem[]>(() => {
-    if (!cart?.items?.length) {
-      return [];
-    }
-
-    const itemsMap = new Map<string, CartItem>();
-
-    cart.items.forEach((item) => {
-      const existingItem = itemsMap.get(item.productId);
-
-      if (existingItem) {
-        itemsMap.set(item.productId, {
-          ...existingItem,
-          quantity:
-            existingItem.quantity + item.quantity,
-        });
-      } else {
-        itemsMap.set(item.productId, item);
-      }
-    });
-
-    return Array.from(itemsMap.values());
-  }, [cart]);
-
-  // =========================
   // Quantity Change
-  // =========================
-
-  const handleQuantityChange = async (
-    productId: string,
-    quantity: number
-  ) => {
-    if (quantity < 1 || updatingProductId) {
-      return;
-    }
-
+  const handleQuantityChange = async (productId: string, quantity: number) => {
+    if (quantity < 1 || isUpdating) return;
     setUpdatingProductId(productId);
-    setError(null);
-
     try {
-      if (!session?.user) {
-        // Guest mode
-        const updated = updateGuestCartItemQuantity(productId, quantity);
-        setCart(updated);
-      } else {
-        // Logged in mode
-        const updatedCart = await updateCartItem(
-          productId,
-          quantity
-        );
-        clearGuestCart();
-        setCart(updatedCart);
-      }
-
-      // Cart changed, so coupon must be applied again.
-      if (appliedCoupon) {
-        setAppliedCoupon(null);
-        setCouponInput("");
-        setCouponError(null);
-      }
-    } catch (err) {
-      setError(getErrorMessage(err));
+      await updateQuantity(productId, quantity);
     } finally {
       setUpdatingProductId(null);
     }
   };
 
-  // =========================
   // Remove Product
-  // =========================
-
   const handleRemove = async (productId: string) => {
-    if (updatingProductId) {
-      return;
-    }
-
+    if (isUpdating) return;
     setUpdatingProductId(productId);
-    setError(null);
-
     try {
-      if (!session?.user) {
-        // Guest mode
-        const updated = removeGuestCartItem(productId);
-        setCart(updated);
-      } else {
-        // Logged in mode
-        const updatedCart = await removeCartItem(productId);
-        clearGuestCart();
-        setCart(updatedCart);
-      }
-
-      // Remove applied coupon when cart changes.
-      if (appliedCoupon) {
-        setAppliedCoupon(null);
-        setCouponInput("");
-        setCouponError(null);
-      }
-    } catch (err) {
-      setError(getErrorMessage(err));
+      await removeItem(productId);
     } finally {
       setUpdatingProductId(null);
     }
   };
 
-  // =========================
   // Apply Coupon
-  // =========================
-
   const handleApplyCoupon = async () => {
     const code = couponInput.trim();
-
-    if (!code || !cart) {
-      return;
-    }
+    if (!code) return;
 
     setIsApplying(true);
-    setCouponError(null);
+    setLocalCouponError(null);
 
-    try {
-      const result = await validateCoupon(
-        code,
-        cart.subtotal
-      );
+    const success = await applyCoupon(code);
+    setIsApplying(false);
 
-      setAppliedCoupon({
-        code: result.code,
-        discount: result.discount,
-      });
-    } catch (err) {
-      setAppliedCoupon(null);
-      setCouponError(getErrorMessage(err));
-    } finally {
-      setIsApplying(false);
+    if (success) {
+      setCouponInput("");
+    } else {
+      setLocalCouponError("Invalid promo code. Try SAVE10 or WELCOME10.");
     }
   };
 
-  // =========================
   // Remove Coupon
-  // =========================
-
   const handleRemoveCoupon = () => {
-    setAppliedCoupon(null);
+    removeCoupon();
     setCouponInput("");
-    setCouponError(null);
+    setLocalCouponError(null);
   };
 
-  // =========================
   // Proceed to Checkout Handler
-  // =========================
-
   const handleProceedToCheckout = () => {
     if (!session?.user) {
       router.push(`/login?next=${encodeURIComponent("/dashboard/user/checkout")}`);
@@ -283,40 +110,17 @@ export default function CartPage() {
     router.push(checkoutUrl);
   };
 
-  // =========================
   // Loading
-  // =========================
-
   if (isPending || isLoading) {
     return (
       <LoadingState message="Loading your shopping cart..." />
     );
   }
 
-  // =========================
-  // Calculations
-  // =========================
-
-  const subtotal = cart?.subtotal ?? 0;
-  const discount = appliedCoupon?.discount ?? 0;
-  const total = Math.max(0, subtotal - discount);
-
-  // =========================
-  // Page
-  // =========================
+  const effectiveCouponError = localCouponError || contextCouponError;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background/60 pb-20 pt-6 text-text">
-
-      {/* Background Glow */}
-      <div className="pointer-events-none absolute left-1/4 top-10 h-[400px] w-[400px] animate-pulse rounded-full bg-blue-900 blur-[130px] dark:bg-blue-500/30" />
-
-      <div
-        className="pointer-events-none absolute bottom-10 right-1/4 h-[450px] w-[450px] animate-pulse rounded-full bg-purple-900 blur-[140px] dark:bg-purple-500/30"
-        style={{
-          animationDuration: "6s",
-        }}
-      />
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
@@ -327,7 +131,7 @@ export default function CartPage() {
         <div className="mb-10 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
 
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-primary/15 px-3.5 py-1 text-xs font-black uppercase tracking-widest text-primary shadow-sm backdrop-blur-md">
+            <div className="inline-flex items-center gap-2 rounded-sm bg-primary/15 px-3.5 py-1 text-xs font-black uppercase tracking-widest text-primary shadow-sm backdrop-blur-md">
               <FaShoppingBag className="text-xs" />
               Secure Bag {!session?.user && "(Guest Mode)"}
             </div>
@@ -344,7 +148,7 @@ export default function CartPage() {
           </div>
 
           {cartItems.length > 0 && (
-            <div className="rounded-2xl border border-border/60 bg-surface/80 px-4 py-2 text-xs font-bold text-muted shadow-sm backdrop-blur-md">
+            <div className="rounded-sm border border-border/60 bg-surface/80 px-4 py-2 text-xs font-bold text-muted shadow-sm backdrop-blur-md">
               Total Items:{" "}
               <span className="font-black text-primary">
                 {cartItems.length}
@@ -358,7 +162,7 @@ export default function CartPage() {
         ========================= */}
 
         {error && (
-          <div className="mb-6 rounded-2xl border border-error/30 bg-error/10 p-4 text-sm font-semibold text-error backdrop-blur-md">
+          <div className="mb-6 rounded-sm border border-error/30 bg-error/10 p-4 text-sm font-semibold text-error backdrop-blur-md">
             {error}
           </div>
         )}
@@ -367,7 +171,7 @@ export default function CartPage() {
             Empty Cart
         ========================= */}
 
-        {!cart || cartItems.length === 0 ? (
+        {cartItems.length === 0 ? (
           <EmptyState
             title="Your Cart is Empty"
             description="Explore our marketplace and add authentic products from verified sellers to your cart."
@@ -383,133 +187,19 @@ export default function CartPage() {
             ========================= */}
 
             <div className="flex flex-col gap-4 lg:col-span-2">
-
-              {cartItems.map((item) => {
-                const isUpdating =
-                  updatingProductId === item.productId;
-
-                return (
-                  <div
+              <AnimatePresence initial={false}>
+                {cartItems.map((item) => (
+                  <CartItemCard
                     key={item.productId}
-                    className="group relative flex flex-col items-start justify-between gap-4 rounded-3xl border border-border/80 bg-surface/80 p-4 shadow-xl shadow-black/5 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-primary/10 sm:flex-row sm:items-center sm:p-6"
-                  >
-
-                    {/* Product Info */}
-
-                    <div className="flex w-full min-w-0 items-start gap-4 sm:w-auto sm:items-center">
-
-                      <Link
-                        href={`/products/${item.productId}`}
-                        className="relative grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-2xl bg-muted-bg text-3xl shadow-inner transition group-hover:scale-105"
-                      >
-                        {item.images?.[0] || item.image ? (
-                          <img
-                            src={item.images?.[0] || item.image}
-                            alt={item.title || "Product"}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          "🛍️"
-                        )}
-                      </Link>
-
-                      <div className="min-w-0 flex-1">
-
-                        <span className="text-[10px] font-black uppercase tracking-wider text-primary">
-                          {item.category || "Marketplace Item"}
-                        </span>
-
-                        <Link
-                          href={`/products/${item.productId}`}
-                          className="mt-0.5 line-clamp-2 block text-sm font-black leading-snug text-text transition-colors hover:text-primary sm:text-base"
-                        >
-                          {item.title ||
-                            `Product #${item.productId}`}
-                        </Link>
-
-                        <p className="mt-1 text-xs font-bold text-muted sm:text-sm">
-                          {formatCurrency(item.price)} each
-                        </p>
-
-                      </div>
-                    </div>
-
-                    {/* =========================
-                        Controls
-                    ========================= */}
-
-                    <div className="flex w-full items-center justify-between gap-4 border-t border-border/60 pt-3 sm:w-auto sm:justify-end sm:border-t-0 sm:pt-0">
-
-                      {/* Quantity */}
-
-                      <div className="flex items-center rounded-2xl border border-border/80 bg-background/90 p-1 shadow-inner backdrop-blur-sm">
-
-                        <button
-                          type="button"
-                          disabled={
-                            isUpdating ||
-                            item.quantity <= 1
-                          }
-                          onClick={() =>
-                            handleQuantityChange(
-                              item.productId,
-                              item.quantity - 1
-                            )
-                          }
-                          className="grid h-8 w-8 place-items-center rounded-xl text-sm font-bold text-text transition hover:bg-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
-                        >
-                          -
-                        </button>
-
-                        <span className="w-8 text-center text-sm font-black text-text">
-                          {isUpdating
-                            ? "..."
-                            : item.quantity}
-                        </span>
-
-                        <button
-                          type="button"
-                          disabled={isUpdating}
-                          onClick={() =>
-                            handleQuantityChange(
-                              item.productId,
-                              item.quantity + 1
-                            )
-                          }
-                          className="grid h-8 w-8 place-items-center rounded-xl text-sm font-bold text-text transition hover:bg-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
-                        >
-                          +
-                        </button>
-
-                      </div>
-
-                      {/* Line Total */}
-
-                      <span className="min-w-[90px] text-right text-sm font-black text-text sm:text-base">
-                        {formatCurrency(
-                          item.price * item.quantity
-                        )}
-                      </span>
-
-                      {/* Remove */}
-
-                      <button
-                        type="button"
-                        disabled={isUpdating}
-                        onClick={() =>
-                          handleRemove(item.productId)
-                        }
-                        title="Remove item"
-                        className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-error/20 bg-error/10 text-error shadow-sm transition-all duration-300 hover:scale-105 hover:bg-error hover:text-white disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
-                      >
-                        <FaTrash size={12} />
-                      </button>
-
-                    </div>
-                  </div>
-                );
-              })}
-
+                    item={item}
+                    layoutMode="page"
+                    isUpdating={updatingProductId === item.productId || isUpdating}
+                    onUpdateQuantity={handleQuantityChange}
+                    onRemove={handleRemove}
+                    onMoveToWishlist={moveToWishlist}
+                  />
+                ))}
+              </AnimatePresence>
             </div>
 
             {/* =========================
@@ -522,7 +212,7 @@ export default function CartPage() {
                   Coupon Card
               ========================= */}
 
-              <div className="rounded-3xl border border-border/80 bg-surface/80 p-5 shadow-2xl shadow-black/5 backdrop-blur-xl transition-all hover:border-primary/30 sm:p-6">
+              <div className="rounded-sm border border-border/80 bg-surface/80 p-5 shadow-2xl shadow-black/5 backdrop-blur-xl transition-all hover:border-primary/30 sm:p-6">
 
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-muted">
                   <FaTicketAlt className="text-sm text-primary" />
@@ -531,7 +221,7 @@ export default function CartPage() {
 
                 {appliedCoupon ? (
 
-                  <div className="mt-4 flex items-center justify-between rounded-2xl border border-primary/20 bg-primary/10 p-4 backdrop-blur-md">
+                  <div className="mt-4 flex items-center justify-between rounded-sm border border-primary/20 bg-primary/10 p-4 backdrop-blur-md">
 
                     <div>
                       <p className="text-sm font-black text-primary">
@@ -576,7 +266,7 @@ export default function CartPage() {
                           }
                         }}
                         placeholder="e.g. SHOP10"
-                        className="w-full rounded-2xl border border-border/80 bg-background/90 px-4 py-3 text-xs font-bold text-text outline-none transition placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 backdrop-blur-sm"
+                        className="w-full rounded-sm border border-border/80 bg-background/90 px-4 py-3 text-xs font-bold text-text outline-none transition placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 backdrop-blur-sm"
                       />
 
                       <button
@@ -586,16 +276,16 @@ export default function CartPage() {
                           isApplying ||
                           !couponInput.trim()
                         }
-                        className="rounded-2xl bg-primary px-5 py-3 text-xs font-black text-white shadow-lg shadow-primary/25 transition-all hover:scale-105 hover:bg-primary-hover disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
+                        className="rounded-sm bg-primary px-5 py-3 text-xs font-black text-white shadow-lg shadow-primary/25 transition-all hover:scale-105 hover:bg-primary-hover disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
                       >
                         {isApplying ? "..." : "Apply"}
                       </button>
 
                     </div>
 
-                    {couponError && (
+                    {effectiveCouponError && (
                       <p className="px-1 text-xs font-semibold text-error">
-                        {couponError}
+                        {effectiveCouponError}
                       </p>
                     )}
 
@@ -607,7 +297,7 @@ export default function CartPage() {
                   Order Summary
               ========================= */}
 
-              <div className="rounded-3xl border border-border/80 bg-surface/80 p-5 shadow-2xl shadow-black/5 backdrop-blur-xl transition-all hover:border-primary/30 sm:p-6">
+              <div className="rounded-sm border border-border/80 bg-surface/80 p-5 shadow-2xl shadow-black/5 backdrop-blur-xl transition-all hover:border-primary/30 sm:p-6">
 
                 <h3 className="text-sm font-black uppercase tracking-wider text-text">
                   Order Summary
@@ -674,7 +364,7 @@ export default function CartPage() {
                 <button
                   type="button"
                   onClick={handleProceedToCheckout}
-                  className="group mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-center text-sm font-black text-white shadow-xl shadow-primary/30 transition-all duration-300 hover:scale-[1.02] hover:bg-primary-hover hover:shadow-primary/50 cursor-pointer"
+                  className="group mt-6 flex w-full items-center justify-center gap-2 rounded-sm bg-primary py-4 text-center text-sm font-black text-white shadow-xl shadow-primary/30 transition-all duration-300 hover:scale-[1.02] hover:bg-primary-hover hover:shadow-primary/50 cursor-pointer"
                 >
                   Proceed to Checkout
 
