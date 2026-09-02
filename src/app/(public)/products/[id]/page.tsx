@@ -48,6 +48,7 @@ import { PriceHistoryChart } from "@/components/products/PriceHistoryChart";
 import { ProductQASection } from "@/components/products/ProductQASection";
 import { ProductReportModal } from "@/components/products/ProductReportModal";
 import { subscribeStockAlert } from "@/lib/api/customer-intelligence-features";
+import Image from "next/image";
 
 export default function ProductDetails() {
   const params = useParams<{ id: string }>();
@@ -288,7 +289,7 @@ export default function ProductDetails() {
           <div className="relative grid min-h-[380px] w-full place-items-center overflow-hidden rounded-3xl border border-border bg-surface shadow-sm sm:min-h-[460px]">
             {product.images?.[0] ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={product.images[0]} alt={product.title} className="h-full w-full object-cover" />
+              <Image src={product.images[0]} alt={product.title} height={150} width={150} />
             ) : (
               <span className="text-8xl select-none">🛍️</span>
             )}
