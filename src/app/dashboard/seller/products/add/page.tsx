@@ -27,19 +27,12 @@ function AddProductForm() {
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
 
-  const [categories, setCategories] = useState<string[]>([
-    "Electronics",
-    "Fashion",
-    "Home & Kitchen",
-    "Beauty",
-    "Sports",
-    "Books",
-    "Gadgets",
-  ]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   const [form, setForm] = useState({
     title: "",
-    category: "Electronics",
+    category: "",
     price: "",
     discountPrice: "",
     stock: "20",
@@ -63,7 +56,8 @@ function AddProductForm() {
           setCategories(list.map((c: any) => c.name || c.title));
         }
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => setCategoriesLoading(false));
 
     if (editId) {
       setIsLoading(true);
@@ -251,7 +245,11 @@ function AddProductForm() {
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
                 className="w-full rounded-2xl border border-border bg-background px-4 py-3.5 text-sm text-text outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                disabled={categoriesLoading}
               >
+                <option value="">
+                  {categoriesLoading ? "Loading categories..." : categories.length === 0 ? "No categories available" : "Select a category"}
+                </option>
                 {categories.map((c) => (
                   <option key={c} value={c}>
                     {c}
