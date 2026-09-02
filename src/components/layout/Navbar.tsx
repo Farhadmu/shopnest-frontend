@@ -61,12 +61,12 @@ export const Navbar: React.FC = () => {
   const { data: session } = useSession();
   const user = session?.user as
     | {
-        id?: string;
-        name?: string;
-        email?: string;
-        role?: "customer" | "seller" | "admin";
-        image?: string;
-      }
+      id?: string;
+      name?: string;
+      email?: string;
+      role?: "customer" | "seller" | "admin";
+      image?: string;
+    }
     | undefined;
 
   const role: UserRole = user?.role || (user ? "customer" : "guest");
@@ -179,10 +179,13 @@ export const Navbar: React.FC = () => {
       { href: "/products", label: "Products" },
       { href: "/ai-advisor", label: "AI Advisor" },
       { href: "/stores", label: "Stores" },
+      { href: "/compare", label: "Compare" },
     ],
     seller: [
       { href: "/products", label: "Shop" },
       { href: "/dashboard/seller/orders", label: "Orders" },
+      { href: "/stores", label: "Stores" },
+      { href: "/compare", label: "Compare" },
     ],
     admin: [
       { href: "/products", label: "Shop" },
@@ -190,8 +193,9 @@ export const Navbar: React.FC = () => {
     ],
     customer: [
       { href: "/products", label: "Shop" },
+      { href: "/stores", label: "Stores" },
+      { href: "/compare", label: "Compare" },
       { href: "/dashboard/user/ai-advisor", label: "AI Advisor" },
-      { href: "/dashboard/user/orders", label: "My Orders" },
     ],
   };
 
@@ -274,11 +278,10 @@ export const Navbar: React.FC = () => {
           key={item.href}
           href={item.href}
           onClick={() => setUserDropdownOpen(false)}
-          className={`flex items-center gap-2.5 rounded-lg p-2.5 transition ${
-            item.isPrimary
+          className={`flex items-center gap-2.5 rounded-lg p-2.5 transition ${item.isPrimary
               ? "text-primary hover:bg-primary/10"
               : "text-text hover:bg-primary/10 hover:text-primary"
-          }`}
+            }`}
         >
           {typeof Icon === "string" ? (
             <span className="text-sm">{Icon}</span>
@@ -349,11 +352,10 @@ export const Navbar: React.FC = () => {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`rounded-xl px-3.5 py-2 text-sm font-semibold transition ${
-                    active
+                  className={`rounded-xl px-3.5 py-2 text-sm font-semibold transition ${active
                       ? "bg-primary/10 text-primary"
                       : "text-muted hover:bg-muted-bg hover:text-text"
-                  }`}
+                    }`}
                 >
                   {item.label}
                 </Link>
