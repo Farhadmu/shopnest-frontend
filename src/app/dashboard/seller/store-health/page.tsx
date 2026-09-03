@@ -1,8 +1,7 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
-import { sellerDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { getSellerHealthScore, SellerHealthData } from "@/lib/api/seller-intelligence";
 import { GaugeMeter } from "@/components/analytics/GaugeMeter";
 import { FaHeartbeat, FaCheckCircle, FaExclamationCircle, FaStar, FaTruck, FaComments } from "react-icons/fa";
@@ -24,7 +23,6 @@ export default function SellerStoreHealthPage() {
       role="Seller"
       title="Store Health & Performance Index"
       subtitle="Comprehensive multi-pillar evaluation across customer satisfaction, dispatch reliability, response speed, product quality, and return rates."
-      links={sellerDashboardLinks}
     >
       <div className="grid gap-6">
         {/* Overall Store Health Score Card */}

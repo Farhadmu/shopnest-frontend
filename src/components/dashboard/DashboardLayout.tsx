@@ -19,38 +19,26 @@ import {
   sellerDashboardLinks,
   adminDashboardLinks,
 } from "@/lib/constants/dashboard-nav";
-import type { DashboardLink } from "@/components/dashboard/DashboardUI";
 
 interface DashboardSidebarLayoutProps {
-  role?: string;
-  links?: DashboardLink[];
   children: ReactNode;
 }
 
-export function DashboardSidebarLayout({
-  role: initialRole,
-  links: initialLinks,
-  children,
-}: DashboardSidebarLayoutProps) {
+export function DashboardSidebarLayout({ children }: DashboardSidebarLayoutProps) {
   const pathname = usePathname();
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const { data: session } = useSession();
 
-  // Determine role & navigation links based on props or current path
-  let role = initialRole || "Customer";
-  let links = initialLinks || userDashboardLinks;
+  // Determine role & navigation links based on current path
+  let role = "Customer";
+  let links = userDashboardLinks;
 
-  if (!initialRole || !initialLinks) {
-    if (pathname.startsWith("/dashboard/seller")) {
-      role = "Seller";
-      links = sellerDashboardLinks;
-    } else if (pathname.startsWith("/dashboard/admin")) {
-      role = "Administrator";
-      links = adminDashboardLinks;
-    } else if (pathname.startsWith("/dashboard/user")) {
-      role = "Customer";
-      links = userDashboardLinks;
-    }
+  if (pathname.startsWith("/dashboard/seller")) {
+    role = "Seller";
+    links = sellerDashboardLinks;
+  } else if (pathname.startsWith("/dashboard/admin")) {
+    role = "Administrator";
+    links = adminDashboardLinks;
   }
 
   const roleIcon =
@@ -139,11 +127,10 @@ export function DashboardSidebarLayout({
                     key={item.href}
                     href={item.href}
                     onClick={() => setMobileDrawerOpen(false)}
-                    className={`flex items-center gap-3 rounded-xl p-2.5 transition ${
-                      isActive
+                    className={`flex items-center gap-3 rounded-xl p-2.5 transition ${isActive
                         ? "bg-primary/10 text-primary font-bold shadow-xs"
                         : "text-text hover:bg-muted-bg"
-                    }`}
+                      }`}
                   >
                     <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-sm">
                       {item.icon}
@@ -213,24 +200,21 @@ export function DashboardSidebarLayout({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`group flex items-start gap-3 rounded-xl p-2.5 transition-all duration-150 ${
-                    isActive
+                  className={`group flex items-start gap-3 rounded-xl p-2.5 transition-all duration-150 ${isActive
                       ? "bg-primary/10 text-primary font-bold shadow-xs border border-primary/20"
                       : "text-text hover:bg-muted-bg hover:text-text border border-transparent"
-                  }`}
+                    }`}
                 >
                   <span
-                    className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg text-sm transition-transform duration-150 group-hover:scale-105 ${
-                      isActive ? "bg-primary text-white shadow-xs" : "bg-primary/10 text-primary"
-                    }`}
+                    className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg text-sm transition-transform duration-150 group-hover:scale-105 ${isActive ? "bg-primary text-white shadow-xs" : "bg-primary/10 text-primary"
+                      }`}
                   >
                     {item.icon}
                   </span>
                   <div className="min-w-0 flex-1">
                     <span
-                      className={`block text-xs font-bold leading-tight ${
-                        isActive ? "text-primary" : "text-text"
-                      }`}
+                      className={`block text-xs font-bold leading-tight ${isActive ? "text-primary" : "text-text"
+                        }`}
                     >
                       {item.label}
                     </span>

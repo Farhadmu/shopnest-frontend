@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { DashboardShell, Panel } from "@/components/dashboard/DashboardUI";
-import { adminDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { getNotifications, markAllNotificationsRead, markNotificationRead, Notification } from "@/lib/api/notifications";
 import { FaBell, FaCheck, FaCheckDouble } from "react-icons/fa";
 
@@ -25,7 +24,6 @@ export default function AdminNotificationsPage() {
       role="Administrator"
       title="Platform Operations & Incident Notifications"
       subtitle="Critical marketplace alerts: seller onboarding requests, product moderation flags, security telemetry warnings, and refund approvals."
-      links={adminDashboardLinks}
       showContinueShopping={false}
     >
       <Panel

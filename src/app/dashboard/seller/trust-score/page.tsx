@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
-import { sellerDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { LoadingCard, ErrorState, EmptyState } from "@/components/dashboard/DashboardStates";
 import { clientFetch } from "@/lib/core/client";
 
@@ -42,7 +41,7 @@ export default function TrustScorePage() {
   const scoreLabel = score >= 80 ? "Excellent" : score >= 60 ? "Good" : score >= 40 ? "Fair" : "Needs Improvement";
 
   return (
-    <DashboardShell role="Seller" title="Seller Trust Score" subtitle="Your store's reputation score based on fulfillment, ratings, and account history" links={sellerDashboardLinks}>
+    <DashboardShell role="Seller" title="Seller Trust Score" subtitle="Your store's reputation score based on fulfillment, ratings, and account history">
       <div className="space-y-6">
         {error && <ErrorState message={error} onRetry={loadData} />}
 

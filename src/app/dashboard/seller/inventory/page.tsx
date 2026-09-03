@@ -1,9 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
-import { sellerDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { getInventoryIntelligence, InventoryIntelligenceData } from "@/lib/api/seller-intelligence";
 import { GaugeMeter } from "@/components/analytics/GaugeMeter";
 import { formatCurrency } from "@/lib/utils";
@@ -26,7 +25,6 @@ export default function SellerInventoryPage() {
       role="Seller"
       title="Smart Inventory & Stock Intelligence"
       subtitle="Proactive stock-out risk calculations, replenishment priority queues, velocity tracking, and automated catalog health ratings."
-      links={sellerDashboardLinks}
     >
       <div className="grid gap-6">
         {/* KPI Cards */}

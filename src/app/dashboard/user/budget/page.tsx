@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { DashboardShell, Panel } from "@/components/dashboard/DashboardUI";
-import { userDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { useBudgetPlanner } from "@/hooks/dashboard/user/useBudgetPlanner";
 import { useCategories } from "@/hooks/useCategories";
 import { BudgetEmptyState } from "./components/BudgetEmptyState";
@@ -21,7 +20,7 @@ export default function BudgetPlannerPage() {
   }, [categories, budgetPurpose, setBudgetPurpose]);
 
   return (
-    <DashboardShell role="Customer" title="Smart Budget Planner" subtitle="Let AI allocate the optimal cart combination for your budget." links={userDashboardLinks}>
+    <DashboardShell role="Customer" title="Smart Budget Planner" subtitle="Let AI allocate the optimal cart combination for your budget.">
       <div className="space-y-6">
         <Panel title="💰 Smart AI Budget Planner">
           <div className="rounded-2xl border border-border bg-muted-bg/30 p-4">

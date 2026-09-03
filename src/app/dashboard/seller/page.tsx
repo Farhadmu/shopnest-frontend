@@ -1,8 +1,7 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
-import { sellerDashboardLinks } from "@/lib/constants/dashboard-nav";
 import {
   getSellerHealthScore,
   SellerHealthData,
@@ -186,7 +185,6 @@ export default function SellerDashboard() {
       role="Seller"
       title="Seller Growth & Intelligence Hub"
       subtitle="Supercharge your storefront with AI forecasting, demand heatmaps, business simulators, profit analyzers, and automated A/B experimentation."
-      links={sellerDashboardLinks}
     >
       {/* Interactive Tabs */}
       <div className="mb-6 flex flex-wrap items-center gap-2 border-b border-border pb-3">

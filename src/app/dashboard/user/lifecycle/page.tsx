@@ -1,14 +1,13 @@
 "use client";
 
 import { DashboardShell, Panel } from "@/components/dashboard/DashboardUI";
-import { userDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { useProductLifecycle } from "@/hooks/dashboard/user/useProductLifecycle";
 
 export default function ProductLifecyclePage() {
   const { lifecycles } = useProductLifecycle();
 
   return (
-    <DashboardShell role="Customer" title="Product Lifecycle" subtitle="Warranty and maintenance tracking for what you've bought." links={userDashboardLinks}>
+    <DashboardShell role="Customer" title="Product Lifecycle" subtitle="Warranty and maintenance tracking for what you've bought.">
       <div className="space-y-6">
         <Panel title="🛡️ Product Lifecycle & Maintenance Tracker">
           <div className="grid gap-4 sm:grid-cols-2">

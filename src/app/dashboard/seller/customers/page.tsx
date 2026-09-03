@@ -1,8 +1,7 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
-import { sellerDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { getCustomerInsights, CustomerInsightsData } from "@/lib/api/seller-intelligence";
 import { DonutChart } from "@/components/analytics/DonutChart";
 import { FaUsers, FaUserCheck, FaHeart, FaStar, FaHistory } from "react-icons/fa";
@@ -29,7 +28,6 @@ export default function SellerCustomersPage() {
       role="Seller"
       title="Customer Insights & Retention Analytics"
       subtitle="Track customer loyalty patterns, repeat purchase rates, demographic segments, and real-time buyer engagement."
-      links={sellerDashboardLinks}
     >
       <div className="grid gap-6">
         {/* KPI Cards */}

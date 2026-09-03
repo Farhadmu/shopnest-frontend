@@ -1,8 +1,7 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useCallback } from "react";
 import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
-import { sellerDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { LoadingCard, ErrorState, EmptyState } from "@/components/dashboard/DashboardStates";
 import { clientFetch, clientMutation } from "@/lib/core/client";
 
@@ -68,7 +67,7 @@ export default function SellerSecurityCenter() {
   };
 
   return (
-    <DashboardShell role="Seller" title="Security Center" subtitle="Monitor sessions, devices, and security events" links={sellerDashboardLinks}>
+    <DashboardShell role="Seller" title="Security Center" subtitle="Monitor sessions, devices, and security events">
       <div className="space-y-6">
         {error && <ErrorState message={error} onRetry={loadData} />}
 

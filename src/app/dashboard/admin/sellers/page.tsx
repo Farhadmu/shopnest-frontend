@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { DashboardShell, Panel } from "@/components/dashboard/DashboardUI";
 import { EmptyState } from "@/components/dashboard/DashboardStates";
-import { adminDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { clientFetch, clientMutation } from "@/lib/core/client";
 
 export default function AdminSellers() {
@@ -29,7 +28,6 @@ export default function AdminSellers() {
       title="Seller Verification"
       subtitle="Approve trustworthy stores and keep the marketplace healthy."
       role="Administrator"
-      links={adminDashboardLinks}
       showContinueShopping={false}
     >
       <Panel title="Pending Applications">

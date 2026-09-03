@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
-import { userDashboardLinks } from "@/lib/constants/dashboard-nav";
 import {
   getComprehensiveSpendingAnalytics,
   getBudgetTracker,
@@ -111,7 +110,6 @@ export default function SpendingAnalyticsPage() {
       role="Customer"
       title="Spending Analytics"
       subtitle="Comprehensive insights into your spending patterns, trends, and budget tracking."
-      links={userDashboardLinks}
     >
       <div className="grid gap-6">
         {error && <ErrorState message={error} onRetry={fetchData} />}

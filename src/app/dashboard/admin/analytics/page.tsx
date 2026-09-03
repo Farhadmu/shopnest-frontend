@@ -5,9 +5,8 @@ import {
   DashboardShell,
   Panel,
   StatCard,
-  EmptyState,
 } from "@/components/dashboard/DashboardUI";
-import { adminDashboardLinks } from "@/lib/constants/dashboard-nav";
+import { EmptyState } from "@/components/dashboard/DashboardStates";
 import {
   getPlatformAnalytics,
   PlatformAnalyticsData,
@@ -56,7 +55,6 @@ export default function AdminAnalyticsPage() {
       role="Administrator"
       title="Macro Platform Growth & Commerce Analytics"
       subtitle="Nationwide marketplace GMV velocity, order trajectories, user and seller onboarding rates, and category distribution."
-      links={adminDashboardLinks}
       showContinueShopping={false}
     >
       <div className="grid gap-6">

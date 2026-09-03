@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
-import { sellerDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { LoadingCard, ErrorState, EmptyState } from "@/components/dashboard/DashboardStates";
 import { getOrders } from "@/lib/api/orders";
 import { getProducts } from "@/lib/api/products";
@@ -110,7 +109,7 @@ export default function SellerRiskIndicators() {
   const severityIcon = (s: string) => s === "high" ? "🔴" : s === "medium" ? "🟡" : "🟢";
 
   return (
-    <DashboardShell role="Seller" title="Risk & Fraud Indicators" subtitle="Monitor unusual patterns and potential risks in your store" links={sellerDashboardLinks}>
+    <DashboardShell role="Seller" title="Risk & Fraud Indicators" subtitle="Monitor unusual patterns and potential risks in your store">
       <div className="space-y-6">
         {error && <ErrorState message={error} onRetry={loadData} />}
 

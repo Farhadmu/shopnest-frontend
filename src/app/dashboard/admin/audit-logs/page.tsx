@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { DashboardShell, Panel } from "@/components/dashboard/DashboardUI";
-import { adminDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { getAuditLogs, AuditLogItem } from "@/lib/api/admin-intelligence";
 import { FaHistory, FaSearch, FaFilter, FaUserShield, FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
 
@@ -37,7 +36,6 @@ export default function AdminAuditLogsPage() {
       role="Administrator"
       title="Platform Security & Governance Audit Log"
       subtitle="Immutable audit trail of administrator approvals, merchant modifications, product moderations, system rate-limiting actions, and access policies."
-      links={adminDashboardLinks}
       showContinueShopping={false}
     >
       <div className="grid gap-6">

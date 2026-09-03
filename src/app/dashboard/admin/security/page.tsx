@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { DashboardShell, Panel, StatCard, EmptyState } from "@/components/dashboard/DashboardUI";
-import { adminDashboardLinks } from "@/lib/constants/dashboard-nav";
+import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
+import { EmptyState } from "@/components/dashboard/DashboardStates";
 import { GaugeMeter } from "@/components/analytics/GaugeMeter";
 import { LineAreaChart } from "@/components/analytics/LineAreaChart";
 import { BarChart } from "@/components/analytics/BarChart";
@@ -223,7 +223,6 @@ export default function SecurityCenterPage() {
       role="Administrator"
       title="Security Command Center"
       subtitle="Real-time security monitoring, threat detection, incident management, and audit trails."
-      links={adminDashboardLinks}
       showContinueShopping={false}
     >
       <div className="grid gap-6">

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
-import { sellerDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { getSalesForecast, SalesForecastData } from "@/lib/api/seller-intelligence";
 import { ConfidenceForecastChart } from "@/components/analytics/ConfidenceForecastChart";
 import { formatCurrency } from "@/lib/utils";
@@ -29,7 +28,6 @@ export default function SellerForecastPage() {
       role="Seller"
       title="Predictive Sales & Revenue Forecasting"
       subtitle="AI-driven demand trajectory estimates, expected order volume, confidence intervals, and seasonal pattern models."
-      links={sellerDashboardLinks}
     >
       <div className="grid gap-6">
         {/* Estimation Notice Alert */}

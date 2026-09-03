@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
-import { adminDashboardLinks } from "@/lib/constants/dashboard-nav";
 import {
   getCommandCenter,
   CommandCenterData,
@@ -86,7 +85,6 @@ export default function AdminDashboard() {
       role="Administrator"
       title="Executive Marketplace Control Center"
       subtitle="Complete platform oversight: real-time telemetry, geographic map, anomaly audits, revenue leakage tracking, seller risk matrix, and macro forecasting."
-      links={adminDashboardLinks}
       showContinueShopping={false}
     >
       {/* Interactive Tabs */}

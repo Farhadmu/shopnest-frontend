@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FiDollarSign, FiShoppingBag, FiPieChart, FiTrendingUp } from "react-icons/fi";
+import { FiPieChart, FiTrendingUp } from "react-icons/fi";
 import { getPersonalSpendingAnalytics, PersonalSpendingAnalyticsResponse } from "@/lib/api/customer-intelligence-features";
 import { formatCurrency } from "@/lib/utils";
 

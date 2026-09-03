@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { DashboardShell, Panel } from "@/components/dashboard/DashboardUI";
-import { adminDashboardLinks } from "@/lib/constants/dashboard-nav";
 import {
   getSecurityIncidents,
   updateSecurityIncident,
@@ -74,7 +73,6 @@ export default function AdminIncidentsPage() {
       role="Administrator"
       title="Security Incident Triage & Lifecycle Management"
       subtitle="Investigate security anomalies, document internal investigation notes, adjust severity tiers, and resolve active incidents."
-      links={adminDashboardLinks}
       showContinueShopping={false}
     >
       <div className="grid gap-6">

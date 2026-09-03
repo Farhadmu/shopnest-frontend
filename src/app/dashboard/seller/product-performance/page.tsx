@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { DashboardShell, Panel } from "@/components/dashboard/DashboardUI";
-import { sellerDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { LoadingTable, ErrorState, EmptyState } from "@/components/dashboard/DashboardStates";
 import { getProducts } from "@/lib/api/products";
 import { getOrders } from "@/lib/api/orders";
@@ -88,7 +87,7 @@ export default function ProductPerformancePage() {
     });
 
   return (
-    <DashboardShell role="Seller" title="Product Performance" subtitle="Track how your products are performing with real sales data" links={sellerDashboardLinks}>
+    <DashboardShell role="Seller" title="Product Performance" subtitle="Track how your products are performing with real sales data">
       <div className="space-y-6">
         {error && <ErrorState message={error} onRetry={loadData} />}
 

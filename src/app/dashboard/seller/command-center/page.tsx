@@ -1,8 +1,7 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useCallback } from "react";
 import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
-import { sellerDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { LoadingCard, LoadingGrid, LoadingChart, ErrorState, EmptyState } from "@/components/dashboard/DashboardStates";
 import { getSellerHealthScore, getSalesForecast, getProfitabilityAnalysis, getInventoryIntelligence, getCustomerInsights, getSellerAnalytics } from "@/lib/api/seller-intelligence";
 import { getSellerDashboardMetrics } from "@/lib/api/sellers";
@@ -103,7 +102,6 @@ export default function SellerCommandCenter() {
       role="Seller"
       title="Seller Command Center"
       subtitle="Real-time insights, analytics, and AI-powered tools for your store"
-      links={sellerDashboardLinks}
     >
       <div className="space-y-6">
         {error && <ErrorState message={error} onRetry={loadData} />}

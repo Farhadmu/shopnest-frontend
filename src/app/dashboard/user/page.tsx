@@ -5,7 +5,6 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { DashboardShell, Panel } from "@/components/dashboard/DashboardUI";
 import { GaugeMeter } from "@/components/analytics/GaugeMeter";
-import { userDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { useOverviewStats } from "@/hooks/dashboard/user/useOverviewStats";
 import { useShoppingIntent } from "@/hooks/dashboard/user/useShoppingIntent";
 import { addToCart } from "@/lib/api/cart";
@@ -59,7 +58,6 @@ export default function CustomerOverviewPage() {
       role="Customer"
       title="Commerce Command Center"
       subtitle="Discover personalized shopping journeys, plan smart budgets, track product lifecycles and protect your account with AI intelligence."
-      links={userDashboardLinks}
     >
       <div className="space-y-8">
         {/* Toast Alert */}

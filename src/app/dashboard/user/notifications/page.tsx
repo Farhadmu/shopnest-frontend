@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { DashboardShell, Panel } from "@/components/dashboard/DashboardUI";
-import { userDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { getNotifications, markAllNotificationsRead, markNotificationRead, Notification } from "@/lib/api/notifications";
 import { FaBell, FaCheck, FaCheckDouble } from "react-icons/fa";
 
@@ -25,7 +24,6 @@ export default function CustomerNotificationsPage() {
       role="Customer"
       title="Customer Notifications & Activity Feed"
       subtitle="Stay informed on order fulfillment dispatches, price drop opportunities, security logins, and personalized rewards."
-      links={userDashboardLinks}
     >
       <Panel
         title="Notification Feed"

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { DashboardShell, Panel } from "@/components/dashboard/DashboardUI";
-import { sellerDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { clientMutation } from "@/lib/core/client";
 
 export default function SellerAITools() {
@@ -53,7 +52,7 @@ export default function SellerAITools() {
   };
 
   return (
-    <DashboardShell role="Seller" title="AI Seller Tools" subtitle="AI-powered product content generation, pricing assistance, and listing optimization" links={sellerDashboardLinks}>
+    <DashboardShell role="Seller" title="AI Seller Tools" subtitle="AI-powered product content generation, pricing assistance, and listing optimization">
       <div className="space-y-6">
         {/* AI Tools Grid */}
         <div className="grid gap-6 lg:grid-cols-2">

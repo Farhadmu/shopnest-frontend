@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { DashboardShell, Panel } from "@/components/dashboard/DashboardUI";
-import { userDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { useShoppingJourney } from "@/hooks/dashboard/user/useShoppingJourney";
 
 export default function ShoppingJourneyPage() {
@@ -10,7 +9,7 @@ export default function ShoppingJourneyPage() {
   const progress = journeyData?.journey?.journeyProgress ?? 45;
 
   return (
-    <DashboardShell role="Customer" title="Shopping Journey" subtitle="Your personalized product discovery timeline." links={userDashboardLinks}>
+    <DashboardShell role="Customer" title="Shopping Journey" subtitle="Your personalized product discovery timeline.">
       <div className="space-y-6">
         <Panel title="🚀 Your Personalized Shopping Journey">
           <div className="mb-4 rounded-2xl bg-gradient-to-r from-primary/15 via-accent/10 to-transparent p-5">

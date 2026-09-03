@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
-import { sellerDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { LoadingCard, ErrorState } from "@/components/dashboard/DashboardStates";
 import { clientFetch, clientMutation } from "@/lib/core/client";
 
@@ -72,7 +71,7 @@ export default function StoreSettings() {
   };
 
   return (
-    <DashboardShell role="Seller" title="Store Settings" subtitle="Manage your store profile, branding, and contact information" links={sellerDashboardLinks}>
+    <DashboardShell role="Seller" title="Store Settings" subtitle="Manage your store profile, branding, and contact information">
       <div className="space-y-6">
         {error && <ErrorState message={error} onRetry={loadData} />}
 

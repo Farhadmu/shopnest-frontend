@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
-import { sellerDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { LoadingCard, ErrorState, EmptyState } from "@/components/dashboard/DashboardStates";
 import { getSellerGoals, createSellerGoal, deleteSellerGoal, SellerGoalItem } from "@/lib/api/seller-intelligence";
 
@@ -58,7 +57,7 @@ export default function SellerGoalsPage() {
   const achievedGoals = goals.filter((g) => g.status === "achieved").length;
 
   return (
-    <DashboardShell role="Seller" title="Seller Goals" subtitle="Set and track your business targets" links={sellerDashboardLinks}>
+    <DashboardShell role="Seller" title="Seller Goals" subtitle="Set and track your business targets">
       <div className="space-y-6">
         {error && <ErrorState message={error} onRetry={loadData} />}
 

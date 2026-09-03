@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
-import { userDashboardLinks } from "@/lib/constants/dashboard-nav";
 import {
   getSecurityOverview,
   SecurityOverviewData,
@@ -69,7 +68,6 @@ export default function CustomerSecurityPage() {
       role="Customer"
       title="Customer Security & Session Center"
       subtitle="Monitor recognized login devices, terminate untrusted active sessions, inspect login history, and strengthen your account defense."
-      links={userDashboardLinks}
     >
       <div className="grid gap-6">
         {actionSuccess && (

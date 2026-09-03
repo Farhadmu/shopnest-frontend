@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { DashboardShell, Panel } from "@/components/dashboard/DashboardUI";
-import { userDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { useShoppingGoals } from "@/hooks/dashboard/user/useShoppingGoals";
 
 export default function ShoppingGoalsPage() {
@@ -19,7 +18,7 @@ export default function ShoppingGoalsPage() {
   };
 
   return (
-    <DashboardShell role="Customer" title="Shopping Goals" subtitle="Set targets and track milestones toward your next big purchase." links={userDashboardLinks}>
+    <DashboardShell role="Customer" title="Shopping Goals" subtitle="Set targets and track milestones toward your next big purchase.">
       <div className="space-y-6">
         <Panel title="🎯 Personal Shopping Goals">
           <form onSubmit={handleCreate} className="mb-6 rounded-2xl border border-border bg-muted-bg/30 p-4">

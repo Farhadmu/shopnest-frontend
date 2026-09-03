@@ -1,8 +1,7 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
-import { sellerDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { getSellerAnalytics, SellerAnalyticsData } from "@/lib/api/seller-intelligence";
 import { LineAreaChart } from "@/components/analytics/LineAreaChart";
 import { BarChart } from "@/components/analytics/BarChart";
@@ -47,7 +46,6 @@ export default function SellerAnalyticsPage() {
       role="Seller"
       title="Advanced Seller Commerce Analytics"
       subtitle="Interactive revenue intelligence, order growth trends, conversion rates, catalog performance, and category shares."
-      links={sellerDashboardLinks}
     >
       <div className="grid gap-6">
         {/* Time Range Filter Bar */}

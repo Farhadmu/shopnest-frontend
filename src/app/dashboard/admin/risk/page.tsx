@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { DashboardShell, Panel, StatCard, EmptyState } from "@/components/dashboard/DashboardUI";
-import { adminDashboardLinks } from "@/lib/constants/dashboard-nav";
+import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
+import { EmptyState } from "@/components/dashboard/DashboardStates";
 import { GaugeMeter } from "@/components/analytics/GaugeMeter";
 import { BarChart } from "@/components/analytics/BarChart";
 import { DonutChart } from "@/components/analytics/DonutChart";
@@ -124,7 +124,6 @@ export default function RiskFraudPage() {
       role="Administrator"
       title="Risk & Fraud Center"
       subtitle="Monitor suspicious activity, seller risk, transaction anomalies and platform fraud signals."
-      links={adminDashboardLinks}
       showContinueShopping={false}
     >
       <div className="grid gap-6">

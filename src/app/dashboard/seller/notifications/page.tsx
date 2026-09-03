@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { DashboardShell, Panel } from "@/components/dashboard/DashboardUI";
-import { sellerDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { getNotifications, markAllNotificationsRead, markNotificationRead, Notification } from "@/lib/api/notifications";
 import { FaBell, FaCheck, FaCheckDouble } from "react-icons/fa";
 
@@ -25,7 +24,6 @@ export default function SellerNotificationsPage() {
       role="Seller"
       title="Store Notifications & Fulfillment Feed"
       subtitle="Immediate alerts for new orders, stock-out warnings, review feedback, catalog moderation updates, and payout summaries."
-      links={sellerDashboardLinks}
     >
       <Panel
         title="Store Alerts & Notifications"
