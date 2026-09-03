@@ -109,24 +109,7 @@ export default function AdminAnalyticsPage() {
     0
   );
 
-  /*
-   * IMPORTANT:
-   *
-   * DonutChart should receive percentage values,
-   * not raw revenue values.
-   *
-   * Example:
-   *
-   * cycle    = 19898
-   * Beauty   = 10000
-   * Mobile   = 6000
-   *
-   * Total = 42498
-   *
-   * cycle percentage =
-   * 19898 / 42498 * 100 = 46.8%
-   */
-
+  // Convert category revenue into percentage
   const donutChartData = categoryData.map((category) => {
     const revenue = Number(category.revenue || 0);
 
@@ -180,14 +163,14 @@ export default function AdminAnalyticsPage() {
                 type="button"
                 onClick={() => handleRangeChange(item)}
                 disabled={loading && item === range}
-                className={`whitespace-nowrap rounded-lg px-3 py-1.5 transition ${
+                className={`cursor-pointer whitespace-nowrap rounded-lg px-3 py-1.5 transition ${
                   range === item
                     ? "bg-primary text-white shadow-sm"
                     : "text-muted hover:text-text"
                 } ${
                   loading && item === range
-                    ? "cursor-wait opacity-80"
-                    : ""
+                    ? "opacity-80"
+                    : "hover:shadow-sm"
                 }`}
               >
                 {item === "7d"
@@ -282,9 +265,7 @@ export default function AdminAnalyticsPage() {
             ================================================= */}
 
             <div className="grid gap-6 lg:grid-cols-2">
-              {/* =================================================
-                  GMV CHART
-              ================================================= */}
+              {/* GMV Chart */}
 
               <Panel
                 title="Marketplace GMV Progression"
@@ -320,9 +301,7 @@ export default function AdminAnalyticsPage() {
                 )}
               </Panel>
 
-              {/* =================================================
-                  ORDERS CHART
-              ================================================= */}
+              {/* Orders Chart */}
 
               <Panel
                 title="Order Fulfillment Intake"
@@ -372,9 +351,7 @@ export default function AdminAnalyticsPage() {
                   <div className="flex w-full min-w-0 flex-col">
                     {categoryData.length > 0 ? (
                       <>
-                        {/* ========================================
-                            DONUT CHART
-                        ======================================== */}
+                        {/* Donut Chart */}
 
                         <div className="flex w-full items-center justify-center overflow-hidden py-3">
                           <div className="max-w-full">
@@ -385,9 +362,7 @@ export default function AdminAnalyticsPage() {
                           </div>
                         </div>
 
-                        {/* ========================================
-                            CATEGORY LIST
-                        ======================================== */}
+                        {/* Category List */}
 
                         <div className="mt-4 grid w-full min-w-0 gap-2 text-xs">
                           {categoryData.map((category, index) => {
@@ -461,10 +436,6 @@ export default function AdminAnalyticsPage() {
                   {data.topSellersRanking.length > 0 ? (
                     <div className="w-full overflow-x-auto">
                       <table className="w-full min-w-162.5 text-left text-xs">
-                        {/* ======================================
-                            TABLE HEADER
-                        ====================================== */}
-
                         <thead>
                           <tr className="border-b border-border text-muted">
                             <th className="pb-3 font-bold">Rank</th>
@@ -486,10 +457,6 @@ export default function AdminAnalyticsPage() {
                             </th>
                           </tr>
                         </thead>
-
-                        {/* ======================================
-                            TABLE BODY
-                        ====================================== */}
 
                         <tbody className="divide-y divide-border/60">
                           {data.topSellersRanking.map((seller) => (
