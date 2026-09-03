@@ -31,8 +31,6 @@ import {
   getGuestCart,
   getGuestWishlist,
   syncGuestDataToServer,
-  clearGuestCart,
-  clearGuestWishlist,
 } from "@/lib/guest-store";
 
 // Types for navigation structures
@@ -212,7 +210,7 @@ export const Navbar: React.FC = () => {
       { icon: FaHeart, label: "Wishlist", href: "/wishlist" },
       { icon: FaRobot, label: "AI Shopping Advisor", href: "/dashboard/user/ai-advisor" },
       { icon: FaUser, label: "Profile Settings", href: "/dashboard/user/profile" },
-      { icon: FaStore, label: "Become a Seller", href: "/dashboard/seller/dashboard", isPrimary: true },
+      { icon: FaStore, label: "Become a Seller", href: "/become-seller", isPrimary: true },
     ],
     seller: [
       { icon: FaStore, label: "Seller Overview", href: "/dashboard/seller" },

@@ -191,7 +191,6 @@ export default function RegisterPage() {
 function RegisterForm() {
   const [role, setRole] = useState<Role>("customer");
   const [fullName, setFullName] = useState("");
-  const [shopName, setShopName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [pw, setPw] = useState("");
@@ -228,8 +227,6 @@ function RegisterForm() {
         email: email.trim().toLowerCase(),
         password: pw,
         callbackURL: next,
-        // @ts-expect-error – role is a custom field in auth.ts
-        role,
       });
       if (res.error) {
         setError(res.error.message || "Registration failed.");
@@ -237,7 +234,14 @@ function RegisterForm() {
       }
       // Sync guest cart & wishlist to database
       await syncGuestDataToServer();
-      router.replace(next);
+      // "Seller" is only an intent here — the account role stays "customer"
+      // until the seller application form is actually submitted and
+      // approved. Selecting it just routes them straight to that form.
+      if (role === "seller") {
+        router.replace("/become-seller");
+      } else {
+        router.replace(next);
+      }
       router.refresh();
     } catch (err) {
       console.error("Sign up error:", err);
