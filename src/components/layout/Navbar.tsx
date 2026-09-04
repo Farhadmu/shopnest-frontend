@@ -225,6 +225,7 @@ export const Navbar: React.FC = () => {
       { icon: FaPlus, label: "Add New Product", href: "/dashboard/seller/products/add" },
       { icon: "🚚", label: "Order Fulfillment", href: "/dashboard/seller/orders" },
       { icon: FaRobot, label: "AI Seller Tools", href: "/dashboard/seller/ai-tools" },
+      { icon: FaUser, label: "Profile Settings", href: "/dashboard/seller/profile" },
       { icon: FaCog, label: "Store Settings", href: "/dashboard/seller/store-settings" },
     ],
     admin: [
@@ -238,6 +239,7 @@ export const Navbar: React.FC = () => {
       { icon: FaStore, label: "Seller Verification", href: "/dashboard/admin/sellers" },
       { icon: FaBox, label: "Product Moderation", href: "/dashboard/admin/products" },
       { icon: "📦", label: "Order Operations", href: "/dashboard/admin/orders" },
+       { icon: FaUser, label: "Profile Settings", href: "/dashboard/admin/profile" },
     ],
   };
 

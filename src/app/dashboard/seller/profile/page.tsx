@@ -3,14 +3,14 @@ import { UserProfile } from "@/lib/api/users";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
-export default async function CustomerProfilePage() {
+export default async function SellerProfilePage() {
   const session = await auth.api.getSession({ headers: await headers() });
   const userProfile: UserProfile | null = session?.user 
     ? { 
         id: session.user.id, 
         name: session.user.name, 
         email: session.user.email, 
-        role: "customer", 
+        role: "seller", 
         avatarUrl: session.user.image || undefined,
         image: session.user.image || undefined
       } 
