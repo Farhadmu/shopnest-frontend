@@ -4,7 +4,7 @@ import { FiX } from "react-icons/fi";
 import { clientMutation } from "@/lib/core/client";
 import { ApiError } from "@/lib/core/errors";
 import type { CategoryItem } from "../../../../types/category";
-import { parentOptionsFor, idOf } from "../../../../lib/utils/category-tree";
+import { indentedOptionsFor, idOf } from "../../../../lib/utils/category-tree";
 
 interface EditCategoryModalProps {
   category: CategoryItem;
@@ -93,9 +93,9 @@ export function EditCategoryModal({ category, categories, onClose, onSaved }: Ed
               className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text"
             >
               <option value={NO_PARENT}>No parent (top-level)</option>
-              {parentOptionsFor(categories, id).map((opt) => (
-                <option key={idOf(opt)} value={idOf(opt)}>
-                  {opt.name}
+              {indentedOptionsFor(categories, id).map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.label}
                 </option>
               ))}
             </select>
