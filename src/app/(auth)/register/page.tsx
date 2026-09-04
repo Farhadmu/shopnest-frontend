@@ -173,6 +173,7 @@ const Eye = ({ show, onToggle }: { show: boolean; onToggle: () => void }) => (
 
 import { useSearchParams } from "next/navigation";
 import { syncGuestDataToServer } from "@/lib/guest-store";
+import Image from "next/image";
 
 /* ─── Types ──────────────────────────────────────────────────────────────────── */
 type Role = "customer" | "seller";
@@ -309,7 +310,7 @@ function RegisterForm() {
           animate="show"
           className="flex-1 flex flex-col items-center justify-center overflow-y-auto custom-scrollbar px-4 py-5 sm:px-6 sm:py-8 lg:px-8 xl:px-12 bg-surface dark:bg-background transition-colors"
         >
-          <div className="w-full max-w-[24rem] sm:max-w-[26rem] my-auto">
+          <div className="w-full max-w-[24rem] sm:max-w-104 my-auto">
 
             {/* Mobile brand mark */}
             <motion.div
@@ -319,7 +320,7 @@ function RegisterForm() {
               animate="show"
               className="flex lg:hidden items-center gap-2 mb-2 sm:mb-3"
             >
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-r from-primary to-accent flex items-center justify-center shrink-0 shadow-md">
+              <div className="w-7 h-7 rounded-lg bg-linear-to-r from-primary to-accent flex items-center justify-center shrink-0 shadow-md">
                 <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M6 2 3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
                 </svg>
@@ -388,7 +389,7 @@ function RegisterForm() {
                   {role === r && (
                     <motion.span
                       layoutId="reg-pill"
-                      className="absolute inset-0 rounded-full bg-gradient-to-r from-primary to-accent shadow-sm"
+                      className="absolute inset-0 rounded-full bg-linear-to-r from-primary to-accent shadow-sm"
                       transition={{ type: "spring", stiffness: 420, damping: 32 }}
                     />
                   )}
@@ -452,7 +453,7 @@ function RegisterForm() {
                 <F
                   id="reg-phone"
                   label="Phone"
-                  type="tel"
+                  type="number"
                   autoComplete="tel"
                   placeholder="Phone number"
                   value={phone}
@@ -551,7 +552,7 @@ function RegisterForm() {
                   disabled={loading || Boolean(socialLoading) || !agreed}
                   whileHover={{ scale: 1.015, boxShadow: "0 6px 24px rgba(91,92,240,0.4)" }}
                   whileTap={{ scale: 0.98 }}
-                  className="group relative w-full rounded-full py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-white overflow-hidden shadow-md disabled:opacity-60 disabled:cursor-not-allowed bg-gradient-to-r from-primary to-accent hover:from-primary-hover hover:to-accent transition-all"
+                  className="group relative w-full rounded-full py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-white overflow-hidden shadow-md disabled:opacity-60 disabled:cursor-not-allowed bg-linear-to-r from-primary to-accent hover:from-primary-hover hover:to-accent transition-all"
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-1.5">
@@ -655,7 +656,7 @@ function RegisterForm() {
           variants={panelRight}
           initial="hidden"
           animate="show"
-          className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col justify-between p-6 xl:p-10 bg-gradient-to-br from-[#4F46E5] via-[#6366F1] to-[#7C3AED] dark:from-[#1E124A] dark:via-[#120B2E] dark:to-[#090614] text-white select-none transition-colors duration-500"
+          className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col justify-between p-6 xl:p-10 bg-linear-to-br from-[#4F46E5] via-[#6366F1] to-[#7C3AED] dark:from-[#1E124A] dark:via-[#120B2E] dark:to-[#090614] text-white select-none transition-colors duration-500"
         >
           {/* Subtle dot-matrix overlay pattern (15% in light, 10% in dark) */}
           <svg className="absolute inset-0 w-full h-full opacity-15 dark:opacity-10 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
@@ -670,7 +671,7 @@ function RegisterForm() {
           {/* Deep ambient purple glow in dark mode */}
           <div aria-hidden="true" className="pointer-events-none absolute inset-0">
             {/* Ambient center glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[28rem] h-[28rem] rounded-full bg-purple-600/20 dark:bg-purple-600/30 blur-[90px]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-md h-112 rounded-full bg-purple-600/20 dark:bg-purple-600/30 blur-[90px]" />
 
             <motion.div
               animate={{
@@ -694,7 +695,7 @@ function RegisterForm() {
             <motion.div
               animate={{ rotate: [0, 360] }}
               transition={{ repeat: Infinity, duration: 24, ease: "linear" }}
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[38rem] h-[38rem]"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-152 h-152"
               style={{
                 background: "conic-gradient(from 0deg, transparent 0%, rgba(255,255,255,0.07) 12%, transparent 24%)",
               }}
@@ -811,7 +812,7 @@ function RegisterForm() {
               {/* Product showcase widget */}
               <div className="mt-3.5 xl:mt-4 flex items-end justify-between gap-3">
                 <motion.div
-                  className="bg-white/20 dark:bg-white/10 backdrop-blur-md border border-white/30 dark:border-white/15 text-white rounded-2xl p-2.5 xl:p-3 shadow-lg flex-1 max-w-[10rem] xl:max-w-[12rem] cursor-default"
+                  className="bg-white/20 dark:bg-white/10 backdrop-blur-md border border-white/30 dark:border-white/15 text-white rounded-2xl p-2.5 xl:p-3 shadow-lg flex-1 max-w-40 xl:max-w-48 cursor-default"
                   animate={{ y: [0, -5, 0] }}
                   transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
                   whileHover={{ scale: 1.03 }}
@@ -820,23 +821,27 @@ function RegisterForm() {
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#10B981] shadow-[0_0_6px_#10B981]" />
                     Trusted Seller
                   </div>
-                  <img
+                  <Image
                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6HreEvV6fYiuxEjQ9RL2P_vKICkXpEMiv7M2fT_zUi_Hd0a9gT4ng_a3iCk-PDkXOcdoz01gojbVpxiuoKSL3W6MRQ3Dx28FiUd3Bvv7cxfeuQy3rTWycxnCLNloIkm-wbfLpQ__Yf2nneUbojHp4GAxra0tcwtRNLa57mX0-cle52a4_DN4QoupV-R96YkVaK2bmZitU_0dNLgHfgzciB2kI0WDaiGtlK9lh73jmCqMYjePoyiu_abWVnC_-gofaazk"
                     alt="Featured product"
-                    className="w-full h-14 xl:h-16 object-contain drop-shadow-xl mix-blend-luminosity"
+                    width={100}
+                    height={14}
+                    className="rounded-2xl object-cover drop-shadow-xl mix-blend-luminosity"
                   />
                   <p className="mt-1 text-white font-bold text-[10px] xl:text-[11px]">Nova Tech · 4.9 ★</p>
                 </motion.div>
 
                 <motion.div
-                  className="flex-shrink-0 -mb-4 xl:-mb-6"
+                  className="shrink-0 -mb-4 xl:-mb-6"
                   animate={{ y: [0, -7, 0], rotate: [-12, -10, -12] }}
                   transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut", delay: 0.5 }}
                 >
-                  <img
+                  <Image
                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-GWxFQcDLwQZBZ7v_A-t8LagrYGornlbyaQ1-tp_8aaheqy9nY0UbU6NfB81br1Rvtm6V1V_kGtDwmC8SWWlQka0S_HHCkWvZxWXFQoJjLXtifgD-jA8JusrrIBOCFChUMw011N8oVShS-NgWuC5qPi5aCmoDTvwo0WJfsgjdTKsHO2VrfzB0ku-FfuZvkg5lPgE4Jn_guSr09iqRkB8ZOMAWaY63g9Th6hzyh2Xdagxf-SAJ0hhPXg"
                     alt="Minimalist sneaker"
-                    className="w-20 xl:w-32 h-auto drop-shadow-2xl"
+                    height={32}
+                    width={20}
+                    className="rounded-2xl object-cover drop-shadow-2xl"
                   />
                 </motion.div>
               </div>
