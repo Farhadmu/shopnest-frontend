@@ -182,13 +182,13 @@ export const Navbar: React.FC = () => {
       { href: "/compare", label: "Compare" },
     ],
     seller: [
-      { href: "/products", label: "Shop" },
+      { href: "/products", label: "Products" },
       { href: "/dashboard/seller/orders", label: "Orders" },
       { href: "/stores", label: "Stores" },
       { href: "/compare", label: "Compare" },
     ],
     admin: [
-      { href: "/products", label: "Shop" },
+      { href: "/products", label: "products" },
       { href: "/dashboard/admin/orders", label: "Orders" },
     ],
     customer: [
