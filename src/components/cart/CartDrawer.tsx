@@ -1,20 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import {
   X,
-  Heart,
-  Trash2,
-  Plus,
-  Minus,
-  Tag,
   ArrowRight,
   ShoppingBag,
-  Check,
   Sparkles,
   ShieldCheck,
 } from "lucide-react";
@@ -24,7 +17,7 @@ import {
   DrawerContent,
   DrawerDialog,
 } from "@heroui/react";
-import { useCartDrawer, ExtendedCartItem } from "@/context/CartDrawerContext";
+import { useCartDrawer } from "@/context/CartDrawerContext";
 import { CartItemCard } from "@/components/cart/CartItemCard";
 import { formatCurrency } from "@/lib/utils";
 
@@ -36,25 +29,13 @@ export function CartDrawer() {
     items,
     itemCount,
     subtotal,
-    discount,
     total,
-    appliedCoupon,
     isLoading,
     isUpdating,
     updateQuantity,
     removeItem,
-    applyCoupon,
-    removeCoupon,
     moveToWishlist,
   } = useCartDrawer();
-
-  const [promoCode, setPromoCode] = useState("");
-  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
-  const [promoMessage, setPromoMessage] = useState<{
-    text: string;
-    type: "success" | "error";
-  } | null>(null);
-  const [wishlistSuccessId, setWishlistSuccessId] = useState<string | null>(null);
 
   // Free shipping progress calculation (Free above ৳2000 or $100)
   const freeShippingThreshold = 2000;
@@ -66,37 +47,6 @@ export function CartDrawer() {
     0,
     freeShippingThreshold - subtotal
   );
-
-  const handleApplyPromo = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!promoCode.trim()) return;
-
-    setIsApplyingCoupon(true);
-    setPromoMessage(null);
-
-    const success = await applyCoupon(promoCode);
-    setIsApplyingCoupon(false);
-
-    if (success) {
-      setPromoMessage({ text: "Promo code applied successfully! 🎉", type: "success" });
-      setPromoCode("");
-    } else {
-      setPromoMessage({
-        text: "Invalid promo code. Try 'SAVE10' or 'WELCOME10'",
-        type: "error",
-      });
-    }
-
-    setTimeout(() => {
-      setPromoMessage(null);
-    }, 4000);
-  };
-
-  const handleWishlistClick = async (item: ExtendedCartItem) => {
-    setWishlistSuccessId(item.productId);
-    await moveToWishlist(item);
-    setTimeout(() => setWishlistSuccessId(null), 2000);
-  };
 
   const handleCheckout = () => {
     closeCart();
@@ -227,69 +177,6 @@ export function CartDrawer() {
             {/* 3. Footer (Sticky Bottom Checkout Section - Full Width Vertical Stack) */}
             {items.length > 0 && (
               <div className="shrink-0 p-5 border-t border-slate-200 dark:border-[#2D2250]/80 bg-slate-50/95 dark:bg-[#110C24]/95 backdrop-blur-md flex flex-col gap-3.5 z-10 w-full">
-                {/* Promo Code Box */}
-                <div className="w-full rounded-xl border border-slate-200 dark:border-purple-900/30 bg-white dark:bg-[#16102E] p-3 shadow-xs">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-                      <Tag size={13} className="text-[#7C3AED]" /> Promo code
-                    </span>
-                    {appliedCoupon && (
-                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded">
-                        Active: {appliedCoupon.code}
-                      </span>
-                    )}
-                  </div>
-
-                  {appliedCoupon ? (
-                    <div className="flex items-center justify-between rounded-lg bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 px-2.5 py-1.5 text-xs text-emerald-700 dark:text-emerald-300">
-                      <div className="flex items-center gap-2 truncate">
-                        <Sparkles size={13} className="shrink-0" />
-                        <span className="font-semibold truncate">
-                          Code <strong>{appliedCoupon.code}</strong> applied (-{formatCurrency(appliedCoupon.discount)})
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={removeCoupon}
-                        className="text-xs text-slate-400 hover:text-rose-500 p-0.5 rounded cursor-pointer"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ) : (
-                    <form onSubmit={handleApplyPromo} className="flex items-center gap-2 w-full">
-                      <div className="relative flex-1">
-                        <input
-                          type="text"
-                          value={promoCode}
-                          onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                          placeholder="Enter your promo code"
-                          className="w-full h-8 rounded-lg border border-slate-200 dark:border-purple-900/40 bg-slate-50 dark:bg-[#0D081D] px-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#7C3AED] focus:outline-hidden focus:ring-1 focus:ring-[#7C3AED]"
-                        />
-                      </div>
-                      <button
-                        type="submit"
-                        disabled={!promoCode.trim() || isApplyingCoupon}
-                        className="h-8 px-4 rounded-lg bg-slate-800 dark:bg-purple-900/60 hover:bg-slate-900 dark:hover:bg-purple-800 text-white text-xs font-bold transition disabled:opacity-40 disabled:cursor-not-allowed shrink-0 cursor-pointer"
-                      >
-                        {isApplyingCoupon ? "..." : "Apply"}
-                      </button>
-                    </form>
-                  )}
-
-                  {promoMessage && (
-                    <p
-                      className={`text-[11px] mt-1.5 font-medium ${
-                        promoMessage.type === "success"
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-rose-500 dark:text-rose-400"
-                      }`}
-                    >
-                      {promoMessage.text}
-                    </p>
-                  )}
-                </div>
-
                 {/* Price Breakdown */}
                 <div className="w-full space-y-1.5 pt-0.5">
                   <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
@@ -298,13 +185,6 @@ export function CartDrawer() {
                       {formatCurrency(subtotal)}
                     </span>
                   </div>
-
-                  {discount > 0 && (
-                    <div className="flex items-center justify-between text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
-                      <span>Coupon Discount:</span>
-                      <span>-{formatCurrency(discount)}</span>
-                    </div>
-                  )}
 
                   <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                     <span>Shipping:</span>

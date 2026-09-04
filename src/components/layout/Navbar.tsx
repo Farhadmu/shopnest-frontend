@@ -17,3 +17,5 @@ export async function Navbar() {
     />
   );
 }
+
+export default Navbar;
