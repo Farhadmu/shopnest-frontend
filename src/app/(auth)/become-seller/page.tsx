@@ -11,9 +11,9 @@ import {
   SellerRejectedCard,
   SellerSuspendedCard,
   SellerBenefitsBar,
-  SellerApplicationForm,
 } from "@/components/seller";
 import { FiZap } from "react-icons/fi";
+import { SellerApplicationForm } from "@/components/seller/form";
 
 export default function BecomeSellerPage() {
   const { data: session, isPending } = useSession();
@@ -95,18 +95,18 @@ export default function BecomeSellerPage() {
 
   // 5. APPLICATION WIZARD (New or Editing/Resubmitting)
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      <div className="mb-8 text-center space-y-2">
+    <div className="mx-auto max-w-4xl px-4 py-6 min-h-[calc(100vh-5rem)] flex flex-col justify-center">
+      <div className="mb-4 text-center space-y-1.5">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-primary">
           <FiZap /> ShopNest Merchant Portal
         </span>
-        <h1 className="text-3xl font-black text-text">
+        <h1 className="text-2xl sm:text-3xl font-black text-text tracking-tight">
           {store ? "Update Seller Application" : "Become a ShopNest Seller"}
         </h1>
         <p className="text-xs text-muted max-w-lg mx-auto">
           {store
             ? "Modify your store details or KYC documentation to submit for admin review."
-            : "Reach millions of active buyers with state-of-the-art seller tools, instant weekly payouts, and AI listing intelligence."}
+            : "Reach millions of buyers with state-of-the-art seller tools & instant weekly payouts."}
         </p>
       </div>
 
