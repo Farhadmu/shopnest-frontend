@@ -1,50 +1,77 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@heroui/react";
 import { Tag, ArrowRight, ShieldCheck, Truck, CheckCircle, X, ShoppingBag } from "lucide-react";
 import type { Cart } from "@/lib/api/cart";
+import { validateCoupon } from "@/lib/api/coupons";
+import { getErrorMessage } from "@/lib/core/errors";
 import { formatCurrency } from "@/lib/utils";
-import type { ShippingMethod, PaymentMethod } from "./CheckoutMethods";
+import type { PaymentMethod } from "./CheckoutMethods";
 import { CheckoutCard } from "./CheckoutCard";
 
 interface OrderSummaryProps {
   cart: Cart;
-  shippingMethod: ShippingMethod;
   shippingFee: number;
-  couponInput: string;
-  appliedCoupon: { code: string; discount: number } | null;
-  couponError: string | null;
-  isApplying: boolean;
-  isSubmitting: boolean;
-  submitError: string | null;
   paymentMethod: PaymentMethod;
   total: number;
   subtotal: number;
-  discount: number;
-  onCouponInputChange: (v: string) => void;
-  onApplyCoupon: () => void;
-  onRemoveCoupon: () => void;
-  onPlaceOrder: () => void;
+  /** Initial coupon code (e.g. from URL query param) */
+  initialCoupon?: string;
+  isSubmitting: boolean;
+  submitError: string | null;
+  onPlaceOrder: (discount: number, couponCode?: string) => void;
 }
 
 export function OrderSummary({
   cart,
   shippingFee,
-  couponInput,
-  appliedCoupon,
-  couponError,
-  isApplying,
+  paymentMethod,
+  total: externalTotal,
+  subtotal,
+  initialCoupon = "",
   isSubmitting,
   submitError,
-  total,
-  subtotal,
-  discount,
-  onCouponInputChange,
-  onApplyCoupon,
-  onRemoveCoupon,
   onPlaceOrder,
 }: OrderSummaryProps) {
+  const [couponInput, setCouponInput] = useState(initialCoupon);
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [isApplying, setIsApplying] = useState(false);
+
+  const discount = appliedCoupon?.discount ?? 0;
+  const total = Math.max(0, subtotal - discount + shippingFee);
+
+  // Auto-apply coupon from URL if present
+  useEffect(() => {
+    if (initialCoupon && !appliedCoupon) {
+      validateCoupon(initialCoupon, subtotal)
+        .then((res) => setAppliedCoupon({ code: res.code, discount: res.discount }))
+        .catch(() => undefined);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialCoupon, subtotal]);
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return;
+    setIsApplying(true);
+    setCouponError(null);
+    try {
+      const res = await validateCoupon(couponInput.trim(), subtotal);
+      setAppliedCoupon({ code: res.code, discount: res.discount });
+    } catch (err) {
+      setAppliedCoupon(null);
+      setCouponError(getErrorMessage(err));
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput("");
+  };
+
   return (
     <CheckoutCard
       icon={ShoppingBag}
@@ -105,7 +132,7 @@ export function OrderSummary({
             </div>
             <button
               type="button"
-              onClick={onRemoveCoupon}
+              onClick={handleRemoveCoupon}
               className="p-1 rounded-sm hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-500 transition-colors"
             >
               <X className="w-3 h-3" />
@@ -117,12 +144,12 @@ export function OrderSummary({
               type="text"
               placeholder="ENTER CODE"
               value={couponInput}
-              onChange={(e) => onCouponInputChange(e.target.value.toUpperCase())}
+              onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
               className="flex-1 px-2.5 py-1.5 rounded-sm text-xs uppercase tracking-wider bg-slate-50 dark:bg-[#0D0A1E] border border-slate-200 dark:border-[#2D2250] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/25 focus:border-violet-500 transition-all"
             />
             <button
               type="button"
-              onClick={onApplyCoupon}
+              onClick={handleApplyCoupon}
               disabled={isApplying || !couponInput.trim()}
               className="px-3 py-1.5 bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold rounded-sm flex-shrink-0 hover:opacity-80 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
             >
@@ -180,7 +207,7 @@ export function OrderSummary({
       {/* Place Order CTA */}
       <div className="px-4 pb-3">
         <Button
-          onPress={onPlaceOrder}
+          onPress={() => onPlaceOrder(discount, appliedCoupon?.code)}
           isDisabled={isSubmitting}
           className="w-full py-2.5 text-xs font-bold text-white rounded-sm shadow-md shadow-violet-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-1.5"
           style={{

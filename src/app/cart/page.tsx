@@ -1,13 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import {
   FaArrowRight,
   FaShieldAlt,
-  FaTicketAlt,
   FaShoppingBag,
 } from "react-icons/fa";
 
@@ -25,26 +23,15 @@ export default function CartPage() {
   // Shared Cart State from Context
   const {
     items: cartItems,
-    itemCount,
     subtotal,
-    discount,
     total,
-    appliedCoupon,
     isLoading,
     isUpdating,
     error,
-    couponError: contextCouponError,
     updateQuantity,
     removeItem,
-    applyCoupon,
-    removeCoupon,
     moveToWishlist,
   } = useCartDrawer();
-
-  // Coupon Input State
-  const [couponInput, setCouponInput] = useState("");
-  const [isApplying, setIsApplying] = useState(false);
-  const [localCouponError, setLocalCouponError] = useState<string | null>(null);
 
   // Product Update State
   const [updatingProductId, setUpdatingProductId] = useState<string | null>(null);
@@ -71,43 +58,14 @@ export default function CartPage() {
     }
   };
 
-  // Apply Coupon
-  const handleApplyCoupon = async () => {
-    const code = couponInput.trim();
-    if (!code) return;
-
-    setIsApplying(true);
-    setLocalCouponError(null);
-
-    const success = await applyCoupon(code);
-    setIsApplying(false);
-
-    if (success) {
-      setCouponInput("");
-    } else {
-      setLocalCouponError("Invalid promo code. Try SAVE10 or WELCOME10.");
-    }
-  };
-
-  // Remove Coupon
-  const handleRemoveCoupon = () => {
-    removeCoupon();
-    setCouponInput("");
-    setLocalCouponError(null);
-  };
-
   // Proceed to Checkout Handler
   const handleProceedToCheckout = () => {
     if (!session?.user) {
-      router.push(`/login?next=${encodeURIComponent("/dashboard/user/checkout")}`);
+      router.push(`/login?next=${encodeURIComponent("checkout")}`);
       return;
     }
 
-    const checkoutUrl = appliedCoupon
-      ? `/dashboard/user/checkout?coupon=${encodeURIComponent(appliedCoupon.code)}`
-      : "/dashboard/user/checkout";
-
-    router.push(checkoutUrl);
+    router.push("/checkout");
   };
 
   // Loading
@@ -116,8 +74,6 @@ export default function CartPage() {
       <LoadingState message="Loading your shopping cart..." />
     );
   }
-
-  const effectiveCouponError = localCouponError || contextCouponError;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background/60 pb-20 pt-6 text-text">
@@ -143,7 +99,7 @@ export default function CartPage() {
             <p className="mt-1 text-sm text-muted">
               {!session?.user
                 ? "Your items are saved locally on this browser. Log in when checking out to keep them permanently!"
-                : "Review your items and apply exclusive promo codes before checkout."}
+                : "Review your items and proceed to a secure checkout."}
             </p>
           </div>
 
@@ -209,91 +165,6 @@ export default function CartPage() {
             <div className="flex flex-col gap-6 lg:sticky lg:top-6">
 
               {/* =========================
-                  Coupon Card
-              ========================= */}
-
-              <div className="rounded-sm border border-border/80 bg-surface/80 p-5 shadow-2xl shadow-black/5 backdrop-blur-xl transition-all hover:border-primary/30 sm:p-6">
-
-                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-muted">
-                  <FaTicketAlt className="text-sm text-primary" />
-                  Promo Coupon
-                </div>
-
-                {appliedCoupon ? (
-
-                  <div className="mt-4 flex items-center justify-between rounded-sm border border-primary/20 bg-primary/10 p-4 backdrop-blur-md">
-
-                    <div>
-                      <p className="text-sm font-black text-primary">
-                        {appliedCoupon.code}
-                      </p>
-
-                      <p className="text-xs font-bold text-muted">
-                        -
-                        {formatCurrency(
-                          appliedCoupon.discount
-                        )}{" "}
-                        discount applied
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={handleRemoveCoupon}
-                      className="text-xs font-bold text-error transition hover:underline cursor-pointer"
-                    >
-                      Remove
-                    </button>
-
-                  </div>
-
-                ) : (
-
-                  <div className="mt-4 flex flex-col gap-2">
-
-                    <div className="flex gap-2">
-
-                      <input
-                        value={couponInput}
-                        onChange={(event) =>
-                          setCouponInput(
-                            event.target.value.toUpperCase()
-                          )
-                        }
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            handleApplyCoupon();
-                          }
-                        }}
-                        placeholder="e.g. SHOP10"
-                        className="w-full rounded-sm border border-border/80 bg-background/90 px-4 py-3 text-xs font-bold text-text outline-none transition placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 backdrop-blur-sm"
-                      />
-
-                      <button
-                        type="button"
-                        onClick={handleApplyCoupon}
-                        disabled={
-                          isApplying ||
-                          !couponInput.trim()
-                        }
-                        className="rounded-sm bg-primary px-5 py-3 text-xs font-black text-white shadow-lg shadow-primary/25 transition-all hover:scale-105 hover:bg-primary-hover disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
-                      >
-                        {isApplying ? "..." : "Apply"}
-                      </button>
-
-                    </div>
-
-                    {effectiveCouponError && (
-                      <p className="px-1 text-xs font-semibold text-error">
-                        {effectiveCouponError}
-                      </p>
-                    )}
-
-                  </div>
-                )}
-              </div>
-
-              {/* =========================
                   Order Summary
               ========================= */}
 
@@ -314,22 +185,6 @@ export default function CartPage() {
                       {formatCurrency(subtotal)}
                     </span>
                   </div>
-
-                  {/* Discount */}
-
-                  {discount > 0 && (
-                    <div className="flex justify-between font-bold text-emerald-600 dark:text-emerald-400">
-
-                      <span>
-                        Discount ({appliedCoupon?.code})
-                      </span>
-
-                      <span>
-                        -{formatCurrency(discount)}
-                      </span>
-
-                    </div>
-                  )}
 
                   {/* Delivery */}
 
