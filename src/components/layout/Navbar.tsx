@@ -192,7 +192,7 @@ export const Navbar: React.FC = () => {
       { href: "/dashboard/admin/orders", label: "Orders" },
     ],
     customer: [
-      { href: "/products", label: "Shop" },
+      { href: "/products", label: "products" },
       { href: "/stores", label: "Stores" },
       { href: "/compare", label: "Compare" },
       { href: "/dashboard/user/ai-advisor", label: "AI Advisor" },
