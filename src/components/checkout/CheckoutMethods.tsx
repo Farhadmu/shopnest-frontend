@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import { useState } from "react";
 import { Truck, Building2, CreditCard, ShieldCheck, Wallet } from "lucide-react";
 import { CheckoutCard } from "./CheckoutCard";
 
@@ -8,9 +8,7 @@ export type ShippingMethod = "home" | "hub";
 export type PaymentMethod = "cod" | "stripe" | "sslcommerz";
 
 interface CheckoutMethodsProps {
-  shippingMethod: ShippingMethod;
   onShippingChange: (method: ShippingMethod, price: number) => void;
-  paymentMethod: PaymentMethod;
   onPaymentChange: (method: PaymentMethod) => void;
 }
 
@@ -79,12 +77,20 @@ const PAYMENT_OPTIONS = [
   },
 ];
 
-export function CheckoutMethods({
-  shippingMethod,
-  onShippingChange,
-  paymentMethod,
-  onPaymentChange,
-}: CheckoutMethodsProps) {
+export function CheckoutMethods({ onShippingChange, onPaymentChange }: CheckoutMethodsProps) {
+  const [shippingMethod, setShippingMethod] = useState<ShippingMethod>("home");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
+
+  const handleShippingChange = (method: ShippingMethod, price: number) => {
+    setShippingMethod(method);
+    onShippingChange(method, price);
+  };
+
+  const handlePaymentChange = (method: PaymentMethod) => {
+    setPaymentMethod(method);
+    onPaymentChange(method);
+  };
+
   return (
     <div className="space-y-3">
       {/* ── 1. Shipping Method ── */}
@@ -101,7 +107,7 @@ export function CheckoutMethods({
               <button
                 key={opt.id}
                 type="button"
-                onClick={() => onShippingChange(opt.id, opt.price)}
+                onClick={() => handleShippingChange(opt.id, opt.price)}
                 className={`w-full text-left px-3 py-2 rounded-sm border-2 transition-all flex items-center gap-3 cursor-pointer ${
                   isSelected
                     ? "border-violet-500 bg-violet-50 dark:bg-violet-950/30"
@@ -155,7 +161,7 @@ export function CheckoutMethods({
               <button
                 key={opt.id}
                 type="button"
-                onClick={() => onPaymentChange(opt.id)}
+                onClick={() => handlePaymentChange(opt.id)}
                 className={`w-full text-left px-3 py-2 rounded-sm border-2 transition-all flex items-center gap-3 cursor-pointer ${
                   isSelected
                     ? `${styles.border} ${styles.bg}`

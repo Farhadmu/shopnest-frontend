@@ -8,6 +8,7 @@ export interface Order {
     name?: string;
     quantity: number;
     price: number;
+    image:string; 
   }>;
   subtotal: number;
   discount: number;
