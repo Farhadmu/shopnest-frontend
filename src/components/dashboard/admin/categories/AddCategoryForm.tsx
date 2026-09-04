@@ -3,7 +3,7 @@ import { useState } from "react";
 import { clientMutation } from "@/lib/core/client";
 import { ApiError } from "@/lib/core/errors";
 import type { CategoryItem } from "../../../../types/category";
-import { parentOptionsFor, idOf } from "../../../../lib/utils/category-tree";
+import { indentedOptionsFor } from "../../../../lib/utils/category-tree";
 
 interface AddCategoryFormProps {
   categories: CategoryItem[];
@@ -55,9 +55,9 @@ export function AddCategoryForm({ categories, onAdded }: AddCategoryFormProps) {
           className="rounded-xl border border-border bg-surface px-4 py-3 text-text sm:w-56"
         >
           <option value={NO_PARENT}>No parent (top-level)</option>
-          {parentOptionsFor(categories).map((c) => (
-            <option key={idOf(c)} value={idOf(c)}>
-              {c.name}
+          {indentedOptionsFor(categories).map((opt) => (
+            <option key={opt.id} value={opt.id}>
+              {opt.label}
             </option>
           ))}
         </select>
