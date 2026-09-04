@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { MapPin, Home, Briefcase, Plus, ChevronDown } from "lucide-react";
 import type { Address } from "@/lib/api/addresses";
 import {
@@ -22,13 +22,22 @@ export interface AddressFormData {
   orderNotes: string;
 }
 
+const INITIAL_ADDRESS: AddressFormData = {
+  firstName: "",
+  lastName: "",
+  phone: "",
+  division: "Dhaka",
+  district: "",
+  upazila: "",
+  streetAddress: "",
+  orderNotes: "",
+};
+
 interface DeliveryAddressFormProps {
-  savedAddresses: Address[];
-  selectedAddressId: string;
-  address: AddressFormData;
-  onChange: (field: keyof AddressFormData, value: string) => void;
-  onSelectSavedAddress: (addr: Address) => void;
-  onSelectCustom: () => void;
+  /** Saved addresses pre-fetched server-side */
+  initialAddresses: Address[];
+  /** Called whenever address form data changes */
+  onChange: (data: AddressFormData) => void;
 }
 
 const inputClass =
@@ -39,28 +48,64 @@ const selectClass =
 
 const labelClass = "block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1";
 
-export function DeliveryAddressForm({
-  savedAddresses,
-  selectedAddressId,
-  address,
-  onChange,
-  onSelectSavedAddress,
-  onSelectCustom,
-}: DeliveryAddressFormProps) {
+export function DeliveryAddressForm({ initialAddresses, onChange }: DeliveryAddressFormProps) {
+  const savedAddresses = initialAddresses;
+  const [selectedAddressId, setSelectedAddressId] = useState<string>(() => {
+    const def = initialAddresses.find((a) => a.isDefault) ?? initialAddresses[0];
+    return def ? (def.id || (def as { _id?: string })._id || "custom") : "custom";
+  });
+  const [address, setAddress] = useState<AddressFormData>(() => {
+    const def = initialAddresses.find((a) => a.isDefault) ?? initialAddresses[0];
+    if (!def) return INITIAL_ADDRESS;
+    const [first = "", ...rest] = (def.fullName || "").split(" ");
+    return {
+      firstName: first,
+      lastName: rest.join(" "),
+      phone: def.phone || "",
+      division: def.division || "Dhaka",
+      district: "",
+      upazila: "",
+      streetAddress: def.streetAddress || "",
+      orderNotes: "",
+    };
+  });
+
   const divisions = getAllDivisions();
   const districts = address.division ? getDistrictsOfDivision(address.division) : [];
   const upazilaList = address.district ? getUpazilasOfDistrict(address.district) : [];
   const thanaList = address.district ? getThanasOfDistrict(address.district) : [];
 
+  // Notify parent whenever address changes
+  useEffect(() => {
+    onChange(address);
+  }, [address, onChange]);
+
+  // No longer self-fetching — addresses come in via initialAddresses prop
+  const applyAddressToForm = useCallback((addr: Address, addrId: string) => {
+    setSelectedAddressId(addrId);
+    const [first = "", ...rest] = (addr.fullName || "").split(" ");
+    setAddress({
+      firstName: first,
+      lastName: rest.join(" "),
+      phone: addr.phone || "",
+      division: addr.division || "Dhaka",
+      district: "",
+      upazila: "",
+      streetAddress: addr.streetAddress || "",
+      orderNotes: "",
+    });
+  }, []);
+
+  const updateField = useCallback((field: keyof AddressFormData, value: string) => {
+    setAddress((prev) => ({ ...prev, [field]: value }));
+  }, []);
+
   const handleDivisionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onChange("division", e.target.value);
-    onChange("district", "");
-    onChange("upazila", "");
+    setAddress((prev) => ({ ...prev, division: e.target.value, district: "", upazila: "" }));
   };
 
   const handleDistrictChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onChange("district", e.target.value);
-    onChange("upazila", "");
+    setAddress((prev) => ({ ...prev, district: e.target.value, upazila: "" }));
   };
 
   return (
@@ -84,12 +129,11 @@ export function DeliveryAddressForm({
                   <button
                     key={addrId}
                     type="button"
-                    onClick={() => onSelectSavedAddress(addr)}
-                    className={`text-left p-2.5 rounded-sm border-2 transition-all ${
-                      isSelected
+                    onClick={() => applyAddressToForm(addr, addrId)}
+                    className={`text-left p-2.5 rounded-sm border-2 transition-all ${isSelected
                         ? "border-violet-500 bg-violet-50 dark:bg-violet-950/30"
                         : "border-slate-200 dark:border-[#2D2250] hover:border-violet-300 dark:hover:border-violet-700 bg-slate-50 dark:bg-[#0D0A1E]"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1.5">
@@ -117,12 +161,14 @@ export function DeliveryAddressForm({
 
               <button
                 type="button"
-                onClick={onSelectCustom}
-                className={`p-2.5 rounded-sm border-2 border-dashed flex items-center justify-center gap-1.5 text-xs font-semibold transition-all ${
-                  selectedAddressId === "custom"
+                onClick={() => {
+                  setSelectedAddressId("custom");
+                  setAddress(INITIAL_ADDRESS);
+                }}
+                className={`p-2.5 rounded-sm border-2 border-dashed flex items-center justify-center gap-1.5 text-xs font-semibold transition-all ${selectedAddressId === "custom"
                     ? "border-violet-500 text-violet-600 bg-violet-50 dark:bg-violet-950/30"
                     : "border-slate-200 dark:border-[#2D2250] text-slate-400 hover:border-violet-400 hover:text-violet-500 bg-slate-50 dark:bg-[#0D0A1E]"
-                }`}
+                  }`}
               >
                 <Plus className="w-3.5 h-3.5" /> New Address
               </button>
@@ -140,7 +186,7 @@ export function DeliveryAddressForm({
                 type="text"
                 placeholder="First name"
                 value={address.firstName}
-                onChange={(e) => onChange("firstName", e.target.value)}
+                onChange={(e) => updateField("firstName", e.target.value)}
                 className={inputClass}
               />
             </div>
@@ -150,7 +196,7 @@ export function DeliveryAddressForm({
                 type="text"
                 placeholder="Last name"
                 value={address.lastName}
-                onChange={(e) => onChange("lastName", e.target.value)}
+                onChange={(e) => updateField("lastName", e.target.value)}
                 className={inputClass}
               />
             </div>
@@ -163,7 +209,7 @@ export function DeliveryAddressForm({
               type="tel"
               placeholder="+880 1X XXXX XXXX"
               value={address.phone}
-              onChange={(e) => onChange("phone", e.target.value)}
+              onChange={(e) => updateField("phone", e.target.value)}
               className={inputClass}
             />
           </div>
@@ -206,7 +252,7 @@ export function DeliveryAddressForm({
               <div className="relative">
                 <select
                   value={address.upazila}
-                  onChange={(e) => onChange("upazila", e.target.value)}
+                  onChange={(e) => updateField("upazila", e.target.value)}
                   disabled={!address.district || (upazilaList.length === 0 && thanaList.length === 0)}
                   className={selectClass}
                 >
@@ -228,7 +274,7 @@ export function DeliveryAddressForm({
             <textarea
               placeholder="House no., Road no., Area, Landmark..."
               value={address.streetAddress}
-              onChange={(e) => onChange("streetAddress", e.target.value)}
+              onChange={(e) => updateField("streetAddress", e.target.value)}
               rows={2}
               className={`${inputClass} resize-none`}
             />
@@ -241,7 +287,7 @@ export function DeliveryAddressForm({
               type="text"
               placeholder="e.g. Leave at door, call before delivery..."
               value={address.orderNotes}
-              onChange={(e) => onChange("orderNotes", e.target.value)}
+              onChange={(e) => updateField("orderNotes", e.target.value)}
               className={inputClass}
             />
           </div>
