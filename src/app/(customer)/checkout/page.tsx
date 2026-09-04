@@ -1,33 +1,32 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, Suspense } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@heroui/react";
+import Link from "next/link";
+import { ShoppingBag, ArrowRight, ShieldCheck } from "lucide-react";
+
 import { getCart, type Cart } from "@/lib/api/cart";
 import { validateCoupon } from "@/lib/api/coupons";
 import { createOrder } from "@/lib/api/orders";
 import { getAddresses, type Address } from "@/lib/api/addresses";
 import { getErrorMessage } from "@/lib/core/errors";
-import { formatCurrency } from "@/lib/utils";
 import { LoadingState } from "@/components/common/LoadingState";
 import { ErrorState } from "@/components/common/ErrorState";
-import Link from "next/link";
-import { CourierComparisonModal } from "@/components/checkout/CourierComparisonModal";
-import { getCODOrderRisk, CODRiskResponse, CourierOption } from "@/lib/api/customer-intelligence-features";
-import { FiShoppingBag, FiArrowRight, FiShield, FiBriefcase, FiHome, FiPlus, FiUser, FiPhone, FiMapPin, FiCreditCard, FiTag, FiLock, FiCheckCircle, FiTruck } from "react-icons/fi";
 
-const BD_DIVISIONS = [
-  "Dhaka",
-  "Chittagong",
-  "Sylhet",
-  "Rajshahi",
-  "Khulna",
-  "Barisal",
-  "Rangpur",
-  "Mymensingh",
-];
+import { DeliveryAddressForm, type AddressFormData } from "@/components/checkout/DeliveryAddressForm";
+import { CheckoutMethods, type ShippingMethod, type PaymentMethod } from "@/components/checkout/CheckoutMethods";
+import { OrderSummary } from "@/components/checkout/OrderSummary";
 
-type PaymentMethodType = "cod" | "bkash" | "nagad" | "rocket" | "card";
+const INITIAL_ADDRESS: AddressFormData = {
+  firstName: "",
+  lastName: "",
+  phone: "",
+  division: "Dhaka",
+  district: "",
+  upazila: "",
+  streetAddress: "",
+  orderNotes: "",
+};
 
 function CheckoutForm() {
   const router = useRouter();
@@ -38,32 +37,15 @@ function CheckoutForm() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Saved Addresses
+  // Addresses & Selected Mode
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>("custom");
+  const [address, setAddress] = useState<AddressFormData>(INITIAL_ADDRESS);
 
-  // Address fields
-  const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [division, setDivision] = useState("Dhaka");
-  const [district, setDistrict] = useState("Dhaka");
-  const [upazila, setUpazila] = useState("");
-  const [landmark, setLandmark] = useState("");
-  const [city, setCity] = useState("");
-  const [streetAddress, setStreetAddress] = useState("");
-  const [orderNotes, setOrderNotes] = useState("");
-
-  // Courier & COD Risk States
-  const [selectedCourier, setSelectedCourier] = useState<CourierOption | null>(null);
-  const [codRisk, setCodRisk] = useState<CODRiskResponse | null>(null);
-
-  // Payment Selection
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>("cod");
-  const [mfsNumber, setMfsNumber] = useState("");
-  const [mfsTrxId, setMfsTrxId] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardCvc, setCardCvc] = useState("");
+  // Shipping & Payment Methods
+  const [shippingMethod, setShippingMethod] = useState<ShippingMethod>("home");
+  const [shippingFee, setShippingFee] = useState(120);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
 
   // Coupon
   const [couponInput, setCouponInput] = useState(initialCoupon);
@@ -71,74 +53,91 @@ function CheckoutForm() {
   const [couponError, setCouponError] = useState<string | null>(null);
   const [isApplying, setIsApplying] = useState(false);
 
-  // Submission
+  // Submit status
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const loadCartAndAddresses = useCallback(async () => {
+  const updateAddress = (field: keyof AddressFormData, value: string) => {
+    setAddress((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const applyAddressToForm = (addr: Address, addrId: string) => {
+    setSelectedAddressId(addrId);
+    const [first = "", ...rest] = (addr.fullName || "").split(" ");
+    setAddress({
+      firstName: first,
+      lastName: rest.join(" "),
+      phone: addr.phone || "",
+      division: addr.division || "Dhaka",
+      district: "",
+      upazila: "",
+      streetAddress: addr.streetAddress || "",
+      orderNotes: "",
+    });
+  };
+
+  useEffect(() => {
     let cancelled = false;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const [cartData, addressesData] = await Promise.allSettled([
-        getCart(),
-        getAddresses(),
-      ]);
 
-      if (cartData.status === "fulfilled") {
-        if (!cancelled) setCart(cartData.value);
-      } else {
-        throw cartData.reason;
-      }
+    async function fetchData() {
+      try {
+        const [cartRes, addrRes] = await Promise.allSettled([getCart(), getAddresses()]);
 
-      if (addressesData.status === "fulfilled" && addressesData.value.length > 0) {
-        if (!cancelled) {
-          setSavedAddresses(addressesData.value);
-          const defaultAddr = addressesData.value.find((a) => a.isDefault) || addressesData.value[0];
+        if (cartRes.status === "fulfilled") {
+          if (!cancelled) setCart(cartRes.value);
+        } else {
+          throw cartRes.reason;
+        }
+
+        if (addrRes.status === "fulfilled" && addrRes.value.length > 0 && !cancelled) {
+          setSavedAddresses(addrRes.value);
+          const defaultAddr = addrRes.value.find((a) => a.isDefault) || addrRes.value[0];
           if (defaultAddr) {
             const addrId = defaultAddr.id || (defaultAddr as { _id?: string })._id || "";
-            setSelectedAddressId(addrId);
-            setFullName(defaultAddr.fullName || "");
-            setPhone(defaultAddr.phone || "");
-            setDivision(defaultAddr.division || "Dhaka");
-            setCity(defaultAddr.city || "");
-            setStreetAddress(defaultAddr.streetAddress || "");
+            applyAddressToForm(defaultAddr, addrId);
           }
         }
+      } catch (err) {
+        if (!cancelled) setError(getErrorMessage(err));
+      } finally {
+        if (!cancelled) setIsLoading(false);
       }
-    } catch (err) {
-      if (!cancelled) setError(getErrorMessage(err));
-    } finally {
-      if (!cancelled) setIsLoading(false);
     }
+
+    fetchData();
+
     return () => {
       cancelled = true;
     };
   }, []);
 
-  useEffect(() => {
-    loadCartAndAddresses();
-  }, [loadCartAndAddresses]);
-
-  const selectSavedAddress = (addr: Address) => {
-    const addrId = addr.id || (addr as { _id?: string })._id || "";
-    setSelectedAddressId(addrId);
-    setFullName(addr.fullName || "");
-    setPhone(addr.phone || "");
-    setDivision(addr.division || "Dhaka");
-    setCity(addr.city || "");
-    setStreetAddress(addr.streetAddress || "");
+  const handleRetry = () => {
+    setIsLoading(true);
+    setError(null);
+    getCart()
+      .then((cartData) => {
+        setCart(cartData);
+        return getAddresses();
+      })
+      .then((addrList) => {
+        if (addrList && addrList.length > 0) {
+          setSavedAddresses(addrList);
+          const defaultAddr = addrList.find((a) => a.isDefault) || addrList[0];
+          if (defaultAddr) {
+            const addrId = defaultAddr.id || (defaultAddr as { _id?: string })._id || "";
+            applyAddressToForm(defaultAddr, addrId);
+          }
+        }
+      })
+      .catch((err) => setError(getErrorMessage(err)))
+      .finally(() => setIsLoading(false));
   };
 
-  const selectCustomAddress = () => {
-    setSelectedAddressId("custom");
-  };
-
-
+  // Auto-apply coupon from URL if present
   useEffect(() => {
     if (initialCoupon && cart && !appliedCoupon) {
       validateCoupon(initialCoupon, cart.subtotal)
-        .then((result) => setAppliedCoupon({ code: result.code, discount: result.discount }))
+        .then((res) => setAppliedCoupon({ code: res.code, discount: res.discount }))
         .catch(() => undefined);
     }
   }, [cart, initialCoupon, appliedCoupon]);
@@ -148,8 +147,8 @@ function CheckoutForm() {
     setIsApplying(true);
     setCouponError(null);
     try {
-      const result = await validateCoupon(couponInput.trim(), cart.subtotal);
-      setAppliedCoupon({ code: result.code, discount: result.discount });
+      const res = await validateCoupon(couponInput.trim(), cart.subtotal);
+      setAppliedCoupon({ code: res.code, discount: res.discount });
     } catch (err) {
       setAppliedCoupon(null);
       setCouponError(getErrorMessage(err));
@@ -159,40 +158,33 @@ function CheckoutForm() {
   };
 
   const handlePlaceOrder = async () => {
-    if (!fullName.trim()) {
-      setSubmitError("Please enter your recipient full name.");
-      return;
-    }
-    if (!phone.trim()) {
-      setSubmitError("Please enter your contact phone number.");
-      return;
-    }
-    if (!streetAddress.trim()) {
-      setSubmitError("Please enter your detailed delivery street address.");
-      return;
-    }
-
-    if (
-      (paymentMethod === "bkash" || paymentMethod === "nagad" || paymentMethod === "rocket") &&
-      !mfsNumber.trim()
-    ) {
-      setSubmitError(`Please enter your ${paymentMethod.toUpperCase()} mobile account number.`);
-      return;
-    }
+    const fullName = `${address.firstName.trim()} ${address.lastName.trim()}`.trim();
+    if (!fullName) return setSubmitError("Please enter your full name.");
+    if (!address.phone.trim()) return setSubmitError("Please enter your contact phone number.");
+    if (!address.streetAddress.trim()) return setSubmitError("Please enter your detailed delivery street address.");
 
     setIsSubmitting(true);
     setSubmitError(null);
 
-    const fullShippingAddress = `${fullName.trim()} | ${phone.trim()} | ${streetAddress.trim()}, ${city.trim() || division}, ${division} Division ${orderNotes.trim() ? `(Note: ${orderNotes.trim()})` : ""}`;
+    const districtPart = address.district ? `, ${address.district}` : "";
+    const upazilaPart = address.upazila ? `, ${address.upazila}` : "";
+    const fullShippingAddress = `${fullName} | ${address.phone.trim()} | ${address.streetAddress.trim()}${upazilaPart}${districtPart}, ${address.division} Division${address.orderNotes.trim() ? ` (Note: ${address.orderNotes.trim()})` : ""}`;
 
     try {
       const order = await createOrder({
         shippingAddress: fullShippingAddress,
-        division,
-        paymentMethod: paymentMethod,
+        division: address.division,
+        paymentMethod,
         couponCode: appliedCoupon?.code,
       });
-      router.push(`/orders/${order.id}`);
+
+      if (paymentMethod === "stripe" || paymentMethod === "sslcommerz") {
+        router.push(
+          `/confirm-payment?method=${paymentMethod}&shipping=${shippingMethod}&amount=${total}&orderId=${order.id}`
+        );
+      } else {
+        router.push(`/orders/${order.id}`);
+      }
     } catch (err) {
       setSubmitError(getErrorMessage(err));
     } finally {
@@ -200,29 +192,21 @@ function CheckoutForm() {
     }
   };
 
-  if (isLoading) {
-    return <LoadingState message="Preparing your secure checkout..." />;
-  }
-
-  if (error) {
-    return <ErrorState message={error} onRetry={loadCartAndAddresses} />;
-  }
-
+  if (isLoading) return <LoadingState message="Preparing your secure checkout..." />;
+  if (error) return <ErrorState message={error} onRetry={handleRetry} />;
   if (!cart || cart.items.length === 0) {
     return (
-      <div className="max-w-2xl mx-auto text-center py-16 px-4">
-        <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-          <FiShoppingBag />
+      <div className="max-w-md mx-auto text-center py-16 px-4">
+        <div className="w-16 h-16 rounded-2xl bg-violet-50 dark:bg-violet-950/30 flex items-center justify-center mx-auto mb-4 text-violet-600">
+          <ShoppingBag className="w-8 h-8" />
         </div>
-        <h2 className="text-2xl font-bold text-foreground mb-2">Your Shopping Cart is Empty</h2>
-        <p className="text-muted text-sm mb-6">
-          Discover thousands of verified products from top sellers across Bangladesh.
-        </p>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-1.5">Your Cart is Empty</h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-5">Discover thousands of verified products on ShopNest.</p>
         <Link
           href="/products"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-medium rounded-xl hover:bg-primary-hover transition-colors"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-sm font-semibold text-xs text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:opacity-90 transition-all"
         >
-          Browse Products <FiArrowRight />
+          Browse Products <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>
     );
@@ -230,481 +214,73 @@ function CheckoutForm() {
 
   const subtotal = cart.subtotal;
   const discount = appliedCoupon?.discount ?? 0;
-  const shippingFee = division === "Dhaka" ? 60 : 120;
   const total = Math.max(0, subtotal - discount + shippingFee);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-6">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-            Secure Checkout
-          </h1>
-          <p className="text-sm text-muted mt-1">
-            Review your order, enter delivery details, and select your payment method.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full text-xs font-semibold w-fit">
-          <FiShield className="text-sm" /> 256-Bit SSL Encrypted & Verified
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Forms */}
-        <div className="lg:col-span-8 space-y-6">
-          {/* Step 1: Delivery Address */}
-          <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 shadow-sm">
-            <div className="flex items-center justify-between gap-3 mb-5">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
-                  1
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-foreground">Delivery & Shipping Address</h2>
-                  <p className="text-xs text-muted">Where should we deliver your package?</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Saved Address Cards */}
-            {savedAddresses.length > 0 && (
-              <div className="mb-6 space-y-3">
-                <label className="block text-xs font-bold uppercase tracking-wider text-muted">
-                  Select from Saved Address Book
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {savedAddresses.map((addr) => {
-                    const addrId = addr.id || (addr as any)._id || "";
-                    const isSelected = selectedAddressId === addrId;
-                    return (
-                      <div
-                        key={addrId}
-                        onClick={() => selectSavedAddress(addr)}
-                        className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all ${
-                          isSelected
-                            ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20"
-                            : "border-border hover:border-border/80 bg-background/50"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="p-1.5 rounded-lg bg-primary/10 text-primary text-xs">
-                              {addr.title?.toLowerCase() === "office" ? (
-                                <FiBriefcase />
-                              ) : (
-                                <FiHome />
-                              )}
-                            </span>
-                            <span className="font-bold text-xs text-foreground capitalize">
-                              {addr.title || "Address"}
-                            </span>
-                            {addr.isDefault && (
-                              <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-500 text-[9px] font-bold rounded">
-                                Default
-                              </span>
-                            )}
-                          </div>
-                          <div
-                            className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
-                              isSelected ? "border-primary bg-primary" : "border-muted"
-                            }`}
-                          >
-                            {isSelected && <div className="w-1 h-1 rounded-full bg-white" />}
-                          </div>
-                        </div>
-                        <p className="text-xs font-semibold text-foreground mt-2">
-                          {addr.fullName} • {addr.phone}
-                        </p>
-                        <p className="text-[11px] text-muted line-clamp-1 mt-0.5">
-                          {addr.streetAddress}, {addr.city || addr.division}, {addr.division}
-                        </p>
-                      </div>
-                    );
-                  })}
-
-                  <div
-                    onClick={selectCustomAddress}
-                    className={`p-3.5 rounded-xl border-2 border-dashed cursor-pointer transition-all flex items-center justify-center gap-2 text-xs font-semibold ${
-                      selectedAddressId === "custom"
-                        ? "border-primary text-primary bg-primary/5"
-                        : "border-border text-muted hover:text-foreground hover:border-border/80"
-                    }`}
-                  >
-                    <FiPlus /> Enter Custom / Other Address
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-foreground mb-1.5">
-                  <span className="flex items-center gap-1">
-                    <FiUser /> Full Name *
-                  </span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Farhadul Islam"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-foreground mb-1.5">
-                  <span className="flex items-center gap-1">
-                    <FiPhone /> Mobile Number (+880) *
-                  </span>
-                </label>
-                <input
-                  type="tel"
-                  placeholder="017XXXXXXXX"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-foreground mb-1.5">
-                  <span className="flex items-center gap-1">
-                    <FiMapPin /> Division *
-                  </span>
-                </label>
-                <select
-                  value={division}
-                  onChange={(e) => setDivision(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-                >
-                  {BD_DIVISIONS.map((d) => (
-                    <option key={d} value={d}>
-                      {d} Division
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-foreground mb-1.5">
-                  City / Area / Thana
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Dhanmondi / Gulshan / Mirpur"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
-                />
-              </div>
-
-              {/* Cash on Delivery */}
-              <div
-                onClick={() => setPaymentMethod("cod")}
-                className="flex items-center gap-3 rounded-xl border border-border p-4 cursor-pointer hover:border-primary/40 transition"
-              >
-                <div>
-                  <h4 className="text-sm font-bold text-foreground">Cash on Delivery</h4>
-                  <p className="text-xs text-muted">Pay in cash upon doorstep delivery</p>
-                </div>
-                <div
-                  className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${paymentMethod === "cod" ? "border-primary bg-primary" : "border-muted"}`}
-                >
-                  {paymentMethod === "cod" && (
-                    <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                  )}
-                </div>
-              </div>
-
-              {/* bKash */}
-              <div
-                onClick={() => setPaymentMethod("bkash")}
-                className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                  paymentMethod === "bkash"
-                    ? "border-[#D12053] bg-[#D12053]/5 shadow-sm"
-                    : "border-border hover:border-border/80 bg-background/50"
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#D12053]/10 text-[#D12053] flex items-center justify-center font-black text-sm">
-                      bKash
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-foreground">bKash Direct</h4>
-                      <p className="text-xs text-muted">Instant mobile wallet checkout</p>
-                    </div>
-                  </div>
-                  <div
-                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${paymentMethod === "bkash" ? "border-[#D12053] bg-[#D12053]" : "border-muted"}`}
-                  >
-                    {paymentMethod === "bkash" && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Nagad */}
-              <div
-                onClick={() => setPaymentMethod("nagad")}
-                className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                  paymentMethod === "nagad"
-                    ? "border-[#F7941D] bg-[#F7941D]/5 shadow-sm"
-                    : "border-border hover:border-border/80 bg-background/50"
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#F7941D]/10 text-[#F7941D] flex items-center justify-center font-black text-sm">
-                      Nagad
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-foreground">Nagad Wallet</h4>
-                      <p className="text-xs text-muted">Govt Post Office digital payment</p>
-                    </div>
-                  </div>
-                  <div
-                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${paymentMethod === "nagad" ? "border-[#F7941D] bg-[#F7941D]" : "border-muted"}`}
-                  >
-                    {paymentMethod === "nagad" && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Card / Stripe */}
-              <div
-                onClick={() => setPaymentMethod("card")}
-                className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                  paymentMethod === "card"
-                    ? "border-primary bg-primary/5 shadow-sm"
-                    : "border-border hover:border-border/80 bg-background/50"
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center text-xl">
-                      <FiCreditCard />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-foreground">Card / Stripe</h4>
-                      <p className="text-xs text-muted">Visa, Mastercard, AMEX</p>
-                    </div>
-                  </div>
-                  <div
-                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${paymentMethod === "card" ? "border-primary bg-primary" : "border-muted"}`}
-                  >
-                    {paymentMethod === "card" && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Dynamic Payment Details Prompt */}
-            {(paymentMethod === "bkash" ||
-              paymentMethod === "nagad" ||
-              paymentMethod === "rocket") && (
-              <div className="p-4 rounded-xl bg-background border border-border space-y-3">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-foreground">
-                    Merchant Account: <strong className="text-primary">+8801700-000000</strong>
-                  </span>
-                  <span className="text-muted">Type: Merchant / Payment</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs text-muted mb-1">
-                      {paymentMethod.toUpperCase()} Account Number *
-                    </label>
-                    <input
-                      type="tel"
-                      placeholder="01XXXXXXXXX"
-                      value={mfsNumber}
-                      onChange={(e) => setMfsNumber(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-border bg-card text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-muted mb-1">
-                      Transaction ID (TrxID) (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 9J4K82L1A"
-                      value={mfsTrxId}
-                      onChange={(e) => setMfsTrxId(e.target.value.toUpperCase())}
-                      className="w-full px-3 py-2 rounded-lg border border-border bg-card text-xs focus:outline-none focus:ring-1 focus:ring-primary uppercase"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {paymentMethod === "card" && (
-              <div className="p-4 rounded-xl bg-background border border-border space-y-3">
-                <div>
-                  <label className="block text-xs text-muted mb-1">Card Number *</label>
-                  <input
-                    type="text"
-                    placeholder="4242 •••• •••• 4242"
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-border bg-card text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs text-muted mb-1">Expiry (MM/YY)</label>
-                    <input
-                      type="text"
-                      placeholder="12/28"
-                      value={cardExpiry}
-                      onChange={(e) => setCardExpiry(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-border bg-card text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-muted mb-1">CVC / CVV</label>
-                    <input
-                      type="password"
-                      placeholder="•••"
-                      maxLength={4}
-                      value={cardCvc}
-                      onChange={(e) => setCardCvc(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-border bg-card text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
+    <div className="min-h-screen dark:bg-[#090614]">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
+        {/* Page Title */}
+        <div className="mb-3.5 flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-black tracking-tight text-slate-900 dark:text-slate-100">Checkout</h1>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">Complete your order securely below</p>
+          </div>
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-full text-[11px] font-semibold">
+            <ShieldCheck className="w-3 h-3" /> 256-Bit SSL Encrypted
           </div>
         </div>
 
-        {/* Right Column: Order Summary */}
-        <div className="lg:col-span-4 space-y-6">
-          <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 shadow-sm lg:sticky lg:top-24">
-            <h3 className="text-lg font-bold text-foreground mb-4">Order Summary</h3>
+        {/* 2-Column Responsive Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-3.5 items-start">
+          {/* Left Column: Delivery Address & Methods */}
+          <div className="space-y-3">
+            <DeliveryAddressForm
+              savedAddresses={savedAddresses}
+              selectedAddressId={selectedAddressId}
+              address={address}
+              onChange={updateAddress}
+              onSelectSavedAddress={(addr) => applyAddressToForm(addr, addr.id || (addr as { _id?: string })._id || "")}
+              onSelectCustom={() => {
+                setSelectedAddressId("custom");
+                setAddress(INITIAL_ADDRESS);
+              }}
+            />
 
-            {/* Cart Items List */}
-            <div className="space-y-3 max-h-60 overflow-y-auto pr-1 mb-4 border-b border-border pb-4 divide-y divide-border/50">
-              {cart.items.map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between pt-2.5 text-xs">
-                  <div className="flex-1 pr-3">
-                    <p className="font-semibold text-foreground line-clamp-1">{item.title}</p>
-                    <p className="text-muted">
-                      Qty: {item.quantity} × {formatCurrency(item.price)}
-                    </p>
-                  </div>
-                  <span className="font-bold text-foreground">
-                    {formatCurrency(item.price * item.quantity)}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <CheckoutMethods
+              shippingMethod={shippingMethod}
+              onShippingChange={(method, price) => {
+                setShippingMethod(method);
+                setShippingFee(price);
+              }}
+              paymentMethod={paymentMethod}
+              onPaymentChange={setPaymentMethod}
+            />
+          </div>
 
-            {/* Coupon Application */}
-            <div className="mb-4">
-              <label className="block text-xs font-semibold text-muted mb-1.5 flex items-center gap-1">
-                <FiTag /> Discount Coupon
-              </label>
-              {appliedCoupon ? (
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs">
-                  <div>
-                    <strong>{appliedCoupon.code}</strong> applied
-                    <p className="text-[10px] text-muted">
-                      -{formatCurrency(appliedCoupon.discount)} discount
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAppliedCoupon(null);
-                      setCouponInput("");
-                    }}
-                    className="text-muted hover:text-red-500 font-semibold text-xs"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="e.g. SHOP10"
-                    value={couponInput}
-                    onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                    className="flex-1 px-3 py-1.5 rounded-xl border border-border bg-background text-xs uppercase focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                  <Button
-                    size="sm"
-                    onPress={handleApplyCoupon}
-                    isDisabled={isApplying || !couponInput.trim()}
-                    className="bg-primary text-white text-xs px-3"
-                  >
-                    {isApplying ? "..." : "Apply"}
-                  </Button>
-                </div>
-              )}
-              {couponError && <p className="text-[11px] text-red-500 mt-1">{couponError}</p>}
-            </div>
-
-            {/* Price Calculations */}
-            <div className="space-y-2 text-xs border-t border-border pt-4">
-              <div className="flex justify-between text-muted">
-                <span>Subtotal ({cart.items.length} items)</span>
-                <span className="text-foreground font-medium">{formatCurrency(subtotal)}</span>
-              </div>
-              {discount > 0 && (
-                <div className="flex justify-between text-emerald-500 font-semibold">
-                  <span>Coupon Savings ({appliedCoupon?.code})</span>
-                  <span>-{formatCurrency(discount)}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-muted">
-                <span>Shipping & Delivery Fee</span>
-                <span>{formatCurrency(shippingFee)}</span>
-              </div>
-              <div className="flex justify-between items-center text-base font-extrabold text-foreground border-t border-border pt-3 mt-2">
-                <span>Grand Total</span>
-                <span className="text-primary text-lg">{formatCurrency(total)}</span>
-              </div>
-            </div>
-
-            {submitError && (
-              <div className="mt-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs">
-                {submitError}
-              </div>
-            )}
-
-            {/* Place Order CTA */}
-            <Button
-              className="w-full mt-6 py-3.5 bg-primary hover:bg-primary-hover text-white font-bold text-sm rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
-              onPress={handlePlaceOrder}
-              isDisabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <span>Securing Order...</span>
-              ) : (
-                <>
-                  <FiLock /> Complete & Place Order ({formatCurrency(total)})
-                </>
-              )}
-            </Button>
-
-            <div className="mt-4 flex items-center justify-center gap-4 text-[11px] text-muted">
-              <span className="flex items-center gap-1">
-                <FiCheckCircle className="text-emerald-500" /> Buyer Protection
-              </span>
-              <span className="flex items-center gap-1">
-                <FiTruck className="text-primary" /> Fast Delivery
-              </span>
-            </div>
+          {/* Right Column: Order Summary */}
+          <div>
+            <OrderSummary
+              cart={cart}
+              shippingMethod={shippingMethod}
+              shippingFee={shippingFee}
+              couponInput={couponInput}
+              appliedCoupon={appliedCoupon}
+              couponError={couponError}
+              isApplying={isApplying}
+              isSubmitting={isSubmitting}
+              submitError={submitError}
+              paymentMethod={paymentMethod}
+              total={total}
+              subtotal={subtotal}
+              discount={discount}
+              onCouponInputChange={setCouponInput}
+              onApplyCoupon={handleApplyCoupon}
+              onRemoveCoupon={() => {
+                setAppliedCoupon(null);
+                setCouponInput("");
+              }}
+              onPlaceOrder={handlePlaceOrder}
+            />
           </div>
         </div>
       </div>

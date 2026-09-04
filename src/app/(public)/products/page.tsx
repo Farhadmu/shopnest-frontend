@@ -279,13 +279,13 @@ function ProductsContent() {
         images: product.images,
         category: product.category,
       });
-      router.push(`/login?next=${encodeURIComponent("/dashboard/user/checkout")}`);
+      router.push(`/login?next=${encodeURIComponent("/checkout")}`);
       return;
     }
 
     try {
       await addToCart(product.id, 1);
-      router.push("/dashboard/user/checkout");
+      router.push("/checkout");
     } catch {
       router.push("/cart");
     }
