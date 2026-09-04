@@ -96,6 +96,31 @@ export async function clientFetch<T>(endpoint: string, options: RequestOptions =
   return handleResponse<T>(response);
 }
 
+/**
+ * Same as `clientFetch`, but also returns the raw response headers —
+ * needed for endpoints like /products that carry pagination metadata
+ * (X-Total-Count, X-Page, X-Limit) outside the JSON body.
+ */
+export async function clientFetchWithHeaders<T>(
+  endpoint: string,
+  options: RequestOptions = {}
+): Promise<{ data: T; headers: Headers }> {
+  const { params, headers: customHeaders, ...fetchOptions } = options;
+  const url = buildUrl(endpoint, params);
+
+  const response = await fetch(url, {
+    ...fetchOptions,
+    headers: {
+      "Content-Type": "application/json",
+      ...customHeaders,
+    },
+    credentials: "include",
+  });
+
+  const data = await handleResponse<T>(response);
+  return { data, headers: response.headers };
+}
+
 /** Client Mutation Handler (POST, PUT, PATCH, DELETE) */
 export async function clientMutation<T>(
   endpoint: string,

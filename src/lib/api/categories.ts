@@ -4,6 +4,11 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
+  /** Parent category id, or null/undefined for a top-level category.
+   * Needed by product-page filtering that builds a tree via
+   * `buildCategoryTree` / `flattenWithDepth` from `lib/utils/category-tree`. */
+  parent?: string | null;
+  image?: string;
 }
 
 function normalize(raw: any): Category {
@@ -11,6 +16,8 @@ function normalize(raw: any): Category {
     id: raw._id || raw.id || raw.slug || raw.name,
     name: raw.name,
     slug: raw.slug || raw.name,
+    parent: raw.parent ? String(raw.parent) : null,
+    image: raw.image,
   };
 }
 
