@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ReactNode, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { usePathname } from "next/navigation";
-import { FaBars, FaTimes, FaArrowRight } from "react-icons/fa";
+import { ReactNode,} from "react";
+import { motion, } from "motion/react";
+
+import {  FaArrowRight } from "react-icons/fa";
 
 export { DashboardSidebarLayout } from "./DashboardLayout";
 export { EmptyState, ErrorState, LoadingCard, LoadingGrid, LoadingChart, LoadingTable, FallbackIndicator, AiBadge } from "./DashboardStates";
@@ -58,7 +58,6 @@ export function DashboardShell({
   title,
   subtitle,
   role,
-  links,
   action,
   children,
   showContinueShopping = true,
@@ -152,7 +151,7 @@ export function FeatureGrid({ links }: { links: DashboardLink[] }) {
             className="block h-full rounded-2xl border border-border bg-surface p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
           >
             <div className="flex items-start gap-3">
-              <span className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-primary/15 to-accent/15 text-xl">
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-linear-to-br from-primary/15 to-accent/15 text-xl">
                 {item.icon}
               </span>
               <div>
