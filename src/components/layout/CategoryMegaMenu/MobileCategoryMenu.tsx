@@ -1,14 +1,26 @@
-// Server component — fetches categories, renders a mobile accordion tree.
-// onNavigate cannot be passed (functions aren't serialisable across the
-// Server→Client boundary). Closing the mobile drawer is handled by the
-// parent client component listening to pathname changes.
+"use client";
+
+import React, { useEffect, useState } from "react";
 import { getCategories } from "@/lib/api/categories";
-import { buildCategoryTree, idOf } from "@/lib/utils/category-tree";
+import { buildCategoryTree, idOf, type CategoryNode } from "@/lib/utils/category-tree";
 import { MobileCategoryRow } from "./MobileCategoryRow";
 
-export async function MobileCategoryMenu() {
-  const categories = await getCategories().catch(() => []);
-  const tree = buildCategoryTree(categories);
+export function MobileCategoryMenu() {
+  const [tree, setTree] = useState<CategoryNode[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getCategories()
+      .then((cats) => {
+        if (!cancelled) setTree(buildCategoryTree(cats));
+      })
+      .catch(() => {
+        if (!cancelled) setTree([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (tree.length === 0) return null;
 

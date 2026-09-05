@@ -46,16 +46,29 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   }
 
   return (
-    <ProductsClient
-      initialItems={initialData.items}
-      initialTotal={initialData.total}
-      initialTotalPages={initialData.totalPages}
-      initialSearch={search}
-      initialCategory={category}
-      initialMinPrice={minPrice}
-      initialMaxPrice={maxPrice}
-      initialSort={sort}
-      initialPage={pageNumber}
-    />
+    <React.Suspense
+      fallback={
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="h-48 animate-pulse rounded-[2.5rem] bg-surface/60 mb-7" />
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <div key={n} className="h-80 animate-pulse rounded-[1.8rem] bg-surface/60" />
+            ))}
+          </div>
+        </div>
+      }
+    >
+      <ProductsClient
+        initialItems={initialData.items}
+        initialTotal={initialData.total}
+        initialTotalPages={initialData.totalPages}
+        initialSearch={search}
+        initialCategory={category}
+        initialMinPrice={minPrice}
+        initialMaxPrice={maxPrice}
+        initialSort={sort}
+        initialPage={pageNumber}
+      />
+    </React.Suspense>
   );
 }

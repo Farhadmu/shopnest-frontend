@@ -9,7 +9,7 @@ import { CategoryMegaMenu } from "@/components/layout/CategoryMegaMenu/CategoryM
 import { MobileCategoryMenu } from "@/components/layout/CategoryMegaMenu/MobileCategoryMenu";
 import { NavbarClient } from "./navbar/NavbarClient";
 
-export async function Navbar() {
+export function Navbar() {
   return (
     <NavbarClient
       desktopCategoryMenu={<CategoryMegaMenu />}
