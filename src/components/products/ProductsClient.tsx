@@ -186,8 +186,17 @@ export function ProductsClient({
     setMaxPriceInput(urlMaxPrice);
   }, [urlSearch, urlMinPrice, urlMaxPrice]);
 
+  const isInitialMount = useRef(true);
+
   // Fetch items whenever URL parameters change
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      if (initialItems.length > 0) {
+        return;
+      }
+    }
+
     let cancelled = false;
     setLoading(true);
 
