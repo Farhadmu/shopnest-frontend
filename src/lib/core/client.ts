@@ -10,7 +10,7 @@ function getBaseUrl(): string {
     return "/api/v1";
   }
 
-  let url = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
+  let url = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "/api/v1";
   url = url.trim().replace(/\/$/, "");
   if (url.startsWith("http") && !url.includes("/api/v1")) {
     url = `${url}/api/v1`;

@@ -1,14 +1,28 @@
-// Server component — fetches categories at render time, renders as pure HTML
-// with CSS hover. No "use client" — this is a React Server Component.
+"use client";
+
+import React, { useEffect, useState } from "react";
 import { getCategories } from "@/lib/api/categories";
-import { buildCategoryTree, idOf } from "@/lib/utils/category-tree";
+import { buildCategoryTree, idOf, type CategoryNode } from "@/lib/utils/category-tree";
 import { CategoryColumn } from "./CategoryColumn";
 import Link from "next/link";
 import { FaChevronDown, FaChevronRight, FaLayerGroup } from "react-icons/fa";
 
-export async function CategoryMegaMenu({ className = "" }: { className?: string }) {
-  const categories = await getCategories().catch(() => []);
-  const tree = buildCategoryTree(categories);
+export function CategoryMegaMenu({ className = "" }: { className?: string }) {
+  const [tree, setTree] = useState<CategoryNode[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getCategories()
+      .then((cats) => {
+        if (!cancelled) setTree(buildCategoryTree(cats));
+      })
+      .catch(() => {
+        if (!cancelled) setTree([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (tree.length === 0) return null;
 
