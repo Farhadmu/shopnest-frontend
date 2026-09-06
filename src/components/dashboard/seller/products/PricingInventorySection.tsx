@@ -46,14 +46,13 @@ export function PricingInventorySection({
             <span className="text-[11px] text-muted">Strikethrough reference</span>
           </div>
           <div className="flex flex-col gap-1">
-            <Label className="text-xs font-bold text-muted">Selling Price</Label>
+            <Label className="text-xs font-bold text-muted">Selling Price (Discounted)</Label>
             <Input
               type="number"
               min="0"
-              required
               value={form.discountPrice}
               onChange={(e) => onChange({ discountPrice: e.target.value })}
-              placeholder="2490"
+              placeholder="2490 (optional)"
               fullWidth
             />
             <span className="text-[11px] font-bold text-accent">
