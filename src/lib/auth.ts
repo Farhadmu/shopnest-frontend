@@ -11,7 +11,7 @@ import nodemailer from "nodemailer";
  * Configures authentication provider, database adapter, and server credentials.
  */
 const client = new MongoClient(process.env.MONGODB_URI || "mongodb://localhost:27017/shopnest");
-const db = client.db();
+const db = client.db("shopnest");
 
 const rawBaseURL =
   process.env.BETTER_AUTH_URL ||

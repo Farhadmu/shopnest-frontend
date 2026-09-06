@@ -34,12 +34,27 @@ export function ProductGalleryUploader({
   const isFull = slotsRemaining === 0;
 
   const addImageUrl = () => {
-    const url = newImageUrl.trim();
-
+    let url = newImageUrl.trim();
     if (!url || isFull) return;
 
-    onImagesChange([...images, url]);
+    if (!url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("data:image/")) {
+      if (url.startsWith("//")) {
+        url = `https:${url}`;
+      } else if (url.includes(".") && !url.includes(" ")) {
+        url = `https://${url}`;
+      }
+    }
 
+    try {
+      if (!url.startsWith("data:image/")) {
+        new URL(url);
+      }
+    } catch {
+      setUploadError("Please enter a valid image URL (e.g. https://example.com/photo.jpg).");
+      return;
+    }
+
+    onImagesChange([...images, url]);
     setNewImageUrl("");
     setUploadError("");
   };
@@ -80,10 +95,20 @@ export function ProductGalleryUploader({
         try {
           const result = await uploadImageToImgBB(file);
           uploadedUrls.push(result.url);
-        } catch (err: any) {
-          setUploadError(
-            err?.message || "One of the images failed to upload.",
-          );
+        } catch {
+          // If ImgBB upload fails (e.g. invalid key or network issue),
+          // fallback to client-side data URL so seller can still upload product photos
+          try {
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(file);
+            });
+            uploadedUrls.push(dataUrl);
+          } catch (readErr: any) {
+            setUploadError(readErr?.message || "Failed to read image file.");
+          }
         }
       }
 

@@ -275,15 +275,20 @@ export function useProductForm(editId: string | null) {
 
   const handleSubmit = async (e?: { preventDefault?: () => void }) => {
     e?.preventDefault?.();
-    if (!form.title.trim()) {
+    const title = form.title.trim();
+    if (!title) {
       setErrorMsg("Product title is required");
       return;
     }
-    if (!form.price || Number(form.price) <= 0) {
+
+    const priceNum = Number(form.price);
+    if (!form.price || isNaN(priceNum) || priceNum <= 0) {
       setErrorMsg("Please enter a valid price (৳)");
       return;
     }
-    if (!form.description.trim()) {
+
+    const description = form.description.trim();
+    if (!description) {
       setErrorMsg("Product description is required");
       return;
     }
@@ -291,21 +296,34 @@ export function useProductForm(editId: string | null) {
     setIsLoading(true);
     setErrorMsg("");
 
+    // Only send discountPrice if valid positive number and less than regular price
+    const discountRaw = form.discountPrice ? Number(form.discountPrice) : undefined;
+    const discountPrice =
+      discountRaw !== undefined && !isNaN(discountRaw) && discountRaw > 0 && discountRaw < priceNum
+        ? discountRaw
+        : undefined;
+
+    const validImages = images.map((img) => img.trim()).filter(Boolean);
+
     const tags = form.tagsInput
       ? form.tagsInput.split(",").map((t) => t.trim()).filter(Boolean)
       : [form.category.toLowerCase()];
 
+    const safeStock = Math.max(0, Math.floor(effectiveStock || 0));
+
     const payload = {
-      title: form.title.trim(),
-      category: form.category,
-      price: Number(form.price),
-      discountPrice: form.discountPrice ? Number(form.discountPrice) : undefined,
-      stock: effectiveStock,
-      description: form.description.trim(),
-      images: images.length > 0 ? images : undefined,
+      title,
+      category: form.category || "Electronics",
+      price: priceNum,
+      discountPrice,
+      stock: safeStock,
+      description,
+      images: validImages,
       tags,
       specifications: buildSpecifications(),
     };
+
+    console.log("🚀 [Submitting Product Payload]:", payload);
 
     try {
       if (editId) {
@@ -318,6 +336,7 @@ export function useProductForm(editId: string | null) {
         router.push("/dashboard/seller/products");
       }, 1200);
     } catch (err) {
+      console.error("❌ [Product Form Error Caught]:", err);
       setErrorMsg(getErrorMessage(err));
     } finally {
       setIsLoading(false);
