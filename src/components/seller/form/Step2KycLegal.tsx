@@ -92,5 +92,3 @@ export function Step2KycLegal({ formData, onChange }: StepProps) {
     </div>
   );
 }
-
-

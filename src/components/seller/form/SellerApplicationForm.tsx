@@ -35,7 +35,7 @@ export function SellerApplicationForm({ initialData, isResubmission = false, onS
     agreedToTerms: false,
   });
 
-  const handleFieldChange = (field: keyof FormDataState, value: any) => {
+  const handleFieldChange = (field: keyof FormDataState, value: FormDataState[keyof FormDataState]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -128,14 +128,13 @@ export function SellerApplicationForm({ initialData, isResubmission = false, onS
     setError("");
 
     try {
-      let storeRes: any;
+      let storeRes: MyStore;
       if (initialData?.status === "rejected" || initialData?.status === "pending") {
         storeRes = await updateMyStore({ ...payload, resubmit: true });
       } else {
         storeRes = await registerStore(payload);
       }
-      const actualStore: MyStore = storeRes?.data ?? storeRes;
-      onSuccess?.({ ...actualStore, status: "pending" });
+      onSuccess?.({ ...storeRes, status: "pending" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not submit application. Please try again.");
     } finally {
@@ -161,24 +160,24 @@ export function SellerApplicationForm({ initialData, isResubmission = false, onS
         {step === 4 && <Step4ReviewSubmit formData={formData} onChange={handleFieldChange} />}
       </div>
 
-      <div className="flex items-center justify-between border-t border-border pt-4 mt-6">
+      <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-border pt-4 mt-6">
         {step > 1 ? (
           <button
             type="button"
             onClick={handleBack}
-            className="flex items-center gap-2 rounded-xl border border-border bg-surface px-5 py-2.5 text-xs font-bold text-text hover:bg-muted-bg transition cursor-pointer"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl border border-border bg-surface px-5 py-2.5 text-xs font-bold text-text hover:bg-muted-bg transition cursor-pointer"
           >
             <FiArrowLeft /> Back
           </button>
         ) : (
-          <div />
+          <div className="hidden sm:block" />
         )}
 
         {step < 4 ? (
           <button
             type="button"
             onClick={handleNext}
-            className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-xs font-black text-white hover:bg-primary-hover shadow-lg shadow-primary/25 transition cursor-pointer"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-xs font-black text-white hover:bg-primary-hover shadow-lg shadow-primary/25 transition cursor-pointer"
           >
             Continue <FiArrowRight />
           </button>
@@ -187,7 +186,7 @@ export function SellerApplicationForm({ initialData, isResubmission = false, onS
             type="button"
             disabled={loading || !formData.agreedToTerms}
             onClick={handleSubmit}
-            className="flex items-center gap-2 rounded-xl bg-success px-6 py-2.5 text-xs font-black text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-success/25 transition cursor-pointer"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-success px-6 py-2.5 text-xs font-black text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-success/25 transition cursor-pointer"
           >
             {loading && <FiLoader className="animate-spin" />}
             {isResubmission ? "Re-submit Application" : "Submit for Verification 🚀"}

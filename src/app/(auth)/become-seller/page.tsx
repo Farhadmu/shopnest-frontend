@@ -15,6 +15,16 @@ import {
 import { FiZap } from "react-icons/fi";
 import { SellerApplicationForm } from "@/components/seller/form";
 
+type SessionUser = {
+  id?: string;
+  name?: string;
+  email?: string;
+  role?: "customer" | "seller" | "admin";
+  image?: string;
+};
+
+type ApiResponse<T> = T | { data: T };
+
 export default function BecomeSellerPage() {
   const { data: session, isPending } = useSession();
   const router = useRouter();
@@ -26,8 +36,8 @@ export default function BecomeSellerPage() {
   const fetchStore = async () => {
     setLoadingStore(true);
     try {
-      const data = await getMyStore();
-      setStore((data as any)?.data ?? data);
+      const data = (await getMyStore()) as ApiResponse<MyStore>;
+      setStore("data" in data ? data.data : data);
     } catch {
       setStore(null);
     } finally {
@@ -52,13 +62,15 @@ export default function BecomeSellerPage() {
     return <LoadingState message="Redirecting to login..." />;
   }
 
+  const user = session.user as SessionUser;
+
   // 1. APPROVED STORE: Shows "You Are Already a Seller" if store is approved or user role is seller
-  const isApproved = store?.status === "approved" || (session?.user as any)?.role === "seller";
+  const isApproved = store?.status === "approved" || user.role === "seller";
   if (isApproved) {
     const activeStore: MyStore = store ?? {
       id: "my-store",
       ownerId: session.user.id,
-      storeName: (session.user as any)?.name ? `${(session.user as any).name}'s Store` : "Verified Store",
+      storeName: user.name ? `${user.name}'s Store` : "Verified Store",
       slug: "seller",
       description: "Official Verified Seller Store",
       status: "approved",
@@ -116,7 +128,7 @@ export default function BecomeSellerPage() {
         initialData={store}
         isResubmission={Boolean(store)}
         onSuccess={(savedStore) => {
-          const actualStore = (savedStore as any)?.data ?? savedStore;
+          const actualStore = ("data" in savedStore ? savedStore.data : savedStore) as MyStore;
           setStore({
             ...actualStore,
             status: "pending",
