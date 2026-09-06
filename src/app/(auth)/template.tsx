@@ -26,7 +26,7 @@ export default function AuthTemplate({
         duration: 0.35,
         ease: [0.22, 1, 0.36, 1],
       }}
-      className="flex-1 min-h-0 flex flex-col w-full"
+      className="flex-1 min-h-0 flex flex-col w-full h-full overflow-hidden"
     >
       {children}
     </motion.div>

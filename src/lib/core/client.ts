@@ -55,8 +55,26 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
     try {
       const errorData = await response.json();
+      console.error("❌ [Backend 400 Error Details]:", errorData);
       if (errorData && typeof errorData === "object") {
-        errorMessage = errorData.message || errorData.error || errorMessage;
+        // Zod validation errors come with a `details.fieldErrors` object
+        const fieldErrors = errorData?.details?.fieldErrors as Record<string, string[]> | undefined;
+        if (fieldErrors && Object.keys(fieldErrors).length > 0) {
+          errorMessage = Object.entries(fieldErrors)
+            .map(([field, msgs]) => `${field}: ${(msgs as string[]).join(", ")}`)
+            .join(" | ");
+        } else if (errorData?.details && typeof errorData.details === "object") {
+          const detailEntries = Object.entries(errorData.details);
+          if (detailEntries.length > 0) {
+            errorMessage = detailEntries
+              .map(([field, errObj]: [string, any]) => `${field}: ${errObj?.message || errObj}`)
+              .join(" | ");
+          } else {
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          }
+        } else {
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        }
         errorDetails = errorData;
       }
     } catch {
