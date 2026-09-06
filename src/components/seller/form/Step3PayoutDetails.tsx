@@ -82,5 +82,3 @@ export function Step3PayoutDetails({ formData, onChange }: StepProps) {
     </div>
   );
 }
-
-

@@ -151,7 +151,6 @@ export function Step1StoreProfile({ formData, onChange }: StepProps) {
                 alt="Store Logo Preview"
                 height={10}
                 width={10}
-                
                 className="h-10 w-10 rounded-md object-cover border border-border shrink-0 shadow-xs"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = "https://placehold.co/100x100?text=Logo";
