@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { Link2, UploadCloud } from "lucide-react";
 import { ChangeEvent, DragEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import {
   createHeroBanner,
@@ -56,15 +57,22 @@ function idOf(category: CategoryItem) {
 export function HeroBannerManager({ categories }: { categories: CategoryItem[] }) {
   const [categoryId, setCategoryId] = useState(() => idOf(categories[0]));
   const [banners, setBanners] = useState<HeroBanner[]>([]);
-  const [form, setForm] = useState<FormState>(() => ({ ...emptyForm, categoryId: idOf(categories[0]) }));
+  const [form, setForm] = useState<FormState>(() => ({
+    ...emptyForm,
+    categoryId: idOf(categories[0]),
+  }));
   const [editing, setEditing] = useState<HeroBanner | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [imageMode, setImageMode] = useState<"upload" | "url">("upload");
 
-  const categoryName = useMemo(() => new Map(categories.map((category) => [idOf(category), category.name])), [categories]);
+  const categoryName = useMemo(
+    () => new Map(categories.map((category) => [idOf(category), category.name])),
+    [categories]
+  );
 
   const load = async () => {
     if (!categoryId) return setBanners([]);
@@ -87,11 +95,13 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
 
   const resetForm = (nextCategoryId = categoryId) => {
     setEditing(null);
+    setImageMode("upload");
     setForm({ ...emptyForm, categoryId: nextCategoryId });
   };
 
   const edit = (banner: HeroBanner) => {
     setEditing(banner);
+    setImageMode(banner.imageUrl.startsWith("/uploads/") ? "upload" : "url");
     setForm({
       categoryId: banner.categoryId ?? "",
       placement: banner.placement,
@@ -167,7 +177,7 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
   const toggle = async (banner: HeroBanner) => {
     try {
       const updated = await updateHeroBanner(banner.id, { isActive: !banner.isActive });
-      setBanners((current) => current.map((item) => item.id === banner.id ? updated : item));
+      setBanners((current) => current.map((item) => (item.id === banner.id ? updated : item)));
       setNotice(updated.isActive ? "Banner activated." : "Banner deactivated.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not update status.");
@@ -214,43 +224,350 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <label className="flex flex-1 flex-col gap-2 text-sm font-bold text-text">
             Category
-            <select value={categoryId} onChange={(event) => { setCategoryId(event.target.value); resetForm(event.target.value); }} className="rounded-xl border border-border bg-background px-4 py-3 font-normal">
+            <select
+              value={categoryId}
+              onChange={(event) => {
+                setCategoryId(event.target.value);
+                resetForm(event.target.value);
+              }}
+              className="rounded-xl border border-border bg-background px-4 py-3 font-normal"
+            >
               <option value="">Select a category</option>
-              {categories.map((category) => <option key={idOf(category)} value={idOf(category)}>{category.name}</option>)}
+              {categories.map((category) => (
+                <option key={idOf(category)} value={idOf(category)}>
+                  {category.name}
+                </option>
+              ))}
             </select>
           </label>
-          <button type="button" onClick={() => resetForm()} className="rounded-xl bg-primary px-5 py-3 font-bold text-white">{editing ? "New banner" : "Add hero banner"}</button>
+          <button
+            type="button"
+            onClick={() => resetForm()}
+            className="rounded-xl bg-primary px-5 py-3 font-bold text-white"
+          >
+            {editing ? "New banner" : "Add hero banner"}
+          </button>
         </div>
       </section>
 
-      {(error || notice) && <div className={`rounded-xl px-4 py-3 text-sm font-semibold ${error ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}>{error ?? notice}</div>}
+      {(error || notice) && (
+        <div
+          className={`rounded-xl px-4 py-3 text-sm font-semibold ${error ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}
+        >
+          {error ?? notice}
+        </div>
+      )}
 
-      <form onSubmit={save} className="grid gap-6 rounded-2xl border border-border bg-surface p-5 shadow-sm lg:grid-cols-[1fr_360px] sm:p-6">
+      <form
+        onSubmit={save}
+        className="grid gap-6 rounded-2xl border border-border bg-surface p-5 shadow-sm lg:grid-cols-[1fr_360px] sm:p-6"
+      >
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="text-sm font-bold text-text">Placement<select value={form.placement} onChange={(event) => setForm({ ...form, placement: event.target.value as FormState["placement"] })} className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"><option value="hero">Hero</option><option value="side">Right side card</option><option value="bottom">Bottom card</option></select></label>
-          <label className="text-sm font-bold text-text">Eyebrow<input value={form.eyebrow} onChange={(event) => setForm({ ...form, eyebrow: event.target.value })} maxLength={100} className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal" /></label>
-          <label className="text-sm font-bold text-text">Title<input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} maxLength={200} className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal" /></label>
-          <label className="text-sm font-bold text-text">Highlight<input value={form.highlight} onChange={(event) => setForm({ ...form, highlight: event.target.value })} maxLength={100} className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal" /></label>
-          <label className="text-sm font-bold text-text">Subtitle<input value={form.subtitle} onChange={(event) => setForm({ ...form, subtitle: event.target.value })} maxLength={300} className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal" /></label>
-          <label className="text-sm font-bold text-text sm:col-span-2">Description<textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} maxLength={500} rows={2} className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal" /></label>
-          <label className="text-sm font-bold text-text">Price<input value={form.price} onChange={(event) => setForm({ ...form, price: event.target.value })} maxLength={50} className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal" /></label>
-          <label className="text-sm font-bold text-text">Button text<input value={form.buttonText} onChange={(event) => setForm({ ...form, buttonText: event.target.value })} maxLength={80} className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal" /></label>
-          <label className="text-sm font-bold text-text sm:col-span-2">Target URL<input value={form.targetUrl} onChange={(event) => setForm({ ...form, targetUrl: event.target.value })} placeholder="/products?category=..." className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal" /></label>
-          <label className="text-sm font-bold text-text">Text theme<select value={form.textTheme} onChange={(event) => setForm({ ...form, textTheme: event.target.value as FormState["textTheme"] })} className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"><option value="light">Light</option><option value="dark">Dark</option></select></label>
-          <label className="text-sm font-bold text-text">Background class<input value={form.bgClassName} onChange={(event) => setForm({ ...form, bgClassName: event.target.value })} placeholder="bg-gray-900" className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal" /></label>
-          <label className="text-sm font-bold text-text">Display order<input type="number" min="0" value={form.displayOrder} onChange={(event) => setForm({ ...form, displayOrder: event.target.value })} className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal" /></label>
-          <label className="flex items-center gap-3 pt-7 text-sm font-bold text-text"><input type="checkbox" checked={form.isActive} onChange={(event) => setForm({ ...form, isActive: event.target.checked })} className="h-4 w-4" />Active banner</label>
-          <label className="sm:col-span-2 text-sm font-bold text-text">Image<input type="file" accept="image/*" onChange={chooseImage} className="mt-2 block w-full rounded-xl border border-border bg-background px-4 py-3 text-sm font-normal" /></label>
-          <div className="flex gap-3 sm:col-span-2"><button disabled={saving || !categoryId} className="rounded-xl bg-primary px-5 py-3 font-bold text-white disabled:opacity-50">{saving ? "Saving..." : editing ? "Save changes" : "Create banner"}</button>{editing && <button type="button" onClick={() => resetForm()} className="rounded-xl border border-border px-5 py-3 font-bold text-text">Cancel</button>}</div>
+          <label className="text-sm font-bold text-text">
+            Placement
+            <select
+              value={form.placement}
+              onChange={(event) =>
+                setForm({ ...form, placement: event.target.value as FormState["placement"] })
+              }
+              className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
+            >
+              <option value="hero">Hero</option>
+              <option value="side">Right side card</option>
+              <option value="bottom">Bottom card</option>
+            </select>
+          </label>
+          <label className="text-sm font-bold text-text">
+            Eyebrow
+            <input
+              value={form.eyebrow}
+              onChange={(event) => setForm({ ...form, eyebrow: event.target.value })}
+              maxLength={100}
+              className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
+            />
+          </label>
+          <label className="text-sm font-bold text-text">
+            Title
+            <input
+              value={form.title}
+              onChange={(event) => setForm({ ...form, title: event.target.value })}
+              maxLength={200}
+              className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
+            />
+          </label>
+          <label className="text-sm font-bold text-text">
+            Highlight
+            <input
+              value={form.highlight}
+              onChange={(event) => setForm({ ...form, highlight: event.target.value })}
+              maxLength={100}
+              className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
+            />
+          </label>
+          <label className="text-sm font-bold text-text">
+            Subtitle
+            <input
+              value={form.subtitle}
+              onChange={(event) => setForm({ ...form, subtitle: event.target.value })}
+              maxLength={300}
+              className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
+            />
+          </label>
+          <label className="text-sm font-bold text-text sm:col-span-2">
+            Description
+            <textarea
+              value={form.description}
+              onChange={(event) => setForm({ ...form, description: event.target.value })}
+              maxLength={500}
+              rows={2}
+              className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
+            />
+          </label>
+          <label className="text-sm font-bold text-text">
+            Price
+            <input
+              value={form.price}
+              onChange={(event) => setForm({ ...form, price: event.target.value })}
+              maxLength={50}
+              className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
+            />
+          </label>
+          <label className="text-sm font-bold text-text">
+            Button text
+            <input
+              value={form.buttonText}
+              onChange={(event) => setForm({ ...form, buttonText: event.target.value })}
+              maxLength={80}
+              className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
+            />
+          </label>
+          <label className="text-sm font-bold text-text sm:col-span-2">
+            Target URL
+            <input
+              value={form.targetUrl}
+              onChange={(event) => setForm({ ...form, targetUrl: event.target.value })}
+              placeholder="/products?category=..."
+              className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
+            />
+          </label>
+          <label className="text-sm font-bold text-text">
+            Text theme
+            <select
+              value={form.textTheme}
+              onChange={(event) =>
+                setForm({ ...form, textTheme: event.target.value as FormState["textTheme"] })
+              }
+              className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
+            >
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </label>
+          <label className="text-sm font-bold text-text">
+            Background class
+            <input
+              value={form.bgClassName}
+              onChange={(event) => setForm({ ...form, bgClassName: event.target.value })}
+              placeholder="bg-gray-900"
+              className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
+            />
+          </label>
+          <label className="text-sm font-bold text-text">
+            Display order
+            <input
+              type="number"
+              min="0"
+              value={form.displayOrder}
+              onChange={(event) => setForm({ ...form, displayOrder: event.target.value })}
+              className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
+            />
+          </label>
+          <label className="flex items-center gap-3 pt-7 text-sm font-bold text-text">
+            <input
+              type="checkbox"
+              checked={form.isActive}
+              onChange={(event) => setForm({ ...form, isActive: event.target.checked })}
+              className="h-4 w-4"
+            />
+            Active banner
+          </label>
+          <div className="sm:col-span-2 rounded-2xl border border-border bg-background p-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-bold text-text">Banner image</span>
+              <div className="flex rounded-full border border-border bg-surface p-1 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setImageMode("upload")}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors ${imageMode === "upload" ? "bg-primary text-white" : "text-muted hover:text-text"}`}
+                >
+                  <UploadCloud className="h-3.5 w-3.5" />
+                  Upload
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageMode("url")}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors ${imageMode === "url" ? "bg-primary text-white" : "text-muted hover:text-text"}`}
+                >
+                  <Link2 className="h-3.5 w-3.5" />
+                  URL
+                </button>
+              </div>
+            </div>
+
+            {imageMode === "upload" ? (
+              <label
+                htmlFor="hero-banner-image"
+                className="mt-3 flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-surface px-4 py-5 text-center transition-colors hover:border-primary/50 hover:bg-primary/5"
+              >
+                <UploadCloud className="h-8 w-8 text-primary" />
+                <span className="mt-2 text-sm font-semibold text-text">Click to upload image</span>
+                <span className="mt-1 text-xs text-muted">PNG, JPG, WEBP up to 5MB</span>
+                <input
+                  id="hero-banner-image"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  onChange={chooseImage}
+                  className="sr-only"
+                />
+              </label>
+            ) : (
+              <label className="mt-3 block text-xs font-semibold text-muted">
+                Image URL
+                <input
+                  type="url"
+                  value={form.imageUrl}
+                  onChange={(event) => setForm({ ...form, imageUrl: event.target.value })}
+                  placeholder="https://example.com/banner.jpg"
+                  className="mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm font-normal text-text outline-none focus:border-primary"
+                />
+              </label>
+            )}
+          </div>
+          <div className="flex gap-3 sm:col-span-2">
+            <button
+              disabled={saving || !categoryId}
+              className="rounded-xl bg-primary px-5 py-3 font-bold text-white disabled:opacity-50"
+            >
+              {saving ? "Saving..." : editing ? "Save changes" : "Create banner"}
+            </button>
+            {editing && (
+              <button
+                type="button"
+                onClick={() => resetForm()}
+                className="rounded-xl border border-border px-5 py-3 font-bold text-text"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
         </div>
         <div className="relative aspect-video overflow-hidden rounded-xl bg-muted-bg">
-          {form.imageUrl ? <><Image src={form.imageUrl} alt="Hero banner preview" fill className={`object-cover ${form.bgClassName}`} sizes="360px" /><div className={`absolute inset-0 flex flex-col justify-end bg-linear-to-t from-black/75 to-transparent p-5 ${form.textTheme === "dark" ? "text-text" : "text-white"}`}><span className="text-xs font-bold uppercase">{form.eyebrow}</span><strong>{form.title || "Banner title"} {form.highlight && <span>{form.highlight}</span>}</strong><span className="text-sm">{form.subtitle || "Banner subtitle"}</span><span className="text-xs">{form.description}</span></div></> : <div className="grid h-full place-items-center text-sm text-muted">Select an image to preview</div>}
+          {form.imageUrl ? (
+            <>
+              <Image
+                src={form.imageUrl}
+                alt="Hero banner preview"
+                fill
+                className={`object-cover ${form.bgClassName}`}
+                sizes="360px"
+              />
+              <div
+                className={`absolute inset-0 flex flex-col justify-end bg-linear-to-t from-black/75 to-transparent p-5 ${form.textTheme === "dark" ? "text-text" : "text-white"}`}
+              >
+                <span className="text-xs font-bold uppercase">{form.eyebrow}</span>
+                <strong>
+                  {form.title || "Banner title"} {form.highlight && <span>{form.highlight}</span>}
+                </strong>
+                <span className="text-sm">{form.subtitle || "Banner subtitle"}</span>
+                <span className="text-xs">{form.description}</span>
+              </div>
+            </>
+          ) : (
+            <div className="grid h-full place-items-center text-sm text-muted">
+              Select an image to preview
+            </div>
+          )}
         </div>
       </form>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-black text-text">{categoryName.get(categoryId) || "Selected category"} banners</h2>
-        {loading ? <div className="rounded-xl border border-border bg-surface p-8 text-center text-muted">Loading banners...</div> : banners.length === 0 ? <div className="rounded-xl border border-dashed border-border bg-surface p-8 text-center text-muted">No banners assigned to this category.</div> : banners.map((banner, index) => <div key={banner.id} draggable onDragStart={() => setDraggedId(banner.id)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => onDrop(event, banner.id)} className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:flex-row sm:items-center"><div className="relative h-28 w-full shrink-0 overflow-hidden rounded-lg bg-muted-bg sm:w-48"><Image src={banner.imageUrl} alt={banner.title || "Hero banner"} fill className="object-cover" sizes="192px" /></div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><span className="rounded-md bg-muted-bg px-2 py-1 text-xs font-bold">{banner.placement}</span><span className="rounded-md bg-muted-bg px-2 py-1 text-xs font-bold">#{index + 1}</span><span className={`rounded-md px-2 py-1 text-xs font-bold ${banner.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}>{banner.isActive ? "Active" : "Inactive"}</span></div><h3 className="mt-2 truncate font-black text-text">{banner.title || "Untitled banner"}</h3><p className="truncate text-sm text-muted">{banner.subtitle || "No subtitle"} {banner.targetUrl && `· ${banner.targetUrl}`}</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => toggle(banner)} className="rounded-lg border border-border px-3 py-2 text-xs font-bold">{banner.isActive ? "Deactivate" : "Activate"}</button><button type="button" onClick={() => edit(banner)} className="rounded-lg border border-border px-3 py-2 text-xs font-bold">Edit</button><button type="button" onClick={() => remove(banner)} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700">Delete</button></div></div>)}
+        <h2 className="text-xl font-black text-text">
+          {categoryName.get(categoryId) || "Selected category"} banners
+        </h2>
+        {loading ? (
+          <div className="rounded-xl border border-border bg-surface p-8 text-center text-muted">
+            Loading banners...
+          </div>
+        ) : banners.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border bg-surface p-8 text-center text-muted">
+            No banners assigned to this category.
+          </div>
+        ) : (
+          banners.map((banner, index) => (
+            <div
+              key={banner.id}
+              draggable
+              onDragStart={() => setDraggedId(banner.id)}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => onDrop(event, banner.id)}
+              className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:flex-row sm:items-center"
+            >
+              <div className="relative h-28 w-full shrink-0 overflow-hidden rounded-lg bg-muted-bg sm:w-48">
+                <Image
+                  src={banner.imageUrl}
+                  alt={banner.title || "Hero banner"}
+                  fill
+                  className="object-cover"
+                  sizes="192px"
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-md bg-muted-bg px-2 py-1 text-xs font-bold">
+                    {banner.placement}
+                  </span>
+                  <span className="rounded-md bg-muted-bg px-2 py-1 text-xs font-bold">
+                    #{index + 1}
+                  </span>
+                  <span
+                    className={`rounded-md px-2 py-1 text-xs font-bold ${banner.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}
+                  >
+                    {banner.isActive ? "Active" : "Inactive"}
+                  </span>
+                </div>
+                <h3 className="mt-2 truncate font-black text-text">
+                  {banner.title || "Untitled banner"}
+                </h3>
+                <p className="truncate text-sm text-muted">
+                  {banner.subtitle || "No subtitle"} {banner.targetUrl && `· ${banner.targetUrl}`}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => toggle(banner)}
+                  className="rounded-lg border border-border px-3 py-2 text-xs font-bold"
+                >
+                  {banner.isActive ? "Deactivate" : "Activate"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => edit(banner)}
+                  className="rounded-lg border border-border px-3 py-2 text-xs font-bold"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => remove(banner)}
+                  className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </section>
     </div>
   );
