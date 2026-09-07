@@ -46,11 +46,39 @@ export default function BecomeSellerPage() {
   };
 
   useEffect(() => {
-    if (session?.user) {
-      fetchStore();
-    } else if (!isPending && !session?.user) {
-      setLoadingStore(false);
+    let isMounted = true;
+
+    if (isPending) return;
+
+    if (!session?.user) {
+      Promise.resolve().then(() => {
+        if (isMounted) setLoadingStore(false);
+      });
+      return;
     }
+
+    const loadInitialStore = async () => {
+      try {
+        const data = (await getMyStore()) as ApiResponse<MyStore>;
+        if (isMounted) {
+          setStore("data" in data ? data.data : data);
+        }
+      } catch {
+        if (isMounted) {
+          setStore(null);
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingStore(false);
+        }
+      }
+    };
+
+    loadInitialStore();
+
+    return () => {
+      isMounted = false;
+    };
   }, [session, isPending]);
 
   if (isPending || loadingStore) {
