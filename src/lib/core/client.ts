@@ -55,8 +55,10 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
     try {
       const errorData = await response.json();
-      console.error("❌ [Backend 400 Error Details]:", errorData);
       if (errorData && typeof errorData === "object") {
+        if (Object.keys(errorData).length > 0) {
+          console.error(`❌ [Backend ${response.status} Error Details] ${response.url}:`, errorData);
+        }
         // Zod validation errors come with a `details.fieldErrors` object
         const fieldErrors = errorData?.details?.fieldErrors as Record<string, string[]> | undefined;
         if (fieldErrors && Object.keys(fieldErrors).length > 0) {

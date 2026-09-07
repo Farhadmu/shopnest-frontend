@@ -13,6 +13,7 @@ import {
   PromoCard as PromoCardType,
 } from "@/lib/constants/banner";
 import { getCategories } from "@/lib/api/categories";
+import { getHeroBanners, HeroBanner } from "@/lib/api/hero-banners";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -21,6 +22,7 @@ import { getCategories } from "@/lib/api/categories";
 const CATEGORY_CYCLE_MS = 3000;
 const HERO_ADVANCE_MS   = 6000;
 const MAX_CATEGORIES    = 10;
+const MAX_PROMO_CARDS    = 2;
 
 // ---------------------------------------------------------------------------
 // Zone-specific Framer Motion variants
@@ -283,6 +285,39 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   );
 }
 
+function customBannerSlides(banners: HeroBanner[], categoryLabel: string): HeroSlide[] {
+  return banners.map((banner) => ({
+    id: banner.id,
+    eyebrow: banner.eyebrow || undefined,
+    title: banner.title || categoryLabel,
+    highlight: banner.highlight || undefined,
+    subtitle: banner.subtitle || undefined,
+    description: banner.description || undefined,
+    price: banner.price || undefined,
+    image: banner.imageUrl,
+    buttonText: banner.buttonText || (banner.targetUrl ? "SHOP NOW" : "EXPLORE"),
+    buttonLink: banner.targetUrl || `/products?category=${encodeURIComponent(categoryLabel)}`,
+    bgClassName: banner.bgClassName || undefined,
+    textTheme: banner.textTheme,
+  }));
+}
+
+function customPromoCards(banners: HeroBanner[], categoryLabel: string): PromoCardType[] {
+  return banners.map((banner) => ({
+    id: banner.id,
+    eyebrow: banner.eyebrow || undefined,
+    title: banner.title || categoryLabel,
+    highlight: banner.highlight || undefined,
+    description: banner.description || banner.subtitle || undefined,
+    price: banner.price || undefined,
+    image: banner.imageUrl,
+    buttonText: banner.buttonText || (banner.targetUrl ? "SHOP NOW" : undefined),
+    buttonLink: banner.targetUrl || undefined,
+    bgClassName: banner.bgClassName || undefined,
+    textTheme: banner.textTheme,
+  }));
+}
+
 // ---------------------------------------------------------------------------
 // CategorySidebar
 // ---------------------------------------------------------------------------
@@ -345,7 +380,7 @@ function CategorySidebar({
                   {isActive && (
                     <motion.span
                       key={`progress-${idx}`}
-                      className="absolute bottom-0 left-0 h-[3px] rounded-b-lg bg-surface/40"
+                      className="absolute bottom-0 left-0 h-0.75 rounded-b-lg bg-surface/40"
                       initial={{ width: "0%" }}
                       animate={{ width: "100%" }}
                       transition={{ duration: CATEGORY_CYCLE_MS / 1000, ease: "linear" }}
@@ -372,6 +407,9 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
     (data.categories ?? FALLBACK_CATEGORIES).slice(0, MAX_CATEGORIES)
   );
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [customBanners, setCustomBanners] = useState<HeroBanner[]>([]);
+  const [bannersLoading, setBannersLoading] = useState(false);
+  const bannerCache = useRef(new Map<string, HeroBanner[]>());
 
   const [activeIdx, setActiveIdx] = useState(0);
   const isPaused = useRef(false);
@@ -440,9 +478,56 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
   };
 
   const activeCat = categories[activeIdx];
-  const activeHeroSlides  = activeCat?.heroSlides  ?? heroSlides;
-  const activeSideCards   = activeCat?.sideCards   ?? sideCards;
-  const activeBottomCards = activeCat?.bottomCards ?? bottomCards;
+  useEffect(() => {
+    const activeCategoryId = activeCat?.id;
+    if (!activeCategoryId || !/^[a-f\d]{24}$/i.test(activeCategoryId)) {
+      Promise.resolve().then(() => {
+        setCustomBanners([]);
+        setBannersLoading(false);
+      });
+      return;
+    }
+
+    const cached = bannerCache.current.get(activeCategoryId);
+    if (cached) {
+      setCustomBanners(cached);
+      return;
+    }
+
+    let cancelled = false;
+    setCustomBanners([]);
+    setBannersLoading(true);
+    getHeroBanners(activeCategoryId)
+      .then(async (categoryBanners) => {
+        if (cancelled) return;
+        const banners = categoryBanners.length > 0 ? categoryBanners : await getHeroBanners();
+        if (cancelled) return;
+        bannerCache.current.set(activeCategoryId, banners);
+        setCustomBanners(banners);
+      })
+      .catch(() => {
+        if (!cancelled) setCustomBanners([]);
+      })
+      .finally(() => {
+        if (!cancelled) setBannersLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [activeCat?.id]);
+
+  const categoryLabel = activeCat?.label ?? "ShopNest";
+  const heroBanners = customBanners.filter((banner) => banner.placement === "hero");
+  const sideBanners = customBanners.filter((banner) => banner.placement === "side");
+  const bottomBanners = customBanners.filter((banner) => banner.placement === "bottom");
+  const dynamicHeroSlides = heroBanners.length > 0
+    ? customBannerSlides(heroBanners, categoryLabel)
+    : activeCat?.heroSlides ?? heroSlides;
+  const activeHeroSlides = bannersLoading && customBanners.length === 0 ? [] : dynamicHeroSlides;
+  const activeSideCards = sideBanners.length > 0
+    ? customPromoCards(sideBanners, categoryLabel).slice(0, MAX_PROMO_CARDS)
+    : activeCat?.sideCards ?? sideCards;
+  const activeBottomCards = bottomBanners.length > 0
+    ? customPromoCards(bottomBanners, categoryLabel).slice(0, MAX_PROMO_CARDS)
+    : activeCat?.bottomCards ?? bottomCards;
 
   const animationKey = activeCat?.id ?? `idx-${activeIdx}`;
 
