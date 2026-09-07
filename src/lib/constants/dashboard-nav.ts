@@ -53,6 +53,7 @@ export const adminDashboardLinks: DashboardLink[] = [
   { label: "Sellers", href: "/dashboard/admin/sellers", icon: "🏬", description: "Seller verification." },
   { label: "Products", href: "/dashboard/admin/products", icon: "📦", description: "Product moderation." },
   { label: "Categories", href: "/dashboard/admin/categories", icon: "🗂️", description: "Category management." },
+  { label: "Hero Banners", href: "/dashboard/admin/hero-banners", icon: "🖼️", description: "Category hero campaigns." },
   { label: "Orders", href: "/dashboard/admin/orders", icon: "🧾", description: "Platform-wide orders." },
   { label: "Coupons", href: "/dashboard/admin/coupons", icon: "🏷️", description: "Platform coupon campaigns." },
   { label: "Reviews", href: "/dashboard/admin/reviews", icon: "⭐", description: "Review moderation." },

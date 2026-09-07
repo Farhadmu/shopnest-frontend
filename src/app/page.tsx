@@ -11,7 +11,7 @@ import RecommendationsSection from "@/components/home/RecommendationsSection";
 import HowItWorksSection from "@/components/home/HowItWorksSection";
 import ProofSection from "@/components/home/ProofSection";
 import FinalCtaSection from "@/components/home/FinalCtaSection";
-import { defaultBannerData } from "@/lib/constants/banner";
+import { defaultBannerData } from "@/lib/banner/BannerData";
 import AiIntelligenceSection from "@/components/home/AiIntelligenceSection";
 import TrendingSection from "@/components/home/Trending/TrendingSection";
 
