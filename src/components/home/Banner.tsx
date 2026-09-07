@@ -405,6 +405,7 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
   );
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [customBanners, setCustomBanners] = useState<HeroBanner[]>([]);
+  const [bannerCategoryId, setBannerCategoryId] = useState<string | null>(null);
   const [bannersLoading, setBannersLoading] = useState(false);
   const bannerCache = useRef(new Map<string, HeroBanner[]>());
 
@@ -471,21 +472,20 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
   useEffect(() => {
     const activeCategoryId = activeCat?.id;
     if (!activeCategoryId || !/^[a-f\d]{24}$/i.test(activeCategoryId)) {
-      Promise.resolve().then(() => {
-        setCustomBanners([]);
-        setBannersLoading(false);
-      });
+      setBannerCategoryId(null);
+      setCustomBanners([]);
+      setBannersLoading(false);
       return;
     }
 
     const cached = bannerCache.current.get(activeCategoryId);
     if (cached) {
+      setBannerCategoryId(activeCategoryId);
       setCustomBanners(cached);
       return;
     }
 
     let cancelled = false;
-    setCustomBanners([]);
     setBannersLoading(true);
     getHeroBanners(activeCategoryId)
       .then(async (categoryBanners) => {
@@ -493,10 +493,11 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
         const banners = categoryBanners.length > 0 ? categoryBanners : await getHeroBanners();
         if (cancelled) return;
         bannerCache.current.set(activeCategoryId, banners);
+        setBannerCategoryId(activeCategoryId);
         setCustomBanners(banners);
       })
       .catch(() => {
-        if (!cancelled) setCustomBanners([]);
+        if (!cancelled) setBannersLoading(false);
       })
       .finally(() => {
         if (!cancelled) setBannersLoading(false);
@@ -505,13 +506,14 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
   }, [activeCat?.id]);
 
   const categoryLabel = activeCat?.label ?? "ShopNest";
-  const heroBanners = customBanners.filter((banner) => banner.placement === "hero");
-  const sideBanners = customBanners.filter((banner) => banner.placement === "side");
-  const bottomBanners = customBanners.filter((banner) => banner.placement === "bottom");
+  const categoryBanners = bannerCategoryId === activeCat?.id ? customBanners : [];
+  const heroBanners = categoryBanners.filter((banner) => banner.placement === "hero");
+  const sideBanners = categoryBanners.filter((banner) => banner.placement === "side");
+  const bottomBanners = categoryBanners.filter((banner) => banner.placement === "bottom");
   const dynamicHeroSlides = heroBanners.length > 0
     ? customBannerSlides(heroBanners, categoryLabel)
     : activeCat?.heroSlides ?? heroSlides;
-  const activeHeroSlides = bannersLoading && customBanners.length === 0 ? [] : dynamicHeroSlides;
+  const activeHeroSlides = dynamicHeroSlides;
   const activeSideCards = sideBanners.length > 0
     ? customPromoCards(sideBanners, categoryLabel).slice(0, MAX_PROMO_CARDS)
     : activeCat?.sideCards ?? sideCards;
