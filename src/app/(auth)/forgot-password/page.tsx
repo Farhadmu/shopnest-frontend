@@ -77,7 +77,7 @@ export default function ForgotPasswordPage() {
           </Link>
 
           {/* Header Icon */}
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-primary/15 to-accent/20 dark:from-primary/30 dark:to-accent/40 flex items-center justify-center text-primary mb-3 sm:mb-4 shadow-inner">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-linear-to-tr from-primary/15 to-accent/20 dark:from-primary/30 dark:to-accent/40 flex items-center justify-center text-primary mb-3 sm:mb-4 shadow-inner">
             <KeyIcon className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
 
@@ -153,7 +153,7 @@ export default function ForgotPasswordPage() {
                 disabled={isLoading}
                 whileHover={{ scale: 1.015 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full rounded-full py-3 sm:py-3.5 text-xs sm:text-sm font-bold text-white shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed bg-gradient-to-r from-primary to-accent hover:from-primary-hover hover:to-accent shadow-indigo-500/25 dark:shadow-purple-900/40"
+                className="w-full rounded-full py-3 sm:py-3.5 text-xs sm:text-sm font-bold text-white shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed bg-linear-to-r from-primary to-accent hover:from-primary-hover hover:to-accent shadow-indigo-500/25 dark:shadow-purple-900/40"
               >
                 {isLoading ? "Sending instructions..." : "Send Reset Instructions"}
               </motion.button>
@@ -163,7 +163,7 @@ export default function ForgotPasswordPage() {
       </div>
 
       {/* Footer */}
-      <footer className="flex-shrink-0 border-t border-border py-2.5 sm:py-3 px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted bg-surface dark:bg-background transition-colors">
+      <footer className="shrink-0 border-t border-border py-2.5 sm:py-3 px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted bg-surface dark:bg-background transition-colors">
         <span>© {new Date().getFullYear()} ShopNest, Inc. All rights reserved.</span>
         <nav className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
           <Link href="/privacy" className="hover:text-primary transition-colors">Privacy</Link>

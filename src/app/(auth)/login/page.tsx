@@ -261,7 +261,7 @@ function LoginForm() {
           variants={panelLeft}
           initial="hidden"
           animate="show"
-          className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col justify-between p-4 xl:p-8 bg-gradient-to-br from-[#4F46E5] via-[#6366F1] to-[#7C3AED] dark:from-[#1E124A] dark:via-[#120B2E] dark:to-[#090614] text-white select-none transition-colors duration-500"
+          className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col justify-between p-4 xl:p-8 bg-linear-to-br from-[#4F46E5] via-[#6366F1] to-[#7C3AED] dark:from-[#1E124A] dark:via-[#120B2E] dark:to-[#090614] text-white select-none transition-colors duration-500"
         >
           {/* Subtle dot-matrix overlay pattern (15% in light, 10% in dark) */}
           <svg className="absolute inset-0 w-full h-full opacity-15 dark:opacity-10 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
@@ -275,7 +275,7 @@ function LoginForm() {
 
           {/* Deep ambient purple glow in dark mode */}
           <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 xl:w-[26rem] xl:h-[26rem] rounded-full bg-purple-600/20 dark:bg-purple-600/30 blur-[80px]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 xl:w-104 xl:h-104 rounded-full bg-purple-600/20 dark:bg-purple-600/30 blur-[80px]" />
 
             <motion.div
               animate={{
@@ -300,7 +300,7 @@ function LoginForm() {
           {/* Floating subtle particles */}
           <FloatingParticles />
 
-          {/* ShopNest wordmark header */}
+          {/* ShopNest word mark */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -413,7 +413,7 @@ function LoginForm() {
                   animate={{ y: [0, -4, 0] }}
                   transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
                   whileHover={{ scale: 1.02 }}
-                  className="bg-white/20 dark:bg-white/10 backdrop-blur-md border border-white/30 dark:border-white/15 text-white rounded-xl p-2 xl:p-2.5 shadow-lg flex-1 max-w-[9.5rem] xl:max-w-[11rem] cursor-default"
+                  className="bg-white/20 dark:bg-white/10 backdrop-blur-md border border-white/30 dark:border-white/15 text-white rounded-xl p-2 xl:p-2.5 shadow-lg flex-1 max-w-38 xl:max-w-44 cursor-default"
                 >
                   <div className="flex items-center gap-1 text-[9px] xl:text-[10px] text-[#EDE9FE] dark:text-purple-200/80 font-semibold mb-0.5">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#10B981] shadow-[0_0_6px_#10B981]" />
@@ -484,7 +484,7 @@ function LoginForm() {
           animate="show"
           className="flex-1 flex flex-col items-center justify-center overflow-y-auto lg:overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-4 py-2 sm:px-6 sm:py-3 lg:px-8 xl:px-12 bg-surface dark:bg-background transition-colors"
         >
-          <div className="w-full max-w-[22rem] sm:max-w-[24rem] xl:max-w-[25rem] my-auto flex flex-col justify-center">
+          <div className="w-full max-w-88 sm:max-w-[24rem] xl:max-w-100 my-auto flex flex-col justify-center">
 
             {/* Mobile-only brand mark */}
             <motion.div
@@ -494,7 +494,7 @@ function LoginForm() {
               animate="show"
               className="flex lg:hidden items-center gap-2 mb-1.5"
             >
-              <div className="w-6 h-6 rounded-lg bg-gradient-to-r from-primary to-accent flex items-center justify-center shadow-md">
+              <div className="w-6 h-6 rounded-lg bg-linear-to-r from-primary to-accent flex items-center justify-center shadow-md">
                 <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M6 2 3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
                 </svg>
@@ -663,7 +663,7 @@ function LoginForm() {
                   disabled={isLoading || Boolean(socialLoading)}
                   whileHover={{ scale: 1.015, boxShadow: "0 6px 22px rgba(91,92,240,0.4)" }}
                   whileTap={{ scale: 0.98 }}
-                  className="group relative w-full rounded-full py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-white overflow-hidden shadow-md transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed bg-gradient-to-r from-primary to-accent hover:from-primary-hover hover:to-accent"
+                  className="group relative w-full rounded-full py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-white overflow-hidden shadow-md transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed bg-linear-to-r from-primary to-accent hover:from-primary-hover hover:to-accent"
                 >
                   {isLoading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -770,7 +770,7 @@ function LoginForm() {
       </div>
 
       {/* ── Minimalist Footer ── */}
-      <footer className="flex-shrink-0 border-t border-border py-1.5 px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-1 text-[10px] sm:text-xs text-muted bg-surface dark:bg-background transition-colors">
+      <footer className="shrink-0 border-t border-border py-1.5 px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-1 text-[10px] sm:text-xs text-muted bg-surface dark:bg-background transition-colors">
         <span>© {new Date().getFullYear()} ShopNest, Inc. All rights reserved.</span>
         <nav className="flex flex-wrap items-center justify-center gap-3 sm:gap-4" aria-label="Legal">
           <Link href="/privacy" className="hover:text-primary transition-colors">Privacy</Link>
