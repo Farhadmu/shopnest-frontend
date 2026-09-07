@@ -22,7 +22,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="flex min-h-screen flex-col bg-background text-text">
+      <body
+        suppressHydrationWarning
+        className="flex min-h-screen flex-col bg-background text-text"
+      >
         <ThemeBootstrap />
         <AppHeroUIProvider>
           <AppShell>{children}</AppShell>
