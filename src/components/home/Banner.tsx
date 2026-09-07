@@ -23,34 +23,7 @@ const CATEGORY_CYCLE_MS = 3000;
 const HERO_ADVANCE_MS   = 6000;
 const MAX_CATEGORIES    = 10;
 const MAX_PROMO_CARDS    = 2;
-
-// ---------------------------------------------------------------------------
-// Zone-specific Framer Motion variants
-// ---------------------------------------------------------------------------
-
-const spring = { type: "spring" as const, stiffness: 260, damping: 25 };
-
-const heroVariants = {
-  enter:  { opacity: 0, scale: 1.02 },
-  center: { opacity: 1, scale: 1    },
-  exit:   { opacity: 0, scale: 0.98 },
-};
-
-const bottomVariants = {
-  enter:  { opacity: 0, y: 16 },
-  center: { opacity: 1, y: 0  },
-  exit:   { opacity: 0, y: -8 },
-};
-
-const sideVariants = {
-  enter:  { opacity: 0, x: 24 },
-  center: { opacity: 1, x: 0  },
-  exit:   { opacity: 0, x: -12 },
-};
-
-const heroTransition   = { ...spring, delay: 0    };
-const bottomTransition = { ...spring, delay: 0.08 };
-const sideTransition   = { ...spring, delay: 0.15 };
+const SWIPE_EASE = [0.22, 1, 0.36, 1] as const;
 
 // ---------------------------------------------------------------------------
 // PromoCard
@@ -170,6 +143,33 @@ function PromoCard({
   );
 }
 
+function AnimatedPromoCard({
+  card,
+  imageSizes,
+  className = "",
+}: {
+  card: PromoCardType;
+  imageSizes: string;
+  className?: string;
+}) {
+  return (
+    <div className={`relative h-full overflow-hidden rounded-xl ${className}`}>
+      <AnimatePresence mode="sync" initial={false}>
+        <motion.div
+          key={card.id}
+          initial={{ x: "100%", opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: "-100%", opacity: 0 }}
+          transition={{ duration: 0.55, ease: SWIPE_EASE }}
+          className="h-full"
+        >
+          <PromoCard card={card} imageSizes={imageSizes} className="h-full" />
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // HeroCarousel
 // ---------------------------------------------------------------------------
@@ -177,10 +177,6 @@ function PromoCard({
 function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   const [active, setActive] = useState(0);
   const total = slides.length;
-
-  useEffect(() => {
-    setActive(0);
-  }, [slides]);
 
   useEffect(() => {
     if (total <= 1) return;
@@ -192,7 +188,8 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
 
   if (total === 0) return null;
 
-  const slide = slides[active];
+  const currentIndex = Math.min(active, total - 1);
+  const slide = slides[currentIndex];
   const isLight = slide.textTheme !== "dark";
   const goTo = (index: number) => setActive((index + total) % total);
 
@@ -262,7 +259,7 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           <button
             type="button"
             aria-label="Previous slide"
-            onClick={() => goTo(active - 1)}
+            onClick={() => goTo(currentIndex - 1)}
             className="absolute left-2 top-1/2 z-20 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-surface/70 text-text opacity-100 transition-opacity hover:bg-surface sm:left-3 sm:h-8 sm:w-8 sm:opacity-0 sm:group-hover:opacity-100"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -270,14 +267,14 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           <button
             type="button"
             aria-label="Next slide"
-            onClick={() => goTo(active + 1)}
+            onClick={() => goTo(currentIndex + 1)}
             className="absolute right-2 top-1/2 z-20 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-surface/70 text-text opacity-100 transition-opacity hover:bg-surface sm:right-3 sm:h-8 sm:w-8 sm:opacity-0 sm:group-hover:opacity-100"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
 
           <div className="absolute bottom-3 right-3 z-20 rounded-md bg-surface px-2.5 py-1 text-[11px] font-semibold text-text shadow sm:bottom-4 sm:right-4 sm:px-3 sm:text-xs">
-            {active + 1} / {total}
+            {currentIndex + 1} / {total}
           </div>
         </>
       )}
@@ -444,22 +441,16 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const categoriesLenRef = useRef(categories.length);
-  categoriesLenRef.current = categories.length;
-
-  const startTimer = useRef(() => {
+  useEffect(() => {
     if (timerRef.current) clearInterval(timerRef.current);
+    if (categories.length === 0) return;
     timerRef.current = setInterval(() => {
-      if (!isPaused.current && isVisible.current && categoriesLenRef.current > 0) {
-        setActiveIdx((prev) => (prev + 1) % categoriesLenRef.current);
+      if (!isPaused.current && isVisible.current) {
+        setActiveIdx((prev) => (prev + 1) % categories.length);
       }
     }, CATEGORY_CYCLE_MS);
-  }).current;
-
-  useEffect(() => {
-    startTimer();
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [startTimer]);
+  }, [categories.length]);
 
   useEffect(() => {
     const el = sectionRef.current;
@@ -474,7 +465,6 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
 
   const handleSelectCategory = (idx: number) => {
     setActiveIdx(idx);
-    startTimer();
   };
 
   const activeCat = categories[activeIdx];
@@ -529,8 +519,6 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
     ? customPromoCards(bottomBanners, categoryLabel).slice(0, MAX_PROMO_CARDS)
     : activeCat?.bottomCards ?? bottomCards;
 
-  const animationKey = activeCat?.id ?? `idx-${activeIdx}`;
-
   return (
     <section
       ref={sectionRef}
@@ -549,69 +537,36 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
 
       {/* ── Centre: Hero + bottom cards ── */}
       <div className="col-span-2 flex flex-col gap-4 sm:col-span-4 lg:col-span-7">
-        <AnimatePresence mode="popLayout" initial={false}>
-          <motion.div
-            key={`hero-${animationKey}`}
-            variants={heroVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={heroTransition}
-            style={{ willChange: "transform, opacity" }}
-            className="flex-1"
-          >
-            <HeroCarousel slides={activeHeroSlides} />
-          </motion.div>
-        </AnimatePresence>
+        <div className="flex-1">
+          <HeroCarousel slides={activeHeroSlides} />
+        </div>
 
         {activeBottomCards.length > 0 && (
-          <AnimatePresence mode="popLayout" initial={false}>
-            <motion.div
-              key={`bottom-${animationKey}`}
-              variants={bottomVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={bottomTransition}
-              style={{ willChange: "transform, opacity" }}
-              className="grid grid-cols-2 gap-4"
-            >
-              {activeBottomCards.map((card) => (
-                <PromoCard
-                  key={card.id}
-                  card={card}
-                  imageSizes="(max-width: 1024px) 50vw, 25vw"
-                  className="min-h-28 sm:min-h-36"
-                />
-              ))}
-            </motion.div>
-          </AnimatePresence>
+          <div className="grid grid-cols-2 gap-4">
+            {activeBottomCards.map((card) => (
+              <AnimatedPromoCard
+                key={card.id}
+                card={card}
+                imageSizes="(max-width: 1024px) 50vw, 25vw"
+                className="min-h-28 sm:min-h-36"
+              />
+            ))}
+          </div>
         )}
       </div>
 
       {/* ── Right: Side cards ── */}
       {activeSideCards.length > 0 && (
-        <AnimatePresence mode="popLayout" initial={false}>
-          <motion.div
-            key={`side-${animationKey}`}
-            variants={sideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={sideTransition}
-            style={{ willChange: "transform, opacity" }}
-            className="col-span-2 grid grid-cols-2 gap-4 sm:col-span-4 lg:col-span-3 lg:flex lg:flex-col"
-          >
+        <div className="col-span-2 grid grid-cols-2 gap-4 sm:col-span-4 lg:col-span-3 lg:flex lg:flex-col">
             {activeSideCards.map((card) => (
-              <PromoCard
+              <AnimatedPromoCard
                 key={card.id}
                 card={card}
                 imageSizes="(max-width: 1024px) 50vw, 25vw"
                 className="min-h-36 sm:min-h-48 lg:flex-1"
               />
             ))}
-          </motion.div>
-        </AnimatePresence>
+        </div>
       )}
     </section>
   );
