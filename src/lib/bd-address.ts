@@ -1,7 +1,7 @@
 /**
  * Bangladesh Address Data Wrapper
  *
- * Uses the @bangladeshi/bangladesh-address package (build/src/index.js)
+ * Uses the @bangladeshi/bangladesh-address package's published source build.
  * which contains: 8 Divisions, 64 Districts, 495 Upazilas, 26 Metropolitan Thanas
  *
  * Package API (name-based, not id-based):
@@ -14,9 +14,8 @@
  *   searchLocations(query)     → SearchResult[]
  */
 
-// Direct import from actual build path (package.json "main" points to wrong path)
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const bdAddress = require("@bangladeshi/bangladesh-address/build/src/index.js");
+const bdAddress = require("@bangladeshi/bangladesh-address/build/src");
 
 export interface UpazilaData {
   upazila: string;
