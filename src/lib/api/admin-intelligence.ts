@@ -63,16 +63,46 @@ export interface MarketplaceHealthData {
 }
 
 export interface RevenueLeakageData {
+  totalRevenue: number;
   totalPotentialLeakage: number;
   leakageFormatted: string;
+  leakagePercentage: number;
   recoveredThisMonth: string;
   leakageCategories: Array<{
     type: string;
     amount: number;
+    count: number;
     severity: string;
     details: string;
   }>;
+  orderSummary: {
+    total: number;
+    completed: number;
+    cancelled: number;
+    refunded: number;
+  };
   automatedRemediation: string;
+}
+
+export interface SellerRiskItem {
+  sellerId: string;
+  storeId: string;
+  storeName: string;
+  rating: number;
+  trustScore: number;
+  totalOrders: number;
+  completedOrders: number;
+  cancelledOrders: number;
+  returnedOrders: number;
+  cancellationRate: number;
+  returnRate: number;
+  totalProducts: number;
+  rejectedProducts: number;
+  riskScore: number;
+  riskLevel: "low" | "medium" | "high" | "critical";
+  riskFactors: string[];
+  status: string;
+  lastActivity: string;
 }
 
 export interface SellerRiskData {
@@ -82,12 +112,18 @@ export interface SellerRiskData {
     high: { count: number; percentage: number; label: string };
     critical: { count: number; percentage: number; label: string };
   };
+  averageRiskScore: number;
+  totalSellers: number;
   flaggedSellers: Array<{
+    sellerId: string;
+    storeId: string;
     storeName: string;
-    reason: string;
+    riskScore: number;
     riskLevel: string;
+    reason: string;
     actionRequired: string;
   }>;
+  allSellers: SellerRiskItem[];
 }
 
 export interface MarketplaceForecastData {
@@ -104,14 +140,20 @@ export interface MarketplaceForecastData {
 export interface CategoryIntelligenceData {
   categories: Array<{
     name: string;
-    growthRate: string;
-    revenueShare: number;
-    orderVolume: string;
+    products: number;
     activeSellers: number;
-    avgOrderValue: string;
+    orders: number;
+    unitsSold: number;
+    revenue: number;
+    avgOrderValue: number;
+    revenueShare: number;
+    growthRate: number;
+    avgRating: number;
+    ratingCount: number;
   }>;
   topPerformer: string;
   fastestExpandingCatalog: string;
+  totalRevenue: number;
 }
 
 export interface SystemTelemetryData {
@@ -176,7 +218,7 @@ export interface PlatformAnalyticsData {
   range: string;
   kpis: {
     totalRevenue: number;
-    revenueGrowth: string;
+    revenueGrowth: number;
     totalUsers: number;
     userGrowth: string;
     totalSellers: number;
@@ -185,8 +227,8 @@ export interface PlatformAnalyticsData {
     orderGrowth: string;
   };
   timeline: Array<{ label: string; revenue: number; orders: number; users: number; sellers: number }>;
-  categoryPerformance: Array<{ category: string; revenue: number; share: number; growth: string }>;
-  topSellersRanking: Array<{ rank: number; name: string; gmv: string; orders: number; rating: number; returnRate: string }>;
+  categoryPerformance: Array<{ category: string; revenue: number; share: number; orders: number }>;
+  topSellersRanking: Array<{ rank: number; storeId: string; name: string; gmv: number; gmvFormatted: string; orders: number; rating: number; returnRate: number; products: number }>;
 }
 
 export async function getPlatformAnalytics(range: string = "30d") {
@@ -207,6 +249,7 @@ export interface RiskEventItem {
 }
 
 export interface RiskMatrixData {
+  range: string;
   overallPlatformRiskScore: number;
   overallRiskLevel: string;
   riskDistribution: {
@@ -226,8 +269,72 @@ export interface RiskMatrixData {
   events: RiskEventItem[];
 }
 
-export async function getRiskMatrix() {
-  return clientFetch<RiskMatrixData>("/admin/risk-matrix");
+export async function getRiskMatrix(range: string = "30d") {
+  return clientFetch<RiskMatrixData>(`/admin/risk-matrix?range=${range}`);
+}
+
+// 37b. SUSPICIOUS ORDERS
+export interface SuspiciousOrderItem {
+  orderId: string;
+  userId: string;
+  totalAmount: number;
+  paymentStatus: string;
+  status: string;
+  riskScore: number;
+  riskLevel: string;
+  reasons: string[];
+  createdAt: string;
+}
+
+export interface SuspiciousOrdersData {
+  orders: SuspiciousOrderItem[];
+  pagination: { total: number; page: number; limit: number; totalPages: number };
+}
+
+export async function getSuspiciousOrders(params?: { range?: string; page?: number; limit?: number }) {
+  const query = new URLSearchParams();
+  if (params?.range) query.append("range", params.range);
+  if (params?.page) query.append("page", String(params.page));
+  if (params?.limit) query.append("limit", String(params.limit));
+  const qStr = query.toString();
+  return clientFetch<SuspiciousOrdersData>(`/admin/suspicious-orders${qStr ? `?${qStr}` : ""}`);
+}
+
+// 37c. FINANCIAL RISK
+export interface FinancialRiskData {
+  totalTransactionValue: number;
+  cancelledOrderValue: number;
+  refundedAmount: number;
+  returnedOrderValue: number;
+  potentialExposure: number;
+  exposurePercentage: number;
+}
+
+export async function getFinancialRisk() {
+  return clientFetch<FinancialRiskData>("/admin/financial-risk");
+}
+
+// 37d. FRAUD ALERTS
+export interface FraudAlertItem {
+  id: string;
+  type: string;
+  entityName: string;
+  entityId: string;
+  riskLevel: string;
+  riskScore: number;
+  reason: string;
+  detectedAt: string;
+  status: string;
+}
+
+export interface FraudAlertsData {
+  alerts: FraudAlertItem[];
+  total: number;
+  byRiskLevel: { critical: number; high: number; medium: number; low: number };
+}
+
+export async function getFraudAlerts(range: string = "30d") {
+  return clientFetch<FraudAlertsData>(`/admin/fraud-alerts?range=${range}`);
 }
 
 // 38. SECURITY INCIDENT MANAGEMENT

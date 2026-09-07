@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { getOrderById } from "@/lib/api/orders";
+import { getOrderById, cancelOrder, requestReturn, type Order } from "@/lib/api/orders";
+import { ReviewModal } from "@/components/reviews/ReviewModal";
 import Link from "next/link";
 import {
   FiCheckCircle,
@@ -14,6 +15,10 @@ import {
   FiHelpCircle,
   FiDollarSign,
   FiRefreshCw,
+  FiPrinter,
+  FiXCircle,
+  FiRotateCcw,
+  FiStar,
 } from "react-icons/fi";
 
 const TRACKING_STEPS = [
@@ -30,11 +35,16 @@ export default function OrderDetailsPage() {
   const id =
     typeof params?.id === "string" ? params.id : Array.isArray(params?.id) ? params.id[0] : "";
 
-  const [order, setOrder] = useState<any>(null);
+  const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
 
-  const loadOrder = () => {
+  // Review modal state
+  const [reviewTarget, setReviewTarget] = useState<{ id: string; title: string } | null>(null);
+
+  const loadOrder = useCallback(() => {
     if (!id) return;
     setLoading(true);
     setError(null);
@@ -42,16 +52,60 @@ export default function OrderDetailsPage() {
       .then((data) => {
         setOrder(data);
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         console.error("Failed to load order:", err);
-        setError(err?.message || "Order not found or authorization failed.");
+        setError(err instanceof Error ? err.message : "Order not found or authorization failed.");
       })
       .finally(() => setLoading(false));
-  };
+  }, [id]);
 
   useEffect(() => {
-    loadOrder();
-  }, [id]);
+    let cancelled = false;
+    const run = async () => {
+      await loadOrder();
+      const interval = window.setInterval(loadOrder, 15000);
+      return () => {
+        cancelled = true;
+        window.clearInterval(interval);
+      };
+    };
+    run();
+  }, [loadOrder]);
+
+  const handleCancel = async () => {
+    if (!order) return;
+    if (!confirm("Are you sure you want to cancel this order? This action cannot be undone.")) return;
+    setActionLoading(true);
+    try {
+      await cancelOrder(order.id || (order as { _id?: string })._id || "");
+      setActionSuccessMsg("Order has been cancelled successfully.");
+      loadOrder();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to cancel order.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleReturn = async () => {
+    if (!order) return;
+    const reason = prompt("Please enter the reason for returning this item (e.g. Size mismatch, defective, wrong color):");
+    if (!reason || !reason.trim()) return;
+    setActionLoading(true);
+    try {
+      await requestReturn(order.id || "", { reason: reason.trim() });
+      setActionSuccessMsg("Return request submitted under ShopNest 7-Day Guarantee.");
+      loadOrder();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to submit return request.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   if (loading) {
     return (
@@ -110,7 +164,7 @@ export default function OrderDetailsPage() {
           <div className="flex items-center gap-3">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
               Order #
-              {String(order.id || order._id || "")
+              {String(order.id || "")
                 .slice(-8)
                 .toUpperCase()}
             </h1>
@@ -120,6 +174,8 @@ export default function OrderDetailsPage() {
                   ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
                   : order.status === "cancelled"
                     ? "bg-red-500/10 text-red-500 border border-red-500/20"
+                    : order.status === "returned"
+                      ? "bg-amber-500/10 text-amber-600 border border-amber-500/20"
                     : "bg-primary/10 text-primary border border-primary/20"
               }`}
             >
@@ -135,21 +191,57 @@ export default function OrderDetailsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={handlePrint}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold rounded-xl transition-colors shadow-sm"
+          >
+            <FiPrinter /> Print / Download Invoice
+          </button>
           <button
             onClick={loadOrder}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-border bg-card hover:bg-muted-bg text-foreground text-xs font-semibold rounded-xl transition-colors"
           >
-            <FiRefreshCw /> Refresh Status
+            <FiRefreshCw /> Refresh
           </button>
+          {(order.status === "pending" || order.status === "confirmed") && (
+            <button
+              onClick={handleCancel}
+              disabled={actionLoading}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-500 text-xs font-bold rounded-xl transition-colors"
+            >
+              <FiXCircle /> {actionLoading ? "Cancelling..." : "Cancel Order"}
+            </button>
+          )}
+          {order.status === "delivered" && (
+            <button
+              onClick={handleReturn}
+              disabled={actionLoading}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold rounded-xl transition-colors"
+            >
+              <FiRotateCcw /> {actionLoading ? "Submitting..." : "Return / Refund"}
+            </button>
+          )}
           <Link
             href="/support"
             className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-border bg-card hover:bg-muted-bg text-foreground text-xs font-semibold rounded-xl transition-colors"
           >
-            <FiHelpCircle /> Need Help?
+            <FiHelpCircle /> Support
           </Link>
         </div>
       </div>
+
+      {actionSuccessMsg && (
+        <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-bold flex items-center gap-2">
+          <FiCheckCircle className="text-base" /> {actionSuccessMsg}
+        </div>
+      )}
+
+      {(order.status === "returned" || order.status === "cancelled") && (
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-xs text-amber-700 dark:text-amber-300">
+          <p className="font-bold">This order has been {order.status}.</p>
+        </div>
+      )}
 
       {/* Real-time Order Tracking Timeline */}
       <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
@@ -195,10 +287,10 @@ export default function OrderDetailsPage() {
             </h2>
 
             <div className="divide-y divide-border/60">
-              {(order.items || []).map((item: any, index: number) => (
+              {(order.items || []).map((item, index: number) => (
                 <div
                   key={index}
-                  className="py-4 first:pt-0 last:pb-0 flex items-center justify-between gap-4"
+                  className="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                 >
                   <div className="flex-1">
                     <h3 className="font-bold text-sm text-foreground">
@@ -211,10 +303,24 @@ export default function OrderDetailsPage() {
                       <span>Unit Price: ৳{item.price?.toLocaleString()}</span>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="flex items-center gap-4 justify-between sm:justify-end">
                     <p className="font-black text-sm text-foreground">
                       ৳{(item.price * item.quantity).toLocaleString()}
                     </p>
+                    {order.status === "delivered" && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setReviewTarget({
+                            id: item.productId || (item as { id?: string }).id || "",
+                            title: item.title || `Product #${index + 1}`,
+                          })
+                        }
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border border-amber-500/30 rounded-xl text-xs font-bold transition-colors"
+                      >
+                        <FiStar /> Write Review
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -225,10 +331,10 @@ export default function OrderDetailsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted mb-2 flex items-center gap-1.5">
-                <FiMapPin className="text-primary" /> Delivery Destination
+                <FiMapPin className="text-primary" /> Order Summary
               </h3>
               <p className="text-sm font-medium text-foreground whitespace-pre-line leading-relaxed">
-                {order.shippingAddress}
+                Total: ৳{order.totalAmount?.toLocaleString()}
               </p>
             </div>
 
@@ -237,14 +343,9 @@ export default function OrderDetailsPage() {
                 <FiDollarSign className="text-emerald-500" /> Payment Details
               </h3>
               <p className="text-sm font-medium text-foreground capitalize">
-                Method:{" "}
-                <strong>{order.paymentMethod ? order.paymentMethod.toUpperCase() : "COD"}</strong>
-              </p>
-              <p className="text-xs text-muted mt-1">
-                Payment Status:{" "}
+                Status:{" "}
                 <strong className="text-emerald-500 uppercase">
-                  {order.paymentStatus ||
-                    (order.status === "delivered" ? "Paid" : "Pending Verification")}
+                  {order.status === "delivered" ? "Paid" : "Pending"}
                 </strong>
               </p>
             </div>
@@ -295,6 +396,19 @@ export default function OrderDetailsPage() {
           </div>
         </div>
       </div>
+
+      {/* Review Modal Trigger */}
+      {reviewTarget && (
+        <ReviewModal
+          productId={reviewTarget.id}
+          productTitle={reviewTarget.title}
+          isOpen={true}
+          onClose={() => setReviewTarget(null)}
+          onSuccess={() => {
+            setActionSuccessMsg("Review submitted successfully! Thank you for your feedback.");
+          }}
+        />
+      )}
     </div>
   );
 }

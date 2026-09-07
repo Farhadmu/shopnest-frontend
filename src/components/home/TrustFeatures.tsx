@@ -48,7 +48,6 @@ const features = [
 
 export default function TrustFeatures() {
   return (
-    // ✅ CLEAN PADDING:
     <section className="py-8">
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {features.map((item, i) => (
@@ -62,21 +61,13 @@ export default function TrustFeatures() {
               delay: i * 0.1,
             }}
           >
-            <motion.div
-              animate={{
-                opacity: [0.9, 1, 0.9],
-                scale: [1, 1.01, 1],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: i * 0.3,
-              }}
+            <div
               className="
                 group relative flex flex-col justify-between
                 overflow-hidden rounded-2xl
                 p-6
+                bg-surface/90 dark:bg-surface
+                border border-border/50
                 shadow-lg dark:shadow-xl
                 transition-all duration-500
                 hover:-translate-y-2
@@ -84,60 +75,8 @@ export default function TrustFeatures() {
                 h-full
               "
             >
-              {/* Rotating Border Light */}
-              <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none p-[2px]">
-                <motion.div
-                  animate={{
-                    rotate: [0, 360],
-                  }}
-                  transition={{
-                    duration: 4,
-                    repeat: Infinity,
-                    ease: "linear",
-                  }}
-                  style={{
-                    background: `conic-gradient(
-                      from 0deg at 50% 50%,
-                      transparent 0%,
-                      transparent 65%,
-                      ${item.glowColor} 88%,
-                      ${item.glowColor} 100%
-                    )`,
-                  }}
-                  className="
-                    absolute
-                    -inset-[50%]
-                    opacity-70
-                    group-hover:opacity-100
-                    transition-opacity duration-300
-                  "
-                />
-              </div>
-
-              {/* Card Background */}
+              {/* Top Main Glow (Only on Hover) */}
               <div
-                className="
-                  absolute inset-[1.5px]
-                  rounded-[14px]
-                  bg-surface/90 dark:bg-surface
-                  z-0
-                "
-              />
-
-              {/* ================================= */}
-              {/* Light Mode Main Glow */}
-              {/* ================================= */}
-
-              <motion.div
-                animate={{
-                  opacity: [0.45, 0.65, 0.45],
-                }}
-                transition={{
-                  duration: 4,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: i * 0.4,
-                }}
                 style={{
                   background: `radial-gradient(
                     circle at 50% 0%,
@@ -151,58 +90,15 @@ export default function TrustFeatures() {
                   rounded-2xl
                   pointer-events-none
                   z-[1]
-
-                  transition-all duration-500
-
-                  group-hover:opacity-100
-                  group-hover:scale-105
-
-                  dark:opacity-30
-                  dark:group-hover:opacity-30
-                "
-              />
-
-              {/* ================================= */}
-              {/* Light Mode Hover Glow */}
-              {/* ================================= */}
-
-              <div
-                className="
-                  absolute inset-0
-                  rounded-2xl
-                  pointer-events-none
-                  z-[1]
                   opacity-0
-                  transition-opacity duration-500
-
                   group-hover:opacity-100
-
-                  dark:group-hover:opacity-0
+                  transition-all duration-500
+                  group-hover:scale-105
                 "
-                style={{
-                  background: `radial-gradient(
-                    circle at 50% 15%,
-                    ${item.glowColor}35,
-                    ${item.glowColor}15 38%,
-                    transparent 70%
-                  )`,
-                }}
               />
 
-              {/* ================================= */}
-              {/* Bottom Soft Glow */}
-              {/* ================================= */}
-
-              <motion.div
-                animate={{
-                  opacity: [0.18, 0.3, 0.18],
-                }}
-                transition={{
-                  duration: 5,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: i * 0.5,
-                }}
+              {/* Bottom Soft Glow (Only on Hover) */}
+              <div
                 style={{
                   background: `radial-gradient(
                     circle at 50% 100%,
@@ -215,13 +111,9 @@ export default function TrustFeatures() {
                   rounded-2xl
                   pointer-events-none
                   z-[1]
-
-                  transition-all duration-500
-
+                  opacity-0
                   group-hover:opacity-70
-
-                  dark:opacity-20
-                  dark:group-hover:opacity-20
+                  transition-all duration-500
                 "
               />
 
@@ -275,16 +167,7 @@ export default function TrustFeatures() {
               </div>
 
               {/* Bottom Dynamic Color Bar */}
-              <motion.div
-                animate={{
-                  opacity: [0.7, 1, 0.7],
-                }}
-                transition={{
-                  duration: 2.5,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: i * 0.2,
-                }}
+              <div
                 className={`
                   relative z-10
                   mt-6
@@ -293,14 +176,12 @@ export default function TrustFeatures() {
                   rounded-full
                   bg-gradient-to-r
                   ${item.barColor}
-
                   transition-all duration-300
-
                   group-hover:h-2
                   group-hover:brightness-125
                 `}
               />
-            </motion.div>
+            </div>
           </motion.div>
         ))}
       </div>

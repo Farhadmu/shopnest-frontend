@@ -6,11 +6,7 @@ import { getOrders, Order } from "@/lib/api/orders";
 import {
   FiPackage,
   FiShoppingBag,
-  FiTruck,
-  FiClock,
-  FiCheckCircle,
   FiArrowRight,
-  FiFilter,
 } from "react-icons/fi";
 
 export default function OrdersPage() {

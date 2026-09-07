@@ -11,7 +11,7 @@ import RecommendationsSection from "@/components/home/RecommendationsSection";
 import HowItWorksSection from "@/components/home/HowItWorksSection";
 import ProofSection from "@/components/home/ProofSection";
 import FinalCtaSection from "@/components/home/FinalCtaSection";
-import { defaultBannerData } from "@/lib/banner/BannerData";
+import { defaultBannerData } from "@/lib/constants/banner";
 import AiIntelligenceSection from "@/components/home/AiIntelligenceSection";
 import TrendingSection from "@/components/home/Trending/TrendingSection";
 
@@ -24,6 +24,8 @@ export default function HomePage() {
       {/* 01 — Hero */}
       <BannerSection data={defaultBannerData} />
 
+
+
       {/* 02 — Trust */}
       <TrustFeatures />
 
@@ -31,7 +33,7 @@ export default function HomePage() {
       <ShopByCategory />
 
       {/* 04 — Trending */}
-     <TrendingSection/>
+      <TrendingSection />
 
       {/* 05 — AI */}
       <AiIntelligenceSection />

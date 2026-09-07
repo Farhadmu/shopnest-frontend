@@ -6,6 +6,10 @@ export interface Review {
   userId: string;
   rating: number;
   comment: string;
+  title?: string;
+  userName?: string;
+  verifiedPurchase?: boolean;
+  images?: string[];
   createdAt: string;
 }
 

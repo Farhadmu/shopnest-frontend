@@ -6,6 +6,8 @@ export interface UserProfile {
   email: string;
   role: "customer" | "seller" | "admin";
   avatarUrl?: string;
+  phone?: string;
+  image?: string;
 }
 
 export async function getUserProfile() {

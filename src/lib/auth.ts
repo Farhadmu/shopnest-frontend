@@ -11,7 +11,7 @@ import nodemailer from "nodemailer";
  * Configures authentication provider, database adapter, and server credentials.
  */
 const client = new MongoClient(process.env.MONGODB_URI || "mongodb://localhost:27017/shopnest");
-const db = client.db();
+const db = client.db("shopnest");
 
 const rawBaseURL =
   process.env.BETTER_AUTH_URL ||
@@ -40,7 +40,9 @@ export const auth = betterAuth({
     "https://shopnest-frontend-six.vercel.app",
     "https://*.vercel.app",
     "http://localhost:3000",
+    "http://localhost:3001",
     "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
     baseURL,
   ].filter((v): v is string => Boolean(v)),
   emailAndPassword: {

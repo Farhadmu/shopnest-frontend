@@ -8,6 +8,7 @@ export interface Order {
     name?: string;
     quantity: number;
     price: number;
+    image:string; 
   }>;
   subtotal: number;
   discount: number;
@@ -42,4 +43,12 @@ export async function createOrder(data: {
   couponCode?: string;
 }) {
   return clientMutation<Order>("/orders", "POST", data);
+}
+
+export async function cancelOrder(id: string) {
+  return clientMutation(`/orders/${id}/cancel`, "PATCH");
+}
+
+export async function requestReturn(id: string, data: { reason: string }) {
+  return clientMutation(`/orders/${id}/return`, "POST", data);
 }
