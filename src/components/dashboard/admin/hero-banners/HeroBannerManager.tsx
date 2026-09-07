@@ -10,8 +10,8 @@ import {
   HeroBanner,
   reorderHeroBanners,
   updateHeroBanner,
-  uploadHeroBannerImage,
 } from "@/lib/api/hero-banners";
+import { uploadImageToImgBB } from "@/lib/utils/imgbb";
 import type { CategoryItem } from "@/types/category";
 
 type FormState = {
@@ -129,8 +129,8 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
     setSaving(true);
     setError(null);
     try {
-      const imageUrl = await uploadHeroBannerImage(file);
-      setForm((current) => ({ ...current, imageUrl }));
+      const result = await uploadImageToImgBB(file);
+      setForm((current) => ({ ...current, imageUrl: result.url }));
       setNotice("Image uploaded. Review the preview before saving.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Image upload failed.");
@@ -421,7 +421,7 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
               >
                 <UploadCloud className="h-8 w-8 text-primary" />
                 <span className="mt-2 text-sm font-semibold text-text">Click to upload image</span>
-                <span className="mt-1 text-xs text-muted">PNG, JPG, WEBP up to 5MB</span>
+                <span className="mt-1 text-xs text-muted">PNG, JPG, WEBP up to 32MB</span>
                 <input
                   id="hero-banner-image"
                   type="file"
