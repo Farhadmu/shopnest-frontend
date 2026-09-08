@@ -1,42 +1,32 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
-import { Button, Input } from "@heroui/react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Button } from "@heroui/react";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ErrorState } from "@/components/common/ErrorState";
 import { LoadingState } from "@/components/common/LoadingState";
-import { formatCurrency } from "@/lib/utils";
+import { StatCard } from "@/components/dashboard/DashboardUI";
+import { CouponModal } from "@/components/coupons/CouponModal";
+import { CouponTable } from "@/components/coupons/CouponTable";
 import { getErrorMessage } from "@/lib/core/errors";
-import {
-  Coupon,
-  CreateCouponInput,
-  createCoupon,
-  deleteCoupon,
-  getCoupons,
-} from "@/lib/api/coupons";
-
-const EMPTY_FORM: CreateCouponInput = {
-  code: "",
-  type: "percentage",
-  value: 10,
-  minPurchase: 0,
-};
+import { deleteCoupon, getCoupons } from "@/lib/api/coupons";
+import { useConfirm } from "@/context/ConfirmDialogContext";
+import type { Coupon } from "@/types/coupon";
 
 export default function SellerCouponsPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [form, setForm] = useState<CreateCouponInput>(EMPTY_FORM);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
+  const [tab, setTab] = useState<"store" | "private" | "homepage">("store");
+  const confirm = useConfirm();
 
   const loadCoupons = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await getCoupons();
-      setCoupons(data);
+      setCoupons(await getCoupons());
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -45,209 +35,196 @@ export default function SellerCouponsPage() {
   }, []);
 
   useEffect(() => {
-    loadCoupons();
-  }, [loadCoupons]);
+    let isMounted = true;
+    void getCoupons()
+      .then((data) => {
+        if (isMounted) {
+          setCoupons(data);
+          setIsLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          setError(getErrorMessage(err));
+          setIsLoading(false);
+        }
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
-  const handleCreate = async () => {
-    setFormError(null);
-    if (!form.code.trim()) {
-      setFormError("Coupon code is required");
-      return;
-    }
-    if (!form.value || form.value <= 0) {
-      setFormError("Value must be greater than 0");
-      return;
-    }
+  // "store" coupons live on the seller's own store page (auto-approved, live instantly).
+  // "private" coupons are share-only codes — shown nowhere until the seller distributes the code.
+  // Both are already live without needing admin approval, but they live on separate tabs.
+  const storeCoupons = useMemo(() => coupons.filter((c) => c.placement === "store"), [coupons]);
+  const privateCoupons = useMemo(() => coupons.filter((c) => c.placement === "private"), [coupons]);
+  const homepageCoupons = useMemo(() => coupons.filter((c) => c.placement === "homepage"), [coupons]);
+  const pendingCount = useMemo(
+    () => homepageCoupons.filter((c) => c.approvalStatus === "pending").length,
+    [homepageCoupons]
+  );
 
-    setIsSubmitting(true);
-    try {
-      await createCoupon({ ...form, code: form.code.trim().toUpperCase() });
-      setIsFormOpen(false);
-      setForm(EMPTY_FORM);
-      await loadCoupons();
-    } catch (err) {
-      setFormError(getErrorMessage(err));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const handleDelete = useCallback(async (id: string) => {
+    const confirmed = await confirm({
+      title: "Delete Coupon?",
+      message: "Are you sure you want to delete this coupon? This action cannot be undone.",
+      confirmText: "Yes, Delete",
+      cancelText: "Cancel",
+      variant: "danger",
+    });
 
-  const handleDelete = async (id: string) => {
+    if (!confirmed) return;
+
     try {
       await deleteCoupon(id);
       setCoupons((prev) => prev.filter((c) => c.id !== id));
     } catch (err) {
       setError(getErrorMessage(err));
     }
+  }, [confirm]);
+
+  const handleEdit = (coupon: Coupon) => {
+    setEditingCoupon(coupon);
+    setIsModalOpen(true);
   };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingCoupon(null);
+  };
+
+  const visible = tab === "store" ? storeCoupons : tab === "private" ? privateCoupons : homepageCoupons;
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold">Coupons</h1>
-          <p className="text-muted">Create and manage discount coupons for your customers.</p>
+          <h1 className="text-2xl font-bold text-text">Coupons &amp; Promotional Deals</h1>
+          <p className="text-muted">
+            Create store-exclusive discount codes or request placement on the marketplace homepage.
+          </p>
         </div>
-        <Button variant="primary" onPress={() => setIsFormOpen((prev) => !prev)}>
-          {isFormOpen ? "Close" : "+ New Coupon"}
+        <Button
+          variant="primary"
+          onPress={() => {
+            setEditingCoupon(null);
+            setIsModalOpen(true);
+          }}
+        >
+          + New Coupon
         </Button>
       </div>
 
-      {isFormOpen && (
-        <div className="rounded-xl border border-border p-4 flex flex-col gap-4">
-          <h3 className="font-semibold text-foreground">Create Coupon</h3>
-          {formError && <p className="text-sm text-error">{formError}</p>}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <StatCard icon="🏷️" label="Store Coupons" value={storeCoupons.length} note="Active on your store page" />
+        <StatCard icon="🔒" label="Private Coupons" value={privateCoupons.length} note="Share-only codes" color="accent" />
+        <StatCard
+          icon="🚀"
+          label="Homepage Requests"
+          value={homepageCoupons.length}
+          note="Awaiting or live on homepage"
+          color="accent"
+        />
+        <StatCard icon="⏳" label="Pending Review" value={pendingCount} note="Waiting on admin approval" color="warning" />
+        <StatCard
+          icon="🎟️"
+          label="Total Redemptions"
+          value={coupons.reduce((sum, c) => sum + c.usedCount, 0)}
+          note="Across all coupons"
+          color="success"
+        />
+      </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-foreground">Coupon Code</label>
-              <Input
-                placeholder="e.g. SAVE20"
-                value={form.code}
-                onChange={(e) => setForm((prev) => ({ ...prev, code: e.target.value }))}
-                fullWidth
-              />
-            </div>
+      {/* =====================================================
+          VIEW FILTER BAR (Admin / Analytics Style)
+      ===================================================== */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-3 sm:p-4">
+        {/* Coupon View Indicator */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-black uppercase text-muted">
+            Coupon View:
+          </span>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-foreground">Discount Type</label>
-              <select
-                className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
-                value={form.type}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, type: e.target.value as "percentage" | "fixed" }))
-                }
-              >
-                <option value="percentage">Percentage</option>
-                <option value="fixed">Fixed Amount</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-foreground">
-                {form.type === "percentage" ? "Percentage Off" : "Amount Off"}
-              </label>
-              <Input
-                type="number"
-                value={String(form.value)}
-                onChange={(e) => setForm((prev) => ({ ...prev, value: Number(e.target.value) }))}
-                fullWidth
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-foreground">Minimum Purchase</label>
-              <Input
-                type="number"
-                value={String(form.minPurchase ?? 0)}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, minPurchase: Number(e.target.value) }))
-                }
-                fullWidth
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-foreground">Usage Limit (optional)</label>
-              <Input
-                type="number"
-                value={form.usageLimit ? String(form.usageLimit) : ""}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    usageLimit: e.target.value ? Number(e.target.value) : undefined,
-                  }))
-                }
-                fullWidth
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-foreground">Expires At (optional)</label>
-              <Input
-                type="date"
-                value={form.expiresAt ? form.expiresAt.slice(0, 10) : ""}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, expiresAt: e.target.value || undefined }))
-                }
-                fullWidth
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onPress={() => setIsFormOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" isDisabled={isSubmitting} onPress={handleCreate}>
-              {isSubmitting ? "Creating..." : "Create Coupon"}
-            </Button>
-          </div>
+          <span className="rounded-lg bg-primary/10 px-2 py-0.5 text-xs font-black text-primary">
+            {tab === "store" ? "My Store Coupons" : tab === "private" ? "Private Coupons" : "Homepage Requests"}{" "}
+            Selected
+          </span>
         </div>
-      )}
+
+        {/* Tab Buttons */}
+        <div className="flex max-w-full items-center gap-1 overflow-x-auto rounded-xl bg-muted-bg p-1 text-xs font-bold">
+          <button
+            type="button"
+            onClick={() => setTab("store")}
+            className={`cursor-pointer whitespace-nowrap rounded-lg px-3 py-1.5 transition ${
+              tab === "store"
+                ? "bg-primary text-white shadow-sm"
+                : "text-muted hover:text-text hover:shadow-sm"
+            }`}
+          >
+            My Store Coupons
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("private")}
+            className={`cursor-pointer whitespace-nowrap rounded-lg px-3 py-1.5 transition ${
+              tab === "private"
+                ? "bg-primary text-white shadow-sm"
+                : "text-muted hover:text-text hover:shadow-sm"
+            }`}
+          >
+            Private / Share Only
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("homepage")}
+            className={`cursor-pointer whitespace-nowrap rounded-lg px-3 py-1.5 transition ${
+              tab === "homepage"
+                ? "bg-primary text-white shadow-sm"
+                : "text-muted hover:text-text hover:shadow-sm"
+            }`}
+          >
+            Homepage Requests
+          </button>
+        </div>
+      </div>
 
       {error && <ErrorState message={error} onRetry={loadCoupons} />}
-
       {!error && isLoading && <LoadingState message="Loading coupons..." />}
 
-      {!error && !isLoading && coupons.length === 0 && (
+      {!error && !isLoading && visible.length === 0 && (
         <EmptyState
-          title="No coupons yet"
-          description="Create your first coupon to offer discounts to customers."
+          title={
+            tab === "store"
+              ? "No store coupons yet"
+              : tab === "private"
+                ? "No private coupons yet"
+                : "No homepage requests yet"
+          }
+          description={
+            tab === "store"
+              ? "Create a coupon to offer discounts to your customers."
+              : tab === "private"
+                ? "Create a private discount code to share directly with your customers — it won't appear on your store or the homepage."
+                : "Submit a coupon for review to feature it on the marketplace homepage."
+          }
           actionLabel="Create Coupon"
-          onAction={() => setIsFormOpen(true)}
+          onAction={() => setIsModalOpen(true)}
         />
       )}
 
-      {!error && !isLoading && coupons.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/5 text-left text-xs uppercase text-muted">
-              <tr>
-                <th className="px-4 py-3">Code</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Value</th>
-                <th className="px-4 py-3">Min Purchase</th>
-                <th className="px-4 py-3">Usage</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {coupons.map((coupon) => (
-                <tr key={coupon.id} className="border-t border-border">
-                  <td className="px-4 py-3 font-semibold">{coupon.code}</td>
-                  <td className="px-4 py-3 capitalize">{coupon.type}</td>
-                  <td className="px-4 py-3">
-                    {coupon.type === "percentage"
-                      ? `${coupon.value}%`
-                      : formatCurrency(coupon.value)}
-                  </td>
-                  <td className="px-4 py-3">{formatCurrency(coupon.minPurchase)}</td>
-                  <td className="px-4 py-3">
-                    {coupon.usedCount}
-                    {coupon.usageLimit ? ` / ${coupon.usageLimit}` : ""}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                        coupon.isActive ? "bg-primary/10 text-primary" : "bg-muted/10 text-muted"
-                      }`}
-                    >
-                      {coupon.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Button size="sm" variant="danger" onPress={() => handleDelete(coupon.id)}>
-                      Delete
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {!error && !isLoading && visible.length > 0 && (
+        <CouponTable coupons={visible} onDelete={handleDelete} onEdit={handleEdit} />
       )}
+
+      <CouponModal
+        mode="seller"
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onCreated={loadCoupons}
+        couponToEdit={editingCoupon}
+      />
     </div>
   );
 }

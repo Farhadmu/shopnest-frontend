@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { APP_NAME } from "@/lib/constants";
 import { AppHeroUIProvider } from "@/providers/HeroUIProvider";
+import { ConfirmDialogProvider } from "@/context/ConfirmDialogContext";
 import { AppShell } from "@/components/layout/AppShell";
 import { ThemeBootstrap } from "@/components/layout/ThemeBootstrap";
 
@@ -27,7 +28,9 @@ export default function RootLayout({
       >
         <ThemeBootstrap />
         <AppHeroUIProvider>
-          <AppShell>{children}</AppShell>
+          <ConfirmDialogProvider>
+            <AppShell>{children}</AppShell>
+          </ConfirmDialogProvider>
         </AppHeroUIProvider>
       </body>
     </html>
