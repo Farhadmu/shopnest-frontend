@@ -1,8 +1,6 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
-@import "@heroui/styles";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "@heroui/styles"; 
 @import "tailwindcss";
-
-@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   --color-primary: #5b5cf0;
@@ -19,66 +17,24 @@
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-error: #f43f5e;
-  --color-foreground: #111827;
-  --color-card: #ffffff;
   --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
+  --radius-sm: .5rem;
+  --radius-md: .75rem;
   --radius-lg: 1rem;
   --radius-xl: 1.25rem;
-
-  /* Aliases for direct variable access */
-  --background: #f3f5f9;
-  --surface: #ffffff;
-  --surface-muted: #e9edf4;
-  --text: #111827;
-  --muted: #64748b;
-  --border: #dbe1ea;
-  --primary: #5b5cf0;
-  --accent: #8b5cf6;
-  --foreground: #111827;
-  --card: #ffffff;
-
-  /* Chart colors */
-  --color-chart-1: #6366f1;
-  --color-chart-2: #10b981;
-  --color-chart-3: #f59e0b;
-  --color-chart-4: #8b5cf6;
-  --color-chart-5: #f43f5e;
 }
 
 .dark {
-  --color-background: #090614;
-  --color-surface: #110c24;
-  --color-muted-bg: #1a1435;
+  --color-background: #0a0f1c;
+  --color-surface: #111827;
+  --color-muted-bg: #182235;
   --color-text: #f8fafc;
   --color-muted: #94a3b8;
-  --color-border: #2d2250;
-  --color-primary: #6366f1;
-  --color-primary-hover: #4f46e5;
+  --color-border: #263247;
+  --color-primary: #818cf8;
+  --color-primary-hover: #6366f1;
   --color-secondary: #e2e8f0;
-  --color-accent: #a855f7;
-  --color-foreground: #f8fafc;
-  --color-card: #110c24;
-
-  /* Aliases for direct variable access */
-  --background: #090614;
-  --surface: #110c24;
-  --surface-muted: #1a1435;
-  --text: #f8fafc;
-  --muted: #94a3b8;
-  --border: #2d2250;
-  --primary: #6366f1;
-  --accent: #a855f7;
-  --foreground: #f8fafc;
-  --card: #110c24;
-
-  /* Chart colors */
-  --color-chart-1: #818cf8;
-  --color-chart-2: #34d399;
-  --color-chart-3: #fbbf24;
-  --color-chart-4: #a78bfa;
-  --color-chart-5: #fb7185;
+  --color-accent: #a78bfa;
 }
 
 @theme {
@@ -96,27 +52,11 @@
   --color-success: var(--color-success);
   --color-warning: var(--color-warning);
   --color-error: var(--color-error);
-  --color-foreground: var(--color-foreground);
-  --color-card: var(--color-card);
-  --color-chart-1: var(--color-chart-1);
-  --color-chart-2: var(--color-chart-2);
-  --color-chart-3: var(--color-chart-3);
-  --color-chart-4: var(--color-chart-4);
-  --color-chart-5: var(--color-chart-5);
   --font-sans: var(--font-sans);
-  --radius-sm: var(--radius-sm);
-  --radius-md: var(--radius-md);
-  --radius-lg: var(--radius-lg);
-  --radius-xl: var(--radius-xl);
 }
 
-* {
-  box-sizing: border-box;
-}
-html {
-  scroll-behavior: smooth;
-  background: var(--color-background);
-}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; background: var(--color-background); }
 body {
   margin: 0;
   min-height: 100vh;
@@ -125,18 +65,9 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
-a {
-  text-decoration: none;
-}
-::selection {
-  background: color-mix(in srgb, var(--color-primary) 25%, transparent);
-}
+button, input, textarea, select { font: inherit; }
+a { text-decoration: none; }
+::selection { background: color-mix(in srgb, var(--color-primary) 25%, transparent); }
 
 .glass {
   background: color-mix(in srgb, var(--color-surface) 82%, transparent);
@@ -145,98 +76,17 @@ a {
 }
 
 .shopnest-grid {
-  background-image:
-    linear-gradient(color-mix(in srgb, var(--color-border) 45%, transparent) 1px, transparent 1px),
-    linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--color-border) 45%, transparent) 1px,
-      transparent 1px
-    );
+  background-image: linear-gradient(color-mix(in srgb, var(--color-border) 45%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--color-border) 45%, transparent) 1px, transparent 1px);
   background-size: 32px 32px;
 }
 
 @keyframes shopnest-float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-9px) } }
 .shopnest-float { animation: shopnest-float 4s ease-in-out infinite; }
 
-@keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 15px rgba(91, 92, 240, 0.35), 0 0 30px rgba(139, 92, 246, 0.15);
-  }
-  50% {
-    box-shadow: 0 0 25px rgba(91, 92, 240, 0.6), 0 0 45px rgba(139, 92, 246, 0.35);
-  }
-}
-.shopnest-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
-
-@keyframes shopnest-marquee {
-  0% {
-    transform: translateX(0%);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-@keyframes shopnest-marquee-reverse {
-  0% {
-    transform: translateX(-50%);
-  }
-  100% {
-    transform: translateX(0%);
-  }
-}
-
-.animate-marquee {
-  display: flex;
-  width: max-content;
-  animation: shopnest-marquee var(--marquee-duration, 40s) linear infinite;
-  will-change: transform;
-}
-
-.pause-on-hover:hover .animate-marquee,
-.animate-marquee:hover {
-  animation-play-state: paused;
-}
-
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
-  .shopnest-float, .shopnest-pulse-glow, .animate-marquee { animation: none; }
+  .shopnest-float { animation: none; }
+  
 }
 
-.custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--color-muted) 25%, transparent);
-  border-radius: 9999px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--color-muted) 45%, transparent);
-}
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--color-muted) 25%, transparent) transparent;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  ::before,
-  ::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-  .shopnest-float {
-    animation: none;
-  }
-}
-
-*:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
+*:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }

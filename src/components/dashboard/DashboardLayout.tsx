@@ -1,8 +1,8 @@
 "use client";
 
-import React, { ReactNode, useEffect, useState } from "react";
+import React, { ReactNode, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { FaArrowRight, FaSignOutAlt, FaStore, FaShieldAlt, FaUser, FaHome } from "react-icons/fa";
 import { useSession, signOut } from "@/lib/auth-client";
@@ -59,12 +59,9 @@ export function DashboardSidebarLayout({
   children,
 }: DashboardSidebarLayoutProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const { data: session } = useSession();
-
-  useEffect(() => {
-    setMobileDrawerOpen(false);
-  }, [pathname]);
 
   const { role, links } = resolveRoleAndLinks(pathname, initialRole, initialLinks);
   const userName = session?.user?.name || "Member";
@@ -74,7 +71,7 @@ export function DashboardSidebarLayout({
     signOut({
       fetchOptions: {
         onSuccess: () => {
-          window.location.href = "/login";
+          router.push("/login");
         },
       },
     });
@@ -149,7 +146,7 @@ export function DashboardSidebarLayout({
       </AnimatePresence>
 
       {/* Content column, offset by the fixed sidebar width on desktop */}
-      <div className="lg:pl-[17rem]">
+      <div className="lg:pl-68">
         <DashboardTopbar
           role={role}
           roleIcon={roleIconFor(role)}

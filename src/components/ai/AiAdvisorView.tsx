@@ -35,6 +35,27 @@ interface ChatMessage {
   timestamp: string;
 }
 
+interface AiChatResponse {
+  reply?: string;
+  suggestedProducts?: SuggestedProduct[];
+}
+
+function normalizeAiResponse(value: unknown): AiChatResponse {
+  if (!value || typeof value !== "object") return {};
+
+  const response = value as Record<string, unknown>;
+  const data = response.data && typeof response.data === "object"
+    ? response.data as Record<string, unknown>
+    : response;
+
+  return {
+    reply: typeof data.reply === "string" ? data.reply : undefined,
+    suggestedProducts: Array.isArray(data.suggestedProducts)
+      ? data.suggestedProducts as SuggestedProduct[]
+      : undefined,
+  };
+}
+
 interface AiAdvisorViewProps {
   isDashboard?: boolean;
 }
@@ -57,13 +78,16 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
       id: "welcome-msg",
       role: "assistant",
       content:
-        "Hello! I am your ShopNest AI Shopping Advisor. Tell me what you're looking for, your budget, or specific requirements, and I'll match the best products from our catalog for you.",
+        "Hello boss! I am your ShopNest AI Shopping Advisor. Tell me what you're looking for, your budget, or specific requirements, and I'll match the best products from our catalog for you.",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
   const [loading, setLoading] = useState(false);
   const [activeProducts, setActiveProducts] = useState<SuggestedProduct[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const messageIdRef = useRef(0);
+
+  const createMessageId = (prefix: string) => `${prefix}-${messageIdRef.current++}`;
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -77,7 +101,7 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
     const query = (textToSend || input).trim();
     if (!query || loading) return;
 
-    const userMsgId = `user-${Date.now()}`;
+    const userMsgId = createMessageId("user");
     const userMsg: ChatMessage = {
       id: userMsgId,
       role: "user",
@@ -90,17 +114,17 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
     setLoading(true);
 
     try {
-      const res: any = await clientMutation("/ai/chat", "POST", { message: query });
-      const data = res?.data ?? res;
+      const res: unknown = await clientMutation("/ai/chat", "POST", { message: query });
+      const data = normalizeAiResponse(res);
       const replyText = data?.reply || "I couldn't find exact matches, but please feel free to refine your query!";
-      const suggested: SuggestedProduct[] = data?.suggestedProducts || [];
+      const suggested = data?.suggestedProducts || [];
 
       if (suggested.length > 0) {
         setActiveProducts(suggested);
       }
 
       const aiMsg: ChatMessage = {
-        id: `ai-${Date.now()}`,
+        id: createMessageId("ai"),
         role: "assistant",
         content: replyText,
         products: suggested,
@@ -108,11 +132,11 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
       };
 
       setMessages((prev) => [...prev, aiMsg]);
-    } catch (err: any) {
+    } catch (err: unknown) {
       const errorMsg: ChatMessage = {
-        id: `err-${Date.now()}`,
+        id: createMessageId("err"),
         role: "assistant",
-        content: err?.message || "AI Advisor service is temporarily unavailable. Please try again shortly.",
+        content: err instanceof Error ? err.message : "AI Advisor service is temporarily unavailable. Please try again shortly.",
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -157,7 +181,7 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
       {/* Main Grid: Chat Area + Recommendations Panel */}
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         {/* Left Column: Chat Conversation */}
-        <div className="flex h-[600px] flex-col rounded-3xl border border-border bg-surface shadow-xl shadow-black/5">
+        <div className="flex h-150 flex-col rounded-3xl border border-border bg-surface shadow-xl shadow-black/5">
           {/* Top Bar */}
           <div className="flex items-center justify-between border-b border-border px-6 py-4 bg-muted-bg/30">
             <div className="flex items-center gap-3">
@@ -189,17 +213,15 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
                   )}
 
                   <div
-                    className={`max-w-[85%] rounded-2xl p-4 text-sm sm:max-w-[75%] ${
-                      isAi
-                        ? "border border-border bg-muted-bg/60 text-text shadow-sm"
-                        : "bg-primary font-medium text-white shadow-md shadow-primary/20"
-                    }`}
+                    className={`max-w-[85%] rounded-2xl p-4 text-sm sm:max-w-[75%] ${isAi
+                      ? "border border-border bg-muted-bg/60 text-text shadow-sm"
+                      : "bg-primary font-medium text-white shadow-md shadow-primary/20"
+                      }`}
                   >
                     <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                     <span
-                      className={`mt-2 block text-[10px] ${
-                        isAi ? "text-muted" : "text-white/70"
-                      } text-right`}
+                      className={`mt-2 block text-[10px] ${isAi ? "text-muted" : "text-white/70"
+                        } text-right`}
                     >
                       {msg.timestamp}
                     </span>
@@ -263,7 +285,7 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
         </div>
 
         {/* Right Column: Suggested Products */}
-        <div className="flex h-[600px] flex-col rounded-3xl border border-border bg-surface p-6 shadow-xl shadow-black/5">
+        <div className="flex h-150 flex-col rounded-3xl border border-border bg-surface p-6 shadow-xl shadow-black/5">
           <div className="flex items-center justify-between border-b border-border pb-4">
             <div className="flex items-center gap-2">
               <FaShoppingBag className="text-primary" />
