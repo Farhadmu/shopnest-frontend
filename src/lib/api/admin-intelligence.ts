@@ -342,35 +342,147 @@ export interface SecurityIncidentItem {
   id: string;
   incidentCode: string;
   title: string;
+  description?: string;
+  type: string;
+  source: string;
   entityType: "user" | "seller" | "order" | "system" | "ip_cluster";
   entityId: string;
   entityName: string;
   severity: "low" | "medium" | "high" | "critical";
-  status: "new" | "investigating" | "resolved" | "dismissed";
+  status: "new" | "open" | "acknowledged" | "investigating" | "mitigated" | "resolved" | "closed" | "dismissed";
   riskScore: number;
   signals: string[];
-  notes: Array<{ authorId: string; authorName: string; note: string; createdAt: string }>;
-  history: Array<{ action: string; changedBy: string; timestamp: string; details?: string }>;
+  assignedAdmin?: { adminId: string; adminName: string; assignedAt: string };
+  detectedAt: string;
+  acknowledgedAt?: string;
+  investigationStartedAt?: string;
+  mitigatedAt?: string;
+  mitigatedBy?: string;
   resolvedAt?: string;
   resolvedBy?: string;
+  resolutionSummary?: string;
+  closedAt?: string;
+  closedBy?: string;
+  closeReason?: string;
+  notes: Array<{ authorId: string; authorName: string; note: string; createdAt: string }>;
+  history: Array<{ action: string; changedBy: string; timestamp: string; details?: string }>;
+  evidence: Array<{ description: string; reference: string; addedBy: string; addedAt: string }>;
+  relatedSecurityEvents?: string[];
+  relatedRiskSignals?: string[];
   createdAt: string;
   updatedAt: string;
 }
 
-export async function getSecurityIncidents(params?: { status?: string; severity?: string }) {
+export interface IncidentStats {
+  total: number;
+  open: number;
+  investigating: number;
+  mitigated: number;
+  resolved: number;
+  closed: number;
+  dismissed: number;
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+  bySeverity: { critical: number; high: number; medium: number; low: number };
+  todayCreated: number;
+  weekCreated: number;
+  monthResolved: number;
+  avgResolutionHours: number | null;
+}
+
+export interface IncidentListResponse {
+  incidents: SecurityIncidentItem[];
+  pagination: { total: number; page: number; limit: number; totalPages: number };
+  stats: IncidentStats;
+}
+
+export interface IncidentTimelineItem {
+  id: string;
+  action: string;
+  actor: string;
+  timestamp: string;
+  details?: string;
+}
+
+export interface IncidentQueryParams {
+  status?: string;
+  severity?: string;
+  type?: string;
+  source?: string;
+  search?: string;
+  sortBy?: string;
+  sortDir?: string;
+  page?: number;
+  limit?: number;
+}
+
+export async function getSecurityIncidents(params?: IncidentQueryParams): Promise<IncidentListResponse> {
   const query = new URLSearchParams();
   if (params?.status) query.append("status", params.status);
   if (params?.severity) query.append("severity", params.severity);
+  if (params?.type) query.append("type", params.type);
+  if (params?.source) query.append("source", params.source);
+  if (params?.search) query.append("search", params.search);
+  if (params?.sortBy) query.append("sortBy", params.sortBy);
+  if (params?.sortDir) query.append("sortDir", params.sortDir);
+  if (params?.page) query.append("page", String(params.page));
+  if (params?.limit) query.append("limit", String(params.limit));
   const qStr = query.toString();
-  return clientFetch<SecurityIncidentItem[]>(`/admin/incidents${qStr ? `?${qStr}` : ""}`);
+  return clientFetch<IncidentListResponse>(`/admin/incidents${qStr ? `?${qStr}` : ""}`);
 }
 
-export async function updateSecurityIncident(id: string, data: { status?: string; severity?: string; notes?: string }) {
-  return clientMutation<SecurityIncidentItem>(`/admin/incidents/${id}`, "PATCH", data);
+export async function getSecurityIncidentById(id: string): Promise<SecurityIncidentItem> {
+  return clientFetch<SecurityIncidentItem>(`/admin/incidents/${id}`);
 }
 
-export async function addIncidentNote(id: string, note: string) {
+export async function getIncidentStats(): Promise<IncidentStats> {
+  return clientFetch<IncidentStats>(`/admin/incidents/stats`);
+}
+
+export async function updateIncidentStatus(id: string, status: string, notes?: string): Promise<SecurityIncidentItem> {
+  return clientMutation<SecurityIncidentItem>(`/admin/incidents/${id}/status`, "PATCH", { status, notes });
+}
+
+export async function updateIncidentSeverity(id: string, severity: string, reason?: string): Promise<SecurityIncidentItem> {
+  return clientMutation<SecurityIncidentItem>(`/admin/incidents/${id}/severity`, "PATCH", { severity, reason });
+}
+
+export async function assignIncident(id: string, adminId: string, adminName: string): Promise<SecurityIncidentItem> {
+  return clientMutation<SecurityIncidentItem>(`/admin/incidents/${id}/assign`, "PATCH", { adminId, adminName });
+}
+
+export async function unassignIncident(id: string): Promise<SecurityIncidentItem> {
+  return clientMutation<SecurityIncidentItem>(`/admin/incidents/${id}/unassign`, "PATCH", {});
+}
+
+export async function addIncidentNote(id: string, note: string): Promise<SecurityIncidentItem> {
   return clientMutation<SecurityIncidentItem>(`/admin/incidents/${id}/notes`, "POST", { note });
+}
+
+export async function resolveIncident(id: string, resolutionSummary: string): Promise<SecurityIncidentItem> {
+  return clientMutation<SecurityIncidentItem>(`/admin/incidents/${id}/resolve`, "POST", { resolutionSummary });
+}
+
+export async function closeIncident(id: string, closeReason: string): Promise<SecurityIncidentItem> {
+  return clientMutation<SecurityIncidentItem>(`/admin/incidents/${id}/close`, "POST", { closeReason });
+}
+
+export async function reopenIncident(id: string, reason: string, targetStatus?: string): Promise<SecurityIncidentItem> {
+  return clientMutation<SecurityIncidentItem>(`/admin/incidents/${id}/reopen`, "POST", { reason, targetStatus: targetStatus || "investigating" });
+}
+
+export async function getIncidentTimeline(id: string): Promise<IncidentTimelineItem[]> {
+  return clientFetch<IncidentTimelineItem[]>(`/admin/incidents/${id}/timeline`);
+}
+
+export async function getRelatedSecurityEvents(id: string) {
+  return clientFetch<any[]>(`/admin/incidents/${id}/security-events`);
+}
+
+export async function getRelatedRiskSignals(id: string) {
+  return clientFetch<any[]>(`/admin/incidents/${id}/risk-signals`);
 }
 
 // 39. ADMIN AUDIT LOG

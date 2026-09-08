@@ -1,11 +1,47 @@
 // frontend/src/components/seller/form/Step2KycLegal.tsx
 "use client";
 
-import React from "react";
+import React, { useCallback, useEffect } from "react";
 import { FiInfo } from "react-icons/fi";
 import { StepProps } from "@/types/seller-application";
+import { BdAddressSelectFields } from "@/components/common/BdAddressSelectFields";
+
+const fieldInputClass =
+  "w-full rounded-md border border-border bg-surface px-3 py-2 text-xs text-text placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition";
+
+const fieldSelectClass =
+  "w-full appearance-none rounded-md border border-border bg-surface pl-3 pr-7 py-2 text-xs text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed";
+
+const fieldLabelClass = "block text-[11px] font-bold text-text mb-1";
 
 export function Step2KycLegal({ formData, onChange }: StepProps) {
+  // Keep the flat `businessAddress` string (sent to the backend) in sync with the
+  // structured division/district/upazila/street fields selected below — this is the
+  // same Division → District → Upazila selector used on the checkout page.
+  const composeBusinessAddress = useCallback(
+    (street: string, upazila: string, district: string, division: string) =>
+      [street, upazila, district, division].filter(Boolean).join(", "),
+    []
+  );
+
+  useEffect(() => {
+    onChange(
+      "businessAddress",
+      composeBusinessAddress(
+        formData.businessStreetAddress,
+        formData.businessUpazila,
+        formData.businessDistrict,
+        formData.businessDivision
+      )
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    formData.businessStreetAddress,
+    formData.businessUpazila,
+    formData.businessDistrict,
+    formData.businessDivision,
+  ]);
+
   return (
     <div className="space-y-3">
       <div>
@@ -45,17 +81,37 @@ export function Step2KycLegal({ formData, onChange }: StepProps) {
         </div>
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-2">
         <label className="block text-[11px] font-bold text-text">
           Business / Warehouse Address <span className="text-error">*</span>
         </label>
+
+        <BdAddressSelectFields
+          division={formData.businessDivision}
+          district={formData.businessDistrict}
+          upazila={formData.businessUpazila}
+          onDivisionChange={(value) => {
+            onChange("businessDivision", value);
+            onChange("businessDistrict", "");
+            onChange("businessUpazila", "");
+          }}
+          onDistrictChange={(value) => {
+            onChange("businessDistrict", value);
+            onChange("businessUpazila", "");
+          }}
+          onUpazilaChange={(value) => onChange("businessUpazila", value)}
+          labels={{ division: "Division", district: "District", upazila: "Upazila" }}
+          selectClassName={fieldSelectClass}
+          labelClassName={fieldLabelClass}
+        />
+
         <input
           type="text"
-          placeholder="House, Road, Area, City, Postal Code"
-          value={formData.businessAddress}
-          onChange={(e) => onChange("businessAddress", e.target.value)}
+          placeholder="House, Road, Area, Postal Code"
+          value={formData.businessStreetAddress}
+          onChange={(e) => onChange("businessStreetAddress", e.target.value)}
           required
-          className="w-full rounded-md border border-border bg-surface px-3 py-2 text-xs text-text placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition"
+          className={fieldInputClass}
         />
       </div>
 
