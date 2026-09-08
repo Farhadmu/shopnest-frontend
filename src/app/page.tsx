@@ -14,6 +14,7 @@ import FinalCtaSection from "@/components/home/FinalCtaSection";
 import { defaultBannerData } from "@/lib/banner/BannerData";
 import AiIntelligenceSection from "@/components/home/AiIntelligenceSection";
 import TrendingSection from "@/components/home/Trending/TrendingSection";
+import CouponSection from "@/components/home/CouponSection";
 
 export default function HomePage() {
 
@@ -49,6 +50,9 @@ export default function HomePage() {
 
       {/* 09 — Recommendations */}
       <RecommendationsSection />
+
+      {/* 09.5 — Coupon */}
+      <CouponSection />
 
       {/* 10 — How it works */}
       <HowItWorksSection />
