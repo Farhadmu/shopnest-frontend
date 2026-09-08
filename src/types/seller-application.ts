@@ -17,6 +17,11 @@ export interface FormDataState {
   ownerName: string;
   contactPhone: string;
   businessAddress: string;
+  /** Structured address fields, selected via the shared BdAddressSelectFields component (same one used at checkout) */
+  businessDivision: string;
+  businessDistrict: string;
+  businessUpazila: string;
+  businessStreetAddress: string;
   nidOrTradeLicense: string;
   taxId: string;
   payoutMethod: string;
