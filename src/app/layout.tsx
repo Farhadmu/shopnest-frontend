@@ -1,11 +1,11 @@
 import dns from 'node:dns'
 dns.setServers(['8.8.8.8','8.8.4.4'])
 
-
 import type { Metadata } from "next";
 import "./globals.css";
 import { APP_NAME } from "@/lib/constants";
 import { AppHeroUIProvider } from "@/providers/HeroUIProvider";
+import { ConfirmDialogProvider } from "@/context/ConfirmDialogContext";
 import { AppShell } from "@/components/layout/AppShell";
 import { ThemeBootstrap } from "@/components/layout/ThemeBootstrap";
 
@@ -22,10 +22,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="flex min-h-screen flex-col bg-background text-text">
+      <body
+        suppressHydrationWarning
+        className="flex min-h-screen flex-col bg-background text-text"
+      >
         <ThemeBootstrap />
         <AppHeroUIProvider>
-          <AppShell>{children}</AppShell>
+          <ConfirmDialogProvider>
+            <AppShell>{children}</AppShell>
+          </ConfirmDialogProvider>
         </AppHeroUIProvider>
       </body>
     </html>

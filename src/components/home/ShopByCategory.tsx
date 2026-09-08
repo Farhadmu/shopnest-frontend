@@ -19,7 +19,6 @@ import {
   FaGamepad,
 } from "react-icons/fa";
 import { getCategories } from "@/lib/api/categories";
-
 const STYLES = [
   {
     color:
@@ -159,8 +158,12 @@ export default function ShopByCategory() {
       .then((cats) => {
         if (cancelled) return;
 
+        // Show top-level categories only — subcategories surface in the
+        // navbar's hover mega menu instead of cluttering this marquee.
+        const roots = cats.filter((c) => !c.parent);
+
         setCategories(
-          cats.map((c, i) => ({
+          roots.map((c, i) => ({
             id: c.id,
             name: c.name,
             desc: "Explore this category",

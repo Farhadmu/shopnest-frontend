@@ -134,26 +134,25 @@ interface FieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 function F({ id, label, icon, right, err, ok, ...rest }: FieldProps) {
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-[10px] sm:text-[11px] font-bold text-muted uppercase tracking-[.12em] pl-0.5">
+    <div className="flex flex-col gap-0.5">
+      <label htmlFor={id} className="text-[9px] sm:text-[10px] font-bold text-muted uppercase tracking-[.1em] pl-0.5">
         {label}
       </label>
       <div className="relative flex items-center">
-        <span className="absolute left-3 text-muted pointer-events-none">
+        <span className="absolute left-2.5 text-muted pointer-events-none">
           {icon}
         </span>
         <input
           id={id}
           {...rest}
-          className={`w-full rounded-xl py-2 sm:py-2.5 pl-8 sm:pl-9 pr-8 sm:pr-9 text-xs sm:text-sm text-text placeholder:text-muted bg-muted-bg border outline-none transition-all focus:ring-2 ${
-            err
+          className={`w-full rounded-xl py-1 sm:py-1.5 pl-7 sm:pl-8 pr-7 sm:pr-8 text-xs text-text placeholder:text-muted bg-muted-bg border outline-none transition-all focus:ring-2 ${err
               ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/20"
               : ok
-              ? "border-emerald-500 focus:border-emerald-500 focus:ring-emerald-500/20"
-              : "border-border focus:border-primary focus:ring-primary/20"
-          }`}
+                ? "border-emerald-500 focus:border-emerald-500 focus:ring-emerald-500/20"
+                : "border-border focus:border-primary focus:ring-primary/20"
+            }`}
         />
-        {right && <span className="absolute right-2.5">{right}</span>}
+        {right && <span className="absolute right-2">{right}</span>}
       </div>
     </div>
   );
@@ -173,6 +172,7 @@ const Eye = ({ show, onToggle }: { show: boolean; onToggle: () => void }) => (
 
 import { useSearchParams } from "next/navigation";
 import { syncGuestDataToServer } from "@/lib/guest-store";
+import Image from "next/image";
 
 /* ─── Types ──────────────────────────────────────────────────────────────────── */
 type Role = "customer" | "seller";
@@ -191,7 +191,6 @@ export default function RegisterPage() {
 function RegisterForm() {
   const [role, setRole] = useState<Role>("customer");
   const [fullName, setFullName] = useState("");
-  const [shopName, setShopName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [pw, setPw] = useState("");
@@ -228,8 +227,6 @@ function RegisterForm() {
         email: email.trim().toLowerCase(),
         password: pw,
         callbackURL: next,
-        // @ts-expect-error – role is a custom field in auth.ts
-        role,
       });
       if (res.error) {
         setError(res.error.message || "Registration failed.");
@@ -237,7 +234,14 @@ function RegisterForm() {
       }
       // Sync guest cart & wishlist to database
       await syncGuestDataToServer();
-      router.replace(next);
+      // "Seller" is only an intent here — the account role stays "customer"
+      // until the seller application form is actually submitted and
+      // approved. Selecting it just routes them straight to that form.
+      if (role === "seller") {
+        router.replace("/become-seller");
+      } else {
+        router.replace(next);
+      }
       router.refresh();
     } catch (err) {
       console.error("Sign up error:", err);
@@ -295,17 +299,17 @@ function RegisterForm() {
   const headlineWords = "Start your journey with verified boutiques & AI power. ".trim().split(" ");
 
   return (
-    <div className="min-h-full flex-1 flex flex-col justify-between bg-surface dark:bg-background text-text transition-colors">
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
+    <div className="h-full flex-1 flex flex-col justify-between bg-surface dark:bg-background text-text transition-colors overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
 
-        {/* ── LEFT: Form Panel (Fully fluid and scrollable on all devices) ── */}
+        {/* ── LEFT: Form Panel (Compact & Fluid, 0 scrollbars across devices) ── */}
         <motion.div
           variants={panelLeft}
           initial="hidden"
           animate="show"
-          className="flex-1 flex flex-col items-center justify-center overflow-y-auto custom-scrollbar px-4 py-5 sm:px-6 sm:py-8 lg:px-8 xl:px-12 bg-surface dark:bg-background transition-colors"
+          className="flex-1 flex flex-col items-center justify-center overflow-y-auto lg:overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-4 py-2 sm:px-6 sm:py-3 lg:px-8 xl:px-12 bg-surface dark:bg-background transition-colors"
         >
-          <div className="w-full max-w-[24rem] sm:max-w-[26rem] my-auto">
+          <div className="w-full max-w-[22rem] sm:max-w-[24rem] xl:max-w-[25rem] my-auto flex flex-col justify-center">
 
             {/* Mobile brand mark */}
             <motion.div
@@ -313,9 +317,9 @@ function RegisterForm() {
               variants={fadeUp}
               initial="hidden"
               animate="show"
-              className="flex lg:hidden items-center gap-2 mb-2 sm:mb-3"
+              className="flex lg:hidden items-center gap-1.5 mb-1"
             >
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-r from-primary to-accent flex items-center justify-center shrink-0 shadow-md">
+              <div className="w-6 h-6 rounded-lg bg-linear-to-r from-primary to-accent flex items-center justify-center shrink-0 shadow-md">
                 <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M6 2 3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
                 </svg>
@@ -329,13 +333,13 @@ function RegisterForm() {
               variants={fadeUp}
               initial="hidden"
               animate="show"
-              className="mb-2.5 sm:mb-3"
+              className="mb-1"
             >
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-text leading-tight" style={{ perspective: "400px" }}>
+              <h1 className="text-base sm:text-lg xl:text-xl font-black tracking-tight text-text leading-tight" style={{ perspective: "400px" }}>
                 {"CREATE ACCOUNT".split("").map((char, i) => (
                   <motion.span
                     key={`rtitle-${i}`}
-                    initial={{ opacity: 0, y: 12, rotateX: 50 }}
+                    initial={{ opacity: 0, y: 10, rotateX: 50 }}
                     animate={{ opacity: 1, y: 0, rotateX: 0 }}
                     transition={{
                       delay: 0.1 + i * 0.035,
@@ -352,7 +356,7 @@ function RegisterForm() {
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4, duration: 0.3 }}
-                className="mt-0.5 text-xs text-muted"
+                className="mt-0.5 text-[10px] sm:text-[11px] text-muted"
               >
                 Join ShopNest as a customer or verified vendor.
               </motion.p>
@@ -364,7 +368,7 @@ function RegisterForm() {
               variants={fadeUp}
               initial="hidden"
               animate="show"
-              className="relative flex p-1 rounded-full mb-2.5 sm:mb-3 bg-muted-bg border border-border"
+              className="relative flex p-0.5 rounded-full mb-1 bg-muted-bg border border-border"
               role="tablist"
               aria-label="Account type"
             >
@@ -375,16 +379,15 @@ function RegisterForm() {
                   role="tab"
                   aria-selected={role === r}
                   onClick={() => { setRole(r); setError(""); }}
-                  className={`relative flex-1 z-10 rounded-full py-1.5 text-xs font-bold transition-colors duration-200 ${
-                    role === r
+                  className={`relative flex-1 z-10 rounded-full py-0.5 sm:py-1 text-[11px] font-bold transition-colors duration-200 ${role === r
                       ? "text-white"
                       : "text-muted hover:text-text"
-                  }`}
+                    }`}
                 >
                   {role === r && (
                     <motion.span
                       layoutId="reg-pill"
-                      className="absolute inset-0 rounded-full bg-gradient-to-r from-primary to-accent shadow-sm"
+                      className="absolute inset-0 rounded-full bg-linear-to-r from-primary to-accent shadow-sm"
                       transition={{ type: "spring", stiffness: 420, damping: 32 }}
                     />
                   )}
@@ -398,14 +401,14 @@ function RegisterForm() {
               {error && (
                 <motion.div
                   key="err"
-                  initial={{ opacity: 0, y: -5, scale: 0.97 }}
+                  initial={{ opacity: 0, y: -4, scale: 0.97 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -4, scale: 0.97 }}
                   transition={{ duration: 0.18 }}
                   role="alert"
-                  className="mb-2 flex items-start gap-1.5 rounded-lg border border-rose-500/25 bg-rose-500/10 px-2.5 py-1.5 text-[11px] font-medium text-rose-600 dark:text-rose-400"
+                  className="mb-1 flex items-start gap-1.5 rounded-lg border border-rose-500/25 bg-rose-500/10 px-2 py-0.5 text-[10px] font-medium text-rose-600 dark:text-rose-400"
                 >
-                  <svg className="w-3.5 h-3.5 mt-px shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                  <svg className="w-3 h-3 mt-px shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                     <circle cx="12" cy="12" r="10" />
                     <line x1="12" y1="8" x2="12" y2="12" />
                     <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -417,7 +420,7 @@ function RegisterForm() {
 
             {/* Form */}
             <form onSubmit={onSubmit} noValidate>
-              <motion.div custom={s++} variants={fadeUp} initial="hidden" animate="show" className="flex flex-col gap-1.5">
+              <motion.div custom={s++} variants={fadeUp} initial="hidden" animate="show" className="flex flex-col gap-0.5 sm:gap-1">
                 {/* Full Name */}
                 <F
                   id="reg-name"
@@ -448,7 +451,7 @@ function RegisterForm() {
                 <F
                   id="reg-phone"
                   label="Phone"
-                  type="tel"
+                  type="number"
                   autoComplete="tel"
                   placeholder="Phone number"
                   value={phone}
@@ -492,13 +495,12 @@ function RegisterForm() {
                 {cf && (
                   <motion.p
                     key={pwBad ? "bad" : "ok"}
-                    initial={{ opacity: 0, y: -3 }}
+                    initial={{ opacity: 0, y: -2 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.15 }}
-                    className={`text-[10px] font-semibold mt-1 ml-0.5 ${
-                      pwBad ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"
-                    }`}
+                    className={`text-[9px] font-semibold mt-0.5 ml-0.5 ${pwBad ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"
+                      }`}
                   >
                     {pwBad ? "✗ Passwords don't match" : "✓ Passwords match"}
                   </motion.p>
@@ -512,7 +514,7 @@ function RegisterForm() {
                 initial="hidden"
                 animate="show"
                 htmlFor="reg-agree"
-                className="flex items-start gap-2 mt-1.5 sm:mt-2 cursor-pointer select-none"
+                className="flex items-start gap-1.5 mt-0.5 sm:mt-1 cursor-pointer select-none"
               >
                 <input
                   type="checkbox"
@@ -539,15 +541,15 @@ function RegisterForm() {
                 variants={fadeUp}
                 initial="hidden"
                 animate="show"
-                className="mt-2.5 relative"
+                className="mt-1 relative"
               >
                 <motion.button
                   id="register-submit"
                   type="submit"
                   disabled={loading || Boolean(socialLoading) || !agreed}
-                  whileHover={{ scale: 1.015, boxShadow: "0 6px 24px rgba(91,92,240,0.4)" }}
+                  whileHover={{ scale: 1.015, boxShadow: "0 6px 20px rgba(91,92,240,0.4)" }}
                   whileTap={{ scale: 0.98 }}
-                  className="group relative w-full rounded-full py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-white overflow-hidden shadow-md disabled:opacity-60 disabled:cursor-not-allowed bg-gradient-to-r from-primary to-accent hover:from-primary-hover hover:to-accent transition-all"
+                  className="group relative w-full rounded-full py-1.5 sm:py-2 text-xs sm:text-sm font-bold text-white overflow-hidden shadow-md disabled:opacity-60 disabled:cursor-not-allowed bg-linear-to-r from-primary to-accent hover:from-primary-hover hover:to-accent transition-all"
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-1.5">
@@ -584,7 +586,7 @@ function RegisterForm() {
                 variants={fadeUp}
                 initial="hidden"
                 animate="show"
-                className="flex items-center gap-2 my-1.5 sm:my-2"
+                className="flex items-center gap-2 my-0.5"
               >
                 <div className="flex-1 h-px bg-border" />
                 <span className="text-[9px] sm:text-[10px] font-bold text-muted uppercase tracking-widest whitespace-nowrap">
@@ -608,7 +610,7 @@ function RegisterForm() {
                   onClick={onGoogle}
                   whileHover={{ scale: 1.015 }}
                   whileTap={{ scale: 0.97 }}
-                  className="flex items-center justify-center gap-1.5 rounded-full border border-border bg-surface py-2 sm:py-2.5 text-[11px] sm:text-xs font-semibold text-text shadow-sm hover:bg-muted-bg transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="flex items-center justify-center gap-1.5 rounded-full border border-border bg-surface py-1.5 sm:py-2 text-[11px] sm:text-xs font-semibold text-text shadow-sm hover:bg-muted-bg transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <GoogleIcon className="w-3.5 h-3.5 shrink-0" />
                   {socialLoading === "google" ? "Connecting…" : "Google"}
@@ -620,7 +622,7 @@ function RegisterForm() {
                   onClick={onFacebook}
                   whileHover={{ scale: 1.015 }}
                   whileTap={{ scale: 0.97 }}
-                  className="flex items-center justify-center gap-1.5 rounded-full border border-border bg-surface py-2 sm:py-2.5 text-[11px] sm:text-xs font-semibold text-text shadow-sm hover:bg-muted-bg transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="flex items-center justify-center gap-1.5 rounded-full border border-border bg-surface py-1.5 sm:py-2 text-[11px] sm:text-xs font-semibold text-text shadow-sm hover:bg-muted-bg transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <FacebookIcon className="w-3.5 h-3.5 shrink-0" />
                   {socialLoading === "facebook" ? "Connecting…" : "Facebook"}
@@ -634,7 +636,7 @@ function RegisterForm() {
               variants={fadeUp}
               initial="hidden"
               animate="show"
-              className="mt-2.5 sm:mt-3 text-center text-xs text-muted"
+              className="mt-1 sm:mt-1.5 text-center text-[11px] sm:text-xs text-muted"
             >
               Already have an account?{" "}
               <motion.span whileHover={{ scale: 1.05 }} className="inline-block">
@@ -646,12 +648,12 @@ function RegisterForm() {
           </div>
         </motion.div>
 
-        {/* ── RIGHT: Visual Showcase Panel (Shown on Desktop, gracefully scrollable on short heights) ── */}
+        {/* ── RIGHT: Visual Showcase Panel (Shown on Desktop, sleek and compact) ── */}
         <motion.div
           variants={panelRight}
           initial="hidden"
           animate="show"
-          className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col justify-between p-6 xl:p-10 bg-gradient-to-br from-[#4F46E5] via-[#6366F1] to-[#7C3AED] dark:from-[#1E124A] dark:via-[#120B2E] dark:to-[#090614] text-white select-none transition-colors duration-500"
+          className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col justify-between p-4 xl:p-8 bg-linear-to-br from-[#4F46E5] via-[#6366F1] to-[#7C3AED] dark:from-[#1E124A] dark:via-[#120B2E] dark:to-[#090614] text-white select-none transition-colors duration-500"
         >
           {/* Subtle dot-matrix overlay pattern (15% in light, 10% in dark) */}
           <svg className="absolute inset-0 w-full h-full opacity-15 dark:opacity-10 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
@@ -665,8 +667,7 @@ function RegisterForm() {
 
           {/* Deep ambient purple glow in dark mode */}
           <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-            {/* Ambient center glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[28rem] h-[28rem] rounded-full bg-purple-600/20 dark:bg-purple-600/30 blur-[90px]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 xl:w-[26rem] xl:h-[26rem] rounded-full bg-purple-600/20 dark:bg-purple-600/30 blur-[80px]" />
 
             <motion.div
               animate={{
@@ -675,7 +676,7 @@ function RegisterForm() {
                 borderRadius: ["50%", "42%", "55%", "48%", "50%"],
               }}
               transition={{ repeat: Infinity, duration: 10, ease: "easeInOut" }}
-              className="absolute -top-24 -right-24 w-80 h-80 bg-white/20 dark:bg-indigo-500/20 blur-3xl"
+              className="absolute -top-20 -right-20 w-64 h-64 bg-white/20 dark:bg-indigo-500/20 blur-3xl"
             />
             <motion.div
               animate={{
@@ -684,16 +685,7 @@ function RegisterForm() {
                 borderRadius: ["50%", "38%", "52%", "45%", "50%"],
               }}
               transition={{ repeat: Infinity, duration: 12, ease: "easeInOut", delay: 1 }}
-              className="absolute -bottom-32 -left-16 w-96 h-96 bg-purple-900/40 dark:bg-purple-950/60 blur-3xl"
-            />
-            {/* Sweeping ambient beam */}
-            <motion.div
-              animate={{ rotate: [0, 360] }}
-              transition={{ repeat: Infinity, duration: 24, ease: "linear" }}
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[38rem] h-[38rem]"
-              style={{
-                background: "conic-gradient(from 0deg, transparent 0%, rgba(255,255,255,0.07) 12%, transparent 24%)",
-              }}
+              className="absolute -bottom-24 -left-12 w-72 h-72 bg-purple-900/40 dark:bg-purple-950/60 blur-3xl"
             />
           </div>
 
@@ -705,49 +697,51 @@ function RegisterForm() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, delay: 0.1 }}
-            className="relative z-10 flex items-center gap-2.5 mb-3 xl:mb-4 shrink-0"
+            className="relative z-10 flex items-center gap-2 mb-2 xl:mb-3 shrink-0"
           >
-            <div className="w-9 h-9 rounded-xl bg-white/20 dark:bg-white/10 backdrop-blur-md border border-white/30 dark:border-white/15 flex items-center justify-center shadow-md text-white">
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M6 2 3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <path d="M16 10a4 4 0 01-8 0" />
-              </svg>
-            </div>
-            <span className="text-white font-black text-lg tracking-tight">ShopNest</span>
+            <Link href="/" className="flex items-center gap-2 group">
+              <div className="w-8 h-8 rounded-xl bg-white/20 dark:bg-white/10 backdrop-blur-md border border-white/30 dark:border-white/15 flex items-center justify-center shadow-md text-white transition-transform group-hover:scale-105">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M6 2 3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <path d="M16 10a4 4 0 01-8 0" />
+                </svg>
+              </div>
+              <span className="text-white font-black text-base xl:text-lg tracking-tight">ShopNest</span>
+            </Link>
           </motion.div>
 
           {/* Glassmorphic Hero Container */}
-          <div className="relative z-10 flex-1 flex items-center py-2 my-auto">
+          <div className="relative z-10 flex-1 flex items-center py-1 my-auto">
             <motion.div
-              initial={{ opacity: 0, y: 24, scale: 0.96 }}
+              initial={{ opacity: 0, y: 20, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.55, delay: 0.18, ease: EASE }}
-              className="w-full backdrop-blur-xl bg-white/15 border border-white/25 dark:backdrop-blur-2xl dark:bg-black/40 dark:border-purple-500/20 rounded-2xl xl:rounded-3xl p-5 xl:p-7 shadow-2xl relative overflow-hidden"
+              className="w-full backdrop-blur-xl bg-white/15 border border-white/25 dark:backdrop-blur-2xl dark:bg-black/40 dark:border-purple-500/20 rounded-2xl xl:rounded-3xl p-4 xl:p-6 shadow-2xl relative overflow-hidden"
             >
               {/* Lightning / Spark badge */}
               <motion.div
                 aria-hidden="true"
-                animate={{ y: [0, -6, 0] }}
+                animate={{ y: [0, -4, 0] }}
                 transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                className="absolute -left-3 top-5 xl:top-6 w-10 h-10 xl:w-12 xl:h-12 rounded-full bg-[#FBBF24] border-2 border-white/50 dark:border-amber-200/60 flex items-center justify-center shadow-[0_0_20px_rgba(251,191,36,0.65)] z-20"
+                className="absolute -left-2 top-4 xl:top-5 w-8 h-8 xl:w-10 xl:h-10 rounded-full bg-[#FBBF24] border-2 border-white/50 dark:border-amber-200/60 flex items-center justify-center shadow-[0_0_16px_rgba(251,191,36,0.65)] z-20"
               >
-                <span className="text-lg xl:text-xl leading-none text-slate-950" role="img" aria-label="Spark">✨</span>
+                <span className="text-sm xl:text-base leading-none text-slate-950" role="img" aria-label="Spark">✨</span>
               </motion.div>
 
               {/* Tag / Micro-copy */}
               <motion.p
-                initial={{ opacity: 0, x: -14, filter: "blur(4px)" }}
+                initial={{ opacity: 0, x: -12, filter: "blur(4px)" }}
                 animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
                 transition={{ delay: 0.25, duration: 0.45 }}
-                className="text-[10px] xl:text-[11px] font-bold uppercase tracking-[.2em] text-[#EDE9FE] dark:text-purple-200/80 mb-1.5 pl-1"
+                className="text-[9px] xl:text-[10px] font-bold uppercase tracking-[.2em] text-[#EDE9FE] dark:text-purple-200/80 mb-1 pl-1"
               >
                 ShopNest Marketplace
               </motion.p>
 
               {/* Main Title */}
               <h2
-                className="text-white font-black text-xl xl:text-2xl 2xl:text-3xl leading-snug tracking-tight max-w-md"
+                className="text-white font-black text-base xl:text-xl 2xl:text-2xl leading-snug tracking-tight max-w-md"
                 style={{ perspective: "600px" }}
               >
                 {headlineWords.map((word, wIdx, arr) => {
@@ -780,7 +774,7 @@ function RegisterForm() {
               </h2>
 
               {/* Perks list */}
-              <ul className="mt-3.5 xl:mt-4 space-y-1.5 xl:space-y-2">
+              <ul className="mt-2.5 xl:mt-3 space-y-1 xl:space-y-1.5">
                 {[
                   { icon: "🛍", label: "Customer", desc: "Browse 10k+ curated products with AI guidance" },
                   { icon: "🏪", label: "Seller", desc: "Open your store, track orders & trust score" },
@@ -788,66 +782,74 @@ function RegisterForm() {
                 ].map(({ icon, label, desc }, i) => (
                   <motion.li
                     key={label}
-                    initial={{ opacity: 0, x: 16 }}
+                    initial={{ opacity: 0, x: 14 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.28 + i * 0.1, duration: 0.4, ease: EASE }}
-                    className="flex items-start gap-2.5"
+                    className="flex items-start gap-2"
                   >
-                    <span className="w-6 h-6 xl:w-7 xl:h-7 rounded-xl flex items-center justify-center text-xs shrink-0 bg-white/20 dark:bg-white/10 backdrop-blur-md border border-white/30 dark:border-white/15 text-white">
+                    <span className="w-5 h-5 xl:w-6 xl:h-6 rounded-lg flex items-center justify-center text-[10px] xl:text-xs shrink-0 bg-white/20 dark:bg-white/10 backdrop-blur-md border border-white/30 dark:border-white/15 text-white">
                       {icon}
                     </span>
                     <div>
-                      <p className="text-white font-bold text-xs leading-tight">{label}</p>
-                      <p className="text-[#EDE9FE] dark:text-purple-200/80 text-[10px] xl:text-[11px] mt-0.5">{desc}</p>
+                      <p className="text-white font-bold text-[11px] xl:text-xs leading-tight">{label}</p>
+                      <p className="text-[#EDE9FE] dark:text-purple-200/80 text-[9px] xl:text-[10px] mt-0.5">{desc}</p>
                     </div>
                   </motion.li>
                 ))}
               </ul>
 
               {/* Product showcase widget */}
-              <div className="mt-3.5 xl:mt-4 flex items-end justify-between gap-3">
+              <div className="mt-2.5 xl:mt-3 flex items-end justify-between gap-2.5">
                 <motion.div
-                  className="bg-white/20 dark:bg-white/10 backdrop-blur-md border border-white/30 dark:border-white/15 text-white rounded-2xl p-2.5 xl:p-3 shadow-lg flex-1 max-w-[10rem] xl:max-w-[12rem] cursor-default"
-                  animate={{ y: [0, -5, 0] }}
+                  className="bg-white/20 dark:bg-white/10 backdrop-blur-md border border-white/30 dark:border-white/15 text-white rounded-xl p-2 xl:p-2.5 shadow-lg flex-1 max-w-[9.5rem] xl:max-w-[11rem] cursor-default"
+                  animate={{ y: [0, -4, 0] }}
                   transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-                  whileHover={{ scale: 1.03 }}
+                  whileHover={{ scale: 1.02 }}
                 >
-                  <div className="flex items-center gap-1.5 text-[10px] text-[#EDE9FE] dark:text-purple-200/80 font-semibold mb-1">
+                  <div className="flex items-center gap-1 text-[9px] xl:text-[10px] text-[#EDE9FE] dark:text-purple-200/80 font-semibold mb-0.5">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#10B981] shadow-[0_0_6px_#10B981]" />
                     Trusted Seller
                   </div>
-                  <img
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6HreEvV6fYiuxEjQ9RL2P_vKICkXpEMiv7M2fT_zUi_Hd0a9gT4ng_a3iCk-PDkXOcdoz01gojbVpxiuoKSL3W6MRQ3Dx28FiUd3Bvv7cxfeuQy3rTWycxnCLNloIkm-wbfLpQ__Yf2nneUbojHp4GAxra0tcwtRNLa57mX0-cle52a4_DN4QoupV-R96YkVaK2bmZitU_0dNLgHfgzciB2kI0WDaiGtlK9lh73jmCqMYjePoyiu_abWVnC_-gofaazk"
-                    alt="Featured product"
-                    className="w-full h-14 xl:h-16 object-contain drop-shadow-xl mix-blend-luminosity"
-                  />
-                  <p className="mt-1 text-white font-bold text-[10px] xl:text-[11px]">Nova Tech · 4.9 ★</p>
+                  <div className="relative w-full h-11 xl:h-14">
+                    <Image
+                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6HreEvV6fYiuxEjQ9RL2P_vKICkXpEMiv7M2fT_zUi_Hd0a9gT4ng_a3iCk-PDkXOcdoz01gojbVpxiuoKSL3W6MRQ3Dx28FiUd3Bvv7cxfeuQy3rTWycxnCLNloIkm-wbfLpQ__Yf2nneUbojHp4GAxra0tcwtRNLa57mX0-cle52a4_DN4QoupV-R96YkVaK2bmZitU_0dNLgHfgzciB2kI0WDaiGtlK9lh73jmCqMYjePoyiu_abWVnC_-gofaazk"
+                      alt="Featured product"
+                      fill
+                      sizes="140px"
+                      className="object-contain drop-shadow-md mix-blend-luminosity"
+                    />
+                  </div>
+                  <p className="mt-0.5 text-white font-bold text-[9px] xl:text-[10px]">Nova Tech · 4.9 ★</p>
                 </motion.div>
 
                 <motion.div
-                  className="flex-shrink-0 -mb-4 xl:-mb-6"
-                  animate={{ y: [0, -7, 0], rotate: [-12, -10, -12] }}
+                  className="shrink-0 -mb-2 xl:-mb-3"
+                  animate={{ y: [0, -5, 0], rotate: [-12, -10, -12] }}
                   transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut", delay: 0.5 }}
                 >
-                  <img
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-GWxFQcDLwQZBZ7v_A-t8LagrYGornlbyaQ1-tp_8aaheqy9nY0UbU6NfB81br1Rvtm6V1V_kGtDwmC8SWWlQka0S_HHCkWvZxWXFQoJjLXtifgD-jA8JusrrIBOCFChUMw011N8oVShS-NgWuC5qPi5aCmoDTvwo0WJfsgjdTKsHO2VrfzB0ku-FfuZvkg5lPgE4Jn_guSr09iqRkB8ZOMAWaY63g9Th6hzyh2Xdagxf-SAJ0hhPXg"
-                    alt="Minimalist sneaker"
-                    className="w-20 xl:w-32 h-auto drop-shadow-2xl"
-                  />
+                  <div className="relative w-16 xl:w-24 h-12 xl:h-16">
+                    <Image
+                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-GWxFQcDLwQZBZ7v_A-t8LagrYGornlbyaQ1-tp_8aaheqy9nY0UbU6NfB81br1Rvtm6V1V_kGtDwmC8SWWlQka0S_HHCkWvZxWXFQoJjLXtifgD-jA8JusrrIBOCFChUMw011N8oVShS-NgWuC5qPi5aCmoDTvwo0WJfsgjdTKsHO2VrfzB0ku-FfuZvkg5lPgE4Jn_guSr09iqRkB8ZOMAWaY63g9Th6hzyh2Xdagxf-SAJ0hhPXg"
+                      alt="Minimalist sneaker"
+                      fill
+                      sizes="100px"
+                      className="object-contain drop-shadow-2xl"
+                    />
+                  </div>
                 </motion.div>
               </div>
 
               {/* Stats row */}
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.45, duration: 0.35 }}
-                className="mt-3 xl:mt-4 grid grid-cols-3 gap-2 border-t border-white/20 dark:border-white/10 pt-2.5 xl:pt-3"
+                className="mt-2.5 xl:mt-3 grid grid-cols-3 gap-2 border-t border-white/20 dark:border-white/10 pt-2 xl:pt-2.5"
               >
                 {[["10k+", "Products"], ["2k+", "Sellers"], ["4.9★", "AI Curated"]].map(([v, l]) => (
                   <div key={l} className="text-center">
                     <p className="text-white font-black text-xs xl:text-sm">{v}</p>
-                    <p className="text-[#EDE9FE] dark:text-purple-200/70 text-[9px] xl:text-[10px] mt-0.5">{l}</p>
+                    <p className="text-[#EDE9FE] dark:text-purple-200/70 text-[8px] xl:text-[9px] mt-0.5">{l}</p>
                   </div>
                 ))}
               </motion.div>
@@ -858,7 +860,7 @@ function RegisterForm() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.55, duration: 0.5 }}
-            className="relative z-10 shrink-0 mt-3 xl:mt-4 text-[10px] xl:text-xs text-[#EDE9FE]/80 dark:text-purple-200/60 font-medium"
+            className="relative z-10 shrink-0 mt-2 text-[10px] xl:text-[11px] text-[#EDE9FE]/80 dark:text-purple-200/60 font-medium"
           >
             © {new Date().getFullYear()} ShopNest · Discover · Compare · Buy with confidence
           </motion.p>
@@ -866,7 +868,7 @@ function RegisterForm() {
       </div>
 
       {/* ── Minimalist Footer ── */}
-      <footer className="flex-shrink-0 border-t border-border py-2 px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-[10px] sm:text-xs text-muted bg-surface dark:bg-background transition-colors">
+      <footer className="flex-shrink-0 border-t border-border py-1.5 px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-1 text-[10px] sm:text-xs text-muted bg-surface dark:bg-background transition-colors">
         <span>© {new Date().getFullYear()} ShopNest, Inc. All rights reserved.</span>
         <nav className="flex flex-wrap items-center justify-center gap-3 sm:gap-4" aria-label="Legal">
           <Link href="/privacy" className="hover:text-primary transition-colors">Privacy</Link>

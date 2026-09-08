@@ -1,9 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { ReactNode } from "react";
-import { motion } from "motion/react";
-import { FaArrowRight } from "react-icons/fa";
+import { ReactNode,} from "react";
+import { motion, } from "motion/react";
+
+import {  FaArrowRight } from "react-icons/fa";
+
+export { DashboardSidebarLayout } from "./DashboardLayout";
+export { EmptyState, ErrorState, LoadingCard, LoadingGrid, LoadingChart, LoadingTable, FallbackIndicator, AiBadge } from "./DashboardStates";
 
 export type DashboardLink = { label: string; href: string; icon: string; description: string };
 
@@ -61,6 +65,7 @@ export function DashboardShell({
   title?: string;
   subtitle?: string;
   role?: string;
+  links?: DashboardLink[];
   action?: ReactNode;
   children: ReactNode;
   showContinueShopping?: boolean;
@@ -131,6 +136,38 @@ export function StatCard({
   );
 }
 
+export function FeatureGrid({ links }: { links: DashboardLink[] }) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      {links.map((item, index) => (
+        <motion.div
+          key={item.href}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.03 }}
+        >
+          <Link
+            href={item.href}
+            className="block h-full rounded-2xl border border-border bg-surface p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
+          >
+            <div className="flex items-start gap-3">
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-linear-to-br from-primary/15 to-accent/15 text-xl">
+                {item.icon}
+              </span>
+              <div>
+                <h3 className="font-extrabold text-text">{item.label}</h3>
+                <p className="mt-1 text-xs leading-5 text-muted">{item.description}</p>
+              </div>
+            </div>
+            <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-primary">
+              Open feature <FaArrowRight size={10} />
+            </span>
+          </Link>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
 
 export function Panel({
   title,

@@ -13,14 +13,25 @@ const AUTH_ROUTES = ["/login", "/register", "/forgot-password", "/reset-password
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthRoute = AUTH_ROUTES.includes(pathname);
+  const isDashboardRoute = pathname.startsWith("/dashboard");
 
   if (isAuthRoute) {
     return (
       <CartDrawerProvider>
-        <div className="min-h-[100dvh] flex flex-col bg-background text-text">
+        <div className="h-[100dvh] flex flex-col bg-background text-text overflow-hidden">
           <Navbar />
-          <main className="flex-1 flex flex-col min-h-0 w-full">{children}</main>
+          <main className="flex-1 min-h-0 w-full flex flex-col overflow-hidden">{children}</main>
         </div>
+        <CartDrawer />
+      </CartDrawerProvider>
+    );
+  }
+
+
+  if (isDashboardRoute) {
+    return (
+      <CartDrawerProvider>
+        <div className="min-h-screen bg-background text-text">{children}</div>
         <CartDrawer />
       </CartDrawerProvider>
     );

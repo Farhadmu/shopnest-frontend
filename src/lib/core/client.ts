@@ -10,7 +10,7 @@ function getBaseUrl(): string {
     return "/api/v1";
   }
 
-  let url = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
+  let url = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "/api/v1";
   url = url.trim().replace(/\/$/, "");
   if (url.startsWith("http") && !url.includes("/api/v1")) {
     url = `${url}/api/v1`;
@@ -56,7 +56,27 @@ async function handleResponse<T>(response: Response): Promise<T> {
     try {
       const errorData = await response.json();
       if (errorData && typeof errorData === "object") {
-        errorMessage = errorData.message || errorData.error || errorMessage;
+        if (Object.keys(errorData).length > 0) {
+          console.error(`❌ [Backend ${response.status} Error Details] ${response.url}:`, errorData);
+        }
+        // Zod validation errors come with a `details.fieldErrors` object
+        const fieldErrors = errorData?.details?.fieldErrors as Record<string, string[]> | undefined;
+        if (fieldErrors && Object.keys(fieldErrors).length > 0) {
+          errorMessage = Object.entries(fieldErrors)
+            .map(([field, msgs]) => `${field}: ${(msgs as string[]).join(", ")}`)
+            .join(" | ");
+        } else if (errorData?.details && typeof errorData.details === "object") {
+          const detailEntries = Object.entries(errorData.details);
+          if (detailEntries.length > 0) {
+            errorMessage = detailEntries
+              .map(([field, errObj]: [string, any]) => `${field}: ${errObj?.message || errObj}`)
+              .join(" | ");
+          } else {
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          }
+        } else {
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        }
         errorDetails = errorData;
       }
     } catch {
@@ -94,6 +114,31 @@ export async function clientFetch<T>(endpoint: string, options: RequestOptions =
   });
 
   return handleResponse<T>(response);
+}
+
+/**
+ * Same as `clientFetch`, but also returns the raw response headers —
+ * needed for endpoints like /products that carry pagination metadata
+ * (X-Total-Count, X-Page, X-Limit) outside the JSON body.
+ */
+export async function clientFetchWithHeaders<T>(
+  endpoint: string,
+  options: RequestOptions = {}
+): Promise<{ data: T; headers: Headers }> {
+  const { params, headers: customHeaders, ...fetchOptions } = options;
+  const url = buildUrl(endpoint, params);
+
+  const response = await fetch(url, {
+    ...fetchOptions,
+    headers: {
+      "Content-Type": "application/json",
+      ...customHeaders,
+    },
+    credentials: "include",
+  });
+
+  const data = await handleResponse<T>(response);
+  return { data, headers: response.headers };
 }
 
 /** Client Mutation Handler (POST, PUT, PATCH, DELETE) */

@@ -30,6 +30,8 @@ export default function TrendingSection() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
 
   const [toast, setToast] = useState<{
     msg: string;
@@ -50,6 +52,7 @@ export default function TrendingSection() {
     async function fetchTrendingProducts() {
       try {
         setLoading(true);
+        setErrorMessage(null);
 
         const response = await getProducts({
           page: 1,
@@ -80,9 +83,11 @@ export default function TrendingSection() {
 
         setProducts(fetchedData);
       } catch (error) {
-        console.error(
-          "Failed to fetch trending products:",
-          error
+        setProducts([]);
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : "We couldn't load trending products."
         );
       } finally {
         setLoading(false);
@@ -90,7 +95,7 @@ export default function TrendingSection() {
     }
 
     fetchTrendingProducts();
-  }, []);
+  }, [retryKey]);
 
  
   // Toast
@@ -387,6 +392,25 @@ export default function TrendingSection() {
 
       {loading ? (
         <TrendingSkeleton />
+      ) : errorMessage ? (
+        <div className="relative z-10 rounded-[2rem] border border-dashed border-border bg-surface p-12 text-center">
+          <h3 className="text-lg font-black text-text">
+            Trending products are unavailable
+          </h3>
+
+          <p className="mt-2 text-sm text-muted">
+            {errorMessage}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => setRetryKey((key) => key + 1)}
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-white transition hover:bg-primary-hover"
+          >
+            Try again
+            <FaArrowRight size={10} />
+          </button>
+        </div>
       ) : products.length > 0 ? (
         <div className="relative z-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {products.slice(0, 8).map((product, index) => (

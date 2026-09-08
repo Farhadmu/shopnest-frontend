@@ -9,8 +9,11 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@bangladeshi/bangladesh-address": "^2.1.0",
     "@better-auth/mongo-adapter": "^1.7.1",
     "@heroui/react": "^3.2.4",
+    "@react-aria/ssr": "^3.10.1",
+    "@react-aria/utils": "^3.34.1",
     "@types/nodemailer": "^8.0.1",
     "better-auth": "^1.7.1",
     "framer-motion": "^13.1.1",
