@@ -93,8 +93,6 @@ export function CheckoutClient({ initialCart, initialAddresses }: CheckoutClient
     const upazilaPart = address.upazila ? `, ${address.upazila}` : "";
     const fullShippingAddress = `${fullName} | ${address.phone.trim()} | ${address.streetAddress.trim()}${upazilaPart}${districtPart}, ${address.division} Division${address.orderNotes.trim() ? ` (Note: ${address.orderNotes.trim()})` : ""}`;
 
-    const total = Math.max(0, (initialCart?.subtotal ?? 0) - discount + shippingFeeRef.current);
-
     try {
       const order = await createOrder({
         shippingAddress: fullShippingAddress,
@@ -105,7 +103,7 @@ export function CheckoutClient({ initialCart, initialAddresses }: CheckoutClient
 
       if (paymentMethodRef.current === "stripe" || paymentMethodRef.current === "sslcommerz") {
         router.push(
-          `/confirm-payment?method=${paymentMethodRef.current}&shipping=${shippingMethodRef.current}&amount=${total}&orderId=${order.id}`
+          `/confirm-payment?method=${paymentMethodRef.current}&shipping=${shippingMethodRef.current}&orderId=${order.id}`
         );
       } else {
         router.push(`/orders/${order.id}`);
