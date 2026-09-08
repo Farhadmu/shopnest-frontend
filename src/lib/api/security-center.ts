@@ -21,12 +21,9 @@ export interface SecurityOverviewData {
   highRiskSellers: number;
   openIncidents: number;
   criticalIncidents: number;
-<<<<<<< HEAD
-=======
   incidentByType?: Record<string, number>;
   incidentBySource?: Record<string, number>;
   recentlyResolved?: Array<{ id: string; incidentCode: string; title: string; severity: string; resolvedAt?: string }>;
->>>>>>> master
 }
 
 export interface SecurityHealthData {
@@ -147,9 +144,6 @@ export interface SecurityIncidentItem {
 export interface SecurityIncidentsData {
   incidents: SecurityIncidentItem[];
   pagination: { total: number; page: number; limit: number; totalPages: number };
-<<<<<<< HEAD
-  stats: { total: number; open: number; investigating: number; resolved: number; critical: number };
-=======
   stats: {
     total: number;
     open: number;
@@ -164,7 +158,6 @@ export interface SecurityIncidentsData {
     avgResolutionHours: number | null;
     monthResolved: number;
   };
->>>>>>> master
 }
 
 export interface SecurityAlertItem {

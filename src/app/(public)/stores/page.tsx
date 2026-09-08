@@ -1,15 +1,3 @@
-<<<<<<< HEAD
-
-import StoresContent from "@/components/stores/StoresContent";
-import { categories, stores } from "@/data/stores";
-
-export default function StoresPage() {
-  return (
-    <StoresContent
-      stores={stores}
-      categories={categories}
-    />
-=======
 import Link from "next/link";
 import { FaArrowRight, FaShieldAlt, FaStar } from "react-icons/fa";
 
@@ -80,6 +68,5 @@ export default function StoresPage() {
         ))}
       </div>
     </div>
->>>>>>> master
   );
 }

@@ -4,15 +4,6 @@ export interface Review {
   id: string;
   productId: string;
   userId: string;
-<<<<<<< HEAD
-  rating: number;
-  comment: string;
-  title?: string;
-  userName?: string;
-  verifiedPurchase?: boolean;
-  images?: string[];
-  createdAt: string;
-=======
   userName?: string;
   rating: number;
   comment: string;
@@ -79,7 +70,6 @@ export async function hideReview(id: string) {
 
 export async function removeReviewAdmin(id: string) {
   return clientMutation<{ success: boolean }>(`/reviews/${id}`, "DELETE");
->>>>>>> master
 }
 
 export async function getProductReviews(productId: string) {

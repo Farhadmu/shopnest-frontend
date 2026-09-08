@@ -342,25 +342,13 @@ export interface SecurityIncidentItem {
   id: string;
   incidentCode: string;
   title: string;
-<<<<<<< HEAD
-=======
   description?: string;
   type: string;
   source: string;
->>>>>>> master
   entityType: "user" | "seller" | "order" | "system" | "ip_cluster";
   entityId: string;
   entityName: string;
   severity: "low" | "medium" | "high" | "critical";
-<<<<<<< HEAD
-  status: "new" | "investigating" | "resolved" | "dismissed";
-  riskScore: number;
-  signals: string[];
-  notes: Array<{ authorId: string; authorName: string; note: string; createdAt: string }>;
-  history: Array<{ action: string; changedBy: string; timestamp: string; details?: string }>;
-  resolvedAt?: string;
-  resolvedBy?: string;
-=======
   status: "new" | "open" | "acknowledged" | "investigating" | "mitigated" | "resolved" | "closed" | "dismissed";
   riskScore: number;
   signals: string[];
@@ -381,29 +369,10 @@ export interface SecurityIncidentItem {
   evidence: Array<{ description: string; reference: string; addedBy: string; addedAt: string }>;
   relatedSecurityEvents?: string[];
   relatedRiskSignals?: string[];
->>>>>>> master
   createdAt: string;
   updatedAt: string;
 }
 
-<<<<<<< HEAD
-export async function getSecurityIncidents(params?: { status?: string; severity?: string }) {
-  const query = new URLSearchParams();
-  if (params?.status) query.append("status", params.status);
-  if (params?.severity) query.append("severity", params.severity);
-  const qStr = query.toString();
-  return clientFetch<SecurityIncidentItem[]>(`/admin/incidents${qStr ? `?${qStr}` : ""}`);
-}
-
-export async function updateSecurityIncident(id: string, data: { status?: string; severity?: string; notes?: string }) {
-  return clientMutation<SecurityIncidentItem>(`/admin/incidents/${id}`, "PATCH", data);
-}
-
-export async function addIncidentNote(id: string, note: string) {
-  return clientMutation<SecurityIncidentItem>(`/admin/incidents/${id}/notes`, "POST", { note });
-}
-
-=======
 export interface IncidentStats {
   total: number;
   open: number;
@@ -516,7 +485,6 @@ export async function getRelatedRiskSignals(id: string) {
   return clientFetch<any[]>(`/admin/incidents/${id}/risk-signals`);
 }
 
->>>>>>> master
 // 39. ADMIN AUDIT LOG
 export interface AuditLogItem {
   id: string;

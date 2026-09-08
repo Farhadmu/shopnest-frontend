@@ -1,17 +1,5 @@
 import { clientFetch, clientMutation } from "@/lib/core/client";
 
-<<<<<<< HEAD
-export interface Order {
-  id: string;
-  items: Array<{
-    productId: string;
-    title?: string;
-    name?: string;
-    quantity: number;
-    price: number;
-    image:string; 
-  }>;
-=======
 export interface OrderItem {
   productId: string;
   title?: string;
@@ -26,7 +14,6 @@ export interface OrderItem {
 export interface Order {
   id: string;
   items: OrderItem[];
->>>>>>> master
   subtotal: number;
   discount: number;
   deliveryFee?: number;
@@ -42,9 +29,6 @@ export interface Order {
   | "cancelled"
   | "returned"
   | "refunded";
-<<<<<<< HEAD
-  createdAt: string;
-=======
   paymentMethod: string;
   paymentStatus: "unpaid" | "paid" | "refunded";
   shippingAddress: string;
@@ -100,7 +84,6 @@ export async function searchAdminOrders(params: {
   if (params.limit) query.append("limit", String(params.limit));
   const qStr = query.toString();
   return clientFetch<OrderListResponse>(`/orders/admin/search${qStr ? `?${qStr}` : ""}`);
->>>>>>> master
 }
 
 export async function getOrders() {

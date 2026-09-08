@@ -4,20 +4,14 @@ export type NotificationType =
   | "order_confirmation"
   | "order_shipped"
   | "order_delivered"
-<<<<<<< HEAD
-=======
   | "order_update"
   | "order_cancelled"
   | "return_update"
->>>>>>> master
   | "price_drop"
   | "coupon"
   | "low_stock"
   | "seller_approval"
   | "new_review"
-<<<<<<< HEAD
-  | "flash_sale";
-=======
   | "flash_sale"
   | "security_alert"
   | "incident_alert"
@@ -70,29 +64,21 @@ export type NotificationRelatedType =
   | "payment"
   | "refund"
   | "system";
->>>>>>> master
 
 export interface Notification {
   id: string;
   userId: string;
-<<<<<<< HEAD
-  type: NotificationType;
-=======
   recipientType?: string;
   type: NotificationType;
   category?: NotificationCategory;
   priority?: NotificationPriority;
   source?: NotificationSource;
->>>>>>> master
   title: string;
   message: string;
   isRead: boolean;
   link?: string;
   relatedId?: string;
-<<<<<<< HEAD
-=======
   relatedType?: NotificationRelatedType;
->>>>>>> master
   createdAt: string;
   updatedAt: string;
 }
@@ -106,8 +92,6 @@ export interface NotificationListResponse {
   totalPages: number;
 }
 
-<<<<<<< HEAD
-=======
 export interface NotificationStats {
   success: boolean;
   total: number;
@@ -119,7 +103,6 @@ export interface NotificationStats {
   byPriority: Record<string, number>;
 }
 
->>>>>>> master
 export async function getNotifications(page = 1, limit = 20) {
   return clientFetch<NotificationListResponse>("/notifications", { params: { page, limit } });
 }
@@ -135,8 +118,6 @@ export async function markNotificationRead(id: string) {
 export async function markAllNotificationsRead() {
   return clientMutation<{ success: boolean }>("/notifications/read-all", "PATCH");
 }
-<<<<<<< HEAD
-=======
 
 // Admin notification endpoints
 export async function getAdminNotifications(params?: {
@@ -187,4 +168,3 @@ export async function markAllAdminNotificationsRead() {
 export async function bulkMarkAdminNotificationsRead(ids: string[]) {
   return clientMutation<{ success: boolean; modified: number }>("/admin/notifications/bulk-read", "PATCH", { ids });
 }
->>>>>>> master
