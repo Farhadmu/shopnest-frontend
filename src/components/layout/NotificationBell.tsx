@@ -7,6 +7,13 @@ import {
   getUnreadCount,
   markAllNotificationsRead,
   markNotificationRead,
+<<<<<<< HEAD
+=======
+  getAdminNotifications,
+  getAdminUnreadCount,
+  markAllAdminNotificationsRead,
+  markAdminNotificationRead,
+>>>>>>> master
   type Notification,
 } from "@/lib/api/notifications";
 import { getErrorMessage } from "@/lib/core/errors";
@@ -25,27 +32,47 @@ export const NotificationBell: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+<<<<<<< HEAD
   const refreshUnreadCount = useCallback(async () => {
     try {
       const res = await getUnreadCount();
+=======
+  const isAdmin = (session?.user as { role?: string })?.role === "admin";
+
+  const refreshUnreadCount = useCallback(async () => {
+    try {
+      const res = isAdmin ? await getAdminUnreadCount() : await getUnreadCount();
+>>>>>>> master
       setUnreadCount(res.count);
     } catch {
       // Silently ignore; bell just won't show a badge until the next poll.
     }
+<<<<<<< HEAD
   }, []);
+=======
+  }, [isAdmin]);
+>>>>>>> master
 
   const loadNotifications = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
+<<<<<<< HEAD
       const res = await getNotifications(1, 10);
+=======
+      const res = isAdmin ? await getAdminNotifications({ limit: 10 }) : await getNotifications(1, 10);
+>>>>>>> master
       setItems(res.items);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
+<<<<<<< HEAD
   }, []);
+=======
+  }, [isAdmin]);
+>>>>>>> master
 
   useEffect(() => {
     if (isPending || !session?.user) return;
@@ -70,7 +97,15 @@ export const NotificationBell: React.FC = () => {
 
   const handleMarkAllRead = async () => {
     try {
+<<<<<<< HEAD
       await markAllNotificationsRead();
+=======
+      if (isAdmin) {
+        await markAllAdminNotificationsRead();
+      } else {
+        await markAllNotificationsRead();
+      }
+>>>>>>> master
       setItems((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch {
@@ -81,7 +116,15 @@ export const NotificationBell: React.FC = () => {
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.isRead) {
       try {
+<<<<<<< HEAD
         await markNotificationRead(notification.id);
+=======
+        if (isAdmin) {
+          await markAdminNotificationRead(notification.id);
+        } else {
+          await markNotificationRead(notification.id);
+        }
+>>>>>>> master
         setItems((prev) =>
           prev.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n))
         );
@@ -178,3 +221,7 @@ export const NotificationBell: React.FC = () => {
     </div>
   );
 };
+<<<<<<< HEAD
+=======
+
+>>>>>>> master
