@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { FiHome, FiGrid, FiShoppingCart, FiHeart, FiUser } from "react-icons/fi";
 import { getCart } from "@/lib/api/cart";
 import { getWishlist } from "@/lib/api/wishlist";
+import { getGuestCart, getGuestWishlist } from "@/lib/guest-store";
 import { useSession } from "@/lib/auth-client";
 import { subscribeToCommerceUpdates } from "@/lib/commerce-events";
 import { useCartDrawer } from "@/context/CartDrawerContext";
@@ -16,10 +17,21 @@ export function MobileBottomNav() {
   const { openCart, itemCount: drawerItemCount } = useCartDrawer();
   const [cartCount, setCartCount] = useState<number>(0);
   const [wishlistCount, setWishlistCount] = useState<number>(0);
+  const isAuthenticated = Boolean(session?.user);
 
   useEffect(() => {
     let isMounted = true;
     const fetchCounts = async () => {
+      if (!isAuthenticated) {
+        const guestCart = getGuestCart();
+        const guestWishlist = getGuestWishlist();
+        if (isMounted) {
+          setCartCount(guestCart.items.reduce((sum, item) => sum + item.quantity, 0));
+          setWishlistCount(guestWishlist.length);
+        }
+        return;
+      }
+
       try {
         const [cartData, wishlistData] = await Promise.allSettled([
           getCart(),
@@ -46,7 +58,7 @@ export function MobileBottomNav() {
       unsubscribe();
       clearInterval(interval);
     };
-  }, [pathname]);
+  }, [isAuthenticated, pathname]);
 
   const role = (session?.user as { role?: string } | undefined)?.role ?? "customer";
   if (role === "seller" || role === "admin") return null;
