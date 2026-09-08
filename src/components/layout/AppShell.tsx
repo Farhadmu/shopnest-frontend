@@ -27,7 +27,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-
   if (isDashboardRoute) {
     return (
       <CartDrawerProvider>
