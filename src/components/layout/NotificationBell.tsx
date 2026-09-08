@@ -7,6 +7,10 @@ import {
   getUnreadCount,
   markAllNotificationsRead,
   markNotificationRead,
+  getAdminNotifications,
+  getAdminUnreadCount,
+  markAllAdminNotificationsRead,
+  markAdminNotificationRead,
   type Notification,
 } from "@/lib/api/notifications";
 import { getErrorMessage } from "@/lib/core/errors";
@@ -25,27 +29,29 @@ export const NotificationBell: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const isAdmin = (session?.user as { role?: string })?.role === "admin";
+
   const refreshUnreadCount = useCallback(async () => {
     try {
-      const res = await getUnreadCount();
+      const res = isAdmin ? await getAdminUnreadCount() : await getUnreadCount();
       setUnreadCount(res.count);
     } catch {
       // Silently ignore; bell just won't show a badge until the next poll.
     }
-  }, []);
+  }, [isAdmin]);
 
   const loadNotifications = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await getNotifications(1, 10);
+      const res = isAdmin ? await getAdminNotifications({ limit: 10 }) : await getNotifications(1, 10);
       setItems(res.items);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => {
     if (isPending || !session?.user) return;
@@ -70,7 +76,11 @@ export const NotificationBell: React.FC = () => {
 
   const handleMarkAllRead = async () => {
     try {
-      await markAllNotificationsRead();
+      if (isAdmin) {
+        await markAllAdminNotificationsRead();
+      } else {
+        await markAllNotificationsRead();
+      }
       setItems((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch {
@@ -81,7 +91,11 @@ export const NotificationBell: React.FC = () => {
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.isRead) {
       try {
-        await markNotificationRead(notification.id);
+        if (isAdmin) {
+          await markAdminNotificationRead(notification.id);
+        } else {
+          await markNotificationRead(notification.id);
+        }
         setItems((prev) =>
           prev.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n))
         );
