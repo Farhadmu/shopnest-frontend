@@ -9,6 +9,8 @@ export interface CartItem {
   image?: string;
   images?: string[];
   category?: string;
+  sellerId?: string;
+  storeId?: string;
 }
 
 export interface Cart {

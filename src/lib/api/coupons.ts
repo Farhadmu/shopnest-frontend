@@ -3,19 +3,26 @@ import type { Coupon, CreateCouponInput } from "@/types/coupon";
 
 export type { Coupon, CreateCouponInput } from "@/types/coupon";
 
+export interface CouponLineItem {
+  productId: string;
+  category?: string;
+  sellerId?: string;
+  price: number;
+  quantity: number;
+}
+
 export interface CouponValidationResult {
   success: boolean;
   code: string;
   discount: number;
-  type: "percentage" | "fixed";
+  type: "percentage" | "fixed" | "free-shipping";
   value: number;
+  freeShipping?: boolean;
 }
 
-/** Validates a coupon code against a cart subtotal; returns the discount it would apply. */
-export async function validateCoupon(code: string, subtotal: number) {
-  return clientFetch<CouponValidationResult>(`/coupons/validate/${encodeURIComponent(code)}`, {
-    params: { subtotal },
-  });
+/** Validates a coupon code against cart line items; returns the discount it would apply. */
+export async function validateCoupon(code: string, items: CouponLineItem[]) {
+  return clientMutation<CouponValidationResult>(`/coupons/validate/${encodeURIComponent(code)}`, "POST", { items });
 }
 
 /** Seller/admin: list coupons owned by the current user (all coupons if admin). */

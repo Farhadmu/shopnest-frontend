@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Chip } from "@heroui/react";
-import { X, Tag, ShoppingBag, Layers, Calendar, Ticket, TrendingUp, Shield } from "lucide-react";
+import { X, Tag, ShoppingBag, Layers, Calendar, Ticket, TrendingUp, Shield, Truck } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { getProductById, type Product } from "@/lib/api/products";
 import { CouponPlacementChip, CouponStatusChip } from "./CouponStatusChip";
@@ -49,7 +49,9 @@ export function CouponDetailModal({ coupon, isOpen, onClose, onApprove, onReject
   const discountLabel =
     coupon.type === "percentage"
       ? `${coupon.value}% Off`
-      : `${formatCurrency(coupon.value)} Off`;
+      : coupon.type === "free-shipping"
+        ? "Free Shipping"
+        : `${formatCurrency(coupon.value)} Off`;
 
   const scopeLabel =
     coupon.scope === "all-products"
@@ -102,6 +104,8 @@ export function CouponDetailModal({ coupon, isOpen, onClose, onApprove, onReject
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/20">
                   {coupon.type === "percentage" ? (
                     <span className="text-xl font-black tracking-tight">{coupon.value}%</span>
+                  ) : coupon.type === "free-shipping" ? (
+                    <Truck className="h-6 w-6" />
                   ) : (
                     <span className="text-lg font-black tracking-tight">৳{coupon.value}</span>
                   )}
@@ -123,7 +127,7 @@ export function CouponDetailModal({ coupon, isOpen, onClose, onApprove, onReject
           {/* ── Discount Details ── */}
           <Section icon={<TrendingUp className="h-4 w-4" />} title="Discount Details">
             <div className="grid grid-cols-2 gap-3">
-              <DetailItem label="Discount Type" value={coupon.type === "percentage" ? "Percentage (%)" : "Fixed Amount (৳)"} />
+              <DetailItem label="Discount Type" value={coupon.type === "percentage" ? "Percentage (%)" : coupon.type === "free-shipping" ? "Free Shipping" : "Fixed Amount (৳)"} />
               <DetailItem label="Discount Value" value={discountLabel} />
               <DetailItem
                 label="Minimum Purchase"

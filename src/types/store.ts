@@ -1,5 +1,6 @@
 export interface Product {
   _id?: string;
+  id?: string;
   name: string;
   price: number | string;
   image: string;
@@ -59,6 +60,7 @@ export interface StoreVoucher {
 
 export interface StoreData {
   id: string;
+  ownerId?: string;
   name: string;
   tagline: string;
   rating: string;

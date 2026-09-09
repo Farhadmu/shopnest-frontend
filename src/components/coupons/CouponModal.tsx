@@ -88,7 +88,7 @@ function formFromCoupon(coupon: Coupon, mode: "seller" | "admin"): FormState {
 /**
  * Single reusable "Create/Edit Coupon" modal powered by HeroUI components.
  * Seller Coupons page and Admin Coupons page both render this component —
- * dynamic labels and fields adjust based on whether Percentage (%) or Fixed Amount (৳) is chosen.
+ * dynamic labels and fields adjust based on whether Percentage (%), Fixed Amount (৳), or Free Shipping is chosen.
  */
 export function CouponModal({ mode, isOpen, onClose, onCreated, couponToEdit }: CouponModalProps) {
   const [form, setForm] = useState<FormState>(() =>
@@ -350,7 +350,7 @@ export function CouponModal({ mode, isOpen, onClose, onCreated, couponToEdit }: 
               </Description>
             </div>
 
-            {/* Discount Type (Percentage vs Fixed) */}
+            {/* Discount Type */}
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-bold text-text">
@@ -364,44 +364,40 @@ export function CouponModal({ mode, isOpen, onClose, onCreated, couponToEdit }: 
                       : "Delivery Fee Waived"}
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-1.5 rounded-xl bg-muted-bg p-1">
+
+              <div className="flex items-center rounded-xl border border-border bg-background p-1">
                 <Button
                   type="button"
                   size="sm"
                   variant={form.type === "percentage" ? "primary" : "ghost"}
                   onPress={() => patch({ type: "percentage" })}
-                  className={`flex items-center justify-center gap-2 rounded-lg font-bold transition-all cursor-pointer ${
-                    form.type === "percentage" ? "shadow-sm" : "text-muted hover:text-text hover:bg-surface/50"
-                  }`}
+                  className="flex-1 justify-center gap-1 px-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap"
                 >
-                  <Percent className="h-3.5 w-3.5" />
-                  <span>Percentage (%)</span>
+                  <Percent className="h-3.5 w-3.5 shrink-0" />
+                  <span>Percentage</span>
                 </Button>
                 <Button
                   type="button"
                   size="sm"
                   variant={form.type === "fixed" ? "primary" : "ghost"}
                   onPress={() => patch({ type: "fixed" })}
-                  className={`flex items-center justify-center gap-2 rounded-lg font-bold transition-all cursor-pointer ${
-                    form.type === "fixed" ? "shadow-sm" : "text-muted hover:text-text hover:bg-surface/50"
-                  }`}
+                  className="flex-1 justify-center gap-1 px-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap"
                 >
-                  <span className="text-sm font-black">৳</span>
-                  <span>Fixed Amount (৳)</span>
+                  <span className="text-xs font-black shrink-0">৳</span>
+                  <span>Fixed</span>
                 </Button>
                 <Button
                   type="button"
                   size="sm"
                   variant={form.type === "free-shipping" ? "primary" : "ghost"}
                   onPress={() => patch({ type: "free-shipping", value: 0 })}
-                  className={`flex items-center justify-center gap-2 rounded-lg font-bold transition-all cursor-pointer ${
-                    form.type === "free-shipping" ? "shadow-sm" : "text-muted hover:text-text hover:bg-surface/50"
-                  }`}
+                  className="flex-1 justify-center gap-1 px-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap"
                 >
-                  <Truck className="h-3.5 w-3.5" />
+                  <Truck className="h-3.5 w-3.5 shrink-0" />
                   <span>Free Shipping</span>
                 </Button>
               </div>
+
               <Description className="text-[11px] text-muted">
                 {form.type === "percentage"
                   ? "Calculates a dynamic % reduction based on order total."
@@ -416,7 +412,7 @@ export function CouponModal({ mode, isOpen, onClose, onCreated, couponToEdit }: 
               SECTION 2: DYNAMIC VALUE & MIN/MAX FIELDS (HeroUI)
           ========================================================= */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {/* Discount Value — hidden entirely for Free Shipping (no amount to enter) */}
+            {/* Discount Value — hidden entirely for Free Shipping */}
             {form.type !== "free-shipping" && (
               <div className="flex flex-col gap-1">
                 <Label className="flex items-center justify-between text-xs font-bold text-text">
