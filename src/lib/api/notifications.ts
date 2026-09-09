@@ -103,8 +103,16 @@ export interface NotificationStats {
   byPriority: Record<string, number>;
 }
 
-export async function getNotifications(page = 1, limit = 20) {
-  return clientFetch<NotificationListResponse>("/notifications", { params: { page, limit } });
+export async function getNotifications(params?: { page?: number; limit?: number; category?: string; source?: string; isRead?: boolean; search?: string }) {
+  const query = new URLSearchParams();
+  if (params?.page) query.append("page", String(params.page));
+  if (params?.limit) query.append("limit", String(params.limit));
+  if (params?.category) query.append("category", params.category);
+  if (params?.source) query.append("source", params.source);
+  if (params?.isRead !== undefined) query.append("isRead", String(params.isRead));
+  if (params?.search) query.append("search", params.search);
+  const qStr = query.toString();
+  return clientFetch<NotificationListResponse>(`/notifications${qStr ? `?${qStr}` : ""}`);
 }
 
 export async function getUnreadCount() {
@@ -117,6 +125,14 @@ export async function markNotificationRead(id: string) {
 
 export async function markAllNotificationsRead() {
   return clientMutation<{ success: boolean }>("/notifications/read-all", "PATCH");
+}
+
+export async function deleteNotification(id: string) {
+  return clientMutation<{ success: boolean; deleted: boolean }>(`/notifications/${id}`, "DELETE");
+}
+
+export async function clearReadNotifications() {
+  return clientMutation<{ success: boolean; deleted: number }>("/notifications/clear-read", "DELETE");
 }
 
 // Admin notification endpoints

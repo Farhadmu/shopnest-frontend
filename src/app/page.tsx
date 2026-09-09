@@ -13,9 +13,9 @@ import { defaultBannerData } from "@/lib/banner/BannerData";
 import AiIntelligenceSection from "@/components/home/AiIntelligenceSection";
 import TrendingSection from "@/components/home/Trending/TrendingSection";
 import CouponSection from "@/components/home/CouponSection";
+import JustForYouSection from "@/components/home/JustForYouSection";
 
 export default function HomePage() {
-
 
 
   return (
@@ -37,26 +37,28 @@ export default function HomePage() {
       {/* 05 — AI */}
       <AiIntelligenceSection />
 
+      {/* 06 — Just For You */}
+      <JustForYouSection />
 
-      {/* 07 — Sellers */}
+      {/* 07 — Coupon */}
+      <CouponSection />
+
+      {/* 09 — Sellers */}
       <SellersSection />
 
-      {/* 08 — Visual search */}
+      {/* 10 — Visual search */}
       <VisualSearchSection />
 
-      {/* 09 — Recommendations */}
+      {/* 11 — Recommendations */}
       <RecommendationsSection />
-
-      {/* 09.5 — Coupon */}
-      <CouponSection />
 
       {/* 10 — How it works */}
       <HowItWorksSection />
 
-      {/* 11 — Proof */}
+      {/* 13 — Proof */}
       <ProofSection />
 
-      {/* 12 — Final CTA */}
+      {/* 14 — Final CTA */}
       <FinalCtaSection />
     </div>
   );

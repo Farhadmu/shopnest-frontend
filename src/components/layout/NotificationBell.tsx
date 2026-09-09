@@ -44,7 +44,7 @@ export const NotificationBell: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = isAdmin ? await getAdminNotifications({ limit: 10 }) : await getNotifications(1, 10);
+      const res = isAdmin ? await getAdminNotifications({ limit: 10 }) : await getNotifications({ page: 1, limit: 10 });
       setItems(res.items);
     } catch (err) {
       setError(getErrorMessage(err));

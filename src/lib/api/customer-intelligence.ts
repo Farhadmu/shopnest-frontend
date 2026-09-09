@@ -1,4 +1,5 @@
 import { clientFetch, clientMutation } from "@/lib/core/client";
+import { Product } from "@/lib/api/products";
 
 export interface ShoppingEvent {
   eventType: string;
@@ -29,6 +30,42 @@ export interface ShoppingJourneyData {
     images: string[];
     ratingAvg: number;
   }>;
+}
+
+export interface JourneyAnalytics {
+  stats: {
+    totalActivities: number;
+    productsViewed: number;
+    searches: number;
+    wishlistAdds: number;
+    cartAdds: number;
+    purchases: number;
+  };
+  timeline: Array<{
+    id: string;
+    eventType: string;
+    productId?: string;
+    productTitle?: string;
+    category?: string;
+    price?: number;
+    metadata?: Record<string, unknown>;
+    createdAt: string;
+  }>;
+  pagination: { total: number; page: number; limit: number; totalPages: number };
+  recentSearches: Array<{ query: string; createdAt: string }>;
+  mostViewedProducts: Array<{ productId: string; productTitle: string; category?: string; price?: number; count: number }>;
+  wishlistActivity: Array<{ productId: string; productTitle: string; price?: number; createdAt: string }>;
+  cartActivity: Array<{ productId: string; productTitle: string; price?: number; createdAt: string }>;
+  purchaseActivity: Array<{ productId: string; productTitle: string; price?: number; orderId?: string; createdAt: string }>;
+  funnel: {
+    discovery: { count: number; percentage: number };
+    views: { count: number; percentage: number };
+    wishlist: { count: number; percentage: number };
+    cart: { count: number; percentage: number };
+    checkout: { count: number; percentage: number };
+    purchase: { count: number; percentage: number };
+  } | null;
+  interests: Array<{ category: string; interactions: number; uniqueProducts: number }>;
 }
 
 export interface BudgetPlanResult {
@@ -79,9 +116,15 @@ export interface ProductLifecycleItem {
   purchaseDate: string;
   estimatedLifespanMonths: number;
   usagePercentage: number;
-  warrantyExpiryDate: string;
+  warrantyProvider?: string;
+  warrantyDurationMonths?: number;
+  warrantyStartDate?: string;
+  warrantyExpiryDate?: string;
+  warrantyStatus: "active" | "expiring_soon" | "expired" | "not_available";
+  warrantyRemainingDays?: number;
+  maintenanceReminders: Array<{ title: string; dueDate: string; status: string; notes?: string }>;
+  maintenanceStatus: "up_to_date" | "due_soon" | "overdue" | "no_schedule";
   status: "active" | "replacement_recommended" | "retired";
-  maintenanceReminders: Array<{ title: string; dueDate: string; status: "pending" | "completed" | "overdue"; notes?: string }>;
 }
 
 export interface ShoppingGoalData {
@@ -90,9 +133,15 @@ export interface ShoppingGoalData {
   category: string;
   targetBudget: number;
   targetDate?: string;
+  currentAmount: number;
+  remainingAmount: number;
+  relatedProductId?: string;
+  relatedCategoryId?: string;
+  notes?: string;
   items: Array<{ title: string; productId?: string; estimatedPrice: number; isCompleted: boolean }>;
   progressPercentage: number;
-  status: "in_progress" | "achieved" | "archived";
+  status: "active" | "completed" | "cancelled";
+  completedAt?: string;
 }
 
 export interface PriceHistoryData {
@@ -140,6 +189,16 @@ export async function getShoppingJourney() {
   return clientFetch<ShoppingJourneyData>("/customer/journey");
 }
 
+export async function getJourneyAnalytics(params?: { range?: string; type?: string; page?: number; limit?: number }) {
+  const query = new URLSearchParams();
+  if (params?.range) query.append("range", params.range);
+  if (params?.type) query.append("type", params.type);
+  if (params?.page) query.append("page", String(params.page));
+  if (params?.limit) query.append("limit", String(params.limit));
+  const qStr = query.toString();
+  return clientFetch<JourneyAnalytics>(`/customer/journey/analytics${qStr ? `?${qStr}` : ""}`);
+}
+
 export async function recordShoppingEvent(data: { eventType: string; productId?: string; productTitle?: string; category?: string; price?: number }) {
   return clientMutation("/customer/journey/event", "POST", data);
 }
@@ -157,11 +216,27 @@ export async function getProductBundle(productId: string) {
 }
 
 export async function getProductLifecycles() {
-  return clientFetch<ProductLifecycleItem[]>("/customer/lifecycle");
+  return clientFetch<{ items: ProductLifecycleItem[]; total: number }>("/customer/lifecycle");
+}
+
+export async function getLifecycleDetails(id: string) {
+  return clientFetch<ProductLifecycleItem>(`/customer/lifecycle/${id}`);
+}
+
+export async function createLifecycleFromOrder(orderId: string) {
+  return clientMutation<ProductLifecycleItem[]>("/customer/lifecycle/from-order/" + orderId, "POST", {});
+}
+
+export async function addMaintenanceRecord(lifecycleId: string, data: { title: string; dueDate: string; notes?: string; status?: string }) {
+  return clientMutation<ProductLifecycleItem>(`/customer/lifecycle/${lifecycleId}/maintenance`, "POST", data);
 }
 
 export async function getShoppingGoals() {
-  return clientFetch<ShoppingGoalData[]>("/customer/goals");
+  return clientFetch<{ items: ShoppingGoalData[]; total: number }>("/customer/goals");
+}
+
+export async function getGoalDetails(id: string) {
+  return clientFetch<ShoppingGoalData>(`/customer/goals/${id}`);
 }
 
 export async function createShoppingGoal(data: Partial<ShoppingGoalData>) {
@@ -170,6 +245,10 @@ export async function createShoppingGoal(data: Partial<ShoppingGoalData>) {
 
 export async function updateShoppingGoal(id: string, data: Partial<ShoppingGoalData>) {
   return clientMutation<ShoppingGoalData>(`/customer/goals/${id}`, "PATCH", data);
+}
+
+export async function addGoalProgress(id: string, amount: number, notes?: string) {
+  return clientMutation<ShoppingGoalData>(`/customer/goals/${id}/progress`, "POST", { amount, notes });
 }
 
 export async function deleteShoppingGoal(id: string) {
@@ -323,6 +402,17 @@ export async function getRecentlyViewedProducts() {
 
 export async function getSmartRecommendations() {
   return clientFetch<CustomerProductSuggestion[]>("/customer/recommendations");
+}
+
+export interface CustomerRecommendationsResponse {
+  isPersonalized: boolean;
+  preferredCategories: string[];
+  count: number;
+  products: Product[];
+}
+
+export async function getCustomerRecommendations(limit = 8): Promise<CustomerRecommendationsResponse> {
+  return clientFetch<CustomerRecommendationsResponse>(`/customer/recommendations?limit=${limit}`);
 }
 
 // COMPREHENSIVE SPENDING ANALYTICS
