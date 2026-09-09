@@ -4,4 +4,5 @@ export interface CategoryItem {
   name: string;
   slug: string;
   parent?: string | null;
+  image?: string;
 }
