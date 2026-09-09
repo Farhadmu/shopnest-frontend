@@ -5,57 +5,91 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { AlertCircle, Package } from "lucide-react";
-import { verifyStripeCheckoutSession } from "@/lib/api/payments";
+import { useSession } from "@/lib/auth-client";
+import {
+  verifyStripeCheckoutSession,
+  verifySSLCommerzPayment,
+} from "@/lib/api/payments";
 import { getOrderById, type Order } from "@/lib/api/orders";
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
+  const orderIdParam = searchParams.get("orderId");
+  const valId = searchParams.get("val_id") || undefined;
+
+  const { data: authSession } = useSession();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [order, setOrder] = useState<Order | null>(null);
-  const [customerEmail, setCustomerEmail] = useState<string>("customer@example.com");
-
-  const missingSessionError = !sessionId ? "No payment session was provided." : null;
+  const [customerEmail, setCustomerEmail] = useState<string>(
+    () => authSession?.user?.email || "customer@example.com"
+  );
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (authSession?.user?.email) {
+      setCustomerEmail(authSession.user.email);
+    }
+  }, [authSession?.user?.email]);
+
+  const resolvedOrderId =
+    orderIdParam ||
+    (sessionId?.startsWith("SHOPNEST_") ? sessionId.replace("SHOPNEST_", "") : null);
+
+  const isStripeSession = Boolean(sessionId && sessionId.startsWith("cs_"));
+  const hasValidIdentifier = Boolean(isStripeSession || resolvedOrderId);
+
+  const missingSessionError = !hasValidIdentifier
+    ? "No payment session or order was provided."
+    : null;
+
+  useEffect(() => {
+    if (!hasValidIdentifier) return;
 
     let isMounted = true;
 
-    verifyStripeCheckoutSession(sessionId)
-      .then(async (res) => {
-        if (!isMounted) return;
+    if (isStripeSession && sessionId) {
+      verifyStripeCheckoutSession(sessionId)
+        .then(async (res) => {
+          if (!isMounted) return;
 
-        if (res.customerEmail) {
-          setCustomerEmail(res.customerEmail);
-        }
-
-        // If order was attached to verify response, use it
-        if (res.order && res.order.items) {
-          setOrder(res.order);
-          setLoading(false);
-          return;
-        }
-
-        // Otherwise fetch full order details using getOrderById
-        if (res.orderId) {
-          try {
-            const fetchedOrder = await getOrderById(res.orderId);
-            if (isMounted) {
-              setOrder(fetchedOrder);
-            }
-          } catch (err) {
-            console.error("Failed to load order details:", err);
+          if (res.customerEmail) {
+            setCustomerEmail(res.customerEmail);
+          } else if (authSession?.user?.email) {
+            setCustomerEmail(authSession.user.email);
           }
-        }
-        if (isMounted) {
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
+
+          // If order was attached to verify response, use it
+          if (res.order && res.order.items) {
+            setOrder(res.order);
+            if (res.order.customerEmail) {
+              setCustomerEmail(res.order.customerEmail);
+            }
+            setLoading(false);
+            return;
+          }
+
+          // Otherwise fetch full order details using getOrderById
+          if (res.orderId) {
+            try {
+              const fetchedOrder = await getOrderById(res.orderId);
+              if (isMounted) {
+                setOrder(fetchedOrder);
+                if (fetchedOrder.customerEmail) {
+                  setCustomerEmail(fetchedOrder.customerEmail);
+                }
+              }
+            } catch (err) {
+              console.error("Failed to load order details:", err);
+            }
+          }
+          if (isMounted) {
+            setLoading(false);
+          }
+        })
+        .catch((err) => {
+          if (!isMounted) return;
           console.error("Verification failed:", err);
           setError(
             err instanceof Error
@@ -63,13 +97,84 @@ function PaymentSuccessContent() {
               : "Failed to verify your payment session."
           );
           setLoading(false);
-        }
-      });
+        });
+    } else if (resolvedOrderId) {
+      verifySSLCommerzPayment({
+        orderId: resolvedOrderId,
+        sessionId: sessionId || undefined,
+        val_id: valId,
+      })
+        .then(async (res) => {
+          if (!isMounted) return;
+
+          if (res.customerEmail) {
+            setCustomerEmail(res.customerEmail);
+          } else if (authSession?.user?.email) {
+            setCustomerEmail(authSession.user.email);
+          }
+
+          if (res.order && res.order.items) {
+            setOrder(res.order);
+            if (res.order.customerEmail) {
+              setCustomerEmail(res.order.customerEmail);
+            }
+            setLoading(false);
+            return;
+          }
+
+          try {
+            const fetchedOrder = await getOrderById(resolvedOrderId);
+            if (isMounted) {
+              setOrder(fetchedOrder);
+              if (fetchedOrder.customerEmail) {
+                setCustomerEmail(fetchedOrder.customerEmail);
+              }
+            }
+          } catch (err) {
+            console.error("Failed to load order details:", err);
+          }
+
+          if (isMounted) {
+            setLoading(false);
+          }
+        })
+        .catch(async (err) => {
+          if (!isMounted) return;
+          console.warn(
+            "SSLCommerz verification returned an error, falling back to getOrderById:",
+            err
+          );
+
+          try {
+            const fetchedOrder = await getOrderById(resolvedOrderId);
+            if (isMounted) {
+              setOrder(fetchedOrder);
+              if (fetchedOrder.customerEmail) {
+                setCustomerEmail(fetchedOrder.customerEmail);
+              } else if (authSession?.user?.email) {
+                setCustomerEmail(authSession.user.email);
+              }
+              setLoading(false);
+            }
+          } catch (fetchErr) {
+            if (isMounted) {
+              console.error("Failed to load order:", fetchErr);
+              setError(
+                err instanceof Error
+                  ? err.message
+                  : "Failed to verify your payment session."
+              );
+              setLoading(false);
+            }
+          }
+        });
+    }
 
     return () => {
       isMounted = false;
     };
-  }, [sessionId]);
+  }, [sessionId, resolvedOrderId, isStripeSession, hasValidIdentifier, valId, authSession?.user?.email]);
+
 
   const formatDate = (dateStr?: string | Date) => {
     const d = dateStr ? new Date(dateStr) : new Date();
@@ -80,7 +185,7 @@ function PaymentSuccessContent() {
   };
 
   const finalError = error || missingSessionError;
-  const isVerifying = sessionId ? loading : false;
+  const isVerifying = hasValidIdentifier ? loading : false;
 
   if (isVerifying) {
     return (
