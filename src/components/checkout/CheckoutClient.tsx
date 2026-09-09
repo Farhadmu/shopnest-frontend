@@ -48,18 +48,19 @@ export function CheckoutClient({ initialCart, initialAddresses }: CheckoutClient
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // ── For OrderSummary re-render when shipping/payment changes ──────────────
-  const [shippingFee, setShippingFee] = useState(120);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
+  const [division, setDivision] = useState("Dhaka");
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleAddressChange = (data: AddressFormData) => {
     addressRef.current = data;
+    setDivision(data.division);
   };
 
-  const handleShippingChange = (method: ShippingMethod, price: number) => {
+  const handleShippingChange = (method: ShippingMethod, _price: number) => {
     shippingMethodRef.current = method;
-    shippingFeeRef.current = price;
-    setShippingFee(price);
+    // Shipping fee is determined by division, not shipping method (backend compatibility)
+    // This is kept for UX but fee comes from division
   };
 
   const handlePaymentChange = (method: PaymentMethod) => {
@@ -125,6 +126,9 @@ export function CheckoutClient({ initialCart, initialAddresses }: CheckoutClient
 
   const subtotal = initialCart.subtotal;
 
+  // Calculate shipping fee based on division (matching backend logic)
+  const shippingFee = division === "Dhaka" ? 60 : 120;
+
   return (
     <div className="min-h-screen dark:bg-[#090614]">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
@@ -157,10 +161,9 @@ export function CheckoutClient({ initialCart, initialAddresses }: CheckoutClient
           <div>
             <OrderSummary
               cart={initialCart}
-              shippingFee={shippingFee}
+              division={division}
               paymentMethod={paymentMethod}
               subtotal={subtotal}
-              total={Math.max(0, subtotal + shippingFee)}
               initialCoupon={initialCoupon}
               isSubmitting={isSubmitting}
               submitError={submitError}
