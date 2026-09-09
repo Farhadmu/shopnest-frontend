@@ -35,7 +35,7 @@ export function CouponRequestCard({ coupon, onApprove, onReject, onReport }: Cou
           <div>
             <p className="text-[10px] font-bold uppercase text-muted">Value</p>
             <p className="font-bold text-text">
-              {coupon.type === "percentage" ? `${coupon.value}% OFF` : `${formatCurrency(coupon.value)} FLAT`}
+              {coupon.type === "percentage" ? `${coupon.value}% OFF` : coupon.type === "free-shipping" ? "FREE SHIPPING" : `${formatCurrency(coupon.value)} FLAT`}
             </p>
           </div>
           <div>

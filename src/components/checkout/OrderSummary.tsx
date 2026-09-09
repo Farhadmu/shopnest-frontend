@@ -12,9 +12,8 @@ import { CheckoutCard } from "./CheckoutCard";
 
 interface OrderSummaryProps {
   cart: Cart;
-  shippingFee: number;
+  division: string;
   paymentMethod: PaymentMethod;
-  total: number;
   subtotal: number;
   /** Initial coupon code (e.g. from URL query param) */
   initialCoupon?: string;
@@ -25,9 +24,8 @@ interface OrderSummaryProps {
 
 export function OrderSummary({
   cart,
-  shippingFee,
+  division,
   paymentMethod,
-  total: externalTotal,
   subtotal,
   initialCoupon = "",
   isSubmitting,
@@ -35,30 +33,45 @@ export function OrderSummary({
   onPlaceOrder,
 }: OrderSummaryProps) {
   const [couponInput, setCouponInput] = useState(initialCoupon);
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number; type?: string; freeShipping?: boolean } | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [isApplying, setIsApplying] = useState(false);
 
   const discount = appliedCoupon?.discount ?? 0;
-  const total = Math.max(0, subtotal - discount + shippingFee);
+  const hasFreeShipping = appliedCoupon?.freeShipping ?? false;
+  
+  // Calculate shipping fee based on division (matching backend: Dhaka=60, Others=120)
+  const baseShippingFee = division === "Dhaka" ? 60 : 120;
+  const effectiveShippingFee = hasFreeShipping ? 0 : baseShippingFee;
+  const total = Math.max(0, subtotal - discount + effectiveShippingFee);
 
   // Auto-apply coupon from URL if present
   useEffect(() => {
     if (initialCoupon && !appliedCoupon) {
-      validateCoupon(initialCoupon, subtotal)
-        .then((res) => setAppliedCoupon({ code: res.code, discount: res.discount }))
+      validateCoupon(initialCoupon, cart.items)
+        .then((res) => setAppliedCoupon({
+          code: res.code,
+          discount: res.discount,
+          type: res.type,
+          freeShipping: res.freeShipping ?? res.type === "free-shipping",
+        }))
         .catch(() => undefined);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialCoupon, subtotal]);
+  }, [initialCoupon, cart.items]);
 
   const handleApplyCoupon = async () => {
     if (!couponInput.trim()) return;
     setIsApplying(true);
     setCouponError(null);
     try {
-      const res = await validateCoupon(couponInput.trim(), subtotal);
-      setAppliedCoupon({ code: res.code, discount: res.discount });
+      const res = await validateCoupon(couponInput.trim(), cart.items);
+      setAppliedCoupon({
+        code: res.code,
+        discount: res.discount,
+        type: res.type,
+        freeShipping: res.freeShipping ?? res.type === "free-shipping",
+      });
     } catch (err) {
       setAppliedCoupon(null);
       setCouponError(getErrorMessage(err));
@@ -127,7 +140,11 @@ export function OrderSummary({
               <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
               <div>
                 <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">{appliedCoupon.code}</p>
-                <p className="text-[10px] text-emerald-600 dark:text-emerald-500">-{formatCurrency(appliedCoupon.discount)} saved</p>
+                {appliedCoupon.freeShipping ? (
+                  <p className="text-[10px] text-emerald-600 dark:text-emerald-500">Free shipping applied</p>
+                ) : (
+                  <p className="text-[10px] text-emerald-600 dark:text-emerald-500">-{formatCurrency(appliedCoupon.discount)} saved</p>
+                )}
               </div>
             </div>
             <button
@@ -176,7 +193,9 @@ export function OrderSummary({
 
         <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
           <span className="flex items-center gap-1"><Truck className="w-3 h-3" /> Shipping</span>
-          <span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(shippingFee)}</span>
+          <span className="font-semibold text-slate-700 dark:text-slate-200">
+            {hasFreeShipping ? "FREE" : formatCurrency(effectiveShippingFee)}
+          </span>
         </div>
 
         <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
