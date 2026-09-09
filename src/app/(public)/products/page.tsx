@@ -1,5 +1,5 @@
 import React from "react";
-import { getProductsPaged, PagedProducts } from "@/lib/api/products";
+import { getProductsPaged, PagedProducts, getStoreOptions, StoreOption, getSellerOptions } from "@/lib/api/products";
 import { getCategories, Category } from "@/lib/api/categories";
 import { ProductsHero } from "@/components/products/listing/ProductsHero";
 import { CategoryChipsBar } from "@/components/products/listing/CategoryChipsBar";
@@ -19,7 +19,7 @@ export interface ProductsPageProps {
   searchParams: Promise<ProductsQueryState>;
 }
 
-const PAGE_SIZE = 24;
+const PAGE_SIZE = 12;
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
   const params = await searchParams;
@@ -30,29 +30,29 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const maxPrice = params.maxPrice ?? "";
   const sort = params.sort ?? "newest";
   const page = Math.max(1, Number(params.page ?? 1) || 1);
-
-  // NOTE: `store`, `rating`, `inStock`, `freeDelivery`, `verified`, and
-  // `aiPick` are rendered as real toggleable links (they update the URL and
-  // survive navigation/sharing), but the current `/products` API does not
-  // yet accept these as query filters.
-  // TODO(backend): extend getProductsPaged()/`/products` to accept
-  // store/rating/inStock/freeDelivery/verified/aiPick so these filters
-  // actually narrow the result set server-side.
+  const store = params.store ?? "";
+  const seller = params.seller ?? "";
+  const productRating = params.productRating ?? "";
 
   let data: PagedProducts = { items: [], total: 0, page: 1, limit: PAGE_SIZE, totalPages: 1 };
   let categories: Category[] = [];
   let allCategoriesTotal = 0;
   let categoryCounts: Record<string, number> = {};
+  let storeOptions: StoreOption[] = [];
+  let sellerOptions: StoreOption[] = [];
 
   const sharedFilters = {
     search: search.trim() || undefined,
+    store: store || undefined,
+    seller: seller || undefined,
+    productRating: productRating || undefined,
     minPrice: minPrice ? Number(minPrice) : undefined,
     maxPrice: maxPrice ? Number(maxPrice) : undefined,
     sort,
   };
 
   try {
-    const [mainData, categoriesResult, allTotalResult] = await Promise.all([
+    const [mainData, categoriesResult, allTotalResult, storesResult, sellersResult] = await Promise.all([
       getProductsPaged({
         page,
         limit: PAGE_SIZE,
@@ -60,22 +60,17 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         ...sharedFilters,
       }),
       getCategories().catch(() => []),
-      // "All Categories" must always reflect the grand total (current
-      // search/price/sort filters only) — never the count of whichever
-      // single category happens to be selected right now.
       getProductsPaged({ page: 1, limit: 1, ...sharedFilters }).catch(() => null),
+      getStoreOptions().catch(() => []),
+      getSellerOptions().catch(() => []),
     ]);
 
     data = mainData;
     categories = categoriesResult;
     allCategoriesTotal = allTotalResult?.total ?? mainData.total;
+    storeOptions = storesResult;
+    sellerOptions = sellersResult;
 
-    // Real per-category counts (one lightweight `limit: 1` request per
-    // category, run in parallel, just to read the `total` from the
-    // response headers) — replaces the earlier placeholder/dummy count.
-    // TODO(backend): if the category list grows large, replace this with a
-    // single `/categories?withCounts=true`-style endpoint instead of N
-    // parallel requests.
     const countEntries = await Promise.all(
       categories.map(async (cat) => {
         try {
@@ -94,7 +89,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const query: ProductsQueryState = { ...params, page: String(page) };
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-20 pt-4 sm:px-6 lg:px-8">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-20 sm:px-6 lg:px-8">
       <ProductsHero defaultSearch={search} />
 
       <CategoryChipsBar
@@ -106,7 +101,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       />
 
       <div className="flex flex-col items-start gap-6 lg:flex-row">
-        <ProductsFilterSidebar query={query} />
+        <ProductsFilterSidebar query={query} sellerOptions={sellerOptions} />
 
         <ProductsResultsPanel
           products={data.items}

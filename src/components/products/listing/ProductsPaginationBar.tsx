@@ -7,7 +7,6 @@ export interface ProductsPaginationBarProps {
   page: number;
   totalPages: number;
   total: number;
-  storesCount?: number;
   query: ProductsQueryState;
 }
 
@@ -26,7 +25,7 @@ function getPageList(current: number, total: number): (number | "...")[] {
   return result;
 }
 
-export function ProductsPaginationBar({ page, totalPages, total, storesCount = 24, query }: ProductsPaginationBarProps) {
+export function ProductsPaginationBar({ page, totalPages, total, query }: ProductsPaginationBarProps) {
   const pages = getPageList(page, totalPages);
 
   return (
@@ -34,7 +33,7 @@ export function ProductsPaginationBar({ page, totalPages, total, storesCount = 2
       <div className="text-xs text-muted">
         Showing <span className="font-bold text-text">{page}</span> of{" "}
         <span className="font-bold text-text">{totalPages}</span> pages &middot;{" "}
-        <span className="font-bold text-text">{total}</span> verified products across {storesCount} stores
+        <span className="font-bold text-text">{total}</span> verified products
       </div>
 
       <div className="flex items-center gap-1.5">

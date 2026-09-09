@@ -9,21 +9,9 @@ export interface StoreFilterOption {
   rating: number;
 }
 
-/**
- * TODO(backend): there is no "stores with product counts" endpoint yet.
- * Using representative store names until `/sellers/stores?withCounts=true`
- * (or similar) exists — swap this list for real data once it does.
- */
-export const DUMMY_STORE_OPTIONS: StoreFilterOption[] = [
-  { id: "nova-tech", name: "Nova Tech", rating: 4.9 },
-  { id: "urban-loom", name: "Urban Loom", rating: 4.8 },
-  { id: "homeaura", name: "HomeAura", rating: 4.7 },
-  { id: "aura-skin", name: "Aura Skin", rating: 4.9 },
-  { id: "booknest", name: "BookNest", rating: 4.9 },
-];
-
 export interface ProductsFilterSidebarProps {
   query: ProductsQueryState;
+  sellerOptions?: StoreFilterOption[];
 }
 
 function HiddenFields({ query, omit }: { query: ProductsQueryState; omit: (keyof ProductsQueryState)[] }) {
@@ -38,23 +26,24 @@ function HiddenFields({ query, omit }: { query: ProductsQueryState; omit: (keyof
   );
 }
 
-export function ProductsFilterSidebar({ query }: ProductsFilterSidebarProps) {
+export function ProductsFilterSidebar({ query, sellerOptions = [] }: ProductsFilterSidebarProps) {
   const activePills: { label: string; href: string }[] = [];
   if (query.inStock === "1") activePills.push({ label: "In Stock Only", href: buildProductsHref(query, { inStock: undefined }) });
   if (query.verified === "1") activePills.push({ label: "Verified Merchants", href: buildProductsHref(query, { verified: undefined }) });
   if (query.freeDelivery === "1") activePills.push({ label: "Free Delivery", href: buildProductsHref(query, { freeDelivery: undefined }) });
   if (query.aiPick === "1") activePills.push({ label: "AI Recommended", href: buildProductsHref(query, { aiPick: undefined }) });
   if (query.rating) activePills.push({ label: `${query.rating}★ & Up`, href: buildProductsHref(query, { rating: undefined }) });
-  if (query.store) {
-    for (const id of query.store.split(",").filter(Boolean)) {
-      const store = DUMMY_STORE_OPTIONS.find((s) => s.id === id);
-      if (store) activePills.push({ label: store.name, href: buildProductsHref(query, { store: toggleInList(query.store, id) }) });
+  if (query.productRating) activePills.push({ label: `${query.productRating}★ & Up`, href: buildProductsHref(query, { productRating: undefined }) });
+  if (query.seller) {
+    for (const id of query.seller.split(",").filter(Boolean)) {
+      const seller = sellerOptions.find((s) => s.id === id);
+      if (seller) activePills.push({ label: seller.name, href: buildProductsHref(query, { seller: toggleInList(query.seller, id) }) });
     }
   }
 
   return (
     <aside className="flex w-full shrink-0 flex-col gap-4 lg:sticky lg:top-24 lg:w-72">
-      {/* Filter header + active pills + store list + rating */}
+      {/* Filter header + active pills + product rating + seller list + merchant rating */}
       <div className="flex flex-col gap-4 rounded-2xl bg-surface p-4 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -80,41 +69,57 @@ export function ProductsFilterSidebar({ query }: ProductsFilterSidebarProps) {
             ))}
           </div>
         )}
-
-        {/* Shop by Store */}
+        {/* Shop by Seller */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase tracking-wider text-muted">Shop by Store</span>
-            <span className="text-[10px] font-bold text-muted">{DUMMY_STORE_OPTIONS.length} Stores</span>
+            <span className="text-[10px] font-black uppercase tracking-wider text-muted">Shop by Seller</span>
+            <span className="text-[10px] font-bold text-muted">{sellerOptions.length} Sellers</span>
           </div>
           <div className="flex flex-col gap-1">
-            {DUMMY_STORE_OPTIONS.map((store) => {
-              const checked = isInList(query.store, store.id);
+            {sellerOptions.map((seller) => {
+              const checked = isInList(query.seller, seller.id);
               return (
                 <Link
-                  key={store.id}
-                  href={buildProductsHref(query, { store: toggleInList(query.store, store.id) })}
+                  key={seller.id}
+                  href={buildProductsHref(query, { seller: toggleInList(query.seller, seller.id) })}
                   className="flex items-center justify-between rounded-lg p-2 transition-colors hover:bg-muted-bg"
                 >
                   <span className="flex items-center gap-2.5">
                     <span
-                      className={`grid h-4 w-4 shrink-0 place-items-center rounded border ${
-                        checked ? "border-primary bg-primary text-white" : "border-border"
-                      }`}
+                      className={`grid h-4 w-4 shrink-0 place-items-center rounded border ${checked ? "border-primary bg-primary text-white" : "border-border"
+                        }`}
                     >
                       {checked && <span className="text-[9px]">✓</span>}
                     </span>
-                    <span className="text-sm font-semibold text-text">{store.name}</span>
+                    <span className="text-sm font-semibold text-text">{seller.name}</span>
                   </span>
                   <span className="flex items-center gap-1 text-xs font-bold text-muted">
                     <FiStar size={12} className="fill-amber-400 text-amber-400" />
-                    {store.rating}
+                    {seller.rating}
                   </span>
                 </Link>
               );
             })}
           </div>
         </div>
+
+        {/* Product Rating */}
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[10px] font-black uppercase tracking-wider text-muted">Product Rating</span>
+          {["4.5", "4.0", "3.0"].map((r) => (
+            <Link
+              key={r}
+              href={buildProductsHref(query, { productRating: query.productRating === r ? undefined : r })}
+              className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 text-sm font-semibold transition-colors ${query.productRating === r ? "bg-primary/10 text-primary" : "text-text hover:bg-muted-bg"
+                }`}
+            >
+              <span className="flex items-center gap-1">
+                <FiStar size={14} className="fill-amber-400 text-amber-400" /> {r} &amp; Up
+              </span>
+            </Link>
+          ))}
+        </div>
+
 
         {/* Price Range */}
         <form action="/products" method="GET" className="flex flex-col gap-2 border-t border-border pt-3">
@@ -166,9 +171,8 @@ export function ProductsFilterSidebar({ query }: ProductsFilterSidebarProps) {
                   <Icon size={15} className="text-primary" /> {label}
                 </span>
                 <span
-                  className={`grid h-4 w-4 place-items-center rounded border ${
-                    checked ? "border-primary bg-primary text-white" : "border-border"
-                  }`}
+                  className={`grid h-4 w-4 place-items-center rounded border ${checked ? "border-primary bg-primary text-white" : "border-border"
+                    }`}
                 >
                   {checked && <span className="text-[9px]">✓</span>}
                 </span>
@@ -177,23 +181,6 @@ export function ProductsFilterSidebar({ query }: ProductsFilterSidebarProps) {
           })}
         </div>
 
-        {/* Merchant Rating */}
-        <div className="flex flex-col gap-1.5 border-t border-border pt-3">
-          <span className="text-[10px] font-black uppercase tracking-wider text-muted">Merchant Rating</span>
-          {["4.5", "4.0"].map((r) => (
-            <Link
-              key={r}
-              href={buildProductsHref(query, { rating: query.rating === r ? undefined : r })}
-              className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 text-sm font-semibold transition-colors ${
-                query.rating === r ? "bg-primary/10 text-primary" : "text-text hover:bg-muted-bg"
-              }`}
-            >
-              <span className="flex items-center gap-1">
-                <FiStar size={14} className="fill-amber-400 text-amber-400" /> {r} &amp; Up
-              </span>
-            </Link>
-          ))}
-        </div>
       </div>
 
       {/* AI Advisor mini card */}

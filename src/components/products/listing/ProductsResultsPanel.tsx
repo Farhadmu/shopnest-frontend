@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FiGrid, FiList } from "react-icons/fi";
 import type { Product } from "@/lib/api/products";
 import { ProductCard } from "@/components/products/ProductCard";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -33,7 +32,6 @@ export interface ProductsResultsPanelProps {
 export function ProductsResultsPanel({ products, total, page, limit, sort }: ProductsResultsPanelProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [view, setView] = useState<"grid" | "list">("grid");
 
   const handleSortChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -75,25 +73,6 @@ export function ProductsResultsPanel({ products, total, page, limit, sort }: Pro
               ))}
             </select>
           </div>
-
-          <div className="flex items-center gap-1 rounded-lg bg-muted-bg p-1">
-            <button
-              type="button"
-              aria-label="Grid view"
-              onClick={() => setView("grid")}
-              className={`rounded p-1.5 transition-colors ${view === "grid" ? "bg-surface text-primary shadow-sm" : "text-muted"}`}
-            >
-              <FiGrid size={16} />
-            </button>
-            <button
-              type="button"
-              aria-label="List view"
-              onClick={() => setView("list")}
-              className={`rounded p-1.5 transition-colors ${view === "list" ? "bg-surface text-primary shadow-sm" : "text-muted"}`}
-            >
-              <FiList size={16} />
-            </button>
-          </div>
         </div>
       </div>
 
@@ -104,15 +83,9 @@ export function ProductsResultsPanel({ products, total, page, limit, sort }: Pro
           description="Try widening your price range or clearing a filter."
         />
       ) : (
-        <div
-          className={
-            view === "grid"
-              ? "grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
-              : "grid grid-cols-1 gap-3"
-          }
-        >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {products.map((product, index) => (
-            <ProductCard key={product.id} product={product} index={index} compact={view === "list"} />
+            <ProductCard key={product.id} product={product} index={index} />
           ))}
         </div>
       )}

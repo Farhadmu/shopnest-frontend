@@ -81,8 +81,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const savings = hasDiscount ? product.price - discountPrice : 0;
   const category = product.category || "General";
   const stock = product.stock ?? 10;
-  const ratingAvg = product.ratingAvg ?? (product.rating ? String(product.rating) : "4.8");
-  const ratingCount = product.ratingCount ?? 12;
+  const ratingAvg = product.ratingAvg ?? 0;
+  const ratingCount = product.ratingCount ?? 0;
 
   const handleCartClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -271,12 +271,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Card Body / Content */}
         <CardContent className="flex flex-1 flex-col p-4">
           {/* Rating & Verification */}
-          <div className="mb-1.5 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1">
-              <FaStar size={11} className="fill-amber-400 text-amber-400" />
-              <span className="text-xs font-black text-text">{ratingAvg}</span>
-              <span className="text-[10px] text-muted">({ratingCount})</span>
-            </div>
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1">
+                <FaStar size={11} className="fill-amber-400 text-amber-400" />
+                <span className="text-xs font-black text-text">
+                  {ratingAvg > 0 ? ratingAvg.toFixed(1) : "—"}
+                </span>
+                <span className="text-[10px] text-muted">
+                  {ratingCount > 0
+                    ? `(${ratingCount} review${ratingCount !== 1 ? "s" : ""})`
+                    : "(No reviews)"}
+                </span>
+              </div>
 
             <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
               Verified
