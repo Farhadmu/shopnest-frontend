@@ -10,7 +10,7 @@ import { CouponModal } from "@/components/coupons/CouponModal";
 import { CouponTable } from "@/components/coupons/CouponTable";
 import { CouponRequestCard } from "@/components/coupons/CouponRequestCard";
 import { CategoryAllocationPanel, HomepageQueuePanel } from "@/components/coupons/CategoryAllocationPanel";
-import { approveCoupon, deleteCoupon, getCoupons, rejectCoupon, reportCoupon } from "@/lib/api/coupons";
+import { approveCoupon, deleteCoupon, getCoupons, rejectCoupon, reportCoupon, resolveReport } from "@/lib/api/coupons";
 import { getErrorMessage } from "@/lib/core/errors";
 import { useConfirm } from "@/context/ConfirmDialogContext";
 import type { Coupon } from "@/types/coupon";
@@ -131,6 +131,36 @@ export default function AdminCouponsPage() {
   const handleReportCancel = () => {
     setReportingCouponId(null);
     setReportNote("");
+  };
+
+  const handleResolveReport = async (id: string) => {
+    const confirmed = await confirm({
+      title: "Remove Report?",
+      message:
+        "Resolve the admin report on this coupon and restore it to active? The seller will be notified that the report has been resolved.",
+      confirmText: "Remove Report",
+      cancelText: "Cancel",
+      variant: "warning",
+    });
+    if (!confirmed) return;
+
+    try {
+      const updated = await resolveReport(id);
+      setCoupons((prev) =>
+        prev.map((c) =>
+          c.id === id
+            ? {
+                ...c,
+                approvalStatus: updated.approvalStatus,
+                isActive: updated.isActive,
+                rejectionNote: updated.rejectionNote,
+              }
+            : c
+        )
+      );
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
   };
 
   const handleDelete = useCallback(async (id: string) => {
@@ -284,6 +314,7 @@ export default function AdminCouponsPage() {
             onApprove={handleApprove}
             onReject={handleRejectStart}
             onReport={handleReportStart}
+            onResolveReport={handleResolveReport}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />

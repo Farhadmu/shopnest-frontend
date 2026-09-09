@@ -72,7 +72,7 @@ export function CouponStatusChip({
 export function CouponPlacementChip({ placement }: { placement: CouponPlacement }) {
   const meta = PLACEMENT_META[placement];
   return (
-    <Chip variant="secondary" className="text-[11px] font-semibold">
+    <Chip variant="secondary" className="text-[11px] font-semibold whitespace-nowrap">
       {meta.icon} {meta.label}
     </Chip>
   );
