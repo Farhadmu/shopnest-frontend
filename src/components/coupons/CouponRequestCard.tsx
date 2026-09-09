@@ -9,10 +9,11 @@ interface CouponRequestCardProps {
   coupon: Coupon;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
+  onReport?: (id: string) => void;
 }
 
 /** Bigger review card for a single pending "homepage placement" request, used on the Admin Pending Requests tab. */
-export function CouponRequestCard({ coupon, onApprove, onReject }: CouponRequestCardProps) {
+export function CouponRequestCard({ coupon, onApprove, onReject, onReport }: CouponRequestCardProps) {
   return (
     <div className="rounded-xl border border-border bg-surface p-5 shadow-sm transition hover:shadow-md">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -50,6 +51,11 @@ export function CouponRequestCard({ coupon, onApprove, onReject }: CouponRequest
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
+          {onReport && (
+            <Button size="sm" variant="outline" onPress={() => onReport(coupon.id)}>
+              Report
+            </Button>
+          )}
           <Button size="sm" variant="outline" onPress={() => onReject(coupon.id)}>
             Reject
           </Button>

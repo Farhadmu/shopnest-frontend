@@ -7,15 +7,20 @@ import { formatCurrency } from "@/lib/utils";
 import { getProductById, type Product } from "@/lib/api/products";
 import { CouponPlacementChip, CouponStatusChip } from "./CouponStatusChip";
 import type { Coupon } from "@/types/coupon";
+import Image from "next/image";
+import { Button } from "@heroui/react";
 
 interface CouponDetailModalProps {
   coupon: Coupon | null;
   isOpen: boolean;
   onClose: () => void;
+  onApprove?: (id: string) => void;
+  onReject?: (id: string) => void;
+  onReport?: (id: string) => void;
 }
 
 /** A read-only detail modal that shows everything about a coupon — shared by admin & seller pages. */
-export function CouponDetailModal({ coupon, isOpen, onClose }: CouponDetailModalProps) {
+export function CouponDetailModal({ coupon, isOpen, onClose, onApprove, onReject, onReport }: CouponDetailModalProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
 
@@ -66,7 +71,7 @@ export function CouponDetailModal({ coupon, isOpen, onClose }: CouponDetailModal
     >
       <div className="relative my-auto flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
         {/* Header */}
-        <div className="flex flex-shrink-0 items-center justify-between border-b border-border px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
               <Ticket className="h-5 w-5" />
@@ -90,7 +95,7 @@ export function CouponDetailModal({ coupon, isOpen, onClose }: CouponDetailModal
         <div className="custom-scrollbar flex flex-col gap-5 overflow-y-auto p-6">
 
           {/* ── Coupon Preview Card ── */}
-          <div className="rounded-xl border border-primary/25 bg-gradient-to-r from-primary/10 via-primary/5 to-surface p-4">
+          <div className="rounded-xl border border-primary/25 bg-linear-to-r from-primary/10 via-primary/5 to-surface p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3.5">
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/20">
@@ -178,10 +183,12 @@ export function CouponDetailModal({ coupon, isOpen, onClose }: CouponDetailModal
                         key={product.id}
                         className="flex items-center gap-2.5 rounded-lg border border-border bg-background/60 px-3 py-2"
                       >
-                        {product.images?.[0] ? (
-                          <img
+                        {product.images && product.images.length > 0 && product.images[0] ? (
+                          <Image
+                            width={48}
+                            height={48}
                             src={product.images[0]}
-                            alt={product.title}
+                            alt={product.title || "Product image"}
                             className="h-9 w-9 rounded-lg object-cover border border-border"
                           />
                         ) : (
@@ -268,6 +275,17 @@ export function CouponDetailModal({ coupon, isOpen, onClose }: CouponDetailModal
             )}
           </Section>
 
+          {/* ── Admin Report / Rejection Note ── */}
+          {coupon.rejectionNote && (
+            <div className="rounded-xl border border-error/30 bg-error/10 p-4">
+              <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-error">
+                <Shield className="h-4 w-4" />
+                Admin Report / Rejection Note
+              </div>
+              <p className="text-sm font-medium text-text">{coupon.rejectionNote}</p>
+            </div>
+          )}
+
           {/* ── Metadata ── */}
           <Section icon={<Shield className="h-4 w-4" />} title="Metadata">
             <div className="grid grid-cols-2 gap-3">
@@ -276,11 +294,6 @@ export function CouponDetailModal({ coupon, isOpen, onClose }: CouponDetailModal
                 value={coupon.createdByRole === "admin" ? "Admin" : `Seller #${coupon.createdBy.slice(-6)}`}
               />
               <DetailItem label="Approval Status" value={coupon.approvalStatus} />
-              {coupon.rejectionNote && (
-                <div className="col-span-2">
-                  <DetailItem label="Rejection Note" value={coupon.rejectionNote} />
-                </div>
-              )}
               <DetailItem label="Active" value={coupon.isActive ? "✅ Yes" : "❌ No"} />
               <DetailItem
                 label="Last Updated"
@@ -291,7 +304,24 @@ export function CouponDetailModal({ coupon, isOpen, onClose }: CouponDetailModal
         </div>
 
         {/* Footer */}
-        <div className="flex flex-shrink-0 items-center justify-end border-t border-border bg-background/60 px-6 py-4">
+        <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-2 border-t border-border bg-background/60 px-6 py-4">
+          <div className="flex items-center gap-2">
+            {(coupon?.approvalStatus === "pending" || coupon?.approvalStatus === "reported") && onApprove && (
+              <Button size="sm" variant="primary" className="cursor-pointer font-bold" onPress={() => void (async () => { await onApprove(coupon.id); onClose(); })()}>
+                Approve
+              </Button>
+            )}
+            {(coupon?.approvalStatus === "pending" || coupon?.approvalStatus === "reported") && onReject && (
+              <Button size="sm" variant="danger" className="cursor-pointer font-bold" onPress={() => { onReject(coupon.id); onClose(); }}>
+                Reject
+              </Button>
+            )}
+            {onReport && coupon?.createdByRole === "seller" && (
+              <Button size="sm" variant="outline" className="cursor-pointer font-bold text-warning border-warning/40 hover:bg-warning/10" onPress={() => { onReport(coupon.id); onClose(); }}>
+                Report
+              </Button>
+            )}
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -319,11 +349,11 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
   );
 }
 
-function DetailItem({ label, value }: { label: string; value: string }) {
+function DetailItem({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
       <span className="text-[11px] font-semibold text-muted">{label}</span>
-      <p className="mt-0.5 text-sm font-medium text-text capitalize">{value}</p>
+      <p className="mt-0.5 text-sm font-medium text-text">{value}</p>
     </div>
   );
 }
