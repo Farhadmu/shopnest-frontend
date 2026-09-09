@@ -3,10 +3,14 @@ import { StoreVoucher as StoreVoucherType } from "@/types/store";
 
 interface StoreVoucherProps {
   voucher: StoreVoucherType;
+  copied?: boolean;
+  onCopy?: () => void;
 }
 
 const StoreVoucher = ({
   voucher,
+  copied = false,
+  onCopy,
 }: StoreVoucherProps) => {
   return (
     <div className="rounded-2xl border border-dashed border-blue-300 bg-blue-50 p-5 dark:border-blue-500/40 dark:bg-blue-500/10">
@@ -35,12 +39,14 @@ const StoreVoucher = ({
 
         <button
           type="button"
+          onClick={onCopy}
           aria-label="Copy voucher code"
           className="flex h-8 w-8 items-center justify-center rounded-lg text-blue-600 transition hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-500/10"
         >
           <FaCopy />
         </button>
       </div>
+      {copied && <p className="mt-2 text-xs font-semibold text-green-600">Voucher code copied</p>}
     </div>
   );
 };

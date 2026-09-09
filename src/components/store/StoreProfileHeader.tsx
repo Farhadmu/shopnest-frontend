@@ -9,10 +9,16 @@ import { StoreData } from "@/types/store";
 
 interface StoreProfileHeaderProps {
   store: StoreData;
+  followed?: boolean;
+  onFollow?: () => void;
+  onMessage?: () => void;
 }
 
 const StoreProfileHeader = ({
   store,
+  followed = false,
+  onFollow,
+  onMessage,
 }: StoreProfileHeaderProps) => {
   return (
     <div className="-mt-12 relative z-10">
@@ -72,14 +78,16 @@ const StoreProfileHeader = ({
           <div className="flex shrink-0 gap-2">
             <button
               type="button"
+              onClick={onFollow}
               className="flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
             >
-              <FaUserPlus />
-              Follow Store
+              <FaUserPlus className={followed ? "text-rose-500" : ""} />
+              {followed ? "Following" : "Follow Store"}
             </button>
 
             <button
               type="button"
+              onClick={onMessage}
               className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
             >
               <FaCommentAlt />
