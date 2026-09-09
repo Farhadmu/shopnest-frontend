@@ -129,7 +129,7 @@ export function ProductsClient({
   const [loading, setLoading] = useState<boolean>(false);
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
 
-  const PAGE_SIZE = 24;
+  const PAGE_SIZE = 12;
 
   const showToast = (msg: string, type: "success" | "error" = "success") => {
     setToast({ msg, type });
