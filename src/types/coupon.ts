@@ -1,4 +1,4 @@
-export type CouponDiscountType = "percentage" | "fixed";
+export type CouponDiscountType = "percentage" | "fixed" | "free-shipping";
 export type CouponScope = "all-products" | "specific-category" | "specific-products";
 export type CouponPlacement = "store" | "homepage" | "private";
 export type CouponApprovalStatus = "approved" | "pending" | "rejected" | "reported";
@@ -38,6 +38,10 @@ export interface Coupon {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+
+  /** Attached by the public homepage endpoint: the coupon's seller's store info. */
+  storeName?: string;
+  logo?: string;
 }
 
 export interface CreateCouponInput {

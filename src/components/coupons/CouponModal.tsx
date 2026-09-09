@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button, Card, Chip, Description, Input, Label } from "@heroui/react";
-import { Percent, Sparkles, X, Ticket } from "lucide-react";
+import { Percent, Sparkles, X, Ticket, Truck } from "lucide-react";
 import { createCoupon, updateCoupon, getCategoryLimit } from "@/lib/api/coupons";
 import { getErrorMessage } from "@/lib/core/errors";
 import { CouponScopeFields } from "./CouponScopeFields";
@@ -133,7 +133,9 @@ export function CouponModal({ mode, isOpen, onClose, onCreated, couponToEdit }: 
     setError(null);
     if (!form.code.trim()) return setError("Coupon code is required.");
     if (form.code.trim().length < 3) return setError("Coupon code must be at least 3 characters.");
-    if (!form.value || form.value <= 0) return setError("Discount value must be greater than 0.");
+    if (form.type !== "free-shipping" && (!form.value || form.value <= 0)) {
+      return setError("Discount value must be greater than 0.");
+    }
     if (form.type === "percentage" && form.value > 100) {
       return setError("Percentage discount cannot exceed 100%.");
     }
@@ -172,7 +174,7 @@ export function CouponModal({ mode, isOpen, onClose, onCreated, couponToEdit }: 
       const payload = {
         code: form.code.trim().toUpperCase(),
         type: form.type,
-        value: form.value,
+        value: form.type === "free-shipping" ? 0 : form.value,
         minPurchase: form.minPurchase,
         maxDiscount: form.type === "percentage" && form.maxDiscount ? Number(form.maxDiscount) : undefined,
         scope: form.scope,
@@ -266,8 +268,10 @@ export function CouponModal({ mode, isOpen, onClose, onCreated, couponToEdit }: 
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/20">
                     {form.type === "percentage" ? (
                       <span className="text-lg font-black tracking-tight">{form.value || 0}%</span>
-                    ) : (
+                    ) : form.type === "fixed" ? (
                       <span className="text-base font-black tracking-tight">৳{form.value || 0}</span>
+                    ) : (
+                      <Truck className="h-5 w-5" />
                     )}
                   </div>
                   <div>
@@ -276,15 +280,26 @@ export function CouponModal({ mode, isOpen, onClose, onCreated, couponToEdit }: 
                         {form.code.trim() ? form.code.toUpperCase() : "COUPON_CODE"}
                       </span>
                       <Chip size="sm" variant="soft" color="accent">
-                        {form.type === "percentage" ? "Percentage Off" : "Flat Cash Discount"}
+                        {form.type === "percentage"
+                          ? "Percentage Off"
+                          : form.type === "fixed"
+                            ? "Flat Cash Discount"
+                            : "Free Shipping"}
                       </Chip>
                     </div>
-                    <p className="mt-1 text-xs text-muted">
-                      {form.type === "percentage"
-                        ? `${form.value || 0}% off qualifying items ${form.maxDiscount ? `(Cap: ৳${form.maxDiscount})` : ""}`
-                        : `Flat ৳${form.value || 0} deducted from cart`}
-                      {form.minPurchase > 0 ? ` • Min Spend: ৳${form.minPurchase}` : " • No min spend"}
-                    </p>
+                    {form.type === "free-shipping" ? (
+                      <p className="mt-1 text-xs text-muted">
+                        <span className="font-bold text-text">FREE SHIPPING</span> • Delivery fee waived
+                        {form.minPurchase > 0 ? ` on orders above ৳${form.minPurchase}` : ""}
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-xs text-muted">
+                        {form.type === "percentage"
+                          ? `${form.value || 0}% off qualifying items ${form.maxDiscount ? `(Cap: ৳${form.maxDiscount})` : ""}`
+                          : `Flat ৳${form.value || 0} deducted from cart`}
+                        {form.minPurchase > 0 ? ` • Min Spend: ৳${form.minPurchase}` : " • No min spend"}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -342,10 +357,14 @@ export function CouponModal({ mode, isOpen, onClose, onCreated, couponToEdit }: 
                   Discount Type <span className="text-error">*</span>
                 </Label>
                 <span className="text-[11px] font-semibold text-primary">
-                  {form.type === "percentage" ? "Percentage Calculation" : "Flat Amount Deduction"}
+                  {form.type === "percentage"
+                    ? "Percentage Calculation"
+                    : form.type === "fixed"
+                      ? "Flat Amount Deduction"
+                      : "Delivery Fee Waived"}
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-muted-bg p-1">
+              <div className="grid grid-cols-3 gap-1.5 rounded-xl bg-muted-bg p-1">
                 <Button
                   type="button"
                   size="sm"
@@ -370,11 +389,25 @@ export function CouponModal({ mode, isOpen, onClose, onCreated, couponToEdit }: 
                   <span className="text-sm font-black">৳</span>
                   <span>Fixed Amount (৳)</span>
                 </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={form.type === "free-shipping" ? "primary" : "ghost"}
+                  onPress={() => patch({ type: "free-shipping", value: 0 })}
+                  className={`flex items-center justify-center gap-2 rounded-lg font-bold transition-all cursor-pointer ${
+                    form.type === "free-shipping" ? "shadow-sm" : "text-muted hover:text-text hover:bg-surface/50"
+                  }`}
+                >
+                  <Truck className="h-3.5 w-3.5" />
+                  <span>Free Shipping</span>
+                </Button>
               </div>
               <Description className="text-[11px] text-muted">
                 {form.type === "percentage"
                   ? "Calculates a dynamic % reduction based on order total."
-                  : "Deducts a fixed taka amount regardless of order total."}
+                  : form.type === "fixed"
+                    ? "Deducts a fixed taka amount regardless of order total."
+                    : "Waives the entire delivery fee — no percentage or amount to configure."}
               </Description>
             </div>
           </div>
@@ -383,42 +416,46 @@ export function CouponModal({ mode, isOpen, onClose, onCreated, couponToEdit }: 
               SECTION 2: DYNAMIC VALUE & MIN/MAX FIELDS (HeroUI)
           ========================================================= */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {/* Discount Value */}
-            <div className="flex flex-col gap-1">
-              <Label className="flex items-center justify-between text-xs font-bold text-text">
-                <span>
+            {/* Discount Value — hidden entirely for Free Shipping (no amount to enter) */}
+            {form.type !== "free-shipping" && (
+              <div className="flex flex-col gap-1">
+                <Label className="flex items-center justify-between text-xs font-bold text-text">
+                  <span>
+                    {form.type === "percentage"
+                      ? "Discount Percentage (%)"
+                      : "Flat Discount Amount (৳)"}{" "}
+                    <span className="text-error">*</span>
+                  </span>
+                  <span className="text-[11px] font-normal text-muted">
+                    {form.type === "percentage" ? "1% to 100%" : "Direct ৳ discount"}
+                  </span>
+                </Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={form.type === "percentage" ? 100 : undefined}
+                  value={String(form.value)}
+                  onChange={(e) => patch({ value: Number(e.target.value) })}
+                  placeholder={form.type === "percentage" ? "e.g. 15 for 15% off" : "e.g. 200 for ৳200 off"}
+                  fullWidth
+                />
+                <Description className="text-[11px] text-muted">
                   {form.type === "percentage"
-                    ? "Discount Percentage (%)"
-                    : "Flat Discount Amount (৳)"}{" "}
-                  <span className="text-error">*</span>
-                </span>
-                <span className="text-[11px] font-normal text-muted">
-                  {form.type === "percentage" ? "1% to 100%" : "Direct ৳ discount"}
-                </span>
-              </Label>
-              <Input
-                type="number"
-                min={1}
-                max={form.type === "percentage" ? 100 : undefined}
-                value={String(form.value)}
-                onChange={(e) => patch({ value: Number(e.target.value) })}
-                placeholder={form.type === "percentage" ? "e.g. 15 for 15% off" : "e.g. 200 for ৳200 off"}
-                fullWidth
-              />
-              <Description className="text-[11px] text-muted">
-                {form.type === "percentage"
-                  ? `Customers receive ${form.value || 0}% off qualifying cart items.`
-                  : `Customers receive flat ৳${form.value || 0} off their subtotal.`}
-              </Description>
-            </div>
+                    ? `Customers receive ${form.value || 0}% off qualifying cart items.`
+                    : `Customers receive flat ৳${form.value || 0} off their subtotal.`}
+                </Description>
+              </div>
+            )}
 
             {/* Minimum Purchase */}
-            <div className="flex flex-col gap-1">
+            <div className={`flex flex-col gap-1 ${form.type === "free-shipping" ? "sm:col-span-2" : ""}`}>
               <Label className="flex items-center justify-between text-xs font-bold text-text">
                 <span>
                   {form.type === "percentage"
                     ? "Minimum Order Value (৳)"
-                    : "Minimum Spend Requirement (৳)"}
+                    : form.type === "fixed"
+                      ? "Minimum Spend Requirement (৳)"
+                      : "Minimum Spend for Free Delivery (৳)"}
                 </span>
                 <span className="text-[11px] font-normal text-muted">
                   {form.minPurchase > 0 ? `৳${form.minPurchase} required` : "No minimum"}
@@ -435,7 +472,9 @@ export function CouponModal({ mode, isOpen, onClose, onCreated, couponToEdit }: 
               <Description className="text-[11px] text-muted">
                 {form.type === "percentage"
                   ? "Cart total required before the percentage discount applies."
-                  : `Subtotal must reach this amount to redeem the ৳${form.value || 0} discount.`}
+                  : form.type === "fixed"
+                    ? `Subtotal must reach this amount to redeem the ৳${form.value || 0} discount.`
+                    : "Orders above this subtotal qualify for free delivery."}
               </Description>
             </div>
           </div>
@@ -470,10 +509,14 @@ export function CouponModal({ mode, isOpen, onClose, onCreated, couponToEdit }: 
                     </Chip>
                   </Label>
                   <div className="flex h-10 items-center rounded-xl border border-dashed border-border bg-muted-bg/40 px-3 text-xs text-muted">
-                    Not applicable (discount is already fixed at ৳{form.value || 0})
+                    {form.type === "free-shipping"
+                      ? "Not applicable (the whole delivery fee is waived, no cap)"
+                      : `Not applicable (discount is already fixed at ৳${form.value || 0})`}
                   </div>
                   <Description className="text-[11px] text-muted">
-                    Flat vouchers are naturally capped at their exact value.
+                    {form.type === "free-shipping"
+                      ? "Free shipping coupons waive the delivery fee entirely."
+                      : "Flat vouchers are naturally capped at their exact value."}
                   </Description>
                 </>
               )}
