@@ -17,10 +17,11 @@ interface CouponDetailModalProps {
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
   onReport?: (id: string) => void;
+  onResolveReport?: (id: string) => void;
 }
 
 /** A read-only detail modal that shows everything about a coupon — shared by admin & seller pages. */
-export function CouponDetailModal({ coupon, isOpen, onClose, onApprove, onReject, onReport }: CouponDetailModalProps) {
+export function CouponDetailModal({ coupon, isOpen, onClose, onApprove, onReject, onReport, onResolveReport }: CouponDetailModalProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
 
@@ -304,14 +305,14 @@ export function CouponDetailModal({ coupon, isOpen, onClose, onApprove, onReject
         </div>
 
         {/* Footer */}
-        <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-2 border-t border-border bg-background/60 px-6 py-4">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-border bg-background/60 px-6 py-4">
           <div className="flex items-center gap-2">
-            {(coupon?.approvalStatus === "pending" || coupon?.approvalStatus === "reported") && onApprove && (
+            {coupon?.approvalStatus === "pending" && onApprove && (
               <Button size="sm" variant="primary" className="cursor-pointer font-bold" onPress={() => void (async () => { await onApprove(coupon.id); onClose(); })()}>
                 Approve
               </Button>
             )}
-            {(coupon?.approvalStatus === "pending" || coupon?.approvalStatus === "reported") && onReject && (
+            {coupon?.approvalStatus === "pending" && onReject && (
               <Button size="sm" variant="danger" className="cursor-pointer font-bold" onPress={() => { onReject(coupon.id); onClose(); }}>
                 Reject
               </Button>
@@ -319,6 +320,19 @@ export function CouponDetailModal({ coupon, isOpen, onClose, onApprove, onReject
             {onReport && coupon?.createdByRole === "seller" && (
               <Button size="sm" variant="outline" className="cursor-pointer font-bold text-warning border-warning/40 hover:bg-warning/10" onPress={() => { onReport(coupon.id); onClose(); }}>
                 Report
+              </Button>
+            )}
+            {coupon?.approvalStatus === "reported" && onResolveReport && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="cursor-pointer font-bold text-success border-success/40 hover:bg-success/10"
+                onPress={() => {
+                  onResolveReport(coupon.id);
+                  onClose();
+                }}
+              >
+                Remove Report
               </Button>
             )}
           </div>
