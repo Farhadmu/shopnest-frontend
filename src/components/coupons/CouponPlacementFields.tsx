@@ -24,7 +24,7 @@ const SELLER_PLACEMENTS: { id: CouponPlacement; title: string; desc: string; ico
 ];
 
 const ADMIN_PLACEMENTS: { id: CouponPlacement; title: string; desc: string; icon: string }[] = [
-  { id: "homepage", title: "Platform Homepage", desc: "Live across the marketplace immediately", icon: "🌐" },
+  { id: "private", title: "Private / Share Only", desc: "Shown nowhere — you share the code", icon: "🔒" },
 ];
 
 const PRESETS = [

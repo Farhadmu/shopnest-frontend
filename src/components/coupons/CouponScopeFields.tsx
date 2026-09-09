@@ -88,7 +88,7 @@ export function CouponScopeFields({
   const handleToggleCategory = (cat: Category) => {
     setLimitError(null);
     const catName = cat.name;
-    if (isLockedForCurrentSeller(cat) && !selectedCategories.includes(catName)) return;
+    if (isHomepage && isLockedForCurrentSeller(cat) && !selectedCategories.includes(catName)) return;
 
     const isSelecting = !selectedCategories.includes(catName);
     
@@ -214,7 +214,7 @@ export function CouponScopeFields({
               ) : (
                 filteredCats.map((cat) => {
                   const isChecked = selectedCategories.includes(cat.name);
-                  const isLocked = isLockedForCurrentSeller(cat) && !isChecked;
+                  const isLocked = isHomepage && isLockedForCurrentSeller(cat) && !isChecked;
                   return (
                     <label
                       key={cat.id}
