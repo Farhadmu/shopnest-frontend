@@ -650,3 +650,14 @@ export function getFallbackStore(rawId: string): StoreData {
     reviewsList: [],
   };
 }
+
+
+export async function getAllStores(): Promise<Store[]> {
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  return stores;
+}
+
+export async function getStoreDetails(id: string): Promise<StoreData> {
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  return storesDatabase[id] || getFallbackStore(id);
+}
