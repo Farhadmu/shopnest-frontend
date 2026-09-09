@@ -7,10 +7,16 @@ import { getHomepageQueueStatus } from "@/lib/api/coupons";
 import { getErrorMessage } from "@/lib/core/errors";
 import type { Coupon } from "@/types/coupon";
 
-/** Admin control: global cap on how many categories may be locked to sellers at once. */
+interface SellerLockedCount {
+  sellerId: string;
+  count: number;
+}
+
+/** Admin control: per-seller cap on how many categories may be locked for homepage coupons. */
 export function CategoryAllocationPanel() {
   const [categoryLength, setCategoryLength] = useState("");
   const [lockedCount, setLockedCount] = useState(0);
+  const [sellerLockedCounts, setSellerLockedCounts] = useState<SellerLockedCount[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -20,6 +26,7 @@ export function CategoryAllocationPanel() {
       .then((s) => {
         setCategoryLength(String(s.category_length));
         setLockedCount(s.lockedCategoriesCount);
+        setSellerLockedCounts(s.sellerLockedCounts || []);
       })
       .catch((err) => setError(getErrorMessage(err)));
   }, []);
@@ -35,6 +42,7 @@ export function CategoryAllocationPanel() {
       const res = await updateAdminSettings(value);
       setCategoryLength(String(res.category_length));
       setLockedCount(res.lockedCategoriesCount);
+      setSellerLockedCounts(res.sellerLockedCounts || []);
       setSuccess("Category limit updated.");
     } catch (err) {
       setError(getErrorMessage(err));
@@ -45,11 +53,24 @@ export function CategoryAllocationPanel() {
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-4 sm:p-5">
-      <h3 className="text-sm font-bold text-text">Category Allocation Limit</h3>
+      <h3 className="text-sm font-bold text-text">Category Allocation Limit (Per Seller)</h3>
       <p className="mt-1 text-xs text-muted">
-        Maximum number of product categories that can be locked/assigned to sellers at once.
-        Currently <span className="font-bold text-text">{lockedCount}</span> categor{lockedCount === 1 ? "y" : "ies"} locked.
+        Maximum number of product categories a single seller can have locked/assigned at once for homepage coupons.
+        Currently <span className="font-bold text-text">{lockedCount}</span> categor{lockedCount === 1 ? "y" : "ies"} locked globally across all sellers.
       </p>
+      {sellerLockedCounts.length > 0 && (
+        <div className="mt-2 max-h-40 overflow-y-auto rounded-lg border border-border bg-background/50 p-2 text-xs">
+          <p className="font-semibold text-text mb-1">Per-seller locked categories:</p>
+          <ul className="space-y-0.5">
+            {sellerLockedCounts.map((s) => (
+              <li key={s.sellerId} className="flex justify-between text-muted">
+                <span>Seller #{s.sellerId.slice(-6)}</span>
+                <span className="font-bold text-text">{s.count} / {categoryLength}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="mt-3 flex flex-wrap items-end gap-3">
         <div className="w-40">
           <Input
