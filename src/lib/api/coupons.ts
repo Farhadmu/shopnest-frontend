@@ -38,9 +38,14 @@ export async function rejectCoupon(id: string, rejectionNote?: string) {
   return clientMutation<{ success: boolean } & Coupon>(`/coupons/${id}/reject`, "PATCH", { rejectionNote });
 }
 
-/** Admin only: send a report/notification to the seller without changing coupon status. */
+/** Admin only: report a coupon, disabling it and sending a report notification to the seller. */
 export async function reportCoupon(id: string, reportNote: string) {
-  return clientMutation<{ success: boolean }>(`/coupons/${id}/report`, "PATCH", { reportNote });
+  return clientMutation<{ success: boolean } & Coupon>(`/coupons/${id}/report`, "PATCH", { reportNote });
+}
+
+/** Admin only: resolve an admin report on a coupon, restoring it to approved/active. */
+export async function resolveReport(id: string) {
+  return clientMutation<{ success: boolean } & Coupon>(`/coupons/${id}/resolve-report`, "PATCH");
 }
 
 /** Seller/admin: delete a coupon they own (admin can delete any). */

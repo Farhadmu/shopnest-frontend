@@ -18,6 +18,7 @@ interface CouponTableProps {
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
   onReport?: (id: string) => void;
+  onResolveReport?: (id: string) => void;
 }
 
 function scopeLabel(coupon: Coupon): string {
@@ -32,7 +33,7 @@ function scopeLabel(coupon: Coupon): string {
 }
 
 /** Reusable coupon list table — shared by the seller "My Store Coupons" tab and the admin "All Platform Coupons" tab. */
-export function CouponTable({ coupons, showOwner, onDelete, onEdit, onApprove, onReject, onReport }: CouponTableProps) {
+export function CouponTable({ coupons, showOwner, onDelete, onEdit, onApprove, onReject, onReport, onResolveReport }: CouponTableProps) {
   const [viewingCoupon, setViewingCoupon] = useState<Coupon | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const confirm = useConfirm();
@@ -87,7 +88,7 @@ export function CouponTable({ coupons, showOwner, onDelete, onEdit, onApprove, o
                   {coupon.type === "percentage" ? `${coupon.value}%` : formatCurrency(coupon.value)}
                 </td>
                 <td className="px-4 py-3 text-xs text-muted">{scopeLabel(coupon)}</td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 min-w-32.5 inline-flex items-center gap-1">
                   <CouponPlacementChip placement={coupon.placement} />
                 </td>
                 <td className="px-4 py-3 text-xs">
@@ -127,7 +128,7 @@ export function CouponTable({ coupons, showOwner, onDelete, onEdit, onApprove, o
                       <Eye className="h-3.5 w-3.5" />
                       View
                     </Button>
-                    {(coupon.approvalStatus === "pending" || coupon.approvalStatus === "reported") && onApprove && (
+                    {coupon.approvalStatus === "pending" && onApprove && (
                       <Button
                         size="sm"
                         variant="primary"
@@ -137,7 +138,7 @@ export function CouponTable({ coupons, showOwner, onDelete, onEdit, onApprove, o
                         Approve
                       </Button>
                     )}
-                    {(coupon.approvalStatus === "pending" || coupon.approvalStatus === "reported") && onReject && (
+                    {coupon.approvalStatus === "pending" && onReject && (
                       <Button
                         size="sm"
                         variant="danger"
@@ -145,6 +146,16 @@ export function CouponTable({ coupons, showOwner, onDelete, onEdit, onApprove, o
                         onPress={() => onReject(coupon.id)}
                       >
                         Reject
+                      </Button>
+                    )}
+                    {coupon.approvalStatus === "reported" && onResolveReport && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="cursor-pointer text-xs font-bold text-success border-success/40 hover:bg-success/10"
+                        onPress={() => onResolveReport(coupon.id)}
+                      >
+                        Remove Report
                       </Button>
                     )}
                     {onEdit && (!showOwner || coupon.createdByRole === "admin") && (
@@ -203,6 +214,7 @@ export function CouponTable({ coupons, showOwner, onDelete, onEdit, onApprove, o
         onApprove={onApprove}
         onReject={onReject}
         onReport={onReport}
+        onResolveReport={onResolveReport}
       />
     </>
   );
