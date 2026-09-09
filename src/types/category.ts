@@ -6,4 +6,5 @@ export interface CategoryItem {
   parent?: string | null;
   is_locked?: boolean;
   assigned_seller_id?: string | null;
+  image?: string;
 }

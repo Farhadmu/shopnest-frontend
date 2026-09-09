@@ -4,8 +4,6 @@ import BannerSection from "@/components/home/Banner";
 import ShopByCategory from "@/components/home/ShopByCategory";
 import TrustFeatures from "@/components/home/TrustFeatures";
 import VisualSearchSection from "@/components/home/VisualSearchSection";
-
-import DealsSection from "@/components/home/DealsSection";
 import SellersSection from "@/components/home/SellersSection";
 import RecommendationsSection from "@/components/home/RecommendationsSection";
 import HowItWorksSection from "@/components/home/HowItWorksSection";
@@ -39,8 +37,6 @@ export default function HomePage() {
       {/* 05 — AI */}
       <AiIntelligenceSection />
 
-      {/* 06 — Deals */}
-      <DealsSection />
 
       {/* 07 — Sellers */}
       <SellersSection />
