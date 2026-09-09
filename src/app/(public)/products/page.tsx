@@ -1,4 +1,4 @@
-import React from "react";
+
 import { getProductsPaged, PagedProducts, getStoreOptions, StoreOption, getSellerOptions } from "@/lib/api/products";
 import { getCategories, Category } from "@/lib/api/categories";
 import { ProductsHero } from "@/components/products/listing/ProductsHero";
@@ -89,7 +89,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const query: ProductsQueryState = { ...params, page: String(page) };
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-20 sm:px-6 lg:px-8">
+    <div className="mx-auto flex w-full container flex-col gap-6 px-4 pb-20 sm:px-6 lg:px-8">
       <ProductsHero defaultSearch={search} />
 
       <CategoryChipsBar

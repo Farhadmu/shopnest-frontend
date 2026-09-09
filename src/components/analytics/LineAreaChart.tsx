@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useId } from "react";
 
 interface DataPoint {
   label: string;
@@ -33,6 +33,8 @@ export function LineAreaChart({
 }: LineAreaChartProps) {
   const activePrimaryColor = color || primaryColor;
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const rawId = useId();
+  const gradientId = `chartGradient-${rawId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
   if (!data || data.length === 0) {
     return <div className="flex h-48 items-center justify-center text-xs text-muted">No data available</div>;
@@ -77,7 +79,7 @@ export function LineAreaChart({
 
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full overflow-visible">
         <defs>
-          <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={activePrimaryColor} stopOpacity="0.25" />
             <stop offset="100%" stopColor={activePrimaryColor} stopOpacity="0.0" />
           </linearGradient>
@@ -98,7 +100,7 @@ export function LineAreaChart({
         })}
 
         {/* Area fill */}
-        <path d={areaPath} fill="url(#chartGradient)" />
+        <path d={areaPath} fill={`url(#${gradientId})`} />
 
         {/* Secondary Line */}
         {hasSecondary && (

@@ -27,8 +27,14 @@ export default function OrdersPage() {
 
   const filteredOrders = orders.filter((o) => {
     if (statusFilter === "all") return true;
+    if (statusFilter === "returned") return o.status === "returned" || o.status === "refunded";
     return o.status === statusFilter;
   });
+
+  const totalOrdersCount = orders.length;
+  const completedOrdersCount = orders.filter((o) => o.status === "delivered").length;
+  const cancelledOrdersCount = orders.filter((o) => o.status === "cancelled").length;
+  const returnedOrdersCount = orders.filter((o) => o.status === "returned" || o.status === "refunded").length;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -47,14 +53,79 @@ export default function OrdersPage() {
         </Link>
       </div>
 
+      {/* Order Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <button
+          type="button"
+          onClick={() => setStatusFilter("all")}
+          className={`rounded-2xl border p-4 text-center cursor-pointer transition text-left sm:text-center ${
+            statusFilter === "all"
+              ? "border-primary bg-primary/10 shadow-xs"
+              : "border-border bg-card hover:border-primary/40"
+          }`}
+        >
+          <p className="text-2xl font-black text-foreground">
+            {loading ? "—" : totalOrdersCount}
+          </p>
+          <p className="text-xs font-bold text-muted mt-0.5">Total Orders</p>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStatusFilter("delivered")}
+          className={`rounded-2xl border p-4 text-center cursor-pointer transition text-left sm:text-center ${
+            statusFilter === "delivered"
+              ? "border-success bg-success/20 shadow-xs"
+              : "border-success/20 bg-success/10 hover:bg-success/15"
+          }`}
+        >
+          <p className="text-2xl font-black text-success">
+            {loading ? "—" : completedOrdersCount}
+          </p>
+          <p className="text-xs font-bold text-muted mt-0.5">Completed</p>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStatusFilter("cancelled")}
+          className={`rounded-2xl border p-4 text-center cursor-pointer transition text-left sm:text-center ${
+            statusFilter === "cancelled"
+              ? "border-error bg-error/20 shadow-xs"
+              : "border-error/20 bg-error/10 hover:bg-error/15"
+          }`}
+        >
+          <p className="text-2xl font-black text-error">
+            {loading ? "—" : cancelledOrdersCount}
+          </p>
+          <p className="text-xs font-bold text-muted mt-0.5">Cancelled</p>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStatusFilter("returned")}
+          className={`rounded-2xl border p-4 text-center cursor-pointer transition text-left sm:text-center ${
+            statusFilter === "returned"
+              ? "border-warning bg-warning/20 shadow-xs"
+              : "border-warning/20 bg-warning/10 hover:bg-warning/15"
+          }`}
+        >
+          <p className="text-2xl font-black text-warning">
+            {loading ? "—" : returnedOrdersCount}
+          </p>
+          <p className="text-xs font-bold text-muted mt-0.5">Returned/Refunded</p>
+        </button>
+      </div>
+
       {/* Filter Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
         {[
-          { key: "all", label: "All Orders", count: orders.length },
+          { key: "all", label: "All Orders", count: totalOrdersCount },
           { key: "pending", label: "Pending", count: orders.filter((o) => o.status === "pending").length },
           { key: "processing", label: "Processing", count: orders.filter((o) => o.status === "processing").length },
           { key: "shipped", label: "Shipped", count: orders.filter((o) => o.status === "shipped").length },
-          { key: "delivered", label: "Delivered", count: orders.filter((o) => o.status === "delivered").length },
+          { key: "delivered", label: "Delivered", count: completedOrdersCount },
+          { key: "cancelled", label: "Cancelled", count: cancelledOrdersCount },
+          { key: "returned", label: "Returned/Refunded", count: returnedOrdersCount },
         ].map((tab) => (
           <button
             key={tab.key}
