@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Label, ListBox, Select } from "@heroui/react";
 import { ProductPickerList } from "./ProductPickerList";
 import { getCategories, type Category } from "@/lib/api/categories";
+import { getCategoryLimit } from "@/lib/api/coupons";
+import { useSession } from "@/lib/auth-client";
 import type { CouponScope } from "@/types/coupon";
 
 interface CouponScopeFieldsProps {
@@ -11,6 +13,8 @@ interface CouponScopeFieldsProps {
   category: string;
   categories?: string[];
   productIds: string[];
+  categoryLimit?: number;
+  placement?: string;
   onScopeChange: (scope: CouponScope) => void;
   onCategoryChange: (category: string) => void;
   onCategoriesChange?: (categories: string[]) => void;
@@ -29,6 +33,8 @@ export function CouponScopeFields({
   category,
   categories: selectedCategories = [],
   productIds,
+  categoryLimit: propCategoryLimit,
+  placement,
   onScopeChange,
   onCategoryChange,
   onCategoriesChange,
@@ -36,18 +42,46 @@ export function CouponScopeFields({
 }: CouponScopeFieldsProps) {
   const [categoryList, setCategoryList] = useState<Category[]>([]);
   const [catSearch, setCatSearch] = useState("");
+  const [limitError, setLimitError] = useState<string | null>(null);
+  const [maxLimit, setMaxLimit] = useState<number | undefined>(propCategoryLimit);
+  const { data: session } = useSession();
+  const currentSellerId = (session?.user as any)?.id as string | undefined;
+
+  const isHomepage = placement === "homepage";
 
   useEffect(() => {
     getCategories()
       .then(setCategoryList)
       .catch(() => setCategoryList([]));
-  }, []);
+
+    if (propCategoryLimit !== undefined) {
+      setMaxLimit(propCategoryLimit);
+    } else {
+      getCategoryLimit()
+        .then(setMaxLimit)
+        .catch(() => setMaxLimit(undefined));
+    }
+  }, [propCategoryLimit]);
 
   const filteredCats = catSearch
     ? categoryList.filter((c) => c.name.toLowerCase().includes(catSearch.toLowerCase()))
     : categoryList;
 
-  const handleToggleCategory = (catName: string) => {
+  /** A category is off-limits if it's locked to a different seller than the current user. */
+  const isLockedForCurrentSeller = (cat: Category) =>
+    Boolean(cat.isLocked) && cat.assignedSellerId !== currentSellerId;
+
+  const handleToggleCategory = (cat: Category) => {
+    setLimitError(null);
+    const catName = cat.name;
+    if (isLockedForCurrentSeller(cat) && !selectedCategories.includes(catName)) return;
+
+    const isSelecting = !selectedCategories.includes(catName);
+    if (isHomepage && isSelecting && maxLimit !== undefined && selectedCategories.length >= maxLimit) {
+      setLimitError(`Homepage category limit reached (${maxLimit} max allowed by admin).`);
+      return;
+    }
+
     if (!onCategoriesChange) {
       // fallback to old single-category if parent doesn't support multi
       onCategoryChange(catName);
@@ -100,9 +134,22 @@ export function CouponScopeFields({
 
         {scope === "specific-category" && (
           <div className="flex flex-col gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-text">
-              Choose Categories
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-text">
+                Choose Categories
+              </span>
+              {isHomepage && maxLimit !== undefined && (
+                <span className="text-[11px] font-semibold text-muted">
+                  Homepage Max Limit: <span className="font-bold text-primary">{maxLimit}</span> ({selectedCategories.length}/{maxLimit} selected)
+                </span>
+              )}
+            </div>
+
+            {limitError && (
+              <p className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-1.5 text-xs font-medium text-warning">
+                {limitError}
+              </p>
+            )}
 
             {/* Selected chips */}
             {selectedCategories.length > 0 && (
@@ -115,7 +162,7 @@ export function CouponScopeFields({
                     {cat}
                     <button
                       type="button"
-                      onClick={() => handleToggleCategory(cat)}
+                      onClick={() => handleToggleCategory({ id: cat, name: cat, slug: cat })}
                       className="ml-0.5 rounded-full p-0.5 text-primary/60 hover:bg-primary/20 hover:text-primary transition-colors"
                     >
                       ✕
@@ -141,20 +188,29 @@ export function CouponScopeFields({
               ) : (
                 filteredCats.map((cat) => {
                   const isChecked = selectedCategories.includes(cat.name);
+                  const isLocked = isLockedForCurrentSeller(cat) && !isChecked;
                   return (
                     <label
                       key={cat.id}
-                      className={`flex cursor-pointer items-center gap-2.5 border-b border-primary/5 px-3 py-2 text-xs transition-colors last:border-0 hover:bg-primary/5 ${
-                        isChecked ? "bg-primary/8 font-medium text-primary" : "text-text"
+                      className={`flex items-center gap-2.5 border-b border-primary/5 px-3 py-2 text-xs transition-colors last:border-0 ${
+                        isLocked
+                          ? "cursor-not-allowed opacity-50"
+                          : `cursor-pointer hover:bg-primary/5 ${isChecked ? "bg-primary/8 font-medium text-primary" : "text-text"}`
                       }`}
                     >
                       <input
                         type="checkbox"
                         checked={isChecked}
-                        onChange={() => handleToggleCategory(cat.name)}
-                        className="h-4 w-4 rounded border-gray-300 text-primary accent-primary cursor-pointer"
+                        disabled={isLocked}
+                        onChange={() => handleToggleCategory(cat)}
+                        className="h-4 w-4 rounded border-gray-300 text-primary accent-primary cursor-pointer disabled:cursor-not-allowed"
                       />
                       <span>{cat.name}</span>
+                      {isLocked && (
+                        <span className="ml-auto rounded-full bg-error/10 px-1.5 py-0.5 text-[10px] font-bold text-error">
+                          🔒 Locked
+                        </span>
+                      )}
                     </label>
                   );
                 })

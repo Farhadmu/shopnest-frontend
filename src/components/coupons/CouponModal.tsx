@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button, Card, Chip, Description, Input, Label } from "@heroui/react";
 import { Percent, Sparkles, X, Ticket } from "lucide-react";
-import { createCoupon, updateCoupon } from "@/lib/api/coupons";
+import { createCoupon, updateCoupon, getCategoryLimit } from "@/lib/api/coupons";
 import { getErrorMessage } from "@/lib/core/errors";
 import { CouponScopeFields } from "./CouponScopeFields";
 import { CouponPlacementFields } from "./CouponPlacementFields";
@@ -96,6 +96,7 @@ export function CouponModal({ mode, isOpen, onClose, onCreated, couponToEdit }: 
   );
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [categoryLimit, setCategoryLimit] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     if (isOpen) {
@@ -105,6 +106,9 @@ export function CouponModal({ mode, isOpen, onClose, onCreated, couponToEdit }: 
         setForm(emptyForm(mode));
       }
       setError(null);
+      getCategoryLimit()
+        .then(setCategoryLimit)
+        .catch(() => setCategoryLimit(undefined));
     }
   }, [isOpen, couponToEdit, mode]);
 
@@ -145,6 +149,14 @@ export function CouponModal({ mode, isOpen, onClose, onCreated, couponToEdit }: 
       !form.category
     ) {
       return setError("Choose at least one category.");
+    }
+    if (
+      form.placement === "homepage" &&
+      form.scope === "specific-category" &&
+      categoryLimit !== undefined &&
+      form.categories.length > categoryLimit
+    ) {
+      return setError(`You cannot select more than ${categoryLimit} categories for homepage coupons as per admin configuration.`);
     }
     if (form.placement === "homepage") {
       if (!form.durationDays || form.durationDays <= 0) {
@@ -495,6 +507,8 @@ export function CouponModal({ mode, isOpen, onClose, onCreated, couponToEdit }: 
             category={form.category}
             categories={form.categories}
             productIds={form.productIds}
+            categoryLimit={categoryLimit}
+            placement={form.placement}
             onScopeChange={(scope) => patch({ scope })}
             onCategoryChange={(category) => patch({ category })}
             onCategoriesChange={(categories) => patch({ categories })}

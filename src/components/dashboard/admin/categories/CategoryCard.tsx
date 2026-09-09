@@ -34,9 +34,24 @@ export function CategoryCard({ category, parentName, onEdit, onDeleted }: Catego
     <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between gap-2">
         <div className="flex flex-col overflow-hidden">
-          <span className="truncate font-bold">{category.name}</span>
+          <div className="flex items-center gap-1.5">
+            <span className="truncate font-bold">{category.name}</span>
+            {category.is_locked && (
+              <span
+                className="shrink-0 rounded-full bg-error/10 px-1.5 py-0.5 text-[10px] font-bold text-error"
+                title={category.assigned_seller_id ? `Locked to seller #${category.assigned_seller_id.slice(-6)}` : "Locked"}
+              >
+                🔒 Locked
+              </span>
+            )}
+          </div>
           <span className="truncate text-xs text-muted">{category.slug}</span>
           {parentName && <span className="truncate text-xs text-muted">Under: {parentName}</span>}
+          {category.is_locked && category.assigned_seller_id && (
+            <span className="truncate text-[11px] text-muted">
+              Assigned: Seller #{category.assigned_seller_id.slice(-6)}
+            </span>
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <button
