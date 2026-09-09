@@ -29,6 +29,12 @@ export default function StoresHero({
   selectedCategory,
   onCategoryChange,
 }: StoresHeroProps) {
+  const totalProducts = stores.reduce((total, store) => total + store.products.length, 0);
+  const totalSales = stores.reduce((total, store) => total + store.salesNumber, 0);
+  const averageRating = stores.length
+    ? (stores.reduce((total, store) => total + Number(store.rating), 0) / stores.length).toFixed(1)
+    : "0.0";
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-blue-100/70 via-indigo-100/50 to-purple-100/40 dark:from-slate-950 dark:via-indigo-950 dark:to-slate-900 text-slate-900 dark:text-white border-b border-blue-200/60 dark:border-slate-800/80 shadow-sm transition-all">
       {/* PREMIUM GLOWING BACKGROUND EFFECTS */}
@@ -68,7 +74,7 @@ export default function StoresHero({
                 <FaUsers className="text-xs" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-900 dark:text-white">{stores.length}+ Verified</p>
+                <p className="text-xs font-bold text-slate-900 dark:text-white">{stores.length} Verified</p>
                 <p className="text-[9px] text-slate-500 dark:text-slate-400">Merchants</p>
               </div>
             </div>
@@ -78,8 +84,8 @@ export default function StoresHero({
                 <FaLock className="text-xs" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-900 dark:text-white">৳45M+</p>
-                <p className="text-[9px] text-slate-500 dark:text-slate-400">Escrow Protected</p>
+                <p className="text-xs font-bold text-slate-900 dark:text-white">{totalProducts}</p>
+                <p className="text-[9px] text-slate-500 dark:text-slate-400">Products Listed</p>
               </div>
             </div>
 
@@ -88,8 +94,8 @@ export default function StoresHero({
                 <FaCheckCircle className="text-xs" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-900 dark:text-white">99.2%</p>
-                <p className="text-[9px] text-slate-500 dark:text-slate-400">Satisfaction</p>
+                <p className="text-xs font-bold text-slate-900 dark:text-white">{averageRating}</p>
+                <p className="text-[9px] text-slate-500 dark:text-slate-400">Average Rating</p>
               </div>
             </div>
 
@@ -98,8 +104,8 @@ export default function StoresHero({
                 <FaClock className="text-xs" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-900 dark:text-white">&lt; 18h</p>
-                <p className="text-[9px] text-slate-500 dark:text-slate-400">Dispatch Time</p>
+                <p className="text-xs font-bold text-slate-900 dark:text-white">{totalSales}</p>
+                <p className="text-[9px] text-slate-500 dark:text-slate-400">Items Sold</p>
               </div>
             </div>
           </div>
