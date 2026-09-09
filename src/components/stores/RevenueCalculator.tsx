@@ -66,7 +66,7 @@ export default function RevenueCalculator() {
             NET MERCHANT PAYOUT (EST.)
           </p>
           <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">
-            ${netPayout.toLocaleString()}{" "}
+            ৳{netPayout.toLocaleString()}{" "}
             <span className="text-xs font-normal text-slate-500 dark:text-slate-400">/mo</span>
           </p>
           <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
