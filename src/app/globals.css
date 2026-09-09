@@ -222,6 +222,13 @@ a {
   scrollbar-color: color-mix(in srgb, var(--color-muted) 25%, transparent) transparent;
 }
 
+.category-carousel {
+  scrollbar-width: none;
+}
+.category-carousel::-webkit-scrollbar {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   ::before,

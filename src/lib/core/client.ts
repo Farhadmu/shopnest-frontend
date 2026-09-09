@@ -69,7 +69,13 @@ async function handleResponse<T>(response: Response): Promise<T> {
           const detailEntries = Object.entries(errorData.details);
           if (detailEntries.length > 0) {
             errorMessage = detailEntries
-              .map(([field, errObj]: [string, any]) => `${field}: ${errObj?.message || errObj}`)
+              .map(([field, errObj]) => {
+                const message =
+                  typeof errObj === "object" && errObj !== null && "message" in errObj
+                    ? String((errObj as { message?: unknown }).message)
+                    : String(errObj);
+                return `${field}: ${message}`;
+              })
               .join(" | ");
           } else {
             errorMessage = errorData.message || errorData.error || errorMessage;
@@ -150,15 +156,13 @@ export async function clientMutation<T>(
 ): Promise<T> {
   const { params, headers: customHeaders, ...fetchOptions } = options;
   const url = buildUrl(endpoint, params);
+  const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
 
   const response = await fetch(url, {
     ...fetchOptions,
     method,
-    headers: {
-      "Content-Type": "application/json",
-      ...customHeaders,
-    },
-    body: body ? JSON.stringify(body) : undefined,
+    headers: isFormData ? customHeaders : { "Content-Type": "application/json", ...customHeaders },
+    body: body ? (isFormData ? body : JSON.stringify(body)) : undefined,
     credentials: "include",
   });
 
