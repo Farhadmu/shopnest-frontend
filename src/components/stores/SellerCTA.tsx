@@ -28,16 +28,16 @@ export default function SellerCTA() {
 
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <Link
-                  href="/auth/register"
+                  href="/become-seller"
                   className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3.5 text-xs font-bold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700"
                 >
                   Open Your Storefront <FaArrowRight className="text-[10px]" />
                 </Link>
                 <Link
-                  href="/handbook"
+                  href="/support"
                   className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition"
                 >
-                  Explore Seller Handbook →
+                  Visit Seller Support →
                 </Link>
               </div>
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@heroui/react";
 import { FiStar, FiCheckCircle, FiTruck, FiShoppingBag, FiZap, FiHeart, FiMinus, FiPlus } from "react-icons/fi";
@@ -9,6 +9,7 @@ import { formatCurrency } from "@/lib/utils";
 import { addToCart } from "@/lib/api/cart";
 import { addToWishlist } from "@/lib/api/wishlist";
 import { useSession } from "@/lib/auth-client";
+import { recordShoppingEvent } from "@/lib/api/customer-intelligence";
 import { addGuestCartItem, addGuestWishlistItem, clearGuestCart, clearGuestWishlist } from "@/lib/guest-store";
 
 export interface ProductBuyBoxProps {
@@ -34,6 +35,7 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
   const [quantity, setQuantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const viewRecordedRef = useRef(false);
 
   const hasDiscount = !!product.discountPrice && product.discountPrice < product.price;
   const displayPrice = hasDiscount ? (product.discountPrice as number) : product.price;
@@ -47,6 +49,20 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
     setToast(msg);
     setTimeout(() => setToast(null), 2800);
   };
+
+  useEffect(() => {
+    if (!session?.user || viewRecordedRef.current) return;
+    viewRecordedRef.current = true;
+    recordShoppingEvent({
+      eventType: "view",
+      productId: product.id,
+      productTitle: product.title,
+      category: product.category,
+      price: product.price,
+    }).catch(() => {
+      viewRecordedRef.current = false;
+    });
+  }, [session?.user, product.id, product.title, product.category, product.price]);
 
   const handleAddToCart = async () => {
     if (!session?.user) {
@@ -69,6 +85,13 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
       setIsAdded(true);
       showToast(`Added ${quantity} × "${product.title}" to cart!`);
       setTimeout(() => setIsAdded(false), 2000);
+      recordShoppingEvent({
+        eventType: "cart_add",
+        productId: product.id,
+        productTitle: product.title,
+        category: product.category,
+        price: displayPrice,
+      }).catch(() => {});
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to add to cart");
     }
@@ -111,6 +134,13 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
       await addToWishlist(product.id);
       clearGuestWishlist();
       showToast("Saved to wishlist!");
+      recordShoppingEvent({
+        eventType: "wishlist_add",
+        productId: product.id,
+        productTitle: product.title,
+        category: product.category,
+        price: displayPrice,
+      }).catch(() => {});
     } catch {
       showToast("Could not update wishlist");
     }

@@ -11,11 +11,17 @@ export interface SecurityOverviewData {
     score: number;
     note: string;
   }>;
-  recommendations: string[];
+  activeSessions: number;
+  totalSessions: number;
+  revokedSessions: number;
+  failedLogins: number;
+  recentSecurityEvents: number;
 }
 
 export interface DeviceSessionItem {
   id: string;
+  userId: string;
+  sessionToken: string;
   deviceName: string;
   deviceType: string;
   browser: string;
@@ -26,6 +32,15 @@ export interface DeviceSessionItem {
   isTrusted: boolean;
   status: string;
   lastActiveAt: string;
+}
+
+export interface SecurityTimelineItem {
+  id: string;
+  event: string;
+  detail: string;
+  timestamp: string;
+  severity: string;
+  icon: string;
 }
 
 export interface LoginRiskResult {
@@ -44,21 +59,16 @@ export interface TransactionRiskResult {
   fraudPreventionShield: string;
 }
 
-export interface SecurityTimelineItem {
-  id: string;
-  event: string;
-  detail: string;
-  timestamp: string;
-  severity: string;
-  icon: string;
-}
-
 export async function getSecurityOverview() {
   return clientFetch<SecurityOverviewData>("/security/overview");
 }
 
 export async function getActiveSessions() {
   return clientFetch<DeviceSessionItem[]>("/security/sessions");
+}
+
+export async function recordSession() {
+  return clientMutation<{ sessionToken: string; status: string }>("/security/sessions/record", "POST", {});
 }
 
 export async function revokeSession(id: string) {

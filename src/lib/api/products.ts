@@ -99,3 +99,15 @@ export async function updateProduct(id: string, data: Partial<CreateProductInput
 export async function deleteProduct(id: string) {
   return clientMutation<{ success: boolean }>(`/products/${id}`, "DELETE");
 }
+
+export interface TrendingProductsResponse {
+  count: number;
+  products: Product[];
+}
+
+export async function getTrendingProducts(limit = 8): Promise<TrendingProductsResponse> {
+  const res = await clientFetch<TrendingProductsResponse>("/products/trending", {
+    params: { limit },
+  });
+  return res;
+}

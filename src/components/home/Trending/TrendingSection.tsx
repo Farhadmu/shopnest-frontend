@@ -11,7 +11,7 @@ import {
   FaFire,
 } from "react-icons/fa";
 
-import { getProducts, Product } from "@/lib/api/products";
+import { getTrendingProducts, Product } from "@/lib/api/products";
 import { addToCart } from "@/lib/api/cart";
 import { addToWishlist } from "@/lib/api/wishlist";
 import {
@@ -54,31 +54,12 @@ export default function TrendingSection() {
         setLoading(true);
         setErrorMessage(null);
 
-        const response = await getProducts({
-          page: 1,
-          limit: 8,
-        });
+        const response = await getTrendingProducts(8);
 
         let fetchedData: Product[] = [];
 
-        if (Array.isArray(response)) {
-          fetchedData = response;
-        } else if (
-          response &&
-          typeof response === "object"
-        ) {
-          const resObj = response as Record<
-            string,
-            unknown
-          >;
-
-          if (Array.isArray(resObj.items)) {
-            fetchedData = resObj.items as Product[];
-          } else if (Array.isArray(resObj.products)) {
-            fetchedData = resObj.products as Product[];
-          } else if (Array.isArray(resObj.data)) {
-            fetchedData = resObj.data as Product[];
-          }
+        if (response && typeof response === "object" && Array.isArray(response.products)) {
+          fetchedData = response.products;
         }
 
         setProducts(fetchedData);
