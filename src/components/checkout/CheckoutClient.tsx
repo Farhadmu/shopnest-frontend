@@ -21,17 +21,6 @@ interface CheckoutClientProps {
   initialAddresses: Address[];
 }
 
-/**
- * CheckoutClient — client boundary for the checkout flow.
- *
- * Responsibilities (only):
- *  - Receive server-fetched cart + addresses as props
- *  - Track address data (received from DeliveryAddressForm via callback)
- *  - Track shipping method + fee and payment method (from CheckoutMethods via callbacks)
- *  - Submit the order (handlePlaceOrder)
- *
- * All other state lives inside the respective child components.
- */
 export function CheckoutClient({ initialCart, initialAddresses }: CheckoutClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
