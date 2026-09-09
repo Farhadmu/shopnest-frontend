@@ -39,7 +39,7 @@ export function BarChart({
     <div className="w-full">
       <div className="flex items-end justify-between gap-2 pt-6" style={{ height }}>
         {data.map((item, i) => {
-          const heightPercent = Math.max(8, (item.value / maxVal) * 100);
+          const heightPercent = item.value > 0 ? Math.max(8, (item.value / maxVal) * 100) : 0;
           const isHovered = hoveredIdx === i;
 
           return (

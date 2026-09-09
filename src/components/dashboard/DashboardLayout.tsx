@@ -69,6 +69,7 @@ export function DashboardSidebarLayout({
   const { role, links } = resolveRoleAndLinks(pathname, initialRole, initialLinks);
   const userName = session?.user?.name || "Member";
   const userEmail = session?.user?.email || "";
+  const userImage = session?.user?.image || "";
 
   const handleLogout = () =>
     signOut({
@@ -154,6 +155,7 @@ export function DashboardSidebarLayout({
           role={role}
           roleIcon={roleIconFor(role)}
           userName={userName}
+          userImage={userImage}
           mobileMenuOpen={mobileDrawerOpen}
           onToggleMobileMenu={() => setMobileDrawerOpen((v) => !v)}
         />
