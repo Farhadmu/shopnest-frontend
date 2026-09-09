@@ -85,7 +85,11 @@ export function CouponTable({ coupons, showOwner, onDelete, onEdit, onApprove, o
                 )}
                 <td className="px-4 py-3 font-mono font-bold text-text">{coupon.code}</td>
                 <td className="px-4 py-3">
-                  {coupon.type === "percentage" ? `${coupon.value}%` : formatCurrency(coupon.value)}
+                  {coupon.type === "percentage"
+                    ? `${coupon.value}%`
+                    : coupon.type === "free-shipping"
+                      ? "Free Shipping"
+                      : formatCurrency(coupon.value)}
                 </td>
                 <td className="px-4 py-3 text-xs text-muted">{scopeLabel(coupon)}</td>
                 <td className="px-4 py-3 min-w-32.5 inline-flex items-center gap-1">

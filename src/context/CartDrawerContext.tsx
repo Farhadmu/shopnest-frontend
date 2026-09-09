@@ -37,6 +37,7 @@ import { getErrorMessage } from "@/lib/core/errors";
 export interface AppliedCoupon {
   code: string;
   discount: number;
+  freeShipping?: boolean;
 }
 
 export interface ExtendedCartItem extends CartItem {
@@ -385,11 +386,13 @@ export function CartDrawerProvider({ children }: { children: React.ReactNode }) 
       setCouponError(null);
 
       try {
-        const result = await validateCoupon(cleanCode, subtotal);
-        if (result && result.discount > 0) {
+        const result = await validateCoupon(cleanCode, cart?.items || []);
+        const isFreeShipping = result.type === "free-shipping" || result.freeShipping;
+        if (result && (result.discount > 0 || isFreeShipping)) {
           setAppliedCoupon({
             code: result.code || cleanCode,
             discount: result.discount,
+            freeShipping: isFreeShipping,
           });
           return true;
         } else {
