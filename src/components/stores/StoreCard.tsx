@@ -79,7 +79,7 @@ export default function StoreCard({ store }: StoreCardProps) {
       {/* Popular Products Header */}
       <div className="mt-4 flex items-center justify-between text-[11px]">
         <span className="font-bold uppercase tracking-wider text-slate-400">Popular Products</span>
-        <span className="text-slate-400">{store.products?.length || 3} items</span>
+        <span className="text-slate-400">{store.products?.length || 0} items</span>
       </div>
 
       {/* Products Thumbnail Grid */}
