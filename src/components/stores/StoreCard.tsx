@@ -8,7 +8,7 @@ type StoreCardProps = {
 
 export default function StoreCard({ store }: StoreCardProps) {
  
-  const storeSlug = store._id || store.id || store.name.toLowerCase().replace(/\s+/g, "-");
+  const storeSlug = (store._id || store.id || store.name).toLowerCase().replace(/\s+/g, "-");
 
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
