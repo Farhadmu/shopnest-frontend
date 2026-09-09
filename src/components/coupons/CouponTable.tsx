@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@heroui/react";
-import { Eye, Pencil } from "lucide-react";
+import { Eye, Info, MessageSquare, Pencil } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { CouponPlacementChip, CouponStatusChip } from "./CouponStatusChip";
 import { CouponDetailModal } from "./CouponDetailModal";
@@ -17,6 +17,7 @@ interface CouponTableProps {
   onDelete?: (id: string) => void;
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
+  onReport?: (id: string) => void;
 }
 
 function scopeLabel(coupon: Coupon): string {
@@ -31,7 +32,7 @@ function scopeLabel(coupon: Coupon): string {
 }
 
 /** Reusable coupon list table — shared by the seller "My Store Coupons" tab and the admin "All Platform Coupons" tab. */
-export function CouponTable({ coupons, showOwner, onDelete, onEdit, onApprove, onReject }: CouponTableProps) {
+export function CouponTable({ coupons, showOwner, onDelete, onEdit, onApprove, onReject, onReport }: CouponTableProps) {
   const [viewingCoupon, setViewingCoupon] = useState<Coupon | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const confirm = useConfirm();
@@ -101,7 +102,18 @@ export function CouponTable({ coupons, showOwner, onDelete, onEdit, onApprove, o
                       : "—"}
                 </td>
                 <td className="px-4 py-3">
-                  <CouponStatusChip coupon={coupon} />
+                  <div className="flex items-center gap-2">
+                    <CouponStatusChip coupon={coupon} />
+                    {(coupon.approvalStatus === "rejected" || coupon.approvalStatus === "reported") && coupon.rejectionNote && (
+                      <span
+                        className="inline-flex cursor-help items-center rounded-full bg-error/10 px-2 py-0.5 text-[10px] font-bold text-error"
+                        title={coupon.rejectionNote}
+                      >
+                        <Info className="mr-1 h-3 w-3" />
+                        Admin Report
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-1.5">
@@ -115,7 +127,7 @@ export function CouponTable({ coupons, showOwner, onDelete, onEdit, onApprove, o
                       <Eye className="h-3.5 w-3.5" />
                       View
                     </Button>
-                    {coupon.approvalStatus === "pending" && onApprove && (
+                    {(coupon.approvalStatus === "pending" || coupon.approvalStatus === "reported") && onApprove && (
                       <Button
                         size="sm"
                         variant="primary"
@@ -125,7 +137,7 @@ export function CouponTable({ coupons, showOwner, onDelete, onEdit, onApprove, o
                         Approve
                       </Button>
                     )}
-                    {coupon.approvalStatus === "pending" && onReject && (
+                    {(coupon.approvalStatus === "pending" || coupon.approvalStatus === "reported") && onReject && (
                       <Button
                         size="sm"
                         variant="danger"
@@ -135,7 +147,7 @@ export function CouponTable({ coupons, showOwner, onDelete, onEdit, onApprove, o
                         Reject
                       </Button>
                     )}
-                    {onEdit && (
+                    {onEdit && (!showOwner || coupon.createdByRole === "admin") && (
                       <Button
                         size="sm"
                         variant="secondary"
@@ -144,6 +156,17 @@ export function CouponTable({ coupons, showOwner, onDelete, onEdit, onApprove, o
                       >
                         <Pencil className="h-3.5 w-3.5" />
                         Edit
+                      </Button>
+                    )}
+                    {onReport && showOwner && coupon.createdByRole === "seller" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="cursor-pointer text-xs font-bold flex gap-1.5 items-center text-warning border-warning/40 hover:bg-warning/10"
+                        onPress={() => onReport(coupon.id)}
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" />
+                        Report
                       </Button>
                     )}
                     {onDelete && (
@@ -177,6 +200,9 @@ export function CouponTable({ coupons, showOwner, onDelete, onEdit, onApprove, o
         coupon={viewingCoupon}
         isOpen={viewingCoupon !== null}
         onClose={() => setViewingCoupon(null)}
+        onApprove={onApprove}
+        onReject={onReject}
+        onReport={onReport}
       />
     </>
   );

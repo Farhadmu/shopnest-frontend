@@ -38,6 +38,11 @@ export async function rejectCoupon(id: string, rejectionNote?: string) {
   return clientMutation<{ success: boolean } & Coupon>(`/coupons/${id}/reject`, "PATCH", { rejectionNote });
 }
 
+/** Admin only: send a report/notification to the seller without changing coupon status. */
+export async function reportCoupon(id: string, reportNote: string) {
+  return clientMutation<{ success: boolean }>(`/coupons/${id}/report`, "PATCH", { reportNote });
+}
+
 /** Seller/admin: delete a coupon they own (admin can delete any). */
 export async function deleteCoupon(id: string) {
   return clientMutation<{ success: boolean }>(`/coupons/${id}`, "DELETE");
@@ -53,7 +58,19 @@ export async function getHomepageCoupons() {
   return clientFetch<Coupon[]>("/coupons/public/homepage");
 }
 
+/** Admin only: snapshot of running vs queued homepage coupons (Queue Engine status). */
+export async function getHomepageQueueStatus() {
+  return clientFetch<{ running: Coupon[]; queued: Coupon[] }>("/coupons/homepage-queue");
+}
+
 /** Public: approved + live coupons for one seller's store page. */
 export async function getStoreCoupons(sellerId: string) {
   return clientFetch<Coupon[]>(`/coupons/public/store/${encodeURIComponent(sellerId)}`);
 }
+
+/** Seller/admin: get platform category allocation limit set by admin. */
+export async function getCategoryLimit() {
+  const res = await clientFetch<{ category_length: number }>("/coupons/category-limit");
+  return res.category_length;
+}
+
