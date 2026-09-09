@@ -4,5 +4,6 @@ export interface CategoryItem {
   name: string;
   slug: string;
   parent?: string | null;
-  image?: string;
+  is_locked?: boolean;
+  assigned_seller_id?: string | null;
 }

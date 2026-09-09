@@ -9,6 +9,10 @@ export interface Category {
    * `buildCategoryTree` / `flattenWithDepth` from `lib/utils/category-tree`. */
   parent?: string | null;
   image?: string;
+  /** Category Allocation & Lock System: true once an admin approved a seller's
+   *  specific-category homepage coupon request for this category. */
+  isLocked?: boolean;
+  assignedSellerId?: string | null;
 }
 
 function normalize(raw: any): Category {
@@ -18,6 +22,8 @@ function normalize(raw: any): Category {
     slug: raw.slug || raw.name,
     parent: raw.parent ? String(raw.parent) : null,
     image: raw.image,
+    isLocked: Boolean(raw.is_locked),
+    assignedSellerId: raw.assigned_seller_id ? String(raw.assigned_seller_id) : null,
   };
 }
 
