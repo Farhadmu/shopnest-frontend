@@ -13,7 +13,9 @@ export interface ProductsQueryState {
   maxPrice?: string;
   sort?: string;
   store?: string;
+  seller?: string;
   rating?: string;
+  productRating?: string;
   inStock?: string;
   freeDelivery?: string;
   verified?: string;
@@ -29,7 +31,9 @@ const KEYS: (keyof ProductsQueryState)[] = [
   "maxPrice",
   "sort",
   "store",
+  "seller",
   "rating",
+  "productRating",
   "inStock",
   "freeDelivery",
   "verified",
@@ -57,7 +61,7 @@ export function buildProductsHref(
   const params = new URLSearchParams();
   for (const key of KEYS) {
     const value = merged[key];
-    if (value !== undefined && value !== null && value !== "" && value !== "1") {
+    if (value !== undefined && value !== null && value !== "") {
       if (key === "page" && value === "1") continue;
       params.set(key, value);
     }

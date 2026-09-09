@@ -40,6 +40,21 @@ export interface CreateProductInput {
  * Wraps backend operations for products using core client fetch handlers.
  */
 
+export interface StoreOption {
+  id: string;
+  name: string;
+  rating: number;
+  productCount: number;
+}
+
+export async function getStoreOptions() {
+  return clientFetch<StoreOption[]>("/products/stores/options");
+}
+
+export async function getSellerOptions() {
+  return clientFetch<StoreOption[]>("/products/sellers/options");
+}
+
 export async function getProducts(params?: Record<string, string | number | boolean | undefined>) {
   return clientFetch<Product[]>("/products", { params });
 }
