@@ -86,3 +86,9 @@ export async function getCategoryLimit() {
   return res.category_length;
 }
 
+/** Seller: get categories already locked to this seller for homepage coupons. */
+export async function getSellerLockedCategories(sellerId?: string) {
+  const url = sellerId ? `/coupons/seller-locked-categories/${encodeURIComponent(sellerId)}` : "/coupons/seller-locked-categories/me";
+  return clientFetch<string[]>(url);
+}
+
