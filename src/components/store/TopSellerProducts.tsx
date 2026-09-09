@@ -6,11 +6,13 @@ import { Product } from "@/types/store";
 interface TopSellerProductsProps {
   products: Product[];
   productsCount: string;
+  onAddToCart?: (product: Product) => void;
 }
 
 const TopSellerProducts = ({
   products,
   productsCount,
+  onAddToCart,
 }: TopSellerProductsProps) => {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -76,6 +78,7 @@ const TopSellerProducts = ({
             {/* Cart Button */}
             <button
               type="button"
+              onClick={() => onAddToCart?.(product)}
               aria-label={`Add ${product.name} to cart`}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-blue-500/10 dark:hover:text-blue-400"
             >
@@ -88,6 +91,7 @@ const TopSellerProducts = ({
       {/* Footer */}
       <button
         type="button"
+        onClick={() => document.getElementById("store-products")?.scrollIntoView({ behavior: "smooth" })}
         className="mt-4 w-full rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
       >
         View All Products
