@@ -33,6 +33,7 @@ export interface Order {
   paymentStatus: "unpaid" | "paid" | "refunded";
   shippingAddress: string;
   userId?: string;
+  customerEmail?: string;
   statusHistory: Array<{ status: string; at: string }>;
   createdAt: string;
   updatedAt: string;

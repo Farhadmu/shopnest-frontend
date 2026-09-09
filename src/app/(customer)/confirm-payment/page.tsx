@@ -2,10 +2,15 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { createStripeCheckoutSession } from "@/lib/api/payments";
+import { useSession } from "@/lib/auth-client";
+import {
+  createStripeCheckoutSession,
+  createSSLCommerzPaymentSession,
+} from "@/lib/api/payments";
 
 function ConfirmPaymentContent() {
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
 
   const method = searchParams.get("method");
   const orderId = searchParams.get("orderId");
@@ -14,7 +19,7 @@ function ConfirmPaymentContent() {
 
   const validationError = !orderId
     ? "Order ID is missing."
-    : method !== "stripe"
+    : method !== "stripe" && method !== "sslcommerz"
     ? "Unsupported payment method."
     : null;
 
@@ -27,6 +32,7 @@ function ConfirmPaymentContent() {
 
         const response = await createStripeCheckoutSession({
           orderId,
+          customerEmail: session?.user?.email || undefined,
         });
 
         if (!response.checkoutUrl) {
@@ -43,7 +49,40 @@ function ConfirmPaymentContent() {
       }
     };
 
-    startStripeCheckout();
+    const startSSLCommerzCheckout = async () => {
+      try {
+        setError(null);
+
+        const response = await createSSLCommerzPaymentSession({
+          orderId,
+          customerEmail: session?.user?.email || undefined,
+        });
+
+
+        const redirectUrl =
+          response.GatewayPageURL || response.redirectGatewayURL;
+
+        if (!redirectUrl) {
+          throw new Error(
+            response.failedreason || "SSLCommerz checkout URL was not returned."
+          );
+        }
+
+        window.location.href = redirectUrl;
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to start SSLCommerz checkout."
+        );
+      }
+    };
+
+    if (method === "stripe") {
+      startStripeCheckout();
+    } else if (method === "sslcommerz") {
+      startSSLCommerzCheckout();
+    }
   }, [orderId, method, validationError]);
 
   const displayedError = error || validationError;
