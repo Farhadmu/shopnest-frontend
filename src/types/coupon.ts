@@ -1,7 +1,8 @@
 export type CouponDiscountType = "percentage" | "fixed";
 export type CouponScope = "all-products" | "specific-category" | "specific-products";
 export type CouponPlacement = "store" | "homepage" | "private";
-export type CouponApprovalStatus = "approved" | "pending" | "rejected";
+export type CouponApprovalStatus = "approved" | "pending" | "rejected" | "reported";
+export type CouponHomepageStatus = "running" | "queued" | "expired";
 
 export interface Coupon {
   id: string;
@@ -29,6 +30,8 @@ export interface Coupon {
   promoStartDate?: string;
   durationDays?: number;
   approvedAt?: string;
+  homepageStatus?: CouponHomepageStatus;
+  queuePosition?: number;
 
   usageLimit?: number;
   usedCount: number;
@@ -58,6 +61,10 @@ export interface CreateCouponInput {
   durationDays?: number;
 
   usageLimit?: number;
+
+  homepageStatus?: CouponHomepageStatus;
+  queuePosition?: number;
+  approvedAt?: string;
 }
 
 export const COUPON_PLACEMENT_LABEL: Record<CouponPlacement, string> = {
@@ -70,4 +77,11 @@ export const COUPON_STATUS_LABEL: Record<CouponApprovalStatus, string> = {
   approved: "Active",
   pending: "Pending Review",
   rejected: "Rejected",
+  reported: "Reported",
+};
+
+export const COUPON_HOMEPAGE_STATUS_LABEL: Record<CouponHomepageStatus, string> = {
+  running: "🚀 Running",
+  queued: "⏳ Queued",
+  expired: "Expired",
 };

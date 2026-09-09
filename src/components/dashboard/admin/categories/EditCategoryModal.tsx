@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import { FiX } from "react-icons/fi";
 import { clientMutation } from "@/lib/core/client";
 import { ApiError } from "@/lib/core/errors";
@@ -22,6 +22,25 @@ export function EditCategoryModal({ category, categories, onClose, onSaved }: Ed
   const [parentId, setParentId] = useState(category.parent ? String(category.parent) : NO_PARENT);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [image, setImage] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(category.image ?? null);
+
+  useEffect(() => {
+    return () => {
+      if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
+  const chooseImage = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    if (file && !file.type.startsWith("image/")) {
+      setError("Choose an image file.");
+      return;
+    }
+    setError(null);
+    setImage(file);
+    setPreview(file ? URL.createObjectURL(file) : category.image ?? null);
+  };
 
   const save = () => {
     if (!name.trim()) {
@@ -34,13 +53,12 @@ export function EditCategoryModal({ category, categories, onClose, onSaved }: Ed
     }
     setError(null);
     setSaving(true);
-    clientMutation(`/categories/${id}`, "PUT", {
-      name: name.trim(),
-      slug: slug.trim(),
-      // Explicit null clears the parent (root-level again); the backend
-      // schema accepts null specifically to support this case.
-      parent: parentId || null,
-    })
+    const body = new FormData();
+    body.append("name", name.trim());
+    body.append("slug", slug.trim());
+    body.append("parent", parentId || "null");
+    if (image) body.append("image", image);
+    clientMutation(`/categories/${id}`, "PUT", body)
       .then(() => onSaved())
       .catch((err) => {
         const message =
@@ -74,6 +92,16 @@ export function EditCategoryModal({ category, categories, onClose, onSaved }: Ed
               autoFocus
               className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text placeholder:text-muted"
             />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-text/70">Image</label>
+            <div className="mt-1 flex items-center gap-3">
+              {preview ? <img src={preview} alt={`${category.name} preview`} className="h-16 w-16 rounded-full object-cover" /> : <div className="h-16 w-16 rounded-full bg-muted/20" />}
+              <label className="cursor-pointer rounded-lg border border-border px-3 py-2 text-sm font-semibold">
+                {image ? image.name : "Replace image"}
+                <input type="file" accept="image/*" onChange={chooseImage} className="sr-only" />
+              </label>
+            </div>
           </div>
           <div>
             <label className="text-xs font-semibold text-text/70">Slug</label>
