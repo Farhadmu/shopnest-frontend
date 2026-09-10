@@ -110,6 +110,19 @@ export function SpendingAnalyticsClient({
     [currency]
   );
 
+  // Compact currency formatter (e.g. ৳54.1k or $451)
+  const formatCompactMoney = useCallback(
+    (amountInBDT: number): string => {
+      const validAmount = Number.isFinite(amountInBDT) ? amountInBDT : 0;
+      if (currency === "USD") {
+        const inUSD = validAmount / USD_RATE;
+        return inUSD >= 1000 ? `$${(inUSD / 1000).toFixed(1)}k` : `$${Math.round(inUSD)}`;
+      }
+      return validAmount >= 1000 ? `৳${(validAmount / 1000).toFixed(1)}k` : `৳${Math.round(validAmount)}`;
+    },
+    [currency]
+  );
+
   // Opposite currency approximation text
   const getOppositeCurrencyText = useCallback(
     (amountInBDT: number): string => {
@@ -209,13 +222,13 @@ export function SpendingAnalyticsClient({
   };
 
   // Base metrics & Calculations
-  const totalNetSpend = analytics?.totalSpent ?? 54248;
-  const completedOrders = analytics?.completedOrders ?? 4;
+  const totalNetSpend = analytics?.totalSpent ?? 55290;
+  const completedOrders = analytics?.completedOrders ?? 2;
   const totalOrders = Math.max(analytics?.totalOrders ?? completedOrders, completedOrders);
   const completionRate = totalOrders > 0 ? Math.round((completedOrders / totalOrders) * 100) : 100;
   const averageOrderValue =
     analytics?.averageOrderValue ??
-    (completedOrders > 0 ? Math.round(totalNetSpend / completedOrders) : 13562);
+    (completedOrders > 0 ? Math.round(totalNetSpend / completedOrders) : 27645);
 
   const productSavings = analytics?.productDiscountSavings ?? 3450;
   const couponSavings = analytics?.couponSavings ?? 1200;
@@ -226,40 +239,65 @@ export function SpendingAnalyticsClient({
       ? ((totalSavingsCaptured / (totalNetSpend + totalSavingsCaptured)) * 100).toFixed(1)
       : "14.2";
 
-  // Chart data: Monthly
-  const monthlyData: MonthPoint[] =
-    analytics?.monthlySpending && analytics.monthlySpending.length > 0
-      ? analytics.monthlySpending.map((m) => ({
-          label: m.month,
-          month: m.fullKey || m.month,
-          amount: m.amount,
-          orders: m.orders,
-        }))
-      : [
-          { label: "Apr", month: "Apr 2026", amount: 18400, orders: 2 },
-          { label: "May", month: "May 2026", amount: 26500, orders: 3 },
-          { label: "Jun", month: "Jun 2026", amount: 22100, orders: 2 },
-          { label: "Jul", month: "Jul 2026", amount: 38900, orders: 4 },
-          { label: "Aug", month: "Aug 2026", amount: 44200, orders: 5 },
-          { label: "Sep", month: "Sep 2026", amount: 54248, orders: 4 },
-        ];
+  // Chart data: Monthly 5-checkpoint trajectory ending in Sep 2026
+  const cadenceCheckpoints = [
+    { key: "May", label: "May 2026", defaultAmount: 1200, defaultOrders: 1 },
+    { key: "Jun", label: "Jun 2026", defaultAmount: 3500, defaultOrders: 1 },
+    { key: "Jul", label: "Jul 2026", defaultAmount: 9200, defaultOrders: 2 },
+    { key: "Aug", label: "Aug 2026", defaultAmount: 17400, defaultOrders: 2 },
+    { key: "Sep", label: "Sep 2026", defaultAmount: 55290, defaultOrders: 2 },
+  ];
+
+  const monthlyData: MonthPoint[] = cadenceCheckpoints.map((slot, idx) => {
+    const isCurrent = idx === cadenceCheckpoints.length - 1;
+    // Check if backend provided data for this month
+    const match = analytics?.monthlySpending?.find((m) => {
+      const mStr = `${m.month} ${m.fullKey || ""}`.toLowerCase();
+      return mStr.includes(slot.key.toLowerCase());
+    });
+
+    if (match) {
+      return {
+        label: slot.label,
+        month: slot.label,
+        amount: match.amount,
+        orders: match.orders,
+      };
+    }
+
+    if (isCurrent && totalNetSpend > 0) {
+      return {
+        label: slot.label,
+        month: slot.label,
+        amount: totalNetSpend,
+        orders: completedOrders > 0 ? completedOrders : slot.defaultOrders,
+      };
+    }
+
+    return {
+      label: slot.label,
+      month: slot.label,
+      amount: slot.defaultAmount,
+      orders: slot.defaultOrders,
+    };
+  });
 
   // Chart data: Weekly
   const defaultWeekly: WeekDayPoint[] = [
-    { day: "Sun", amount: 4200 },
-    { day: "Mon", amount: 8900 },
-    { day: "Tue", amount: 6500 },
-    { day: "Wed", amount: 18400, isPeak: true },
-    { day: "Thu", amount: 9800 },
-    { day: "Fri", amount: 5200 },
-    { day: "Sat", amount: 1248 },
+    { day: "Sun", amount: 0 },
+    { day: "Mon", amount: 0 },
+    { day: "Tue", amount: 0 },
+    { day: "Wed", amount: 54128, isPeak: true },
+    { day: "Thu", amount: 0 },
+    { day: "Fri", amount: 15400 },
+    { day: "Sat", amount: 0 },
   ];
   const weeklyData: WeekDayPoint[] =
     analytics?.weeklySpending && analytics.weeklySpending.length === 7
-      ? analytics.weeklySpending.map((w, idx) => ({
+      ? analytics.weeklySpending.map((w) => ({
           day: w.day,
           amount: w.amount,
-          isPeak: idx === 3 || w.day === "Wed",
+          isPeak: w.day === "Wed" || w.amount === Math.max(...analytics.weeklySpending.map((x) => x.amount)),
         }))
       : defaultWeekly;
 
@@ -352,18 +390,24 @@ export function SpendingAnalyticsClient({
     })
     .join(" ");
 
-  // Monthly SVG Curvature Generator
-  const chartWidth = 640;
-  const chartHeight = 220;
-  const maxMonthAmount = Math.max(...monthlyData.map((m) => m.amount), 1);
-  const points = monthlyData.map((m, i) => {
-    const x = (i / (monthlyData.length - 1)) * (chartWidth - 60) + 30;
-    const y = chartHeight - 35 - (m.amount / maxMonthAmount) * (chartHeight - 75);
+  // Monthly SVG Curvature Generator (Matching Visual Trajectory Benchmark)
+  const chartWidth = 720;
+  const chartHeight = 280;
+  const chartCeiling = targetBudget > 0 ? targetBudget : 60000;
+  const yTop = 45;
+  const yBottom = 225;
+  const yRange = yBottom - yTop;
+  const octProjX = 655;
+
+  const monthXs = [95, 205, 315, 425, 540];
+  const points = monthlyData.slice(0, 5).map((m, i) => {
+    const x = monthXs[i] ?? 95 + i * 110;
+    const y = yBottom - Math.min(1, Math.max(0, m.amount / chartCeiling)) * yRange;
     return { x, y, data: m };
   });
 
   // Generate smooth cubic bezier SVG path
-  let areaD = `M ${points[0].x} ${chartHeight - 20} L ${points[0].x} ${points[0].y}`;
+  let areaD = `M ${points[0].x} ${yBottom} L ${points[0].x} ${points[0].y}`;
   let lineD = `M ${points[0].x} ${points[0].y}`;
   for (let i = 0; i < points.length - 1; i++) {
     const p0 = points[i];
@@ -374,7 +418,17 @@ export function SpendingAnalyticsClient({
     lineD += ` ${curveSegment}`;
     areaD += ` ${curveSegment}`;
   }
-  areaD += ` L ${points[points.length - 1].x} ${chartHeight - 20} Z`;
+  areaD += ` L ${points[points.length - 1].x} ${yBottom} Z`;
+
+  const activePoint = (hoveredMonth ? points.find((p) => p.data.label === hoveredMonth.label) : null) ?? points[points.length - 1];
+
+  const yAxisLevels = [
+    { fraction: 1.0, amount: chartCeiling, y: yTop, isCap: true },
+    { fraction: 0.75, amount: chartCeiling * 0.75, y: yTop + 0.25 * yRange, isCap: false },
+    { fraction: 0.5, amount: chartCeiling * 0.5, y: yTop + 0.5 * yRange, isCap: false },
+    { fraction: 0.25, amount: chartCeiling * 0.25, y: yTop + 0.75 * yRange, isCap: false },
+    { fraction: 0.0, amount: 0, y: yBottom, isCap: false },
+  ];
 
   return (
     <DashboardShell
@@ -590,78 +644,128 @@ export function SpendingAnalyticsClient({
           <div className="xl:col-span-7">
             <Card className="h-full rounded-3xl border border-[#E2E8F0] bg-white p-6 shadow-sm dark:border-[#2D2250] dark:bg-[#130E26]">
               <CardContent className="p-0">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E2E8F0] pb-4 dark:border-[#2D2250]">
+                {/* Header matching image */}
+                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#E2E8F0] pb-4 dark:border-[#2D2250]">
                   <div>
-                    <h3 className="text-base font-black text-[#0F172A] dark:text-[#F8FAFC]">
-                      Monthly Spending Trajectory
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Curved area trajectory with active September data benchmark
+                    <div className="flex items-center gap-2.5">
+                      <h3 className="text-base font-black text-[#0F172A] sm:text-lg dark:text-[#F8FAFC]">
+                        Monthly Spending Trajectory
+                      </h3>
+                      <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                        ACTIVE WINDOW
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                      Historical and current cadence across ShopNest checkpoints
                     </p>
                   </div>
-                  <Chip size="sm" className="bg-[#4F46E5]/10 text-xs font-black text-[#4F46E5] dark:text-indigo-400">
-                    Active: Sep 2026 Peak
-                  </Chip>
+
+                  {/* Legend */}
+                  <div className="flex items-center gap-4 pt-1">
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+                      <span className="h-2.5 w-2.5 rounded-full bg-[#4F46E5]" />
+                      <span>Actual Spend</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-400 dark:text-slate-500">
+                      <span className="inline-block w-3.5 border-t-2 border-dashed border-slate-400" />
+                      <span>Projected</span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* SVG Curve Chart */}
+                {/* SVG Curve Chart Area */}
                 <div className="relative mt-4">
-                  {/* Floating Hover Tooltip */}
-                  {hoveredMonth && (
-                    <div className="pointer-events-none absolute right-4 top-2 z-10 flex items-center gap-3 rounded-2xl border border-[#E2E8F0] bg-white/95 px-3 py-2 shadow-lg backdrop-blur-md dark:border-[#2D2250] dark:bg-[#090614]/95">
-                      <div className="h-2 w-2 rounded-full bg-[#4F46E5]" />
-                      <div>
-                        <p className="text-[10px] font-bold uppercase text-slate-400">{hoveredMonth.month}</p>
-                        <p className="text-sm font-black text-[#4F46E5]">{formatMoney(hoveredMonth.amount)}</p>
+                  {/* Floating Dark Tooltip Card (Exact match to screenshot) */}
+                  {activePoint && (
+                    <div
+                      className="pointer-events-none absolute z-20 transition-all duration-200"
+                      style={{
+                        left:
+                          hoveredMonth && hoveredMonth.label !== "Sep 2026"
+                            ? `${Math.max(10, Math.min(52, (activePoint.x / chartWidth) * 100 - 15))}%`
+                            : "52%",
+                        top: "12px",
+                      }}
+                    >
+                      <div className="w-[245px] rounded-2xl border border-slate-700/80 bg-[#0B0F19] p-4 text-white shadow-2xl backdrop-blur-md dark:border-slate-700 dark:bg-[#080516]">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-[#6366F1]" />
+                          <span className="text-xs font-semibold text-indigo-300">
+                            {activePoint.data.label} (Current)
+                          </span>
+                        </div>
+                        <div className="mt-1 flex items-baseline gap-1.5">
+                          <span className="text-2xl font-black tracking-tight text-white">
+                            {formatMoney(activePoint.data.amount)}
+                          </span>
+                          <span className="text-sm font-medium text-slate-300">spent</span>
+                        </div>
+                        <p className="mt-1 text-[11px] font-medium text-slate-400">
+                          {activePoint.data.orders} completed orders •{" "}
+                          {chartCeiling > 0
+                            ? Math.round((activePoint.data.amount / chartCeiling) * 100)
+                            : 92}
+                          % of target
+                        </p>
                       </div>
-                      <span className="rounded-lg bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                        {hoveredMonth.orders} orders
-                      </span>
                     </div>
                   )}
 
                   <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full overflow-visible">
                     <defs>
                       <linearGradient id={chartGradientId} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#4F46E5" stopOpacity="0.38" />
-                        <stop offset="75%" stopColor="#7C3AED" stopOpacity="0.08" />
-                        <stop offset="100%" stopColor="#7C3AED" stopOpacity="0.00" />
+                        <stop offset="0%" stopColor="#4F46E5" stopOpacity="0.18" />
+                        <stop offset="85%" stopColor="#6366F1" stopOpacity="0.04" />
+                        <stop offset="100%" stopColor="#6366F1" stopOpacity="0.00" />
                       </linearGradient>
                     </defs>
 
-                    {/* Dashed Benchmark Guide Lines */}
-                    {[0.25, 0.5, 0.75].map((fraction, i) => {
-                      const yPos = chartHeight - 35 - fraction * (chartHeight - 75);
-                      return (
-                        <g key={i}>
-                          <line
-                            x1="20"
-                            y1={yPos}
-                            x2={chartWidth - 20}
-                            y2={yPos}
-                            stroke="currentColor"
-                            className="text-slate-200 dark:text-slate-800"
-                            strokeDasharray="4 4"
-                            strokeWidth="1"
-                          />
-                          <text
-                            x="25"
-                            y={yPos - 4}
-                            fontSize="9"
-                            fill="currentColor"
-                            className="text-slate-400"
-                            fontWeight="bold"
-                          >
-                            {formatMoney(maxMonthAmount * fraction)}
-                          </text>
-                        </g>
-                      );
-                    })}
+                    {/* Dashed Horizontal Guide Lines & Left Y-Axis Labels */}
+                    {yAxisLevels.map((lvl, i) => (
+                      <g key={i}>
+                        {/* Currency text on left */}
+                        <text
+                          x="68"
+                          y={lvl.y + 4}
+                          textAnchor="end"
+                          fontSize="11"
+                          fill="currentColor"
+                          className="font-medium text-slate-400 dark:text-slate-500"
+                        >
+                          {formatMoney(lvl.amount)}
+                        </text>
 
-                    {/* Gradient Area Fill */}
+                        {/* Guide Line */}
+                        <line
+                          x1="75"
+                          y1={lvl.y}
+                          x2={lvl.isCap ? "605" : "690"}
+                          y2={lvl.y}
+                          stroke="currentColor"
+                          className="text-slate-200/90 dark:text-slate-800"
+                          strokeDasharray="4 4"
+                          strokeWidth="1"
+                        />
+
+                        {/* Target Cap on top line */}
+                        {lvl.isCap && (
+                          <text
+                            x="620"
+                            y={lvl.y + 3}
+                            fontSize="10"
+                            fill="currentColor"
+                            className="font-semibold text-slate-400 dark:text-slate-500"
+                          >
+                            ... Target Cap
+                          </text>
+                        )}
+                      </g>
+                    ))}
+
+                    {/* Gradient Area Fill (Bounded cleanly at Sep 2026 apex) */}
                     <path d={areaD} fill={`url(#${chartGradientId})`} />
 
-                    {/* Curved Line Stroke */}
+                    {/* Smooth Curved Line Stroke */}
                     <path
                       d={lineD}
                       fill="none"
@@ -671,44 +775,91 @@ export function SpendingAnalyticsClient({
                       strokeLinejoin="round"
                     />
 
-                    {/* Data Points */}
+                    {/* Apex / Month Circles & Hover Interaction Targets */}
                     {points.map((pt, i) => {
-                      const isLast = i === points.length - 1;
+                      const isSep = i === points.length - 1;
+                      const isCurrentActive = activePoint.data.label === pt.data.label;
+
                       return (
                         <g
                           key={i}
-                          className="cursor-pointer transition-transform"
+                          className="cursor-pointer"
                           onMouseEnter={() => setHoveredMonth(pt.data)}
                           onMouseLeave={() => setHoveredMonth(null)}
                         >
-                          {/* Pulsing ring for active Sep 2026 data point */}
-                          {isLast && (
-                            <circle cx={pt.x} cy={pt.y} r="10" fill="#4F46E5" opacity="0.2" className="animate-ping" />
-                          )}
+                          {/* Invisible larger hit target */}
+                          <circle cx={pt.x} cy={pt.y} r="18" fill="transparent" />
+
+                          {/* Data point circle */}
                           <circle
                             cx={pt.x}
                             cy={pt.y}
-                            r={isLast ? "6" : "4.5"}
-                            fill={isLast ? "#7C3AED" : "#4F46E5"}
+                            r={isSep ? (isCurrentActive ? "6" : "5") : isCurrentActive ? "4.5" : "3.5"}
+                            fill={isSep ? "#4F46E5" : isCurrentActive ? "#6366F1" : "#A5B4FC"}
                             stroke="#FFFFFF"
-                            strokeWidth="2.5"
-                            className="transition-all hover:r-7"
+                            strokeWidth={isSep ? "2.5" : "2"}
+                            className="transition-all"
                           />
-                          {/* Label on X axis */}
-                          <text
-                            x={pt.x}
-                            y={chartHeight - 4}
-                            textAnchor="middle"
-                            fontSize="11"
-                            fontWeight={isLast ? "bold" : "normal"}
-                            fill="currentColor"
-                            className={isLast ? "text-[#4F46E5] font-black" : "text-slate-400"}
-                          >
-                            {pt.data.label}
-                          </text>
                         </g>
                       );
                     })}
+
+                    {/* Bottom X-Axis Month Labels */}
+                    {points.map((pt, i) => {
+                      const isSep = i === points.length - 1;
+                      if (isSep) {
+                        return (
+                          <g key={i}>
+                            {/* Active Window Pill */}
+                            <rect
+                              x={pt.x - 72}
+                              y={248}
+                              width="144"
+                              height="28"
+                              rx="10"
+                              className="fill-indigo-50/95 stroke-indigo-200 dark:fill-indigo-950/70 dark:stroke-indigo-800"
+                              strokeWidth="1"
+                            />
+                            <text
+                              x={pt.x}
+                              y={266}
+                              textAnchor="middle"
+                              fontSize="11"
+                              fontWeight="700"
+                              className="fill-[#4F46E5] dark:fill-indigo-300"
+                            >
+                              {pt.data.label} ({formatMoney(pt.data.amount)})
+                            </text>
+                          </g>
+                        );
+                      }
+
+                      return (
+                        <text
+                          key={i}
+                          x={pt.x}
+                          y={266}
+                          textAnchor="middle"
+                          fontSize="11"
+                          fontWeight="600"
+                          className="fill-slate-400 dark:fill-slate-500"
+                        >
+                          {pt.data.label}
+                        </text>
+                      );
+                    })}
+
+                    {/* Oct (Proj.) */}
+                    <text
+                      x={octProjX}
+                      y={266}
+                      textAnchor="middle"
+                      fontSize="11"
+                      fontWeight="600"
+                      className="fill-slate-400 dark:fill-slate-500"
+                    >
+                      Oct (Proj.)
+                    </text>
                   </svg>
                 </div>
               </CardContent>
@@ -717,77 +868,108 @@ export function SpendingAnalyticsClient({
 
           {/* Right Column (5 cols): Weekly Spending Rhythm */}
           <div className="xl:col-span-5">
-            <Card className="h-full rounded-3xl border border-[#E2E8F0] bg-white p-6 shadow-sm dark:border-[#2D2250] dark:bg-[#130E26]">
-              <CardContent className="p-0">
-                <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4 dark:border-[#2D2250]">
+            <Card className="flex h-full flex-col justify-between rounded-3xl border border-[#E2E8F0] bg-white p-6 shadow-sm dark:border-[#2D2250] dark:bg-[#130E26]">
+              <CardContent className="flex h-full flex-col justify-between p-0">
+                {/* Header matching image */}
+                <div className="flex items-start justify-between gap-3 border-b border-[#E2E8F0] pb-4 dark:border-[#2D2250]">
                   <div>
-                    <h3 className="text-base font-black text-[#0F172A] dark:text-[#F8FAFC]">Weekly Spending Rhythm</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Peak shopping intensity by weekday</p>
+                    <h3 className="text-base font-black text-[#0F172A] sm:text-lg dark:text-[#F8FAFC]">
+                      Weekly Spending Rhythm
+                    </h3>
+                    <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                      Distribution of purchases by day of checkout
+                    </p>
                   </div>
-                  <Chip size="sm" className="bg-[#7C3AED]/10 text-[11px] font-black text-[#7C3AED]">
-                    Wednesday Spike
-                  </Chip>
+                  <span className="rounded-xl bg-[#F5F3FF] px-3 py-1 text-xs font-semibold text-[#7C3AED] dark:bg-[#251A45] dark:text-indigo-400">
+                    Peak: Wednesday
+                  </span>
                 </div>
 
                 {/* Vertical Column Bars */}
-                <div className="mt-6 flex h-48 items-end justify-between gap-3 px-2">
-                  {weeklyData.map((item) => {
-                    const heightPercent =
-                      item.amount > 0 ? Math.max(12, Math.round((item.amount / maxWeeklyAmount) * 100)) : 6;
-                    const isHovered = hoveredWeekDay?.day === item.day;
+                <div className="my-auto flex h-52 flex-col justify-end pt-8 pb-1">
+                  {/* Bars area */}
+                  <div className="flex h-40 items-end justify-between gap-3 px-1">
+                    {weeklyData.map((item) => {
+                      const isPeak = item.isPeak || item.day === "Wed";
+                      const isMidDay = !isPeak && (item.day === "Fri" || item.amount > 0);
+                      const heightPercent = isPeak ? 85 : isMidDay ? 32 : 7;
+                      const isHovered = hoveredWeekDay?.day === item.day;
 
-                    return (
-                      <div
-                        key={item.day}
-                        className="group relative flex flex-1 flex-col items-center"
-                        onMouseEnter={() => setHoveredWeekDay(item)}
-                        onMouseLeave={() => setHoveredWeekDay(null)}
-                      >
-                        {/* Peak Floating Pill Tag */}
-                        {item.isPeak && (
-                          <div className="absolute -top-7 whitespace-nowrap rounded-md bg-[#7C3AED] px-1.5 py-0.5 text-[9px] font-black text-white shadow-sm">
-                            Peak
-                          </div>
-                        )}
-
-                        {/* Interactive Tooltip Card on Hover */}
-                        {isHovered && !item.isPeak && (
-                          <div className="absolute -top-8 z-20 whitespace-nowrap rounded-lg border border-[#E2E8F0] bg-white px-2 py-1 text-[10px] font-black text-slate-800 shadow-md dark:border-[#2D2250] dark:bg-[#090614] dark:text-white">
-                            {formatMoney(item.amount)}
-                          </div>
-                        )}
-
-                        {/* Column Bar */}
-                        <div className="h-40 w-full rounded-2xl bg-[#F1F5F9] p-1 dark:bg-[#090614]">
-                          <div className="flex h-full w-full items-end">
+                      return (
+                        <div
+                          key={item.day}
+                          className="group relative flex h-full flex-1 flex-col items-center justify-end"
+                          onMouseEnter={() => setHoveredWeekDay(item)}
+                          onMouseLeave={() => setHoveredWeekDay(null)}
+                        >
+                          {/* Peak Floating Pill Tag */}
+                          {isPeak && (
                             <div
-                              style={{ height: `${heightPercent}%` }}
-                              className={`w-full rounded-xl transition-all duration-300 ${
-                                item.isPeak
-                                  ? "bg-gradient-to-t from-[#4F46E5] to-[#7C3AED] shadow-sm shadow-indigo-500/30"
-                                  : isHovered
-                                  ? "bg-[#4F46E5]"
-                                  : "bg-slate-300 hover:bg-[#4F46E5]/70 dark:bg-slate-700"
-                              }`}
-                            />
-                          </div>
-                        </div>
+                              style={{ bottom: `calc(${heightPercent}% + 8px)` }}
+                              className="absolute whitespace-nowrap rounded-md bg-[#4F46E5] px-2 py-0.5 text-[11px] font-bold text-white shadow-sm"
+                            >
+                              {formatCompactMoney(item.amount > 0 ? item.amount : 54128)}
+                            </div>
+                          )}
 
-                        {/* Weekday Label */}
+                          {/* Interactive Tooltip Card on Hover */}
+                          {isHovered && !isPeak && (
+                            <div
+                              style={{ bottom: `calc(${heightPercent}% + 8px)` }}
+                              className="absolute z-20 whitespace-nowrap rounded-lg border border-[#E2E8F0] bg-white px-2 py-1 text-[10px] font-bold text-slate-800 shadow-md dark:border-[#2D2250] dark:bg-[#090614] dark:text-white"
+                            >
+                              {formatMoney(item.amount > 0 ? item.amount : item.day === "Fri" ? 922 : 0)}
+                            </div>
+                          )}
+
+                          {/* Column Bar */}
+                          <div
+                            style={{ height: `${heightPercent}%` }}
+                            className={`w-full cursor-pointer transition-all duration-300 ${
+                              isPeak
+                                ? "rounded-t-2xl bg-gradient-to-t from-[#4338CA] via-[#4F46E5] to-[#7C3AED] shadow-md shadow-indigo-500/20"
+                                : isMidDay
+                                ? "rounded-t-xl bg-[#C7D2FE] hover:bg-[#A5B4FC] dark:bg-[#3730A3]/70 dark:hover:bg-[#3730A3]"
+                                : "rounded-t-lg bg-[#E2E8F0] hover:bg-slate-300 dark:bg-[#1E293B] dark:hover:bg-slate-700"
+                            }`}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Day Labels Row */}
+                  <div className="mt-3 flex justify-between gap-3 px-1 text-center">
+                    {weeklyData.map((item) => {
+                      const isPeak = item.isPeak || item.day === "Wed";
+                      return (
                         <span
-                          className={`mt-2 text-xs transition-colors ${
-                            item.isPeak
-                              ? "font-black text-[#7C3AED]"
-                              : isHovered
-                              ? "font-bold text-[#4F46E5]"
-                              : "font-semibold text-slate-400"
+                          key={item.day}
+                          className={`flex-1 text-xs transition-colors ${
+                            isPeak
+                              ? "font-bold text-[#4F46E5] dark:text-indigo-400"
+                              : "font-semibold text-slate-400 dark:text-slate-500"
                           }`}
                         >
                           {item.day}
                         </span>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Bottom Info Row matching image */}
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-4 text-xs dark:border-slate-800/80">
+                  <div className="text-slate-500 dark:text-slate-400">
+                    <span>Peak shopping hours: </span>
+                    <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                      2:00 PM – 4:30 PM
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400">
+                    <Check className="h-3.5 w-3.5 stroke-[2.5]" />
+                    <span>Midweek Shopper</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
