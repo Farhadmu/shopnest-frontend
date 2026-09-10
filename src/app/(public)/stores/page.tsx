@@ -2,6 +2,8 @@ import StoresContent from "@/components/stores/StoresContent";
 import { getPublicStores } from "@/lib/api/stores.server";
 import type { Store } from "@/types/store";
 
+export const dynamic = "force-dynamic";
+
 export default async function StoresPage() {
   let stores: Store[] = [];
   let categories = ["All Stores"];
