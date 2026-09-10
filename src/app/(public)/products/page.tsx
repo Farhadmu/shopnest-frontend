@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { getProductsPaged, PagedProducts, getStoreOptions, StoreOption, getSellerOptions } from "@/lib/api/products";
 import { getCategories, Category } from "@/lib/api/categories";
