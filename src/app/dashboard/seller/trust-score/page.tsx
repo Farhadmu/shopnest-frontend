@@ -17,6 +17,8 @@ interface TrustBreakdown {
   };
 }
 
+type TrustApiResponse = TrustBreakdown | { data: TrustBreakdown };
+
 export default function TrustScorePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,16 +28,20 @@ export default function TrustScorePage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await clientFetch<TrustBreakdown>("/trust/me");
-      setData(res);
+      const res = await clientFetch<TrustApiResponse>("/trust/me");
+      setData("data" in res ? res.data : res);
     } catch {
+      setData(null);
       setError("Failed to load trust score. Make sure you have a registered store.");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void loadData(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadData]);
 
   const score = data?.trustScore || 0;
   const scoreColor = score >= 80 ? "success" : score >= 50 ? "warning" : "error";
