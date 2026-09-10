@@ -12,6 +12,7 @@ import {
   FiShoppingBag,
   FiTag,
   FiXCircle,
+  FiCalendar,
 } from "react-icons/fi";
 import { getHomepageCoupons } from "@/lib/api/coupons";
 import type { Coupon, CouponDiscountType } from "@/types/coupon";
@@ -108,27 +109,39 @@ function getSubtitle(coupon: Coupon): string {
   return `${minText} on your order`;
 }
 
-function getCategoryInfo(coupon: Coupon): { label: string; href: string } {
-  if (coupon.scope === "specific-category" && coupon.category) {
-    return { label: coupon.category, href: `/products?category=${encodeURIComponent(coupon.category)}` };
+function getCategoryInfo(coupon: Coupon): { labels: string[]; href: string } {
+  if (coupon.scope === "specific-category") {
+    const labels =
+      coupon.categories && coupon.categories.length > 0
+        ? coupon.categories
+        : coupon.category
+          ? [coupon.category]
+          : [];
+    if (labels.length > 0) {
+      return {
+        labels,
+        href: `/products?category=${encodeURIComponent(labels.join(","))}`,
+      };
+    }
   }
   if (coupon.scope === "specific-products") {
-    return { label: "Selected Products", href: "/products" };
+    return { labels: ["Selected Products"], href: "/products" };
   }
-  return { label: "All Products", href: "/products" };
+  return { labels: ["All Products"], href: "/products" };
 }
 
 function formatUnit(value: number): string {
   return String(Math.max(value, 0)).padStart(2, "0");
 }
 
-/** Derives {hours,minutes,seconds} remaining until `expiresAt`, or null once it has passed. */
+/** Derives {days,hours,minutes,seconds} remaining until `expiresAt`, or null once it has passed. */
 function getRemaining(expiresAt: string | undefined, now: number) {
   if (!expiresAt) return null;
   const diff = new Date(expiresAt).getTime() - now;
   if (diff <= 0) return null;
   return {
-    hours: Math.floor(diff / 3_600_000),
+    days: Math.floor(diff / 86_400_000),
+    hours: Math.floor((diff % 86_400_000) / 3_600_000),
     minutes: Math.floor((diff % 3_600_000) / 60_000),
     seconds: Math.floor((diff % 60_000) / 1_000),
   };
@@ -236,9 +249,8 @@ export default function CouponSection() {
             return (
               <Card
                 key={coupon.id}
-                className={`relative overflow-hidden border ${theme.cardBorder} ${theme.cardBg} shadow-xs hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 rounded-md group ${
-                  !isRunning ? "opacity-80" : ""
-                }`}
+                className={`relative overflow-hidden border ${theme.cardBorder} ${theme.cardBg} shadow-xs hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 rounded-md group ${!isRunning ? "opacity-80" : ""
+                  }`}
               >
                 <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full gap-3.5">
                   {/* Meta Top Header: Seller Name & Category Badge */}
@@ -254,7 +266,9 @@ export default function CouponSection() {
                       <span
                         className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${theme.categoryBg}`}
                       >
-                        <FiTag className="text-[9px]" /> {category.label}
+                        <FiTag className="text-[9px]" />
+                        {category.labels[0]}
+                        {category.labels.length > 1 && ` +${category.labels.length - 1}`}
                       </span>
                     </div>
                   </div>
@@ -283,8 +297,19 @@ export default function CouponSection() {
                           </Chip>
                         )}
 
-                        {isRunning && remaining && (
-                          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-100/70 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/40 text-[10px] font-mono font-bold text-rose-600 dark:text-rose-400">
+                        {isRunning && remaining && remaining.days >= 1 && (
+                          <div
+                            className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${theme.chipBg}`}
+                          >
+                            <FiCalendar className="text-[10px]" />
+                            <span>
+                              {remaining.days} Day{remaining.days > 1 ? "s" : ""} Left
+                            </span>
+                          </div>
+                        )}
+
+                        {isRunning && remaining && remaining.days < 1 && (
+                          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-100/70 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/40 text-[10px] font-mono font-bold text-rose-600 dark:text-rose-400 animate-pulse">
                             <FiClock className="text-[10px]" />
                             <span>
                               {formatUnit(remaining.hours)}:{formatUnit(remaining.minutes)}:
@@ -334,9 +359,8 @@ export default function CouponSection() {
                   <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
                     {/* Code Copy Pill */}
                     <div
-                      className={`flex items-center ${theme.boxBg} rounded-md p-1 border shadow-xs shrink-0 ${
-                        !isRunning ? "opacity-60" : ""
-                      }`}
+                      className={`flex items-center ${theme.boxBg} rounded-md p-1 border shadow-xs shrink-0 ${!isRunning ? "opacity-60" : ""
+                        }`}
                     >
                       <span className="text-[10px] font-semibold text-slate-400 pl-1.5 pr-1 uppercase tracking-wider">
                         CODE:
@@ -346,9 +370,8 @@ export default function CouponSection() {
                         onClick={() => handleCopy(coupon)}
                         disabled={!isRunning}
                         aria-disabled={!isRunning}
-                        className={`flex items-center gap-1.5 ${theme.btnBg} px-2 py-0.5 rounded-md text-xs font-bold font-mono tracking-wider transition-colors ${
-                          isRunning ? "cursor-pointer" : "cursor-not-allowed"
-                        }`}
+                        className={`flex items-center gap-1.5 ${theme.btnBg} px-2 py-0.5 rounded-md text-xs font-bold font-mono tracking-wider transition-colors ${isRunning ? "cursor-pointer" : "cursor-not-allowed"
+                          }`}
                       >
                         <span>{coupon.code}</span>
                         {copiedCode === coupon.code ? (
@@ -366,7 +389,10 @@ export default function CouponSection() {
                       href={category.href}
                       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold ${theme.actionBtn} shadow-xs hover:shadow transition-all active:scale-95 shrink-0`}
                     >
-                      <span>{category.label}</span>
+                      <span>
+                        {category.labels[0]}
+                        {category.labels.length > 1 && ` +${category.labels.length - 1}`}
+                      </span>
                       <FiArrowRight className="text-[11px]" />
                     </Link>
                   </div>

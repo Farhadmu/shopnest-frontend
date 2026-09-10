@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Label, ListBox, Select } from "@heroui/react";
 import { ProductPickerList } from "./ProductPickerList";
 import { getCategories, type Category } from "@/lib/api/categories";
-import { getCategoryLimit } from "@/lib/api/coupons";
+import { getCategoryLimit, getSellerLockedCategories } from "@/lib/api/coupons";
 import { useSession } from "@/lib/auth-client";
 import type { CouponScope } from "@/types/coupon";
 
@@ -44,10 +44,20 @@ export function CouponScopeFields({
   const [catSearch, setCatSearch] = useState("");
   const [limitError, setLimitError] = useState<string | null>(null);
   const [maxLimit, setMaxLimit] = useState<number | undefined>(propCategoryLimit);
+  const [sellerLockedCategories, setSellerLockedCategories] = useState<string[]>([]);
   const { data: session } = useSession();
   const currentSellerId = (session?.user as any)?.id as string | undefined;
 
   const isHomepage = placement === "homepage";
+
+  // Fetch seller's currently locked categories when component mounts or seller changes
+  useEffect(() => {
+    if (isHomepage && currentSellerId) {
+      getSellerLockedCategories(currentSellerId)
+        .then(setSellerLockedCategories)
+        .catch(() => setSellerLockedCategories([]));
+    }
+  }, [isHomepage, currentSellerId]);
 
   useEffect(() => {
     getCategories()
@@ -71,15 +81,31 @@ export function CouponScopeFields({
   const isLockedForCurrentSeller = (cat: Category) =>
     Boolean(cat.isLocked) && cat.assignedSellerId !== currentSellerId;
 
+  /** Categories already locked to the current seller (from previous approved homepage coupons) */
+  const isAlreadyLockedToSeller = (catName: string) =>
+    sellerLockedCategories.includes(catName);
+
   const handleToggleCategory = (cat: Category) => {
     setLimitError(null);
     const catName = cat.name;
-    if (isLockedForCurrentSeller(cat) && !selectedCategories.includes(catName)) return;
+    if (isHomepage && isLockedForCurrentSeller(cat) && !selectedCategories.includes(catName)) return;
 
     const isSelecting = !selectedCategories.includes(catName);
-    if (isHomepage && isSelecting && maxLimit !== undefined && selectedCategories.length >= maxLimit) {
-      setLimitError(`Homepage category limit reached (${maxLimit} max allowed by admin).`);
-      return;
+    
+    // For homepage coupons: check per-seller limit
+    // Count = already locked to seller + newly selected (excluding those already locked)
+    if (isHomepage && isSelecting && maxLimit !== undefined) {
+      const alreadyLockedSelected = selectedCategories.filter(c => isAlreadyLockedToSeller(c)).length;
+      const newSelectionsCount = selectedCategories.length - alreadyLockedSelected;
+      // If adding a new category (not already locked to seller), check if it would exceed limit
+      if (!isAlreadyLockedToSeller(catName)) {
+        if (sellerLockedCategories.length + newSelectionsCount + 1 > maxLimit) {
+          setLimitError(
+            `Homepage category limit reached (${maxLimit} max per seller). You already have ${sellerLockedCategories.length} categories allocated from previous coupons.`
+          );
+          return;
+        }
+      }
     }
 
     if (!onCategoriesChange) {
@@ -188,7 +214,7 @@ export function CouponScopeFields({
               ) : (
                 filteredCats.map((cat) => {
                   const isChecked = selectedCategories.includes(cat.name);
-                  const isLocked = isLockedForCurrentSeller(cat) && !isChecked;
+                  const isLocked = isHomepage && isLockedForCurrentSeller(cat) && !isChecked;
                   return (
                     <label
                       key={cat.id}

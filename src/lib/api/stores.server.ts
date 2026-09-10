@@ -123,7 +123,10 @@ function normalizeStore(store: BackendStore): Store {
 }
 
 export async function getPublicStores(): Promise<{ stores: Store[]; categories: string[] }> {
-  const stores = await publicFetch<BackendStore[]>("/sellers");
+  const response = await publicFetch<BackendStore[] | { data: BackendStore[] }>("/sellers", {
+    cache: "no-store",
+  });
+  const stores = "data" in response ? response.data : response;
   const normalizedStores = stores.map(normalizeStore);
   const categories = ["All Stores", ...STORE_CATEGORIES];
 
