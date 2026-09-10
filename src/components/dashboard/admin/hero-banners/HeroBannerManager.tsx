@@ -28,6 +28,8 @@ type FormState = {
   targetUrl: string;
   overlayColor: string;
   overlayOpacity: string;
+  lightTextColor: string;
+  darkTextColor: string;
   bgClassName: string;
   textTheme: "light" | "dark";
   displayOrder: string;
@@ -48,6 +50,8 @@ const emptyForm: FormState = {
   targetUrl: "",
   overlayColor: "",
   overlayOpacity: "50",
+  lightTextColor: "",
+  darkTextColor: "",
   bgClassName: "",
   textTheme: "light",
   displayOrder: "1",
@@ -120,6 +124,8 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
       targetUrl: banner.targetUrl ?? "",
       overlayColor: banner.overlayColor ?? "",
       overlayOpacity: String(banner.overlayOpacity ?? 50),
+      lightTextColor: banner.lightTextColor ?? "",
+      darkTextColor: banner.darkTextColor ?? "",
       bgClassName: banner.bgClassName ?? "",
       textTheme: banner.textTheme,
       displayOrder: String(banner.displayOrder),
@@ -165,6 +171,8 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
         targetUrl: form.targetUrl.trim() || null,
         overlayColor: form.overlayColor || null,
         overlayOpacity: form.overlayColor ? Number(form.overlayOpacity) : null,
+        lightTextColor: form.lightTextColor || null,
+        darkTextColor: form.darkTextColor || null,
         bgClassName: form.bgClassName.trim() || null,
         textTheme: form.textTheme,
         displayOrder: Number(form.displayOrder) || 0,
@@ -380,6 +388,33 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
               className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
             />
           </label>
+          <fieldset className="text-sm font-bold text-text sm:col-span-2">
+            <legend>Text colors by mode</legend>
+            <div className="mt-2 grid gap-3 sm:grid-cols-2">
+              {([
+                ["lightTextColor", "Light / white mode", "#ffffff"],
+                ["darkTextColor", "Dark mode", "#111827"],
+              ] as const).map(([field, label, defaultColor]) => (
+                <div key={field} className="flex items-center gap-3 rounded-xl border border-border bg-background p-3">
+                  <input
+                    type="color"
+                    value={form[field] || defaultColor}
+                    onChange={(event) => setForm({ ...form, [field]: event.target.value })}
+                    className="h-10 w-12 cursor-pointer rounded-lg border border-border bg-background p-1"
+                    aria-label={`Choose ${label} text color`}
+                  />
+                  <span className="min-w-0 flex-1 text-xs font-semibold">{label}</span>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, [field]: "" })}
+                    className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-bold ${!form[field] ? "border-primary bg-primary/10 text-primary" : "border-border text-muted"}`}
+                  >
+                    Default
+                  </button>
+                </div>
+              ))}
+            </div>
+          </fieldset>
           <label className="text-sm font-bold text-text">
             Image overlay
             <div className="mt-2 flex items-center gap-3">
@@ -530,6 +565,10 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
               />
               <div
                 className={`relative z-10 flex h-full flex-col justify-end p-5 ${form.textTheme === "dark" ? "text-text" : "text-white"}`}
+                style={{
+                  color:
+                    (form.textTheme === "light" ? form.lightTextColor : form.darkTextColor) || undefined,
+                }}
               >
                 <span className="text-xs font-bold uppercase">{form.eyebrow}</span>
                 <strong>
