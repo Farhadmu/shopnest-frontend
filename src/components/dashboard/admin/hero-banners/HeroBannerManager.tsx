@@ -454,6 +454,44 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
             </div>
           </label>
           <label className="text-sm font-bold text-text">
+            Image overlay
+            <div className="mt-2 flex items-center gap-3">
+              <input
+                type="color"
+                value={form.overlayColor || "#000000"}
+                onChange={(event) => setForm({ ...form, overlayColor: event.target.value })}
+                className="h-11 w-14 cursor-pointer rounded-lg border border-border bg-background p-1"
+                aria-label="Choose image overlay color"
+              />
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, overlayColor: "" })}
+                className={`rounded-lg border px-3 py-2 text-xs font-bold ${!form.overlayColor ? "border-primary bg-primary/10 text-primary" : "border-border text-muted"}`}
+              >
+                None
+              </button>
+              <span className="text-xs font-normal text-muted">
+                {form.overlayColor || "No overlay"}
+              </span>
+            </div>
+            <div className="mt-3 flex items-center gap-3">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={form.overlayOpacity}
+                onChange={(event) => setForm({ ...form, overlayOpacity: event.target.value })}
+                disabled={!form.overlayColor}
+                className="w-full accent-primary disabled:opacity-40"
+                aria-label="Choose image overlay opacity"
+              />
+              <span className="w-12 text-right text-xs font-semibold text-muted">
+                {form.overlayColor ? `${form.overlayOpacity}%` : "Off"}
+              </span>
+            </div>
+          </label>
+          <label className="text-sm font-bold text-text">
             Display order
             <input
               type="number"
