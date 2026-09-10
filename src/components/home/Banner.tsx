@@ -58,8 +58,20 @@ function PromoCard({
         />
         <div
           className={`absolute inset-0 ${
-            isLight ? "bg-secondary/50" : "bg-surface/70"
+            card.overlayColor === undefined
+              ? isLight
+                ? "bg-secondary/50"
+                : "bg-surface/70"
+              : ""
           }`}
+          style={
+            card.overlayColor
+              ? {
+                  backgroundColor: card.overlayColor,
+                  opacity: (card.overlayOpacity ?? 50) / 100,
+                }
+              : undefined
+          }
         />
       </div>
 
@@ -212,8 +224,20 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
         />
         <div
           className={`absolute inset-0 ${
-            isLight ? "bg-secondary/50" : "bg-surface/70"
+            slide.overlayColor === undefined
+              ? isLight
+                ? "bg-secondary/50"
+                : "bg-surface/70"
+              : ""
           }`}
+          style={
+            slide.overlayColor
+              ? {
+                  backgroundColor: slide.overlayColor,
+                  opacity: (slide.overlayOpacity ?? 50) / 100,
+                }
+              : undefined
+          }
         />
       </div>
 
@@ -297,6 +321,8 @@ function customBannerSlides(banners: HeroBanner[], categoryLabel: string): HeroS
     buttonText: banner.buttonText || (banner.targetUrl ? "SHOP NOW" : "EXPLORE"),
     buttonLink: banner.targetUrl || `/products?category=${encodeURIComponent(categoryLabel)}`,
     bgClassName: banner.bgClassName || undefined,
+    overlayColor: banner.overlayColor ?? null,
+    overlayOpacity: banner.overlayColor ? banner.overlayOpacity ?? 50 : null,
     textTheme: banner.textTheme,
   }));
 }
@@ -313,6 +339,8 @@ function customPromoCards(banners: HeroBanner[], categoryLabel: string): PromoCa
     buttonText: banner.buttonText || (banner.targetUrl ? "SHOP NOW" : undefined),
     buttonLink: banner.targetUrl || undefined,
     bgClassName: banner.bgClassName || undefined,
+    overlayColor: banner.overlayColor ?? null,
+    overlayOpacity: banner.overlayColor ? banner.overlayOpacity ?? 50 : null,
     textTheme: banner.textTheme,
   }));
 }
