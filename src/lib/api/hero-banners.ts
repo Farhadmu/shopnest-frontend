@@ -15,6 +15,8 @@ export interface HeroBanner {
   targetUrl?: string | null;
   overlayColor?: string | null;
   overlayOpacity?: number | null;
+  lightTextColor?: string | null;
+  darkTextColor?: string | null;
   bgClassName?: string | null;
   textTheme: "light" | "dark";
   isActive: boolean;
@@ -41,6 +43,8 @@ interface RawHeroBanner {
   targetUrl?: string | null;
   overlayColor?: string | null;
   overlayOpacity?: number | null;
+  lightTextColor?: string | null;
+  darkTextColor?: string | null;
   isActive: boolean;
   displayOrder?: number;
   createdAt?: string;
@@ -63,6 +67,8 @@ function normalize(raw: RawHeroBanner): HeroBanner {
     targetUrl: raw.targetUrl ?? null,
     overlayColor: raw.overlayColor ?? null,
     overlayOpacity: raw.overlayOpacity ?? null,
+    lightTextColor: raw.lightTextColor ?? null,
+    darkTextColor: raw.darkTextColor ?? null,
     bgClassName: raw.bgClassName ?? null,
     textTheme: raw.textTheme ?? "light",
     isActive: Boolean(raw.isActive),

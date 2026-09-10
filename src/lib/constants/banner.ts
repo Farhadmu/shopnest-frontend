@@ -24,6 +24,8 @@ export type HeroSlide = {
   bgClassName?: string;
   overlayColor?: string | null;
   overlayOpacity?: number | null;
+  lightTextColor?: string | null;
+  darkTextColor?: string | null;
 
   textTheme?: "light" | "dark";
 };
@@ -41,6 +43,8 @@ export type PromoCard = {
   bgClassName?: string;
   overlayColor?: string | null;
   overlayOpacity?: number | null;
+  lightTextColor?: string | null;
+  darkTextColor?: string | null;
   textTheme?: "light" | "dark";
 };
 
