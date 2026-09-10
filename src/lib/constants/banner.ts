@@ -22,6 +22,10 @@ export type HeroSlide = {
   buttonLink: string;
 
   bgClassName?: string;
+  overlayColor?: string | null;
+  overlayOpacity?: number | null;
+  lightTextColor?: string | null;
+  darkTextColor?: string | null;
 
   textTheme?: "light" | "dark";
 };
@@ -37,6 +41,10 @@ export type PromoCard = {
   buttonText?: string;
   buttonLink?: string;
   bgClassName?: string;
+  overlayColor?: string | null;
+  overlayOpacity?: number | null;
+  lightTextColor?: string | null;
+  darkTextColor?: string | null;
   textTheme?: "light" | "dark";
 };
 
