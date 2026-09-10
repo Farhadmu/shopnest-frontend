@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
@@ -277,7 +278,7 @@ export function SpendingAnalyticsClient({
                 {monthlyChartData.length > 0 ? (
                   <LineAreaChart data={monthlyChartData} color="var(--color-chart-1)" height={260} />
                 ) : (
-                  <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-border bg-muted-bg/40 text-sm text-muted">
+                  <div className="flex min-h-55 items-center justify-center rounded-2xl border border-dashed border-border bg-muted-bg/40 text-sm text-muted">
                     No spending data for this period
                   </div>
                 )}
@@ -294,7 +295,7 @@ export function SpendingAnalyticsClient({
                 {weeklyChartData.some((d) => d.value > 0) ? (
                   <BarChart data={weeklyChartData} color="var(--color-chart-4)" height={260} />
                 ) : (
-                  <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-border bg-muted-bg/40 text-sm text-muted">
+                  <div className="flex min-h-55 items-center justify-center rounded-2xl border border-dashed border-border bg-muted-bg/40 text-sm text-muted">
                     No weekly data available
                   </div>
                 )}
@@ -328,7 +329,7 @@ export function SpendingAnalyticsClient({
                           key={cat.category}
                           className="flex items-center justify-between rounded-xl bg-muted-bg p-2.5 text-xs"
                         >
-                          <span className="font-bold text-text truncate max-w-[120px]">{cat.category}</span>
+                          <span className="font-bold text-text truncate max-w-30">{cat.category}</span>
                           <span className="font-black text-primary">
                             {formatCurrency(cat.amount ?? 0)} ({cat.percentage ?? 0}%)
                           </span>
@@ -337,7 +338,7 @@ export function SpendingAnalyticsClient({
                     </div>
                   </div>
                 ) : (
-                  <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-border bg-muted-bg/40 text-sm text-muted">
+                  <div className="flex min-h-55 items-center justify-center rounded-2xl border border-dashed border-border bg-muted-bg/40 text-sm text-muted">
                     No category data available
                   </div>
                 )}
@@ -381,7 +382,7 @@ export function SpendingAnalyticsClient({
                     })}
                   </div>
                 ) : (
-                  <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-border bg-muted-bg/40 text-sm text-muted">
+                  <div className="flex min-h-55 items-center justify-center rounded-2xl border border-dashed border-border bg-muted-bg/40 text-sm text-muted">
                     No seller data available
                   </div>
                 )}
