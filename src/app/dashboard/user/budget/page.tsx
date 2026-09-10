@@ -10,7 +10,7 @@ import { BudgetEmptyState } from "./components/BudgetEmptyState";
 import Image from "next/image";
 
 export default function BudgetPlannerPage() {
-  const { budgetInput, setBudgetInput, budgetPurpose, setBudgetPurpose, budgetPlan, loading, generate } = useBudgetPlanner();
+  const { budgetInput, setBudgetInput, budgetPurpose, setBudgetPurpose, budgetPlan, loading, generate, error } = useBudgetPlanner();
   const { categories, loading: categoriesLoading } = useCategories();
 
   // Default to the first category slug once loaded
@@ -21,9 +21,14 @@ export default function BudgetPlannerPage() {
   }, [categories, budgetPurpose, setBudgetPurpose]);
 
   return (
-    <DashboardShell role="Customer" title="Smart Budget Planner" subtitle="Let AI allocate the optimal cart combination for your budget." links={userDashboardLinks}>
+    <DashboardShell role="Customer" title="💰 Smart Budget Planner" subtitle="Get an optimized cart combination based on your budget and category." links={userDashboardLinks}>
       <div className="space-y-6">
-        <Panel title="💰 Smart AI Budget Planner">
+        {error && (
+          <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-xs font-bold text-red-600">
+            {error}
+          </div>
+        )}
+        <Panel title="">
           <div className="rounded-2xl border border-border bg-muted-bg/30 p-4">
             <div className="grid gap-4 sm:grid-cols-3">
               <div>
