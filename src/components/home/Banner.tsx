@@ -377,13 +377,11 @@ function CategorySidebar({
   categories,
   activeIdx,
   loading,
-  saleLabel,
   onSelect,
 }: {
   categories: BannerCategory[];
   activeIdx: number;
   loading: boolean;
-  saleLabel?: string;
   onSelect: (idx: number) => void;
 }) {
   const listRef = useRef<HTMLUListElement>(null);
@@ -395,10 +393,6 @@ function CategorySidebar({
 
   return (
     <aside className="col-span-2 rounded-xl border border-border bg-surface p-4 sm:col-span-4 sm:p-5 lg:col-span-2">
-      {saleLabel && (
-        <p className="mb-3 text-sm font-bold text-error">{saleLabel}</p>
-      )}
-
       {loading ? (
         <ul className="space-y-3">
           {[...Array(MAX_CATEGORIES)].map((_, n) => (
@@ -452,7 +446,7 @@ function CategorySidebar({
 // ---------------------------------------------------------------------------
 
 export default function BannerSection({ data }: { data: BannerSectionData }) {
-  const { saleLabel, heroSlides, sideCards, bottomCards } = data;
+  const { heroSlides, sideCards, bottomCards } = data;
 
   const [categories, setCategories] = useState<BannerCategory[]>(() =>
     (data.categories ?? FALLBACK_CATEGORIES).slice(0, MAX_CATEGORIES)
@@ -591,7 +585,6 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
         categories={categories}
         activeIdx={activeIdx}
         loading={categoriesLoading}
-        saleLabel={saleLabel}
         onSelect={handleSelectCategory}
       />
 
