@@ -19,8 +19,8 @@ import { getHeroBanners, HeroBanner } from "@/lib/api/hero-banners";
 // Constants
 // ---------------------------------------------------------------------------
 
-const CATEGORY_CYCLE_MS = 3000;
-const HERO_ADVANCE_MS   = 6000;
+const CATEGORY_CYCLE_MS = 7000;
+const HERO_ADVANCE_MS   = 7000;
 const MAX_CATEGORIES    = 10;
 const MAX_PROMO_CARDS    = 2;
 const SWIPE_EASE = [0.22, 1, 0.36, 1] as const;
@@ -52,6 +52,7 @@ function PromoCard({
           alt={card.title}
           fill
           sizes={imageSizes}
+          quality={100}
           className="object-cover"
           priority={false}
         />
@@ -205,6 +206,7 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           alt={slide.title}
           fill
           sizes="(max-width: 1024px) 100vw, 60vw"
+          quality={100}
           className="object-cover"
           priority
         />
@@ -472,9 +474,6 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
   useEffect(() => {
     const activeCategoryId = activeCat?.id;
     if (!activeCategoryId || !/^[a-f\d]{24}$/i.test(activeCategoryId)) {
-      setBannerCategoryId(null);
-      setCustomBanners([]);
-      setBannersLoading(false);
       return;
     }
 
@@ -482,19 +481,19 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
     if (cached) {
       setBannerCategoryId(activeCategoryId);
       setCustomBanners(cached);
+      setBannersLoading(false);
       return;
     }
 
     let cancelled = false;
     setBannersLoading(true);
     getHeroBanners(activeCategoryId)
-      .then(async (categoryBanners) => {
+      .then((categoryBanners) => {
         if (cancelled) return;
-        const banners = categoryBanners.length > 0 ? categoryBanners : await getHeroBanners();
         if (cancelled) return;
-        bannerCache.current.set(activeCategoryId, banners);
+        bannerCache.current.set(activeCategoryId, categoryBanners);
         setBannerCategoryId(activeCategoryId);
-        setCustomBanners(banners);
+        setCustomBanners(categoryBanners);
       })
       .catch(() => {
         if (!cancelled) setBannersLoading(false);
@@ -506,6 +505,7 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
   }, [activeCat?.id]);
 
   const categoryLabel = activeCat?.label ?? "ShopNest";
+  const isApiCategory = Boolean(activeCat?.id && /^[a-f\d]{24}$/i.test(activeCat.id));
   const categoryBanners = bannerCategoryId === activeCat?.id ? customBanners : [];
   const heroBanners = categoryBanners.filter((banner) => banner.placement === "hero");
   const sideBanners = categoryBanners.filter((banner) => banner.placement === "side");
@@ -513,13 +513,19 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
   const dynamicHeroSlides = heroBanners.length > 0
     ? customBannerSlides(heroBanners, categoryLabel)
     : activeCat?.heroSlides ?? heroSlides;
-  const activeHeroSlides = dynamicHeroSlides;
+  const activeHeroSlides = isApiCategory 
+    ? (bannersLoading || heroBanners.length === 0 ? [] : customBannerSlides(heroBanners, categoryLabel))
+    : dynamicHeroSlides;
   const activeSideCards = sideBanners.length > 0
     ? customPromoCards(sideBanners, categoryLabel).slice(0, MAX_PROMO_CARDS)
-    : activeCat?.sideCards ?? sideCards;
+    : isApiCategory
+      ? []
+      : activeCat?.sideCards ?? sideCards;
   const activeBottomCards = bottomBanners.length > 0
     ? customPromoCards(bottomBanners, categoryLabel).slice(0, MAX_PROMO_CARDS)
-    : activeCat?.bottomCards ?? bottomCards;
+    : isApiCategory
+      ? []
+      : activeCat?.bottomCards ?? bottomCards;
 
   return (
     <section
