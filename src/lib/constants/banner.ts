@@ -770,7 +770,6 @@ export const FALLBACK_CATEGORIES: BannerCategory[] = [
 ];
 
 export const defaultBannerData: BannerSectionData = {
-  saleLabel: "SALE 40% OFF",
   categories: FALLBACK_CATEGORIES,
   heroSlides: beautyCards.heroSlides,
   sideCards: beautyCards.sideCards,
