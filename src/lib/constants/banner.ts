@@ -377,69 +377,6 @@ const beautyCards: CardSet = {
   ],
 };
 
-// ── 6. Gaming ───────────────────────────────────────────────────────────────
-const gamingCards: CardSet = {
-  heroSlides: [
-    {
-      id: "gaming-hero",
-      title: "VR Headset Ultra",
-      subtitle: "Mixed Reality Gaming",
-      description: "Pancake lens, 4K per eye, full body tracking",
-      image: "/assets/headphone.png",
-      buttonText: "LEVEL UP",
-      buttonLink: "/products/vr-headset-ultra",
-      bgClassName: "bg-gradient-to-br from-cyan-500 to-blue-800",
-      textTheme: "light",
-    },
-  ],
-  sideCards: [
-    {
-      id: "gaming-s1",
-      eyebrow: "ESPORTS",
-      title: "Tournament Mouse",
-      highlight: "25K DPI",
-      image: "/assets/keyboard.png",
-      buttonText: "CUSTOMIZE",
-      buttonLink: "/products/tournament-mouse",
-      bgClassName: "bg-gradient-to-br from-cyan-900 to-blue-950",
-      textTheme: "light",
-    },
-    {
-      id: "gaming-s2",
-      title: "Racing Sim Wheel",
-      highlight: "FORCE FB",
-      price: "$349",
-      image: "/assets/gopro.png",
-      buttonLink: "/products/racing-sim-wheel",
-      bgClassName: "bg-gray-900",
-      textTheme: "light",
-    },
-  ],
-  bottomCards: [
-    {
-      id: "gaming-b1",
-      title: "Ergonomic Gaming Chair",
-      highlight: "4D ARMS",
-      price: "$429",
-      image: "/assets/watch.png",
-      buttonText: "PRE-ORDER",
-      buttonLink: "/products/ergonomic-gaming-chair",
-      bgClassName: "bg-gradient-to-br from-blue-600 to-indigo-800",
-      textTheme: "light",
-    },
-    {
-      id: "gaming-b2",
-      title: "RGB LED Light Strip",
-      highlight: "SMART",
-      description: "Sync with gameplay, voice control",
-      image: "/assets/playgo5.png",
-      buttonLink: "/products/rgb-led-light-strip",
-      bgClassName: "bg-white",
-      textTheme: "dark",
-    },
-  ],
-};
-
 // ── 7. Audio ────────────────────────────────────────────────────────────────
 const audioCards: CardSet = {
   heroSlides: [
