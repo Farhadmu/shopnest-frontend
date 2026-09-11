@@ -276,3 +276,208 @@ export async function getCustomerInsights() {
   return clientFetch<CustomerInsightsData>("/sellers/customer-insights");
 }
 
+// 24. SELLER COMMAND CENTER — unified real-data endpoint
+export interface CommandCenterHeader {
+  sellerName: string;
+  storeName: string;
+  slug: string;
+  status: string;
+  trustScore: number;
+  rating: number;
+  ratingCount: number;
+  followersCount: number;
+  logo: string;
+  banner: string;
+}
+
+export interface CommandCenterMetrics {
+  todayRevenue: number;
+  todayOrders: number;
+  totalRevenue: number;
+  rangeRevenue: number;
+  previousRangeRevenue: number;
+  revenueGrowthPct: number | null;
+  rangeOrders: number;
+  previousRangeOrders: number;
+  ordersGrowthPct: number | null;
+  productsSold: number;
+  avgOrderValue: number;
+  pendingOrders: number;
+  processingOrders: number;
+  shippedOrders: number;
+  deliveredOrders: number;
+  cancelledOrders: number;
+  returnedOrders: number;
+  totalProducts: number;
+  healthyStockCount: number;
+  lowStockCount: number;
+  outOfStockCount: number;
+  storeRating: number;
+  estimatedProfit: number;
+}
+
+export interface CommandCenterTrendPoint {
+  label: string;
+  revenue: number;
+  orders: number;
+  unitsSold: number;
+}
+
+export interface CommandCenterCategoryPerformance {
+  category: string;
+  revenue: number;
+  orders: number;
+  units: number;
+  sharePercent: number;
+}
+
+export interface CommandCenterActionItem {
+  id: string;
+  type: "low_stock" | "pending_orders" | "cancellation_spike" | "negative_review" | "onboarding" | "campaign";
+  priority: "critical" | "high" | "warning" | "info";
+  title: string;
+  description: string;
+  actionLabel: string;
+  actionHref: string;
+}
+
+export interface CommandCenterPipelineStage {
+  count: number;
+  percent: number;
+}
+
+export interface CommandCenterOrderPipeline {
+  pending: CommandCenterPipelineStage;
+  processing: CommandCenterPipelineStage;
+  shipped: CommandCenterPipelineStage;
+  delivered: CommandCenterPipelineStage;
+  cancelled: CommandCenterPipelineStage;
+  returned: CommandCenterPipelineStage;
+}
+
+export interface CommandCenterRecentOrderItem {
+  productId: string;
+  title: string;
+  price: number;
+  quantity: number;
+  image: string;
+}
+
+export interface CommandCenterRecentOrder {
+  orderId: string;
+  userId: string;
+  customerName: string;
+  status: string;
+  paymentStatus: string;
+  createdAt: string;
+  sellerSubtotal: number;
+  itemCount: number;
+  items: CommandCenterRecentOrderItem[];
+}
+
+export interface CommandCenterInventoryCommand {
+  healthyCount: number;
+  lowStockCount: number;
+  outOfStockCount: number;
+  totalCatalogUnits: number;
+  topLowStock: Array<{
+    id: string;
+    title: string;
+    stock: number;
+    price: number;
+    category: string;
+    image: string;
+    sold: number;
+  }>;
+}
+
+export interface CommandCenterProductPerformance {
+  topProducts: Array<{
+    id: string;
+    title: string;
+    category: string;
+    price: number;
+    discountPrice?: number;
+    stock: number;
+    image: string;
+    sold: number;
+    revenue: number;
+    ratingAvg: number;
+    ratingCount: number;
+    views: number;
+    status: string;
+  }>;
+  underperformingProducts: Array<{
+    id: string;
+    title: string;
+    category: string;
+    price: number;
+    discountPrice?: number;
+    stock: number;
+    image: string;
+    sold: number;
+    revenue: number;
+    ratingAvg: number;
+    ratingCount: number;
+    views: number;
+    status: string;
+  }>;
+}
+
+export interface CommandCenterProfitIntelligence {
+  grossRevenue: number;
+  totalDiscounts: number;
+  estimatedPlatformFee: number;
+  estimatedNetProfit: number;
+  profitMarginPercent: number;
+  isEstimated: boolean;
+  note: string;
+}
+
+export interface CommandCenterHealthScore {
+  overallHealth: number;
+  deliveryReliability: number;
+  customerSatisfaction: number;
+  catalogReadiness: number;
+  returnRatePercent: number;
+}
+
+export interface CommandCenterAiInsight {
+  title: string;
+  category: string;
+  text: string;
+  impact: "positive" | "warning" | "suggestion";
+}
+
+export interface CommandCenterPerformanceSnapshot {
+  conversionRate: number;
+  cancellationRate: number;
+  returnRate: number;
+  averageRating: number;
+  averageOrderValue: number;
+  repeatCustomerRate: number;
+}
+
+export interface CommandCenterData {
+  header: CommandCenterHeader;
+  dateRange: string;
+  metrics: CommandCenterMetrics;
+  salesPerformance: {
+    trendPoints: CommandCenterTrendPoint[];
+    categoryPerformance: CommandCenterCategoryPerformance[];
+  };
+  actionCenter: CommandCenterActionItem[];
+  orderPipeline: CommandCenterOrderPipeline;
+  recentOrders: CommandCenterRecentOrder[];
+  inventoryCommand: CommandCenterInventoryCommand;
+  productPerformance: CommandCenterProductPerformance;
+  profitIntelligence: CommandCenterProfitIntelligence;
+  healthScore: CommandCenterHealthScore;
+  aiInsights: CommandCenterAiInsight[];
+  performanceSnapshot: CommandCenterPerformanceSnapshot;
+}
+
+export async function getSellerCommandCenter(range: string = "30d") {
+  return clientFetch<CommandCenterData>(`/sellers/command-center?range=${encodeURIComponent(range)}`);
+}
+
