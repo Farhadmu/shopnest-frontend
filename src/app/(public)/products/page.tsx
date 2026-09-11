@@ -1,6 +1,10 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
-import { getProductsPaged, PagedProducts, getStoreOptions, StoreOption, getSellerOptions } from "@/lib/api/products";
+import {
+  getProductsPaged,
+  PagedProducts,
+  getStoreOptions,
+  StoreOption,
+  getSellerOptions,
+} from "@/lib/api/products";
 import { getCategories, Category } from "@/lib/api/categories";
 import { ProductsHero } from "@/components/products/listing/ProductsHero";
 import { CategoryChipsBar } from "@/components/products/listing/CategoryChipsBar";
@@ -53,18 +57,19 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   };
 
   try {
-    const [mainData, categoriesResult, allTotalResult, storesResult, sellersResult] = await Promise.all([
-      getProductsPaged({
-        page,
-        limit: PAGE_SIZE,
-        category: category || undefined,
-        ...sharedFilters,
-      }),
-      getCategories().catch(() => []),
-      getProductsPaged({ page: 1, limit: 1, ...sharedFilters }).catch(() => null),
-      getStoreOptions().catch(() => []),
-      getSellerOptions().catch(() => []),
-    ]);
+    const [mainData, categoriesResult, allTotalResult, storesResult, sellersResult] =
+      await Promise.all([
+        getProductsPaged({
+          page,
+          limit: PAGE_SIZE,
+          category: category || undefined,
+          ...sharedFilters,
+        }),
+        getCategories().catch(() => []),
+        getProductsPaged({ page: 1, limit: 1, ...sharedFilters }).catch(() => null),
+        getStoreOptions().catch(() => []),
+        getSellerOptions().catch(() => []),
+      ]);
 
     data = mainData;
     categories = categoriesResult;
@@ -75,7 +80,12 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     const countEntries = await Promise.all(
       categories.map(async (cat) => {
         try {
-          const res = await getProductsPaged({ page: 1, limit: 1, category: cat.name, ...sharedFilters });
+          const res = await getProductsPaged({
+            page: 1,
+            limit: 1,
+            category: cat.name,
+            ...sharedFilters,
+          });
           return [cat.name, res.total] as const;
         } catch {
           return [cat.name, 0] as const;
@@ -113,7 +123,12 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         />
       </div>
 
-      <ProductsPaginationBar page={data.page} totalPages={data.totalPages} total={data.total} query={query} />
+      <ProductsPaginationBar
+        page={data.page}
+        totalPages={data.totalPages}
+        total={data.total}
+        query={query}
+      />
 
       <TrustAssuranceRibbon />
 

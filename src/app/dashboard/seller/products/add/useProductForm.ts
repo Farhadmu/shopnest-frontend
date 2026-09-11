@@ -66,7 +66,7 @@ export function useProductForm(editId: string | null) {
       })
       .catch(() => undefined);
 
-    if (!editId) return;
+    if (!editId || editId === "undefined" || editId === "null" || editId.trim() === "") return;
 
     setIsLoading(true);
     getProductById(editId)
