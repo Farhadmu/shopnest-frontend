@@ -31,9 +31,13 @@ export function CouponDetailModal({ coupon, isOpen, onClose, onApprove, onReject
       return;
     }
 
-    if (coupon.scope === "specific-products" && coupon.productIds && coupon.productIds.length > 0) {
+    const validProductIds = (coupon.productIds ?? []).filter(
+      (id) => id && id !== "undefined" && id !== "null" && id.trim() !== ""
+    );
+
+    if (coupon.scope === "specific-products" && validProductIds.length > 0) {
       setLoadingProducts(true);
-      Promise.allSettled(coupon.productIds.map((id) => getProductById(id)))
+      Promise.allSettled(validProductIds.map((id) => getProductById(id)))
         .then((results) => {
           const loaded = results
             .filter((r): r is PromiseFulfilledResult<Product> => r.status === "fulfilled")

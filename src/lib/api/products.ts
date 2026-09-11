@@ -1,4 +1,5 @@
 import { clientFetch, clientFetchWithHeaders, clientMutation } from "@/lib/core/client";
+import { ApiError } from "@/lib/core/errors";
 
 export interface Product {
   id: string;
@@ -85,6 +86,9 @@ export async function getProductsPaged(
 }
 
 export async function getProductById(id: string) {
+  if (!id || id === "undefined" || id === "null" || id.trim() === "") {
+    throw new ApiError("Invalid product ID", 400);
+  }
   return clientFetch<Product>(`/products/${id}`);
 }
 

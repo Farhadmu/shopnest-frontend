@@ -189,7 +189,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       className={`h-full ${className}`}
     >
       <Card
-        className="group relative flex h-full flex-col overflow-hidden rounded-[1.5rem] border border-border/70 bg-surface shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/10 p-0"
+        className="group relative flex h-full flex-col overflow-hidden rounded-lg border border-border/70 bg-surface shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/10 p-0"
       >
         {/* Product Image Box */}
         <div className="relative block overflow-hidden">
@@ -258,10 +258,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             title={isWishlist ? "Saved to Wishlist" : "Add to Wishlist"}
             whileTap={{ scale: 0.85 }}
             whileHover={{ scale: 1.1 }}
-            className={`absolute right-3 top-3 z-30 grid h-9 w-9 place-items-center rounded-full border border-white/50 bg-white/95 shadow-md backdrop-blur-xl transition-all duration-300 dark:border-white/10 dark:bg-slate-900/90 ${
+            className={`absolute right-3 top-3 z-30 grid h-9 w-9 place-items-center rounded-full border border-white/50 bg-white/95 shadow-md backdrop-blur-xl transition-all duration-300 dark:border-white/10 dark:bg-slate-900/90 cursor-pointer ${
               isWishlist
                 ? "border-red-500 bg-red-500 text-white"
-                : "text-gray-400 hover:border-red-200 hover:text-red-500 dark:hover:border-red-500/30 dark:hover:text-red-500"
+                : "text-gray-400 hover:border-red-200 hover:text-red-500 dark:hover:border-red-500/30 dark:hover:text-red-500 cursor-pointer"
             }`}
           >
             <FaHeart size={13} className={isWishlist ? "text-white" : ""} />
@@ -269,9 +269,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         {/* Card Body / Content */}
-        <CardContent className="flex flex-1 flex-col p-4">
+        <CardContent className="flex flex-1 flex-col p-3">
           {/* Rating & Verification */}
-            <div className="mb-1.5 flex items-center justify-between gap-2">
+            <div className="mb-1 flex items-center justify-between gap-2">
               <div className="flex items-center gap-1">
                 <FaStar size={11} className="fill-amber-400 text-amber-400" />
                 <span className="text-xs font-black text-text">
@@ -291,13 +291,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
           {/* Title */}
           <Link href={`/products/${product.id}`} className="group/link">
-            <h3 className="line-clamp-2 min-h-[38px] text-sm font-extrabold leading-5 text-text transition-colors group-hover/link:text-primary">
+            <h3 className="line-clamp-2 text-sm font-extrabold leading-5 text-text transition-colors group-hover/link:text-primary">
               {product.title}
             </h3>
           </Link>
 
           {/* Pricing */}
-          <div className="mt-2 flex items-baseline gap-2">
+          <div className="mt-1 flex items-baseline gap-2">
             <span className="text-base sm:text-lg font-black text-text">
               {formatCurrency(displayPrice)}
             </span>
@@ -309,7 +309,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
 
           {/* Stock Status */}
-          <div className="mt-1.5">
+          <div>
             {stock > 0 ? (
               <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -324,7 +324,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </CardContent>
 
         {/* Card Footer with Hero UI Action Buttons */}
-        <CardFooter className="gap-2 pt-0 pb-4 px-4">
+        <CardFooter className="gap-2 pb-3 px-3">
           <Button
             size="sm"
             variant="primary"
