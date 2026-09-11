@@ -22,7 +22,6 @@ export const userDashboardLinks: DashboardLink[] = [
 ];
 
 export const sellerDashboardLinks: DashboardLink[] = [
-  { label: "Dashboard", href: "/dashboard/seller", icon: "🏠", description: "Seller Growth & Intelligence Hub — Store Overview." },
   { label: "Command Center", href: "/dashboard/seller/command-center", icon: "📊", description: "Real-time KPI dashboard." },
   { label: "Sales Analytics", href: "/dashboard/seller/analytics", icon: "📈", description: "Revenue & sales breakdown." },
   { label: "Product Performance", href: "/dashboard/seller/product-performance", icon: "🏆", description: "Product-wise sales & revenue." },

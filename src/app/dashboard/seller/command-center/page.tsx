@@ -1,16 +1,21 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useCallback } from "react";
 import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
 import { sellerDashboardLinks } from "@/lib/constants/dashboard-nav";
-import { LoadingCard, LoadingGrid, LoadingChart, ErrorState, EmptyState } from "@/components/dashboard/DashboardStates";
-import { getSellerHealthScore, getSalesForecast, getProfitabilityAnalysis, getInventoryIntelligence, getCustomerInsights, getSellerAnalytics } from "@/lib/api/seller-intelligence";
-import { getSellerDashboardMetrics } from "@/lib/api/sellers";
-import { getOrders } from "@/lib/api/orders";
-import { getProducts } from "@/lib/api/products";
-import { BarChart } from "@/components/analytics/BarChart";
-import { DonutChart } from "@/components/analytics/DonutChart";
+import { LoadingGrid, LoadingChart, ErrorState, EmptyState } from "@/components/dashboard/DashboardStates";
+import {
+  getSellerHealthScore,
+  getSalesForecast,
+  getProfitabilityAnalysis,
+  getInventoryIntelligence,
+  getCustomerInsights,
+  getSellerAnalytics,
+} from "@/lib/api/seller-intelligence";
+import { getMyStore } from "@/lib/api/sellers";
+import { clientFetch } from "@/lib/core/client";
 import { LineAreaChart } from "@/components/analytics/LineAreaChart";
+import { FaSyncAlt, FaStore, FaShieldAlt } from "react-icons/fa";
 
 interface DashboardMetrics {
   totalRevenue: number;
@@ -31,7 +36,6 @@ export default function SellerCommandCenter() {
   const [error, setError] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [healthData, setHealthData] = useState<any>(null);
-  const [forecastData, setForecastData] = useState<any>(null);
   const [profitData, setProfitData] = useState<any>(null);
   const [inventoryData, setInventoryData] = useState<any>(null);
   const [customerData, setCustomerData] = useState<any>(null);
@@ -41,26 +45,54 @@ export default function SellerCommandCenter() {
     setLoading(true);
     setError(null);
     try {
-      const [metricsRes, ordersRes, productsRes, healthRes, forecastRes, profitRes, inventoryRes, customerRes, analyticsRes] = await Promise.allSettled([
-        getSellerDashboardMetrics(),
-        getOrders(),
-        getProducts(),
+      const [
+        ordersRes,
+        storeRes,
+        trustRes,
+        healthRes,
+        profitRes,
+        inventoryRes,
+        customerRes,
+        analyticsRes,
+      ] = await Promise.allSettled([
+        clientFetch<any[]>("/orders/seller/mine"),
+        getMyStore(),
+        clientFetch<any>("/trust/me"),
         getSellerHealthScore(),
-        getSalesForecast(),
         getProfitabilityAnalysis(),
         getInventoryIntelligence(),
         getCustomerInsights(),
         getSellerAnalytics("30d"),
       ]);
 
-      // Process orders for metrics
-      const orders = ordersRes.status === "fulfilled" ? (ordersRes.value || []) : [];
-      const products = productsRes.status === "fulfilled" ? (productsRes.value || []) : [];
+      const orders = ordersRes.status === "fulfilled" ? ((ordersRes.value as any)?.data ?? ordersRes.value ?? []) : [];
+      const store = storeRes.status === "fulfilled" ? storeRes.value : null;
+      const trust = trustRes.status === "fulfilled" ? ((trustRes.value as any)?.data ?? trustRes.value ?? null) : null;
+      const health = healthRes.status === "fulfilled" ? healthRes.value : null;
+      const inventory = inventoryRes.status === "fulfilled" ? inventoryRes.value : null;
 
-      const totalRevenue = orders.reduce((sum: number, o: any) => sum + (o.totalAmount || 0), 0);
+      // Extract seller-isolated revenue & products sold
+      const storeIdVariants = new Set([
+        store?.id,
+        store?._id,
+        store?.slug,
+        store?.ownerId,
+      ].filter(Boolean));
+
+      let totalRevenue = 0;
+      let productsSold = 0;
+
+      orders.forEach((o: any) => {
+        (o.items || []).forEach((it: any) => {
+          if (storeIdVariants.has(it.storeId) || storeIdVariants.has(it.sellerId)) {
+            totalRevenue += (it.price || 0) * (it.quantity || 1);
+            productsSold += it.quantity || 1;
+          }
+        });
+      });
+
       const totalOrders = orders.length;
-      const productsSold = orders.reduce((sum: number, o: any) => sum + ((o.items || []).reduce((s: number, i: any) => s + (i.quantity || 0), 0)), 0);
-      const activeProducts = products.filter((p: any) => p.status === "approved" && !p.isDeleted).length;
+      const activeProducts = inventory?.summary?.totalItems || 0;
       const pendingOrders = orders.filter((o: any) => o.status === "pending").length;
       const processingOrders = orders.filter((o: any) => o.status === "processing" || o.status === "confirmed").length;
       const deliveredOrders = orders.filter((o: any) => o.status === "delivered").length;
@@ -77,18 +109,17 @@ export default function SellerCommandCenter() {
         deliveredOrders,
         cancelledOrders,
         avgOrderValue,
-        storeRating: 4.5,
-        trustScore: healthRes.status === "fulfilled" ? (healthRes.value?.overallHealth || 85) : 85,
+        storeRating: store?.rating || 5.0,
+        trustScore: trust?.trustScore ?? (health?.overallHealth || 100),
       });
 
-      if (healthRes.status === "fulfilled") setHealthData(healthRes.value);
-      if (forecastRes.status === "fulfilled") setForecastData(forecastRes.value);
+      if (health) setHealthData(health);
       if (profitRes.status === "fulfilled") setProfitData(profitRes.value);
-      if (inventoryRes.status === "fulfilled") setInventoryData(inventoryRes.value);
+      if (inventory) setInventoryData(inventory);
       if (customerRes.status === "fulfilled") setCustomerData(customerRes.value);
       if (analyticsRes.status === "fulfilled") setAnalyticsData(analyticsRes.value);
-    } catch (err) {
-      setError("Failed to load dashboard data. Please try again.");
+    } catch {
+      setError("Failed to load command center telemetry. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -102,73 +133,93 @@ export default function SellerCommandCenter() {
     <DashboardShell
       role="Seller"
       title="Seller Command Center"
-      subtitle="Real-time insights, analytics, and AI-powered tools for your store"
+      subtitle="Real-time multi-dimensional telemetry, order fulfillment pipeline, and automated inventory intelligence"
       links={sellerDashboardLinks}
     >
       <div className="space-y-6">
+        {/* Header Action Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4">
+          <div className="flex items-center gap-2">
+            <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-black uppercase tracking-wider text-text">
+              Real-Time Telemetry Live Sync
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={loadData}
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-muted-bg px-3 py-1.5 text-xs font-bold text-text transition hover:border-primary/50 hover:text-primary disabled:opacity-50"
+          >
+            <FaSyncAlt className={loading ? "animate-spin" : ""} size={11} /> Refresh Data
+          </button>
+        </div>
+
         {error && <ErrorState message={error} onRetry={loadData} />}
 
-        {/* KPI Cards */}
+        {/* Key Metrics */}
         <section>
-          <h2 className="text-lg font-bold text-text mb-4">Key Metrics</h2>
+          <h2 className="text-sm font-black uppercase tracking-wider text-muted mb-3">Core Performance KPIs</h2>
           {loading ? (
             <LoadingGrid count={6} />
           ) : metrics ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-              <StatCard icon="💰" value={`৳${metrics.totalRevenue.toLocaleString()}`} label="Total Revenue" note="From delivered orders" color="success" />
-              <StatCard icon="📦" value={String(metrics.totalOrders)} label="Total Orders" note="All time" color="default" />
-              <StatCard icon="🛍️" value={String(metrics.productsSold)} label="Products Sold" note="Units dispatched" color="accent" />
-              <StatCard icon="📋" value={String(metrics.activeProducts)} label="Active Products" note="Live in store" color="secondary" />
-              <StatCard icon="⏳" value={String(metrics.pendingOrders)} label="Pending Orders" note="Awaiting processing" color="warning" />
-              <StatCard icon="🚚" value={String(metrics.deliveredOrders)} label="Delivered" note="Successfully completed" color="success" />
+              <StatCard icon="💰" value={`৳${metrics.totalRevenue.toLocaleString()}`} label="Store Revenue" note="From store items" color="success" />
+              <StatCard icon="📦" value={String(metrics.totalOrders)} label="Total Orders" note="All-time orders" color="default" />
+              <StatCard icon="🛍️" value={String(metrics.productsSold)} label="Units Dispatched" note="Sold products" color="accent" />
+              <StatCard icon="📋" value={String(metrics.activeProducts)} label="Catalog Items" note="Monitored SKUs" color="secondary" />
+              <StatCard icon="⭐" value={`${metrics.storeRating.toFixed(1)}/5.0`} label="Store Rating" note="Customer reviews" color="warning" />
+              <StatCard icon="🛡️" value={`${metrics.trustScore}/100`} label="Trust Score" note="Platform verified" color="success" />
             </div>
           ) : (
             <EmptyState icon="📊" title="No data available" description="Start selling to see your metrics here." />
           )}
         </section>
 
-        {/* Order Status Breakdown */}
+        {/* Order Fulfillment Pipeline */}
         <section>
-          <h2 className="text-lg font-bold text-text mb-4">Order Status</h2>
+          <h2 className="text-sm font-black uppercase tracking-wider text-muted mb-3">Fulfillment Pipeline</h2>
           {loading ? (
             <LoadingGrid count={4} />
           ) : metrics ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard icon="⏳" value={String(metrics.pendingOrders)} label="Pending" note="Awaiting processing" color="warning" />
-              <StatCard icon="⚙️" value={String(metrics.processingOrders)} label="Processing" note="In progress" color="default" />
-              <StatCard icon="✅" value={String(metrics.deliveredOrders)} label="Delivered" note="Completed" color="success" />
-              <StatCard icon="❌" value={String(metrics.cancelledOrders)} label="Cancelled" note="Order cancelled" color="error" />
+              <StatCard icon="⏳" value={String(metrics.pendingOrders)} label="Pending" note="Awaiting review" color="warning" />
+              <StatCard icon="⚙️" value={String(metrics.processingOrders)} label="In Processing" note="Packaging & preparing" color="default" />
+              <StatCard icon="✅" value={String(metrics.deliveredOrders)} label="Delivered" note="Completed orders" color="success" />
+              <StatCard icon="❌" value={String(metrics.cancelledOrders)} label="Cancelled" note="Voided orders" color="error" />
             </div>
           ) : null}
         </section>
 
         {/* Analytics Charts */}
         <section>
-          <h2 className="text-lg font-bold text-text mb-4">Sales Analytics (30 Days)</h2>
+          <h2 className="text-sm font-black uppercase tracking-wider text-muted mb-3">30-Day Sales Velocity</h2>
           {loading ? (
             <LoadingChart />
-          ) : analyticsData?.trendPoints ? (
-            <Panel title="Revenue & Orders Trend">
+          ) : analyticsData?.trendPoints && analyticsData.trendPoints.length > 0 ? (
+            <Panel title="Revenue & Orders Trend (Last 30 Days)">
               <LineAreaChart
                 data={analyticsData.trendPoints.map((p: any) => ({ label: p.label, value: p.revenue, secondary: p.orders }))}
               />
             </Panel>
           ) : (
-            <EmptyState icon="📈" title="No analytics data" description="Not enough sales data to generate analytics yet." />
+            <div className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center text-xs text-muted">
+              30-day sales timeline will plot automatically as soon as customer checkouts occur.
+            </div>
           )}
         </section>
 
         {/* Inventory Overview */}
         <section>
-          <h2 className="text-lg font-bold text-text mb-4">Inventory Overview</h2>
+          <h2 className="text-sm font-black uppercase tracking-wider text-muted mb-3">Stock & Catalog Health</h2>
           {loading ? (
             <LoadingGrid count={4} />
           ) : inventoryData?.summary ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard icon="📦" value={String(inventoryData.summary.totalItems || 0)} label="Total Items" note="Active products" color="default" />
-              <StatCard icon="⚠️" value={String(inventoryData.summary.lowStockCount || 0)} label="Low Stock" note="Needs restock" color="warning" />
-              <StatCard icon="🚫" value={String(inventoryData.summary.outOfStockCount || 0)} label="Out of Stock" note="Unavailable" color="error" />
-              <StatCard icon="✅" value={String(inventoryData.summary.healthyStockCount || 0)} label="Healthy Stock" note="Adequate stock" color="success" />
+              <StatCard icon="📦" value={String(inventoryData.summary.totalItems || 0)} label="Monitored SKUs" note="Catalog products" color="default" />
+              <StatCard icon="⚠️" value={String(inventoryData.summary.lowStockCount || 0)} label="Low Stock Alert" note="<= 10 units remaining" color="warning" />
+              <StatCard icon="🚫" value={String(inventoryData.summary.outOfStockCount || 0)} label="Stockout SKUs" note="Zero inventory" color="error" />
+              <StatCard icon="✅" value={String(inventoryData.summary.healthyStockCount || 0)} label="Healthy Runway" note="Adequate stock" color="success" />
             </div>
           ) : (
             <EmptyState icon="📦" title="No inventory data" description="Add products to see inventory insights." />
@@ -177,29 +228,29 @@ export default function SellerCommandCenter() {
 
         {/* Customer Insights */}
         <section>
-          <h2 className="text-lg font-bold text-text mb-4">Customer Insights</h2>
+          <h2 className="text-sm font-black uppercase tracking-wider text-muted mb-3">Buyer Insights & Retention</h2>
           {loading ? (
             <LoadingGrid count={3} />
           ) : customerData?.overview ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <StatCard icon="👥" value={String(customerData.overview.totalCustomers || 0)} label="Total Customers" note="All buyers" color="default" />
-              <StatCard icon="🔄" value={`${customerData.overview.repeatPurchaseRate || 0}%`} label="Repeat Rate" note="Returning buyers" color="success" />
-              <StatCard icon="💳" value={`৳${(customerData.overview.averageLifetimeValue || 0).toLocaleString()}`} label="Avg Lifetime Value" note="Per customer" color="accent" />
+              <StatCard icon="👥" value={String(customerData.overview.totalCustomers || 0)} label="Unique Buyers" note="Verified buyers" color="default" />
+              <StatCard icon="🔄" value={String(customerData.overview.repeatPurchaseRate || "0%")} label="Repeat Purchase Rate" note="Loyal customers" color="success" />
+              <StatCard icon="💳" value={String(customerData.overview.averageLifetimeValue || "৳0")} label="Average Buyer LTV" note="Lifetime customer value" color="accent" />
             </div>
           ) : (
             <EmptyState icon="👥" title="No customer data" description="Customer insights will appear after your first sales." />
           )}
         </section>
 
-        {/* Profit Overview */}
+        {/* Profitability Overview */}
         {profitData?.summary && (
           <section>
-            <h2 className="text-lg font-bold text-text mb-4">Profit Overview</h2>
+            <h2 className="text-sm font-black uppercase tracking-wider text-muted mb-3">Profitability Analysis</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard icon="💵" value={`৳${(profitData.summary.revenue || 0).toLocaleString()}`} label="Revenue" note="Gross revenue" color="success" />
-              <StatCard icon="🏷️" value={`৳${(profitData.summary.totalDiscounts || 0).toLocaleString()}`} label="Discounts" note="Total discounts" color="warning" />
-              <StatCard icon="📊" value={`৳${(profitData.summary.grossProfit || 0).toLocaleString()}`} label="Gross Profit" note="After COGS" color="default" />
-              <StatCard icon="📈" value={`${profitData.summary.netMarginPercent || 0}%`} label="Net Margin" note="Profit margin" color="accent" />
+              <StatCard icon="💵" value={`৳${(profitData.summary.revenue || 0).toLocaleString()}`} label="Gross Revenue" note="Store sales volume" color="success" />
+              <StatCard icon="📦" value={`৳${(profitData.summary.cogs || 0).toLocaleString()}`} label="Estimated COGS" note="Cost of goods (60%)" color="default" />
+              <StatCard icon="📊" value={`৳${(profitData.summary.grossProfit || 0).toLocaleString()}`} label="Gross Margin" note="Revenue - COGS" color="warning" />
+              <StatCard icon="📈" value={String(profitData.summary.netMarginPercent || "0%")} label="Net Margin" note="Estimated net return" color="accent" />
             </div>
           </section>
         )}
@@ -207,3 +258,4 @@ export default function SellerCommandCenter() {
     </DashboardShell>
   );
 }
+

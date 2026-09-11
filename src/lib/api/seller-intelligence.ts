@@ -1,4 +1,4 @@
-﻿import { clientFetch, clientMutation } from "@/lib/core/client";
+import { clientFetch, clientMutation } from "@/lib/core/client";
 
 export interface SellerHealthData {
   storeName: string;
@@ -106,7 +106,12 @@ export interface ProfitabilityData {
     netMarginPercent: string;
   };
   topProfitableProducts: Array<{
+    id?: string;
     title: string;
+    price?: number;
+    sold?: number;
+    stock?: number;
+    image?: string;
     revenue: number;
     marginPercent: number;
     netProfit: number;
@@ -152,11 +157,22 @@ export async function getDemandHeatmap(timeframe = "30d") {
   return clientFetch<DemandHeatmapData>(`/sellers/demand-heatmap?timeframe=${timeframe}`);
 }
 
-export async function simulateGrowthScenario(data: { currentPrice: number; newPrice: number; adSpend: number; inventoryExpansion: number }) {
+export async function simulateGrowthScenario(data: {
+  productId?: string;
+  currentPrice?: number;
+  newPrice?: number;
+  adSpend?: number;
+  inventoryExpansion?: number;
+}) {
   return clientMutation<GrowthSimulationResult>("/sellers/simulator/growth", "POST", data);
 }
 
-export async function simulateCampaign(data: { campaignName: string; discountPercent: number; durationDays: number; targetSegment: string }) {
+export async function simulateCampaign(data: {
+  campaignName?: string;
+  discountPercent?: number;
+  durationDays?: number;
+  targetSegment?: string;
+}) {
   return clientMutation<CampaignSimulationResult>("/sellers/simulator/campaign", "POST", data);
 }
 
