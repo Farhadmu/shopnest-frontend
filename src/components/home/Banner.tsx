@@ -39,9 +39,11 @@ function PromoCard({
   className?: string;
 }) {
   const isLight = card.textTheme === "light";
+  const customTextColor = isLight ? card.lightTextColor : card.darkTextColor;
 
   return (
     <div
+      style={customTextColor ? { color: customTextColor } : undefined}
       className={`relative flex h-full flex-col justify-between overflow-hidden rounded-xl p-4 sm:p-5 ${
         card.bgClassName ?? "bg-secondary"
       } ${className}`}
@@ -58,14 +60,27 @@ function PromoCard({
         />
         <div
           className={`absolute inset-0 ${
-            isLight ? "bg-secondary/50" : "bg-surface/70"
+            card.overlayColor === undefined
+              ? isLight
+                ? "bg-secondary/50"
+                : "bg-surface/70"
+              : ""
           }`}
+          style={
+            card.overlayColor
+              ? {
+                  backgroundColor: card.overlayColor,
+                  opacity: (card.overlayOpacity ?? 50) / 100,
+                }
+              : undefined
+          }
         />
       </div>
 
       <div className="relative z-10 max-w-[85%] sm:max-w-[75%]">
         {card.eyebrow && (
           <p
+            style={customTextColor ? { color: customTextColor } : undefined}
             className={`text-[9px] font-semibold tracking-widest sm:text-[10px] ${
               isLight ? "text-surface/70" : "text-muted"
             }`}
@@ -74,6 +89,7 @@ function PromoCard({
           </p>
         )}
         <h3
+          style={customTextColor ? { color: customTextColor } : undefined}
           className={`mt-1 text-sm font-bold leading-snug sm:text-base ${
             isLight ? "text-surface" : "text-text"
           }`}
@@ -82,7 +98,10 @@ function PromoCard({
           {card.highlight && (
             <>
               {" "}
-              <span className={isLight ? "text-warm" : "text-primary"}>
+              <span
+                className={isLight ? "text-warm" : "text-primary"}
+                style={customTextColor ? { color: customTextColor } : undefined}
+              >
                 {card.highlight}
               </span>
             </>
@@ -91,6 +110,7 @@ function PromoCard({
 
         {card.description && (
           <p
+            style={customTextColor ? { color: customTextColor } : undefined}
             className={`mt-1 text-[11px] sm:text-xs ${
               isLight ? "text-surface/80" : "text-muted"
             }`}
@@ -101,12 +121,14 @@ function PromoCard({
 
         {card.price && (
           <p
+            style={customTextColor ? { color: customTextColor } : undefined}
             className={`mt-1 text-[11px] sm:text-xs ${
               isLight ? "text-surface/80" : "text-text"
             }`}
           >
             {card.title.toLowerCase().includes("from") ? "" : "FROM "}
             <span
+              style={customTextColor ? { color: customTextColor } : undefined}
               className={`text-sm font-bold sm:text-base ${
                 isLight ? "text-success" : "text-primary"
               }`}
@@ -118,6 +140,7 @@ function PromoCard({
 
         {card.buttonText && card.buttonLink && (
           <Link
+            style={customTextColor ? { color: customTextColor } : undefined}
             href={card.buttonLink}
             className={`mt-2 inline-block rounded-md px-3 py-1.5 text-[10px] font-bold tracking-wide transition-colors sm:mt-3 sm:px-4 sm:py-2 sm:text-[11px] ${
               isLight
@@ -131,6 +154,7 @@ function PromoCard({
 
         {!card.buttonText && card.buttonLink && (
           <Link
+            style={customTextColor ? { color: customTextColor } : undefined}
             href={card.buttonLink}
             className={`mt-2 inline-block text-[11px] font-semibold underline sm:text-xs ${
               isLight ? "text-surface" : "text-text"
@@ -192,6 +216,7 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   const currentIndex = Math.min(active, total - 1);
   const slide = slides[currentIndex];
   const isLight = slide.textTheme !== "dark";
+  const customTextColor = isLight ? slide.lightTextColor : slide.darkTextColor;
   const goTo = (index: number) => setActive((index + total) % total);
 
   return (
@@ -212,13 +237,29 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
         />
         <div
           className={`absolute inset-0 ${
-            isLight ? "bg-secondary/50" : "bg-surface/70"
+            slide.overlayColor === undefined
+              ? isLight
+                ? "bg-secondary/50"
+                : "bg-surface/70"
+              : ""
           }`}
+          style={
+            slide.overlayColor
+              ? {
+                  backgroundColor: slide.overlayColor,
+                  opacity: (slide.overlayOpacity ?? 50) / 100,
+                }
+              : undefined
+          }
         />
       </div>
 
-      <div className="relative z-10 flex h-full flex-col justify-center gap-2 max-w-[85%] p-5 sm:max-w-[70%] sm:gap-3 sm:p-6 lg:max-w-[55%] lg:p-8">
+      <div
+        className="relative z-10 flex h-full flex-col justify-center gap-2 max-w-[85%] p-5 sm:max-w-[70%] sm:gap-3 sm:p-6 lg:max-w-[55%] lg:p-8"
+        style={customTextColor ? { color: customTextColor } : undefined}
+      >
         <h2
+          style={customTextColor ? { color: customTextColor } : undefined}
           className={`text-xl font-extrabold leading-tight sm:text-2xl lg:text-3xl ${
             isLight ? "text-surface" : "text-text"
           }`}
@@ -227,6 +268,7 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
         </h2>
         {slide.subtitle && (
           <p
+            style={customTextColor ? { color: customTextColor } : undefined}
             className={`text-lg font-extrabold leading-tight sm:text-xl lg:text-2xl ${
               isLight ? "text-surface" : "text-text"
             }`}
@@ -236,6 +278,7 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
         )}
         {slide.description && (
           <p
+            style={customTextColor ? { color: customTextColor } : undefined}
             className={`mt-1 text-xs leading-relaxed sm:text-sm ${
               isLight ? "text-surface/80" : "text-muted"
             }`}
@@ -245,6 +288,7 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
         )}
 
         <Link
+          style={customTextColor ? { color: customTextColor } : undefined}
           href={slide.buttonLink}
           className={`mt-3 inline-block w-fit rounded-md px-4 py-2 text-xs font-bold tracking-wide transition-colors sm:mt-4 sm:px-6 sm:py-3 sm:text-sm ${
             isLight
@@ -297,6 +341,10 @@ function customBannerSlides(banners: HeroBanner[], categoryLabel: string): HeroS
     buttonText: banner.buttonText || (banner.targetUrl ? "SHOP NOW" : "EXPLORE"),
     buttonLink: banner.targetUrl || `/products?category=${encodeURIComponent(categoryLabel)}`,
     bgClassName: banner.bgClassName || undefined,
+    overlayColor: banner.overlayColor ?? null,
+    overlayOpacity: banner.overlayColor ? banner.overlayOpacity ?? 50 : null,
+    lightTextColor: banner.lightTextColor ?? null,
+    darkTextColor: banner.darkTextColor ?? null,
     textTheme: banner.textTheme,
   }));
 }
@@ -313,6 +361,10 @@ function customPromoCards(banners: HeroBanner[], categoryLabel: string): PromoCa
     buttonText: banner.buttonText || (banner.targetUrl ? "SHOP NOW" : undefined),
     buttonLink: banner.targetUrl || undefined,
     bgClassName: banner.bgClassName || undefined,
+    overlayColor: banner.overlayColor ?? null,
+    overlayOpacity: banner.overlayColor ? banner.overlayOpacity ?? 50 : null,
+    lightTextColor: banner.lightTextColor ?? null,
+    darkTextColor: banner.darkTextColor ?? null,
     textTheme: banner.textTheme,
   }));
 }
@@ -325,13 +377,11 @@ function CategorySidebar({
   categories,
   activeIdx,
   loading,
-  saleLabel,
   onSelect,
 }: {
   categories: BannerCategory[];
   activeIdx: number;
   loading: boolean;
-  saleLabel?: string;
   onSelect: (idx: number) => void;
 }) {
   const listRef = useRef<HTMLUListElement>(null);
@@ -343,10 +393,6 @@ function CategorySidebar({
 
   return (
     <aside className="col-span-2 rounded-xl border border-border bg-surface p-4 sm:col-span-4 sm:p-5 lg:col-span-2">
-      {saleLabel && (
-        <p className="mb-3 text-sm font-bold text-error">{saleLabel}</p>
-      )}
-
       {loading ? (
         <ul className="space-y-3">
           {[...Array(MAX_CATEGORIES)].map((_, n) => (
@@ -400,7 +446,7 @@ function CategorySidebar({
 // ---------------------------------------------------------------------------
 
 export default function BannerSection({ data }: { data: BannerSectionData }) {
-  const { saleLabel, heroSlides, sideCards, bottomCards } = data;
+  const { heroSlides, sideCards, bottomCards } = data;
 
   const [categories, setCategories] = useState<BannerCategory[]>(() =>
     (data.categories ?? FALLBACK_CATEGORIES).slice(0, MAX_CATEGORIES)
@@ -539,7 +585,6 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
         categories={categories}
         activeIdx={activeIdx}
         loading={categoriesLoading}
-        saleLabel={saleLabel}
         onSelect={handleSelectCategory}
       />
 

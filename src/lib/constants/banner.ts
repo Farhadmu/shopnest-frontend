@@ -22,6 +22,10 @@ export type HeroSlide = {
   buttonLink: string;
 
   bgClassName?: string;
+  overlayColor?: string | null;
+  overlayOpacity?: number | null;
+  lightTextColor?: string | null;
+  darkTextColor?: string | null;
 
   textTheme?: "light" | "dark";
 };
@@ -37,6 +41,10 @@ export type PromoCard = {
   buttonText?: string;
   buttonLink?: string;
   bgClassName?: string;
+  overlayColor?: string | null;
+  overlayOpacity?: number | null;
+  lightTextColor?: string | null;
+  darkTextColor?: string | null;
   textTheme?: "light" | "dark";
 };
 
@@ -762,7 +770,6 @@ export const FALLBACK_CATEGORIES: BannerCategory[] = [
 ];
 
 export const defaultBannerData: BannerSectionData = {
-  saleLabel: "SALE 40% OFF",
   categories: FALLBACK_CATEGORIES,
   heroSlides: beautyCards.heroSlides,
   sideCards: beautyCards.sideCards,

@@ -26,6 +26,10 @@ type FormState = {
   price: string;
   buttonText: string;
   targetUrl: string;
+  overlayColor: string;
+  overlayOpacity: string;
+  lightTextColor: string;
+  darkTextColor: string;
   bgClassName: string;
   textTheme: "light" | "dark";
   displayOrder: string;
@@ -44,6 +48,10 @@ const emptyForm: FormState = {
   price: "",
   buttonText: "",
   targetUrl: "",
+  overlayColor: "",
+  overlayOpacity: "50",
+  lightTextColor: "",
+  darkTextColor: "",
   bgClassName: "",
   textTheme: "light",
   displayOrder: "1",
@@ -114,6 +122,10 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
       price: banner.price ?? "",
       buttonText: banner.buttonText ?? "",
       targetUrl: banner.targetUrl ?? "",
+      overlayColor: banner.overlayColor ?? "",
+      overlayOpacity: String(banner.overlayOpacity ?? 50),
+      lightTextColor: banner.lightTextColor ?? "",
+      darkTextColor: banner.darkTextColor ?? "",
       bgClassName: banner.bgClassName ?? "",
       textTheme: banner.textTheme,
       displayOrder: String(banner.displayOrder),
@@ -157,6 +169,10 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
         price: form.price.trim() || null,
         buttonText: form.buttonText.trim() || null,
         targetUrl: form.targetUrl.trim() || null,
+        overlayColor: form.overlayColor || null,
+        overlayOpacity: form.overlayColor ? Number(form.overlayOpacity) : null,
+        lightTextColor: form.lightTextColor || null,
+        darkTextColor: form.darkTextColor || null,
         bgClassName: form.bgClassName.trim() || null,
         textTheme: form.textTheme,
         displayOrder: Number(form.displayOrder) || 0,
@@ -372,6 +388,109 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
               className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
             />
           </label>
+          <fieldset className="text-sm font-bold text-text sm:col-span-2">
+            <legend>Text colors by mode</legend>
+            <div className="mt-2 grid gap-3 sm:grid-cols-2">
+              {([
+                ["lightTextColor", "Light / white mode", "#ffffff"],
+                ["darkTextColor", "Dark mode", "#111827"],
+              ] as const).map(([field, label, defaultColor]) => (
+                <div key={field} className="flex items-center gap-3 rounded-xl border border-border bg-background p-3">
+                  <input
+                    type="color"
+                    value={form[field] || defaultColor}
+                    onChange={(event) => setForm({ ...form, [field]: event.target.value })}
+                    className="h-10 w-12 cursor-pointer rounded-lg border border-border bg-background p-1"
+                    aria-label={`Choose ${label} text color`}
+                  />
+                  <span className="min-w-0 flex-1 text-xs font-semibold">{label}</span>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, [field]: "" })}
+                    className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-bold ${!form[field] ? "border-primary bg-primary/10 text-primary" : "border-border text-muted"}`}
+                  >
+                    Default
+                  </button>
+                </div>
+              ))}
+            </div>
+          </fieldset>
+          <label className="text-sm font-bold text-text">
+            Image overlay
+            <div className="mt-2 flex items-center gap-3">
+              <input
+                type="color"
+                value={form.overlayColor || "#000000"}
+                onChange={(event) => setForm({ ...form, overlayColor: event.target.value })}
+                className="h-11 w-14 cursor-pointer rounded-lg border border-border bg-background p-1"
+                aria-label="Choose image overlay color"
+              />
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, overlayColor: "" })}
+                className={`rounded-lg border px-3 py-2 text-xs font-bold ${!form.overlayColor ? "border-primary bg-primary/10 text-primary" : "border-border text-muted"}`}
+              >
+                None
+              </button>
+              <span className="text-xs font-normal text-muted">
+                {form.overlayColor || "No overlay"}
+              </span>
+            </div>
+            <div className="mt-3 flex items-center gap-3">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={form.overlayOpacity}
+                onChange={(event) => setForm({ ...form, overlayOpacity: event.target.value })}
+                disabled={!form.overlayColor}
+                className="w-full accent-primary disabled:opacity-40"
+                aria-label="Choose image overlay opacity"
+              />
+              <span className="w-12 text-right text-xs font-semibold text-muted">
+                {form.overlayColor ? `${form.overlayOpacity}%` : "Off"}
+              </span>
+            </div>
+          </label>
+          <label className="text-sm font-bold text-text">
+            Image overlay
+            <div className="mt-2 flex items-center gap-3">
+              <input
+                type="color"
+                value={form.overlayColor || "#000000"}
+                onChange={(event) => setForm({ ...form, overlayColor: event.target.value })}
+                className="h-11 w-14 cursor-pointer rounded-lg border border-border bg-background p-1"
+                aria-label="Choose image overlay color"
+              />
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, overlayColor: "" })}
+                className={`rounded-lg border px-3 py-2 text-xs font-bold ${!form.overlayColor ? "border-primary bg-primary/10 text-primary" : "border-border text-muted"}`}
+              >
+                None
+              </button>
+              <span className="text-xs font-normal text-muted">
+                {form.overlayColor || "No overlay"}
+              </span>
+            </div>
+            <div className="mt-3 flex items-center gap-3">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={form.overlayOpacity}
+                onChange={(event) => setForm({ ...form, overlayOpacity: event.target.value })}
+                disabled={!form.overlayColor}
+                className="w-full accent-primary disabled:opacity-40"
+                aria-label="Choose image overlay opacity"
+              />
+              <span className="w-12 text-right text-xs font-semibold text-muted">
+                {form.overlayColor ? `${form.overlayOpacity}%` : "Off"}
+              </span>
+            </div>
+          </label>
           <label className="text-sm font-bold text-text">
             Display order
             <input
@@ -472,7 +591,22 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
                 sizes="360px"
               />
               <div
-                className={`absolute inset-0 flex flex-col justify-end bg-linear-to-t from-black/75 to-transparent p-5 ${form.textTheme === "dark" ? "text-text" : "text-white"}`}
+                className="absolute inset-0"
+                style={
+                  form.overlayColor
+                    ? {
+                        backgroundColor: form.overlayColor,
+                        opacity: Number(form.overlayOpacity) / 100,
+                      }
+                    : undefined
+                }
+              />
+              <div
+                className={`relative z-10 flex h-full flex-col justify-end p-5 ${form.textTheme === "dark" ? "text-text" : "text-white"}`}
+                style={{
+                  color:
+                    (form.textTheme === "light" ? form.lightTextColor : form.darkTextColor) || undefined,
+                }}
               >
                 <span className="text-xs font-bold uppercase">{form.eyebrow}</span>
                 <strong>

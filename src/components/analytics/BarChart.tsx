@@ -68,7 +68,7 @@ export function BarChart({
 
               {/* Label */}
               <div className="mt-2 text-center">
-                <p className="text-[10px] font-bold text-muted truncate max-w-[60px]">{item.label}</p>
+                <p className="text-[10px] font-bold text-muted truncate max-w-15">{item.label}</p>
                 {item.subLabel && <p className="text-[9px] text-muted/80">{item.subLabel}</p>}
               </div>
             </div>
