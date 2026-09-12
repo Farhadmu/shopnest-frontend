@@ -4,13 +4,16 @@ import { useState } from "react";
 import { DashboardShell, Panel } from "@/components/dashboard/DashboardUI";
 import { userDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { useShoppingGoals } from "@/hooks/dashboard/user/useShoppingGoals";
+import { useCategories } from "@/hooks/useCategories";
 import { FaBullseye, FaCalendarAlt, FaCheckCircle, FaSpinner, FaPlus, FaEdit, FaTimes, FaMoneyBillWave } from "react-icons/fa";
 
 export default function ShoppingGoalsPage() {
   const { goals, loading, error, refreshGoals, createGoal, addProgress, updateGoal, removeGoal } = useShoppingGoals();
+  const { categories, loading: categoriesLoading } = useCategories();
+
   const [title, setTitle] = useState("");
   const [budget, setBudget] = useState(25000);
-  const [category, setCategory] = useState("General");
+  const [category, setCategory] = useState("general");
   const [targetDate, setTargetDate] = useState("");
   const [showForm, setShowForm] = useState(false);
 
@@ -32,7 +35,7 @@ export default function ShoppingGoalsPage() {
     await createGoal(title.trim(), Number(budget), category, targetDate || undefined);
     setTitle("");
     setBudget(25000);
-    setCategory("General");
+    setCategory("general");
     setTargetDate("");
     setShowForm(false);
   };
@@ -128,11 +131,23 @@ export default function ShoppingGoalsPage() {
                   onChange={(e) => setCategory(e.target.value)}
                   className="rounded-xl border border-border bg-surface px-3.5 py-2.5 text-xs text-text focus:border-primary focus:outline-none"
                 >
-                  <option value="General">General</option>
-                  <option value="Electronics">Electronics</option>
-                  <option value="Fashion">Fashion</option>
-                  <option value="Home">Home</option>
-                  <option value="Sports">Sports</option>
+                  <option value="general">General</option>
+                  {categoriesLoading && (
+                    <option value="" disabled>
+                      Loading...
+                    </option>
+                  )}
+                  {!categoriesLoading && categories.length === 0 && (
+                    <option value="" disabled>
+                      No categories found
+                    </option>
+                  )}
+                  {!categoriesLoading &&
+                    categories.map((cat) => (
+                      <option key={cat.id} value={cat.slug}>
+                        {cat.name}
+                      </option>
+                    ))}
                 </select>
                 <input
                   type="date"
@@ -182,7 +197,7 @@ export default function ShoppingGoalsPage() {
                       <span className="text-primary">{g.progressPercentage}%</span>
                     </div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-muted-bg">
-                      <div className="h-full rounded-full bg-gradient-to-r from-primary to-success transition-all duration-500" style={{ width: `${Math.min(100, g.progressPercentage)}%` }} />
+                      <div className="h-full rounded-full bg-linear-to-r from-primary to-success transition-all duration-500" style={{ width: `${Math.min(100, g.progressPercentage)}%` }} />
                     </div>
                     <div className="mt-1 flex items-center justify-between text-[10px] text-muted">
                       <span>৳{g.currentAmount.toLocaleString()} saved</span>

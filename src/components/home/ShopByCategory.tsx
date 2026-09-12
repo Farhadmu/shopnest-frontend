@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import Link from "next/link";
@@ -81,7 +82,7 @@ export default function ShopByCategory() {
       <div className="mb-8 flex items-end justify-between px-4 sm:px-0">
         <div>
           <div className="mb-3 flex items-center gap-2">
-            <span className="h-[2px] w-8 rounded-full bg-primary" />
+            <span className="h-0.5 w-8 rounded-full bg-primary" />
             <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-primary">Discover Categories</span>
           </div>
           <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-4xl">Shop by category</h2>
@@ -115,7 +116,7 @@ export default function ShopByCategory() {
           <div ref={carouselRef} className="category-carousel min-w-0 flex-1 overflow-x-auto scroll-smooth">
             <div className="flex w-full gap-4 py-2 sm:gap-5 lg:gap-6">
               {categories.map((category) => (
-                <article key={category.id} className="group flex min-w-0 shrink-0 basis-[calc((100%_-_1rem)/2)] flex-col items-center text-center sm:basis-[calc((100%_-_7.5rem)/4)] lg:basis-[calc((100%_-_9rem)/7)]">
+                <article key={category.id} className="group flex min-w-0 shrink-0 basis-[calc((100%-1rem)/2)] flex-col items-center text-center sm:basis-[calc((100%-7.5rem)/4)] lg:basis-[calc((100%-9rem)/7)]">
                   <Link href={`/products?category=${encodeURIComponent(category.slug)}`} className="flex w-full flex-col items-center">
                     <CategoryImage category={category} />
                     <h3 className="mt-4 line-clamp-2 min-h-10 w-full text-sm font-extrabold text-slate-900 dark:text-white">{category.name}</h3>

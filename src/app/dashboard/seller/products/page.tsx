@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { FaPlus, FaEdit, FaTrash, FaBox, FaSearch } from "react-icons/fa";
 import { getProducts, deleteProduct, Product } from "@/lib/api/products";
+import { getMyStore } from "@/lib/api/sellers";
 import { useSession } from "@/lib/auth-client";
 
 export default function SellerProducts() {
@@ -14,17 +15,32 @@ export default function SellerProducts() {
 
   const { data: session } = useSession();
 
-  const load = () => {
+  const load = async () => {
     setLoading(true);
-    getProducts({ page: 1, limit: 100 })
-      .then((data) => {
-        // Sellers see their own products
-        const userId = (session?.user as any)?.id;
-        const filtered = userId ? data.filter((p) => !p.sellerId || p.sellerId === userId) : data;
-        setItems(filtered.length > 0 ? filtered : data);
-      })
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
+    try {
+      const [products, store] = await Promise.all([
+        getProducts({ limit: 100 }),
+        getMyStore().catch(() => null),
+      ]);
+      const userId = (session?.user as any)?.id;
+      const validIds = new Set([
+        store?.id,
+        store?._id,
+        store?.slug,
+        store?.ownerId,
+        userId,
+      ].filter(Boolean));
+
+      const sellerProducts = products.filter((p: any) =>
+        validIds.has(p.storeId) || validIds.has(p.sellerId) || (!p.sellerId && !p.storeId && userId)
+      );
+
+      setItems(sellerProducts);
+    } catch {
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {

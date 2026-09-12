@@ -59,7 +59,7 @@ export function BudgetEmptyState({ summary, category }: BudgetEmptyStateProps) {
       {/* Actions */}
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
         <Link
-          href={`/shop?category=${category}`}
+          href={`/products?category=${category}`}
           className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold text-white transition hover:opacity-90 shadow-md"
           style={{ backgroundColor: "var(--color-warning)" }}
         >
@@ -68,7 +68,7 @@ export function BudgetEmptyState({ summary, category }: BudgetEmptyStateProps) {
         </Link>
 
         <Link
-          href="/shop"
+          href="/products"
           className="inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold transition hover:border-primary"
           style={{
             backgroundColor: "var(--color-surface)",

@@ -22,6 +22,7 @@ export const userDashboardLinks: DashboardLink[] = [
 ];
 
 export const sellerDashboardLinks: DashboardLink[] = [
+  { label: "Dashboard", href: "/dashboard/seller", icon: "🏠", description: "Seller Growth & Intelligence Hub — Store Overview." },
   { label: "Command Center", href: "/dashboard/seller/command-center", icon: "📊", description: "Real-time KPI dashboard." },
   { label: "Sales Analytics", href: "/dashboard/seller/analytics", icon: "📈", description: "Revenue & sales breakdown." },
   { label: "Product Performance", href: "/dashboard/seller/product-performance", icon: "🏆", description: "Product-wise sales & revenue." },
@@ -35,8 +36,8 @@ export const sellerDashboardLinks: DashboardLink[] = [
   { label: "Risk Indicators", href: "/dashboard/seller/risk-indicators", icon: "⚠️", description: "Fraud & anomaly detection." },
   { label: "Goals", href: "/dashboard/seller/goals", icon: "🎯", description: "Business targets & progress." },
   { label: "Products", href: "/dashboard/seller/products", icon: "🧾", description: "Manage product catalog." },
-  { label: "Add Product", href: "/dashboard/seller/products/add", icon: "➕", description: "List a new product." },
-  { label: "AI Seller Tools", href: "/dashboard/seller/ai-tools", icon: "🤖", description: "AI listing & pricing tools." },
+  { label: "Add Product", href: "/dashboard/seller/products/add", icon: "➕", description: "List a new product manually or with AI." },
+  { label: "AI Product Studio", href: "/dashboard/seller/ai-tools", icon: "🤖", description: "Create listings from product images with AI." },
   { label: "Security Center", href: "/dashboard/seller/security", icon: "🔐", description: "Sessions & security events." },
   { label: "Notifications", href: "/dashboard/seller/notifications", icon: "🔔", description: "Order & store alerts." },
   { label: "Store Settings", href: "/dashboard/seller/store-settings", icon: "⚙️", description: "Store profile & preferences." },

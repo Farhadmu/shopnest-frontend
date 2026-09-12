@@ -39,14 +39,55 @@ const INITIAL_FORM: ProductFormState = {
  * the presentational tree so every section component below can stay a small,
  * dumb, reusable piece of UI.
  */
-export function useProductForm(editId: string | null) {
+export function useProductForm(editId: string | null, aiPrefill?: Record<string, unknown>) {
   const router = useRouter();
 
   const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
-  const [form, setForm] = useState<ProductFormState>(INITIAL_FORM);
-  const [images, setImages] = useState<string[]>([]);
-  const [variants, setVariants] = useState<VariantRow[]>([]);
-  const [specs, setSpecs] = useState<SpecRow[]>([{ id: uid(), key: "", value: "" }]);
+  const [form, setForm] = useState<ProductFormState>(() => {
+    if (aiPrefill) {
+      const specs = aiPrefill.specifications as Record<string, string> || {};
+      return {
+        title: (aiPrefill.title as string) || "",
+        category: (aiPrefill.category as string) || "Electronics",
+        brand: (aiPrefill.brand as string) || specs["Brand"] || "",
+        model: (aiPrefill.model as string) || specs["Model"] || "",
+        masterSku: specs["Master SKU"] || "",
+        price: aiPrefill.price ? String(aiPrefill.price) : "",
+        discountPrice: "",
+        stock: "20",
+        lowStockAlert: "10",
+        barcode: specs["Barcode"] || "",
+        warranty: WARRANTY_OPTIONS[0],
+        escrow: ESCROW_OPTIONS[0],
+        codEnabled: true,
+        expressDispatch: true,
+        description: (aiPrefill.description as string) || "",
+        tagsInput: Array.isArray(aiPrefill.tags) ? aiPrefill.tags.join(", ") : (aiPrefill.tags as string) || "",
+      };
+    }
+    return INITIAL_FORM;
+  });
+  const [images, setImages] = useState<string[]>(() => (aiPrefill?.images as string[]) || []);
+  const [variants, setVariants] = useState<VariantRow[]>(() => {
+    if (aiPrefill?.variants && Array.isArray(aiPrefill.variants)) {
+      return aiPrefill.variants.map((v: Record<string, unknown>, idx: number) => ({
+        id: uid(),
+        name: String(v.name || ""),
+        swatch: SWATCH_PALETTE[idx % SWATCH_PALETTE.length],
+        stock: "0",
+        priceDelta: String(v.priceDelta || 0),
+      }));
+    }
+    return [];
+  });
+  const [specs, setSpecs] = useState<SpecRow[]>(() => {
+    if (aiPrefill?.specifications && typeof aiPrefill.specifications === "object") {
+      return Object.entries(aiPrefill.specifications as Record<string, string>)
+        .filter(([, v]) => v && String(v).trim())
+        .map(([key, value]) => ({ id: uid(), key, value: String(value) }));
+    }
+    return [{ id: uid(), key: "", value: "" }];
+  });
   const [packageContents, setPackageContents] = useState<string[]>([]);
   const [newPackageItem, setNewPackageItem] = useState("");
 
@@ -66,7 +107,7 @@ export function useProductForm(editId: string | null) {
       })
       .catch(() => undefined);
 
-    if (!editId) return;
+    if (!editId || editId === "undefined" || editId === "null" || editId.trim() === "") return;
 
     setIsLoading(true);
     getProductById(editId)

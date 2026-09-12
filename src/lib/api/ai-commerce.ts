@@ -17,7 +17,7 @@ export interface IntentDetectionResult {
     rawQuery?: string;
   };
   matchingProducts: Array<{
-    id: string;
+    id?: string;
     _id?: string;
     title: string;
     description?: string;

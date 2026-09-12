@@ -1,4 +1,4 @@
-﻿import { clientFetch, clientMutation } from "@/lib/core/client";
+import { clientFetch, clientMutation } from "@/lib/core/client";
 
 export interface SellerHealthData {
   storeName: string;
@@ -106,7 +106,12 @@ export interface ProfitabilityData {
     netMarginPercent: string;
   };
   topProfitableProducts: Array<{
+    id?: string;
     title: string;
+    price?: number;
+    sold?: number;
+    stock?: number;
+    image?: string;
     revenue: number;
     marginPercent: number;
     netProfit: number;
@@ -152,11 +157,22 @@ export async function getDemandHeatmap(timeframe = "30d") {
   return clientFetch<DemandHeatmapData>(`/sellers/demand-heatmap?timeframe=${timeframe}`);
 }
 
-export async function simulateGrowthScenario(data: { currentPrice: number; newPrice: number; adSpend: number; inventoryExpansion: number }) {
+export async function simulateGrowthScenario(data: {
+  productId?: string;
+  currentPrice?: number;
+  newPrice?: number;
+  adSpend?: number;
+  inventoryExpansion?: number;
+}) {
   return clientMutation<GrowthSimulationResult>("/sellers/simulator/growth", "POST", data);
 }
 
-export async function simulateCampaign(data: { campaignName: string; discountPercent: number; durationDays: number; targetSegment: string }) {
+export async function simulateCampaign(data: {
+  campaignName?: string;
+  discountPercent?: number;
+  durationDays?: number;
+  targetSegment?: string;
+}) {
   return clientMutation<CampaignSimulationResult>("/sellers/simulator/campaign", "POST", data);
 }
 
@@ -258,5 +274,389 @@ export interface CustomerInsightsData {
 
 export async function getCustomerInsights() {
   return clientFetch<CustomerInsightsData>("/sellers/customer-insights");
+}
+
+// 24. SELLER COMMAND CENTER — unified real-data endpoint
+export interface CommandCenterHeader {
+  sellerName: string;
+  storeName: string;
+  slug: string;
+  status: string;
+  trustScore: number;
+  rating: number;
+  ratingCount: number;
+  followersCount: number;
+  logo: string;
+  banner: string;
+}
+
+export interface CommandCenterMetrics {
+  todayRevenue: number;
+  todayOrders: number;
+  totalRevenue: number;
+  rangeRevenue: number;
+  previousRangeRevenue: number;
+  revenueGrowthPct: number | null;
+  rangeOrders: number;
+  previousRangeOrders: number;
+  ordersGrowthPct: number | null;
+  productsSold: number;
+  avgOrderValue: number;
+  pendingOrders: number;
+  processingOrders: number;
+  shippedOrders: number;
+  deliveredOrders: number;
+  cancelledOrders: number;
+  returnedOrders: number;
+  totalProducts: number;
+  healthyStockCount: number;
+  lowStockCount: number;
+  outOfStockCount: number;
+  storeRating: number;
+  estimatedProfit: number;
+}
+
+export interface CommandCenterTrendPoint {
+  label: string;
+  revenue: number;
+  orders: number;
+  unitsSold: number;
+}
+
+export interface CommandCenterCategoryPerformance {
+  category: string;
+  revenue: number;
+  orders: number;
+  units: number;
+  sharePercent: number;
+}
+
+export interface CommandCenterActionItem {
+  id: string;
+  type: "low_stock" | "pending_orders" | "cancellation_spike" | "negative_review" | "onboarding" | "campaign";
+  priority: "critical" | "high" | "warning" | "info";
+  title: string;
+  description: string;
+  actionLabel: string;
+  actionHref: string;
+}
+
+export interface CommandCenterPipelineStage {
+  count: number;
+  percent: number;
+}
+
+export interface CommandCenterOrderPipeline {
+  pending: CommandCenterPipelineStage;
+  processing: CommandCenterPipelineStage;
+  shipped: CommandCenterPipelineStage;
+  delivered: CommandCenterPipelineStage;
+  cancelled: CommandCenterPipelineStage;
+  returned: CommandCenterPipelineStage;
+}
+
+export interface CommandCenterRecentOrderItem {
+  productId: string;
+  title: string;
+  price: number;
+  quantity: number;
+  image: string;
+}
+
+export interface CommandCenterRecentOrder {
+  orderId: string;
+  userId: string;
+  customerName: string;
+  status: string;
+  paymentStatus: string;
+  createdAt: string;
+  sellerSubtotal: number;
+  itemCount: number;
+  items: CommandCenterRecentOrderItem[];
+}
+
+export interface CommandCenterInventoryCommand {
+  healthyCount: number;
+  lowStockCount: number;
+  outOfStockCount: number;
+  totalCatalogUnits: number;
+  topLowStock: Array<{
+    id: string;
+    title: string;
+    stock: number;
+    price: number;
+    category: string;
+    image: string;
+    sold: number;
+  }>;
+}
+
+export interface CommandCenterProductPerformance {
+  topProducts: Array<{
+    id: string;
+    title: string;
+    category: string;
+    price: number;
+    discountPrice?: number;
+    stock: number;
+    image: string;
+    sold: number;
+    revenue: number;
+    ratingAvg: number;
+    ratingCount: number;
+    views: number;
+    status: string;
+  }>;
+  underperformingProducts: Array<{
+    id: string;
+    title: string;
+    category: string;
+    price: number;
+    discountPrice?: number;
+    stock: number;
+    image: string;
+    sold: number;
+    revenue: number;
+    ratingAvg: number;
+    ratingCount: number;
+    views: number;
+    status: string;
+  }>;
+}
+
+export interface CommandCenterProfitIntelligence {
+  grossRevenue: number;
+  totalDiscounts: number;
+  estimatedPlatformFee: number;
+  estimatedNetProfit: number;
+  profitMarginPercent: number;
+  isEstimated: boolean;
+  note: string;
+}
+
+export interface CommandCenterHealthScore {
+  overallHealth: number;
+  deliveryReliability: number;
+  customerSatisfaction: number;
+  catalogReadiness: number;
+  returnRatePercent: number;
+}
+
+export interface CommandCenterAiInsight {
+  title: string;
+  category: string;
+  text: string;
+  impact: "positive" | "warning" | "suggestion";
+}
+
+export interface CommandCenterPerformanceSnapshot {
+  conversionRate: number;
+  cancellationRate: number;
+  returnRate: number;
+  averageRating: number;
+  averageOrderValue: number;
+  repeatCustomerRate: number;
+}
+
+export interface CommandCenterData {
+  header: CommandCenterHeader;
+  dateRange: string;
+  metrics: CommandCenterMetrics;
+  salesPerformance: {
+    trendPoints: CommandCenterTrendPoint[];
+    categoryPerformance: CommandCenterCategoryPerformance[];
+  };
+  actionCenter: CommandCenterActionItem[];
+  orderPipeline: CommandCenterOrderPipeline;
+  recentOrders: CommandCenterRecentOrder[];
+  inventoryCommand: CommandCenterInventoryCommand;
+  productPerformance: CommandCenterProductPerformance;
+  profitIntelligence: CommandCenterProfitIntelligence;
+  healthScore: CommandCenterHealthScore;
+  aiInsights: CommandCenterAiInsight[];
+  performanceSnapshot: CommandCenterPerformanceSnapshot;
+}
+
+export async function getSellerCommandCenter(range: string = "30d") {
+  return clientFetch<CommandCenterData>(`/sellers/command-center?range=${encodeURIComponent(range)}`);
+}
+
+// ============================================================
+// AI PRODUCT CREATION STUDIO
+// ============================================================
+
+export interface ProductImageAnalysis {
+  detectedProductType: string;
+  detectedCategory: string;
+  detectedSubcategory: string;
+  detectedColor: string;
+  detectedMaterial: string;
+  detectedBrand: string;
+  detectedFeatures: string[];
+  detectedUseCase: string;
+  suggestedTitle: string;
+  suggestedTags: string[];
+  conditionNotes: string;
+  confidence: "high" | "medium" | "low";
+  isFallback: boolean;
+  imageUrls: string[];
+}
+
+export interface ProductGeneratedContent {
+  title: string;
+  category: string;
+  subcategory: string;
+  brand: string;
+  model: string;
+  description: string;
+  shortDescription: string;
+  features: string[];
+  specifications: Record<string, string>;
+  variants: Array<{ name: string; color?: string; priceDelta?: number }>;
+  highlights: string[];
+  whyBuy: string;
+  currentPriceRange: { min: number | null; max: number | null; currency: string; source: string };
+  seoTitle: string;
+  seoDescription: string;
+  tags: string[];
+  marketingCaption: string;
+  pricing: {
+    suggestedPrice: number | null;
+    reasoning: string;
+  };
+  isFallback: boolean;
+  imageUrls: string[];
+  storeId: string;
+}
+
+export interface TranslatedContent {
+  translatedSections: Record<string, string>;
+  isFallback: boolean;
+}
+
+export interface PriceSuggestion {
+  categoryAvgPrice: number;
+  categoryProducts: number;
+  sellerAvgPrice: number | null;
+  suggestedMin: number | null;
+  suggestedMax: number | null;
+  reasoning: string;
+  isFallback: boolean;
+}
+
+export async function analyzeProductImages(data: { imageUrls: string[]; hints?: Record<string, string | undefined> }) {
+  return clientMutation<ProductImageAnalysis>("/ai/analyze-product-images", "POST", data);
+}
+
+export async function generateProductFromImages(data: {
+  imageUrls: string[];
+  analysis?: Record<string, unknown>;
+  hints?: Record<string, string | undefined>;
+}) {
+  return clientMutation<ProductGeneratedContent>("/ai/generate-product-from-images", "POST", data);
+}
+
+export async function translateProductContent(data: { sections: Record<string, string>; targetLanguage: "bn" | "en" }) {
+  return clientMutation<TranslatedContent>("/ai/translate-content", "POST", data);
+}
+
+export async function suggestProductPrice(data: { category?: string; costPrice?: number }) {
+  return clientMutation<PriceSuggestion>("/ai/suggest-product-price", "POST", data);
+}
+
+// ============================================================
+// AI PRODUCT FINDER — NEW PIPELINE
+// ============================================================
+
+export interface ProductFinderProgressStep {
+  step: "image_quality" | "vision_analysis" | "product_identification" | "web_research" | "source_verification" | "price_research" | "image_discovery" | "image_generation" | "listing_generation";
+  status: "pending" | "running" | "completed" | "failed" | "skipped";
+  message: string;
+  error?: string;
+}
+
+export interface ProductFinderSource {
+  url: string;
+  title: string;
+  snippet: string;
+  publishedDate?: string;
+  domain: string;
+  type: "official" | "retailer" | "review" | "database" | "other";
+}
+
+export interface ProductFinderPriceObservation {
+  amount: number;
+  currency: string;
+  source: string;
+  sourceUrl: string;
+  observedAt: string;
+  isVerified: boolean;
+}
+
+export interface ProductFinderDiscoveredImage {
+  url: string;
+  sourceUrl: string;
+  sourceType: "manufacturer" | "retailer" | "other";
+  licenseStatus: "unknown" | "permitted" | "restricted";
+}
+
+export interface ProductFinderContent {
+  title: string;
+  category: string;
+  subcategory: string;
+  brand: string;
+  model: string;
+  description: string;
+  shortDescription: string;
+  features: string[];
+  specifications: Record<string, string>;
+  variants: Array<{ name: string; color?: string; priceDelta?: number }>;
+  highlights: string[];
+  whyBuy: string;
+  seoTitle: string;
+  seoDescription: string;
+  tags: string[];
+  marketingCaption: string;
+  packageContents: string[];
+  warranty: string;
+  suggestedPrice: number | null;
+  priceReasoning: string;
+}
+
+export interface ProductFinderIdentifiedProduct {
+  name: string;
+  brand: string;
+  model: string;
+  category: string;
+  subcategory: string;
+  productType: string;
+  color?: string;
+  material?: string;
+  variant?: string;
+}
+
+export interface ProductFinderResult {
+  productFound: boolean;
+  confidence: "high" | "medium" | "low" | "none";
+  identifiedProduct: ProductFinderIdentifiedProduct | null;
+  sources: ProductFinderSource[];
+  verificationStatus: Record<string, "verified" | "partially_verified" | "not_verified" | "conflicting">;
+  priceResearch: {
+    observedPrices: ProductFinderPriceObservation[];
+    suggestedPrice: number | null;
+    priceRange: { min: number | null; max: number | null };
+    currency: string;
+    reasoning: string;
+    researchStatus: "verified" | "partially_verified" | "not_verified";
+  } | null;
+  discoveredImages: ProductFinderDiscoveredImage[];
+  generatedImages: string[];
+  content: ProductFinderContent | null;
+  limitations: string[];
+  progress: ProductFinderProgressStep[];
+}
+
+export async function runProductFinder(data: { imageUrls: string[]; hints?: Record<string, string | undefined> }) {
+  return clientMutation<ProductFinderResult>("/ai/product-finder/pipeline", "POST", data);
 }
 

@@ -20,6 +20,9 @@ export interface ProductDetailPageProps {
 
 export async function generateMetadata({ params }: ProductDetailPageProps): Promise<Metadata> {
   const { id } = await params;
+  if (!id || id === "undefined" || id === "null" || id.trim() === "") {
+    return { title: "Product - ShopNest" };
+  }
   try {
     const product = await getProductById(id);
     return {
@@ -33,6 +36,9 @@ export async function generateMetadata({ params }: ProductDetailPageProps): Prom
 
 export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
   const { id } = await params;
+  if (!id || id === "undefined" || id === "null" || id.trim() === "") {
+    notFound();
+  }
 
   const product = await getProductById(id).catch(() => null);
   if (!product) {
@@ -70,7 +76,10 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
         </div>
       </div>
 
-      <ProductReviewsSection productId={product.id} initialReviews={reviews} />
+      <ProductReviewsSection
+        productId={product.id || (product as { _id?: string })._id || id}
+        initialReviews={reviews}
+      />
     </div>
   );
 }

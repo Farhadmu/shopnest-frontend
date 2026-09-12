@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { clientFetch, clientMutation } from "@/lib/core/client";
+import { getMyStore } from "@/lib/api/sellers";
+import { useSession } from "@/lib/auth-client";
 import {
   FiPackage,
   FiTruck,
@@ -26,13 +28,25 @@ export default function SellerOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [storeInfo, setStoreInfo] = useState<any>(null);
+  const { data: session } = useSession();
 
-  const loadOrders = () => {
+  const loadOrders = async () => {
     setLoading(true);
-    clientFetch<any[]>("/orders/seller/mine")
-      .then((r) => setOrders((r as any).data ?? r ?? []))
-      .catch(() => setOrders([]))
-      .finally(() => setLoading(false));
+    try {
+      const [ordersRes, storeRes] = await Promise.allSettled([
+        clientFetch<any[]>("/orders/seller/mine"),
+        getMyStore(),
+      ]);
+
+      const orderList = ordersRes.status === "fulfilled" ? ((ordersRes.value as any)?.data ?? ordersRes.value ?? []) : [];
+      setOrders(orderList);
+      if (storeRes.status === "fulfilled") setStoreInfo(storeRes.value);
+    } catch {
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -51,14 +65,31 @@ export default function SellerOrdersPage() {
     }
   };
 
+  const userId = (session?.user as any)?.id;
+  const validStoreIds = new Set([
+    storeInfo?.id,
+    storeInfo?._id,
+    storeInfo?.slug,
+    storeInfo?.ownerId,
+    userId,
+  ].filter(Boolean));
+
   const filteredOrders = orders.filter((o) => {
     if (statusFilter === "all") return true;
     return o.status === statusFilter;
   });
 
-  const totalSellerRevenue = orders
+  // Calculate seller-specific revenue from store items
+  let totalSellerRevenue = 0;
+  orders
     .filter((o) => o.status !== "cancelled")
-    .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    .forEach((o) => {
+      (o.items || []).forEach((it: any) => {
+        if (validStoreIds.size === 0 || validStoreIds.has(it.storeId) || validStoreIds.has(it.sellerId)) {
+          totalSellerRevenue += (it.price || 0) * (it.quantity || 1);
+        }
+      });
+    });
 
   return (
     <div className="space-y-6">
@@ -71,9 +102,9 @@ export default function SellerOrdersPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="bg-card border border-border px-4 py-2 rounded-xl text-right">
-            <span className="text-[11px] text-muted block">Store Revenue</span>
-            <span className="text-lg font-black text-primary">৳{totalSellerRevenue.toLocaleString()}</span>
+          <div className="bg-card border border-border px-4 py-2.5 rounded-2xl text-right shadow-sm">
+            <span className="text-[11px] font-bold text-muted block">Store Realized Revenue</span>
+            <span className="text-xl font-black text-primary">৳{totalSellerRevenue.toLocaleString()}</span>
           </div>
         </div>
       </div>
@@ -90,6 +121,7 @@ export default function SellerOrdersPage() {
         ].map((tab) => (
           <button
             key={tab.key}
+            type="button"
             onClick={() => setStatusFilter(tab.key)}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
               statusFilter === tab.key
@@ -99,7 +131,7 @@ export default function SellerOrdersPage() {
           >
             <span>{tab.label}</span>
             <span
-              className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+              className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
                 statusFilter === tab.key ? "bg-white/20 text-white" : "bg-muted-bg text-muted"
               }`}
             >
@@ -116,7 +148,7 @@ export default function SellerOrdersPage() {
         </div>
       ) : filteredOrders.length === 0 ? (
         <div className="bg-card border border-border rounded-2xl p-12 text-center max-w-md mx-auto shadow-sm">
-          <div className="w-14 h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4 text-2xl">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4 text-2xl">
             <FiPackage />
           </div>
           <h3 className="text-lg font-bold text-foreground mb-1">
@@ -132,10 +164,25 @@ export default function SellerOrdersPage() {
             const orderId = String(o._id || o.id);
             const isUpdating = updatingId === orderId;
 
+            // Seller items on this order
+            const sellerItems = (o.items || []).filter(
+              (it: any) =>
+                validStoreIds.size === 0 ||
+                validStoreIds.has(it.storeId) ||
+                validStoreIds.has(it.sellerId) ||
+                !it.storeId
+            );
+
+            const displayItems = sellerItems.length > 0 ? sellerItems : (o.items || []);
+            const orderSubtotal = displayItems.reduce(
+              (sum: number, it: any) => sum + (it.price || 0) * (it.quantity || 1),
+              0
+            );
+
             return (
               <div
                 key={orderId}
-                className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4"
+                className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 transition hover:border-primary/30"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/60 pb-3">
                   <div className="flex items-center gap-3">
@@ -144,11 +191,11 @@ export default function SellerOrdersPage() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-foreground text-sm">
+                        <span className="font-black text-foreground text-sm">
                           Order #{orderId.slice(-8).toUpperCase()}
                         </span>
                         <span
-                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase ${
+                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase ${
                             o.status === "delivered"
                               ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
                               : o.status === "cancelled"
@@ -166,8 +213,10 @@ export default function SellerOrdersPage() {
                   </div>
 
                   <div className="sm:text-right">
-                    <span className="text-xs text-muted block">Order Total</span>
-                    <span className="text-base font-black text-primary">৳{o.totalAmount?.toLocaleString() || "0"}</span>
+                    <span className="text-xs text-muted block">Store Items Total</span>
+                    <span className="text-base font-black text-primary">
+                      ৳{orderSubtotal.toLocaleString() || (o.totalAmount || 0).toLocaleString()}
+                    </span>
                   </div>
                 </div>
 
@@ -177,19 +226,19 @@ export default function SellerOrdersPage() {
                     <p className="font-semibold text-muted mb-1 flex items-center gap-1">
                       <FiMapPin className="text-primary" /> Delivery Destination & Customer
                     </p>
-                    <p className="text-foreground font-medium">{o.shippingAddress}</p>
-                    <p className="text-muted mt-1">Payment: <strong className="text-foreground uppercase">{o.paymentMethod || "COD"}</strong></p>
+                    <p className="text-foreground font-medium">{o.shippingAddress || "Customer Address On File"}</p>
+                    <p className="text-muted mt-1">Payment Method: <strong className="text-foreground uppercase">{o.paymentMethod || "COD"}</strong></p>
                   </div>
 
                   <div className="p-3 bg-muted-bg/50 rounded-xl border border-border/40">
                     <p className="font-semibold text-muted mb-1 flex items-center gap-1">
-                      <FiPackage className="text-primary" /> Order Items ({o.items?.length || 0})
+                      <FiPackage className="text-primary" /> Store Line Items ({displayItems.length})
                     </p>
                     <div className="space-y-1">
-                      {(o.items || []).map((it: any, idx: number) => (
+                      {displayItems.map((it: any, idx: number) => (
                         <div key={idx} className="flex justify-between text-foreground">
                           <span className="line-clamp-1">{it.title || `Item #${idx + 1}`} × {it.quantity}</span>
-                          <span className="font-semibold shrink-0">৳{(it.price * it.quantity).toLocaleString()}</span>
+                          <span className="font-black shrink-0">৳{((it.price || 0) * (it.quantity || 1)).toLocaleString()}</span>
                         </div>
                       ))}
                     </div>
@@ -205,6 +254,7 @@ export default function SellerOrdersPage() {
                       return (
                         <button
                           key={step.key}
+                          type="button"
                           disabled={isUpdating || isActive}
                           onClick={() => handleAdvanceStatus(orderId, step.key)}
                           className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
@@ -227,3 +277,4 @@ export default function SellerOrdersPage() {
     </div>
   );
 }
+

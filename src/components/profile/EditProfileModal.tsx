@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { updateUserProfile, UserProfile } from "@/lib/api/users";
+import { uploadImageToImgBB } from "@/lib/utils/imgbb";
 import { X, UploadCloud, CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function EditProfileModal({
@@ -27,23 +28,12 @@ export default function EditProfileModal({
 
     setUploading(true);
     setMsg("");
-    const formData = new FormData();
-    formData.append("image", file);
 
     try {
-      const response = await fetch(
-        `https://api.imgbb.com/1/upload?key=${process.env.NEXT_PUBLIC_IMGBB_KEY}`,
-        { method: "POST", body: formData }
-      );
-      const data = await response.json();
-      if (data.success) {
-        setAvatar(data.data.url);
-        setMsg("Avatar uploaded successfully!");
-        setIsSuccessMsg(true);
-      } else {
-        setMsg("Image upload failed.");
-        setIsSuccessMsg(false);
-      }
+      const result = await uploadImageToImgBB(file);
+      setAvatar(result.url);
+      setMsg("Avatar uploaded successfully!");
+      setIsSuccessMsg(true);
     } catch {
       setMsg("Network error during upload.");
       setIsSuccessMsg(false);

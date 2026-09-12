@@ -3,6 +3,7 @@ import { ChangeEvent, useEffect, useState } from "react";
 import { FiX } from "react-icons/fi";
 import { clientMutation } from "@/lib/core/client";
 import { ApiError } from "@/lib/core/errors";
+import { uploadImageToImgBB } from "@/lib/utils/imgbb";
 import type { CategoryItem } from "../../../../types/category";
 import { indentedOptionsFor, idOf } from "../../../../lib/utils/category-tree";
 
@@ -23,6 +24,7 @@ export function EditCategoryModal({ category, categories, onClose, onSaved }: Ed
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [image, setImage] = useState<File | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(category.image ?? null);
 
   useEffect(() => {
@@ -31,15 +33,27 @@ export function EditCategoryModal({ category, categories, onClose, onSaved }: Ed
     };
   }, [preview]);
 
-  const chooseImage = (event: ChangeEvent<HTMLInputElement>) => {
+  const chooseImage = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
     if (file && !file.type.startsWith("image/")) {
       setError("Choose an image file.");
       return;
     }
     setError(null);
-    setImage(file);
-    setPreview(file ? URL.createObjectURL(file) : category.image ?? null);
+    if (file) {
+      try {
+        const result = await uploadImageToImgBB(file);
+        setImage(file);
+        setImageUrl(result.url);
+        setPreview(URL.createObjectURL(file));
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "Image upload failed.");
+      }
+    } else {
+      setImage(null);
+      setImageUrl(null);
+      setPreview(category.image ?? null);
+    }
   };
 
   const save = () => {
@@ -53,11 +67,12 @@ export function EditCategoryModal({ category, categories, onClose, onSaved }: Ed
     }
     setError(null);
     setSaving(true);
-    const body = new FormData();
-    body.append("name", name.trim());
-    body.append("slug", slug.trim());
-    body.append("parent", parentId || "null");
-    if (image) body.append("image", image);
+    const body: Record<string, unknown> = {
+      name: name.trim(),
+      slug: slug.trim(),
+      parent: parentId || null,
+    };
+    if (imageUrl) body.image = imageUrl;
     clientMutation(`/categories/${id}`, "PUT", body)
       .then(() => onSaved())
       .catch((err) => {

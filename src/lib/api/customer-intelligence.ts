@@ -430,7 +430,7 @@ export interface ComprehensiveSpendingAnalytics {
   monthlySpending: Array<{ month: string; fullKey: string; amount: number; orders: number; year: number; monthIndex: number }>;
   weeklySpending: Array<{ day: string; amount: number }>;
   categorySpending: Array<{ category: string; amount: number; percentage: number }>;
-  sellerSpending: Array<{ sellerId: string; name: string; amount: number; orders: number }>;
+  sellerSpending: Array<{ sellerId: string; name: string; amount: number; orders: number; latestOrderId?: string }>;
   spendingTrend: "increasing" | "decreasing" | "stable";
   spendingTrendPercent: number;
   insights: string[];

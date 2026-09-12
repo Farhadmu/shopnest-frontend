@@ -2,6 +2,7 @@
 import { ChangeEvent, useEffect, useState } from "react";
 import { clientMutation } from "@/lib/core/client";
 import { ApiError } from "@/lib/core/errors";
+import { uploadImageToImgBB } from "@/lib/utils/imgbb";
 import type { CategoryItem } from "../../../../types/category";
 import { indentedOptionsFor } from "../../../../lib/utils/category-tree";
 
@@ -23,6 +24,7 @@ export function AddCategoryForm({ categories, onAdded }: AddCategoryFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [image, setImage] = useState<File | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
   useEffect(() => {
@@ -31,30 +33,42 @@ export function AddCategoryForm({ categories, onAdded }: AddCategoryFormProps) {
     };
   }, [preview]);
 
-  const chooseImage = (event: ChangeEvent<HTMLInputElement>) => {
+  const chooseImage = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
     if (file && !file.type.startsWith("image/")) {
       setError("Choose an image file.");
       return;
     }
     setError(null);
-    setImage(file);
-    setPreview(file ? URL.createObjectURL(file) : null);
+    if (file) {
+      try {
+        const result = await uploadImageToImgBB(file);
+        setImage(file);
+        setImageUrl(result.url);
+        setPreview(URL.createObjectURL(file));
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "Image upload failed.");
+      }
+    } else {
+      setImage(null);
+      setImageUrl(null);
+      setPreview(null);
+    }
   };
 
   const add = () => {
     if (!name.trim()) return;
     setError(null);
     setSubmitting(true);
-    const body = new FormData();
-    body.append("name", name.trim());
-    if (parentId) body.append("parent", parentId);
-    if (image) body.append("image", image);
+    const body: Record<string, unknown> = { name: name.trim() };
+    if (parentId) body.parent = parentId;
+    if (imageUrl) body.image = imageUrl;
     clientMutation("/categories", "POST", body)
       .then(() => {
         setName("");
         setParentId(NO_PARENT);
         setImage(null);
+        setImageUrl(null);
         setPreview(null);
         onAdded();
       })

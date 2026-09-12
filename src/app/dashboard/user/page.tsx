@@ -330,8 +330,10 @@ export default function CustomerOverviewPage() {
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {result.matchingProducts.map((p) => {
-                      const isAdded = !!addedMap[p.id];
-                      const isAdding = addingCartId === p.id;
+                      const pid = p.id || p._id || "";
+                      if (!pid) return null;
+                      const isAdded = !!addedMap[pid];
+                      const isAdding = addingCartId === pid;
                       const hasDiscount = !!p.discountPrice && p.discountPrice < p.price;
                       const displayPrice = p.discountPrice || p.price;
                       const discountPct = hasDiscount
@@ -340,7 +342,7 @@ export default function CustomerOverviewPage() {
 
                       return (
                         <div
-                          key={p.id}
+                          key={pid}
                           className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border bg-card p-3.5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md"
                         >
                           {/* Top Tag & Discount Badge */}
@@ -356,7 +358,7 @@ export default function CustomerOverviewPage() {
                           </div>
 
                           {/* Image & Title */}
-                          <Link href={`/products/${p.id}`} className="block space-y-2">
+                          <Link href={`/products/${pid}`} className="block space-y-2">
                             <div className="aspect-video sm:aspect-square w-full overflow-hidden rounded-xl bg-muted-bg flex items-center justify-center relative">
                               {p.images?.[0] ? (
                                 <img
@@ -410,14 +412,14 @@ export default function CustomerOverviewPage() {
                             {/* Actions */}
                             <div className="flex items-center gap-2">
                               <Link
-                                href={`/products/${p.id}`}
+                                href={`/products/${pid}`}
                                 className="flex-1 rounded-xl border border-border bg-surface hover:bg-muted-bg py-2 text-center text-xs font-bold text-foreground transition-colors"
                               >
                                 View Specs
                               </Link>
                               <button
                                 type="button"
-                                onClick={(e) => handleAddToCart(p.id, e)}
+                                onClick={(e) => handleAddToCart(pid, e)}
                                 disabled={isAdding || (p.stock ?? 1) <= 0}
                                 className={`flex items-center justify-center gap-1 rounded-xl px-3 py-2 text-xs font-bold transition-all ${
                                   isAdded

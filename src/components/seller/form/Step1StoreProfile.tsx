@@ -4,6 +4,7 @@
 import React, { useState } from "react";
 import { FiUploadCloud, FiLink, FiTrash2, FiLoader } from "react-icons/fi";
 import { CATEGORIES } from "@/lib/constants/seller-application";
+import { uploadImageToImgBB } from "@/lib/utils/imgbb";
 import { StepProps } from "@/types/seller-application";
 import Image from "next/image";
 
@@ -19,25 +20,6 @@ export function Step1StoreProfile({ formData, onChange }: StepProps) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
 
-  const uploadToImgBB = async (file: File): Promise<string> => {
-    const body = new FormData();
-    body.append("image", file);
-
-    const apiKey = process.env.NEXT_PUBLIC_IMGBB_KEY || "6d7007353630f7e44ae70d651786f68c";
-
-    const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
-      method: "POST",
-      body,
-    });
-
-    const data = await response.json();
-    if (data.success) {
-      return data.data.url;
-    } else {
-      throw new Error(data.error?.message || "Failed to upload image");
-    }
-  };
-
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     field: "logo" | "banner",
@@ -48,9 +30,9 @@ export function Step1StoreProfile({ formData, onChange }: StepProps) {
 
     try {
       setLoading(true);
-      const uploadedUrl = await uploadToImgBB(file);
-      onChange(field, uploadedUrl);
-    } catch (err) {
+      const result = await uploadImageToImgBB(file);
+      onChange(field, result.url);
+    } catch {
       alert("Image upload failed. Please try again or paste direct URL.");
     } finally {
       setLoading(false);
@@ -149,8 +131,8 @@ export function Step1StoreProfile({ formData, onChange }: StepProps) {
               <Image
                 src={formData.logo}
                 alt="Store Logo Preview"
-                height={10}
-                width={10}
+                height={80}
+                width={80}
                 className="h-10 w-10 rounded-md object-cover border border-border shrink-0 shadow-xs"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = "https://placehold.co/100x100?text=Logo";
@@ -232,9 +214,9 @@ export function Step1StoreProfile({ formData, onChange }: StepProps) {
               <Image
                 src={formData.banner}
                 alt="Store Banner Preview"
-                height={10}
-                width={16}
-                className="rounded-md object-cover border border-border shrink-0 shadow-xs"
+                height={64}
+                width={128}
+                className="h-16 w-32 rounded-md object-cover border border-border shrink-0 shadow-xs"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = "https://placehold.co/200x100?text=Banner";
                 }}

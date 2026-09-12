@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
@@ -19,10 +19,19 @@ export default function SellerCustomersPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const donutData = [
-    { label: "New Buyers", value: data?.overview?.newCustomers || 0 },
-    { label: "Repeat Buyers", value: data?.overview?.returningCustomers || 0 },
-  ];
+  const totalCust = data?.overview?.totalCustomers || 0;
+  const newCust = data?.overview?.newCustomers || 0;
+  const retCust = data?.overview?.returningCustomers || 0;
+
+  const newPct = totalCust > 0 ? Math.round((newCust / totalCust) * 100) : 0;
+  const retPct = totalCust > 0 ? Math.round((retCust / totalCust) * 100) : 0;
+
+  const donutData = totalCust > 0
+    ? [
+        { label: "New Buyers", value: newCust },
+        { label: "Repeat Buyers", value: retCust },
+      ]
+    : [{ label: "Awaiting First Sale", value: 1 }];
 
   return (
     <DashboardShell
@@ -37,8 +46,8 @@ export default function SellerCustomersPage() {
           <StatCard
             icon="👥"
             label="Total Unique Buyers"
-            value={data?.overview?.totalCustomers || 0}
-            note="Verified platform customers"
+            value={totalCust}
+            note="Verified store customers"
           />
           <StatCard
             icon="🔄"
@@ -57,7 +66,7 @@ export default function SellerCustomersPage() {
             icon="💎"
             label="Avg Customer LTV"
             value={data?.overview?.averageLifetimeValue || "৳0"}
-            note="Estimated lifetime value"
+            note="Lifetime gross spend"
           />
         </div>
 
@@ -69,12 +78,14 @@ export default function SellerCustomersPage() {
               <div className="mt-4 grid w-full gap-2 text-xs">
                 <div className="flex items-center justify-between rounded-xl bg-muted-bg p-2.5">
                   <span className="font-bold text-text">New Buyers</span>
-                  <span className="font-black text-primary">{data?.overview.newCustomers || 96} (68%)</span>
+                  <span className="font-black text-primary">
+                    {newCust} ({newPct}%)
+                  </span>
                 </div>
                 <div className="flex items-center justify-between rounded-xl bg-muted-bg p-2.5">
                   <span className="font-bold text-text">Repeat Customers</span>
                   <span className="font-black text-emerald-600 dark:text-emerald-400">
-                    {data?.overview.returningCustomers || 46} (32%)
+                    {retCust} ({retPct}%)
                   </span>
                 </div>
               </div>
@@ -83,63 +94,72 @@ export default function SellerCustomersPage() {
 
           <div className="lg:col-span-2">
             <Panel title="Top Buyer Demographic Segments">
-              <div className="grid gap-3">
-                {(data?.topCustomerSegments || [
-                  { segment: "Tech Enthusiasts & Gamers", count: 64, avgSpend: "৳14,200", ltv: "৳38,500" },
-                  { segment: "Work-from-Home Professionals", count: 49, avgSpend: "৳8,900", ltv: "৳22,400" },
-                  { segment: "Students & Casual Buyers", count: 29, avgSpend: "৳3,400", ltv: "৳7,800" },
-                ]).map((seg) => (
-                  <div
-                    key={seg.segment}
-                    className="flex flex-col justify-between gap-2 rounded-2xl border border-border bg-surface p-4 text-xs sm:flex-row sm:items-center"
-                  >
-                    <div>
-                      <h3 className="font-black text-text">{seg.segment}</h3>
-                      <p className="mt-0.5 text-muted">{seg.count} buyers active in last 90 days</p>
-                    </div>
-                    <div className="flex items-center gap-4 text-right">
+              {(data?.topCustomerSegments || []).length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center text-xs text-muted">
+                  Buyer segments will automatically populate as customer checkout volume builds.
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {(data?.topCustomerSegments || []).map((seg) => (
+                    <div
+                      key={seg.segment}
+                      className="flex flex-col justify-between gap-2 rounded-2xl border border-border bg-surface p-4 text-xs sm:flex-row sm:items-center"
+                    >
                       <div>
-                        <p className="text-[10px] text-muted uppercase font-bold">Avg Order</p>
-                        <p className="font-black text-text">{seg.avgSpend}</p>
+                        <h3 className="font-black text-text">{seg.segment}</h3>
+                        <p className="mt-0.5 text-muted">{seg.count} customer(s) in this segment</p>
                       </div>
-                      <div>
-                        <p className="text-[10px] text-muted uppercase font-bold">Est. LTV</p>
-                        <p className="font-black text-primary">{seg.ltv}</p>
+                      <div className="flex items-center gap-4 text-right">
+                        <div>
+                          <p className="text-[10px] text-muted uppercase font-bold">Avg Order</p>
+                          <p className="font-black text-text">{seg.avgSpend}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-muted uppercase font-bold">Est. LTV</p>
+                          <p className="font-black text-primary">{seg.ltv}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </Panel>
           </div>
         </div>
 
         {/* Live Buyer Activity Feed */}
         <Panel title="Recent Buyer Activity Stream">
-          <div className="space-y-2.5">
-            {(data?.recentActivity || []).map((act, idx) => (
-              <div
-                key={idx}
-                className="flex items-center justify-between rounded-xl bg-muted-bg/50 p-3.5 text-xs transition hover:bg-muted-bg"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-xs">
-                    🛒
-                  </span>
-                  <div>
-                    <p className="font-bold text-text">{act.customer}</p>
-                    <p className="text-[11px] text-muted">{act.action}</p>
+          {(data?.recentActivity || []).length === 0 ? (
+            <div className="p-8 text-center text-xs text-muted">
+              No recent order activity recorded yet. Orders will appear here in real-time.
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {(data?.recentActivity || []).map((act, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between rounded-xl bg-muted-bg/50 p-3.5 text-xs transition hover:bg-muted-bg"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-xs">
+                      🛒
+                    </span>
+                    <div>
+                      <p className="font-bold text-text">{act.customer}</p>
+                      <p className="text-[11px] text-muted">{act.action}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-black text-emerald-600 dark:text-emerald-400">{act.amount}</span>
+                    <p className="text-[10px] text-muted">{act.time}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="font-black text-emerald-600 dark:text-emerald-400">{act.amount}</span>
-                  <p className="text-[10px] text-muted">{act.time}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </Panel>
       </div>
     </DashboardShell>
   );
 }
+
