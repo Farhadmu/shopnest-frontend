@@ -22,7 +22,22 @@ import { useProductForm } from "./useProductForm";
 function AddProductFormInner() {
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
-  const p = useProductForm(editId);
+  const fromAi = searchParams.get("fromAi");
+
+  const aiPrefill = fromAi === "1" ? (() => {
+    try {
+      const raw = sessionStorage.getItem("ai-studio-product-data");
+      if (raw) {
+        sessionStorage.removeItem("ai-studio-product-data");
+        return JSON.parse(raw) as Record<string, unknown>;
+      }
+    } catch {
+      // ignore parse errors
+    }
+    return undefined;
+  })() : undefined;
+
+  const p = useProductForm(editId, aiPrefill);
 
   const patchForm = (patch: Partial<ProductFormState>) =>
     p.setForm((prev) => ({ ...prev, ...patch }));

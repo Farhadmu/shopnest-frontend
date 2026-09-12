@@ -481,3 +481,182 @@ export async function getSellerCommandCenter(range: string = "30d") {
   return clientFetch<CommandCenterData>(`/sellers/command-center?range=${encodeURIComponent(range)}`);
 }
 
+// ============================================================
+// AI PRODUCT CREATION STUDIO
+// ============================================================
+
+export interface ProductImageAnalysis {
+  detectedProductType: string;
+  detectedCategory: string;
+  detectedSubcategory: string;
+  detectedColor: string;
+  detectedMaterial: string;
+  detectedBrand: string;
+  detectedFeatures: string[];
+  detectedUseCase: string;
+  suggestedTitle: string;
+  suggestedTags: string[];
+  conditionNotes: string;
+  confidence: "high" | "medium" | "low";
+  isFallback: boolean;
+  imageUrls: string[];
+}
+
+export interface ProductGeneratedContent {
+  title: string;
+  category: string;
+  subcategory: string;
+  brand: string;
+  model: string;
+  description: string;
+  shortDescription: string;
+  features: string[];
+  specifications: Record<string, string>;
+  variants: Array<{ name: string; color?: string; priceDelta?: number }>;
+  highlights: string[];
+  whyBuy: string;
+  currentPriceRange: { min: number | null; max: number | null; currency: string; source: string };
+  seoTitle: string;
+  seoDescription: string;
+  tags: string[];
+  marketingCaption: string;
+  pricing: {
+    suggestedPrice: number | null;
+    reasoning: string;
+  };
+  isFallback: boolean;
+  imageUrls: string[];
+  storeId: string;
+}
+
+export interface TranslatedContent {
+  translatedSections: Record<string, string>;
+  isFallback: boolean;
+}
+
+export interface PriceSuggestion {
+  categoryAvgPrice: number;
+  categoryProducts: number;
+  sellerAvgPrice: number | null;
+  suggestedMin: number | null;
+  suggestedMax: number | null;
+  reasoning: string;
+  isFallback: boolean;
+}
+
+export async function analyzeProductImages(data: { imageUrls: string[]; hints?: Record<string, string | undefined> }) {
+  return clientMutation<ProductImageAnalysis>("/ai/analyze-product-images", "POST", data);
+}
+
+export async function generateProductFromImages(data: {
+  imageUrls: string[];
+  analysis?: Record<string, unknown>;
+  hints?: Record<string, string | undefined>;
+}) {
+  return clientMutation<ProductGeneratedContent>("/ai/generate-product-from-images", "POST", data);
+}
+
+export async function translateProductContent(data: { sections: Record<string, string>; targetLanguage: "bn" | "en" }) {
+  return clientMutation<TranslatedContent>("/ai/translate-content", "POST", data);
+}
+
+export async function suggestProductPrice(data: { category?: string; costPrice?: number }) {
+  return clientMutation<PriceSuggestion>("/ai/suggest-product-price", "POST", data);
+}
+
+// ============================================================
+// AI PRODUCT FINDER — NEW PIPELINE
+// ============================================================
+
+export interface ProductFinderProgressStep {
+  step: "image_quality" | "vision_analysis" | "product_identification" | "web_research" | "source_verification" | "price_research" | "image_discovery" | "image_generation" | "listing_generation";
+  status: "pending" | "running" | "completed" | "failed" | "skipped";
+  message: string;
+  error?: string;
+}
+
+export interface ProductFinderSource {
+  url: string;
+  title: string;
+  snippet: string;
+  publishedDate?: string;
+  domain: string;
+  type: "official" | "retailer" | "review" | "database" | "other";
+}
+
+export interface ProductFinderPriceObservation {
+  amount: number;
+  currency: string;
+  source: string;
+  sourceUrl: string;
+  observedAt: string;
+  isVerified: boolean;
+}
+
+export interface ProductFinderDiscoveredImage {
+  url: string;
+  sourceUrl: string;
+  sourceType: "manufacturer" | "retailer" | "other";
+  licenseStatus: "unknown" | "permitted" | "restricted";
+}
+
+export interface ProductFinderContent {
+  title: string;
+  category: string;
+  subcategory: string;
+  brand: string;
+  model: string;
+  description: string;
+  shortDescription: string;
+  features: string[];
+  specifications: Record<string, string>;
+  variants: Array<{ name: string; color?: string; priceDelta?: number }>;
+  highlights: string[];
+  whyBuy: string;
+  seoTitle: string;
+  seoDescription: string;
+  tags: string[];
+  marketingCaption: string;
+  packageContents: string[];
+  warranty: string;
+  suggestedPrice: number | null;
+  priceReasoning: string;
+}
+
+export interface ProductFinderIdentifiedProduct {
+  name: string;
+  brand: string;
+  model: string;
+  category: string;
+  subcategory: string;
+  productType: string;
+  color?: string;
+  material?: string;
+  variant?: string;
+}
+
+export interface ProductFinderResult {
+  productFound: boolean;
+  confidence: "high" | "medium" | "low" | "none";
+  identifiedProduct: ProductFinderIdentifiedProduct | null;
+  sources: ProductFinderSource[];
+  verificationStatus: Record<string, "verified" | "partially_verified" | "not_verified" | "conflicting">;
+  priceResearch: {
+    observedPrices: ProductFinderPriceObservation[];
+    suggestedPrice: number | null;
+    priceRange: { min: number | null; max: number | null };
+    currency: string;
+    reasoning: string;
+    researchStatus: "verified" | "partially_verified" | "not_verified";
+  } | null;
+  discoveredImages: ProductFinderDiscoveredImage[];
+  generatedImages: string[];
+  content: ProductFinderContent | null;
+  limitations: string[];
+  progress: ProductFinderProgressStep[];
+}
+
+export async function runProductFinder(data: { imageUrls: string[]; hints?: Record<string, string | undefined> }) {
+  return clientMutation<ProductFinderResult>("/ai/product-finder/pipeline", "POST", data);
+}
+
