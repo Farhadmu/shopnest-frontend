@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useSyncExternalStore, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import {
@@ -14,10 +14,17 @@ function ConfirmPaymentContent() {
 
   const method = searchParams.get("method");
   const orderId = searchParams.get("orderId");
+  const isHydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   const [error, setError] = useState<string | null>(null);
 
-  const validationError = !orderId
+  const validationError = !isHydrated
+    ? null
+    : !orderId
     ? "Order ID is missing."
     : method !== "stripe" && method !== "sslcommerz"
     ? "Unsupported payment method."
@@ -83,7 +90,7 @@ function ConfirmPaymentContent() {
     } else if (method === "sslcommerz") {
       startSSLCommerzCheckout();
     }
-  }, [orderId, method, validationError]);
+  }, [orderId, method, session?.user?.email, validationError]);
 
   const displayedError = error || validationError;
 
@@ -135,4 +142,4 @@ export default function ConfirmPaymentPage() {
       <ConfirmPaymentContent />
     </Suspense>
   );
-}
+}

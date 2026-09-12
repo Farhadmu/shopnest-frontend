@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { authClient } from "@/lib/auth-client";
+import { normalizeAuthRedirect } from "@/lib/auth-redirect";
 
 /* ─── SVG Icons ─────────────────────────────────────────────────────────────── */
 const GoogleIcon = ({ className }: { className?: string }) => (
@@ -203,7 +204,7 @@ function RegisterForm() {
   const [error, setError] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/";
+  const next = normalizeAuthRedirect(searchParams.get("next"));
 
   const pwOk = cf !== "" && pw === cf;
   const pwBad = cf !== "" && pw !== cf;

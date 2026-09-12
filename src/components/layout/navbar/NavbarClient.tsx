@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useSyncExternalStore } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { FaBars, FaTimes, FaSearch } from "react-icons/fa";
 import { useSession, signOut } from "@/lib/auth-client";
@@ -53,19 +53,19 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [cartCount, setCartCount] = useState(0);
+  const isHydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   const { data: session } = useSession();
   const user = session?.user as
     | { id?: string; name?: string; email?: string; role?: "customer" | "seller" | "admin"; image?: string }
     | undefined;
 
-  const role: UserRole = user?.role || (user ? "customer" : "guest");
-  const isAuthenticated = !!user;
-
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [pathname]);
+  const role: UserRole = isHydrated ? user?.role || (user ? "customer" : "guest") : "guest";
+  const isAuthenticated = isHydrated && !!user;
 
   // Sync cart count
   useEffect(() => {
@@ -214,6 +214,7 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
 
         {/* Mobile dropdown */}
         <NavbarMobileMenu
+          key={pathname}
           open={mobileMenuOpen}
           isAuthenticated={isAuthenticated}
           user={user}

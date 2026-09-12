@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { authClient } from "@/lib/auth-client";
+import { normalizeAuthRedirect } from "@/lib/auth-redirect";
 
 /* ─── SVG Icons ─────────────────────────────────────────────────────────────── */
 function GoogleIcon({ className }: { className?: string }) {
@@ -175,7 +176,7 @@ function LoginForm() {
   const [errorMsg, setErrorMsg] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/";
+  const next = normalizeAuthRedirect(searchParams.get("next"));
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
