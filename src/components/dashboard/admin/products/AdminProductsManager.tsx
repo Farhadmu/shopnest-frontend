@@ -1,17 +1,13 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, useId } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FiEdit2,
   FiTrash2,
-  FiEye,
   FiCheckCircle,
   FiXCircle,
-  FiSearch,
-  FiPlus,
   FiRefreshCw,
   FiCheck,
   FiPackage,
@@ -20,61 +16,35 @@ import {
   FiAlertTriangle,
   FiX,
   FiDownload,
-  FiGrid,
-  FiList,
   FiLayers,
   FiAlertCircle,
   FiExternalLink,
-  FiCopy,
 } from "react-icons/fi";
 import { getProducts, deleteProduct, Product, updateProduct } from "@/lib/api/products";
 import { clientMutation } from "@/lib/core/client";
-
-// Compact Wave Sparkline Component
-function InventoryTrendChart({ seed = 1 }: { seed?: number }) {
-  const chartUniqueId = useId().replace(/:/g, "");
-
-  const curves = [
-    "M 4 20 C 18 20, 28 32, 44 32 C 60 32, 68 12, 92 8 L 100 6",
-    "M 4 16 C 18 24, 34 30, 50 16 C 66 4, 82 14, 100 10",
-    "M 4 22 C 20 10, 36 8, 52 24 C 68 34, 84 12, 100 8",
-    "M 4 12 C 18 28, 34 32, 54 14 C 72 4, 88 18, 100 6",
-  ];
-  const dPath = curves[Math.abs(seed) % curves.length];
-
-  return (
-    <div className="relative h-5 w-16 shrink-0 flex items-center justify-center">
-      <svg className="w-full h-full overflow-visible" viewBox="0 0 104 38" fill="none">
-        <defs>
-          <linearGradient id={chartUniqueId} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#6366F1" />
-            <stop offset="100%" stopColor="#A855F7" />
-          </linearGradient>
-        </defs>
-        <path
-          d={dPath}
-          stroke={`url(#${chartUniqueId})`}
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <circle cx="100" cy="7" r="2.5" fill="#A855F7" />
-      </svg>
-    </div>
-  );
-}
+import { InventoryTrendChart } from "./InventoryTrendChart";
+import { ProductActionButtons } from "./ProductActionButtons";
+import { ProductFilters, type SortOption, type StatusFilter } from "./ProductFilters";
+import {
+  getBrandName,
+  getCategoryName,
+  getProductId,
+  getSKU,
+  isProductActive,
+  type AdminProduct,
+} from "./product-utils";
 
 interface AdminProductsManagerProps {
   initialProducts: Product[];
 }
 
 export function AdminProductsManager({ initialProducts = [] }: AdminProductsManagerProps) {
-  const [items, setItems] = useState<Product[]>(initialProducts);
+  const [items, setItems] = useState<AdminProduct[]>(initialProducts);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive" | "low_stock">("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<"newest" | "price_asc" | "price_desc" | "stock_asc" | "stock_desc" | "name_asc">("newest");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -85,8 +55,8 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Modals State
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [inspectingProduct, setInspectingProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<AdminProduct | null>(null);
+  const [inspectingProduct, setInspectingProduct] = useState<AdminProduct | null>(null);
   const [editFormData, setEditFormData] = useState({
     title: "",
     price: 0,
@@ -96,13 +66,6 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
     status: "active",
   });
   const [isSavingEdit, setIsSavingEdit] = useState(false);
-
-  // Sync when initialProducts updates
-  useEffect(() => {
-    if (initialProducts && initialProducts.length > 0) {
-      setItems(initialProducts);
-    }
-  }, [initialProducts]);
 
   const showToast = (type: "success" | "error", text: string) => {
     setToast({ type, text });
@@ -123,31 +86,6 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
     }
   };
 
-  const getProductId = (p: Product): string => {
-    return String((p as any)._id || p.id || "");
-  };
-
-  const getCategoryName = (p: Product): string => {
-    if (typeof p.category === "object" && p.category !== null) {
-      return (p.category as any).name || "General";
-    }
-    return String(p.category || "General");
-  };
-
-  const getSKU = (p: Product): string => {
-    const rawId = getProductId(p);
-    return rawId ? `SKU-${rawId.slice(-6).toUpperCase()}` : "SKU-PROD01";
-  };
-
-  const getBrandName = (p: Product): string => {
-    return (p as any).brand || (p.storeId ? `Store #${p.storeId.slice(-4)}` : "Verified Vendor");
-  };
-
-  const isProductActive = (p: Product): boolean => {
-    const st = (p.status || "active").toLowerCase();
-    return st === "active" || st === "approved" || st === "published";
-  };
-
   // Toggle selection
   const handleSelectAll = () => {
     if (selectedIds.length === filteredProducts.length && filteredProducts.length > 0) {
@@ -164,7 +102,7 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
   };
 
   // Quick Toggle Status
-  const handleToggleStatus = async (p: Product) => {
+  const handleToggleStatus = async (p: AdminProduct) => {
     const pid = getProductId(p);
     const currentlyActive = isProductActive(p);
     const nextStatus = currentlyActive ? "inactive" : "active";
@@ -173,9 +111,7 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
     try {
       await clientMutation(`/products/${pid}/moderate`, "PATCH", {
         status: nextStatus === "active" ? "approved" : "rejected",
-      }).catch(() =>
-        updateProduct(pid, { status: nextStatus } as any)
-      );
+      });
 
       setItems((prev) =>
         prev.map((item) =>
@@ -220,7 +156,11 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
       return;
     setLoading(true);
     try {
-      await Promise.allSettled(selectedIds.map((id) => deleteProduct(id)));
+      const results = await Promise.allSettled(selectedIds.map((id) => deleteProduct(id)));
+      const failedCount = results.filter((result) => result.status === "rejected").length;
+      if (failedCount > 0) {
+        throw new Error(`${failedCount} product deletion(s) failed`);
+      }
       showToast("success", `${selectedIds.length} products deleted successfully.`);
       setSelectedIds([]);
       await loadData();
@@ -236,15 +176,17 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
   const handleBulkStatusChange = async (newStatus: "active" | "inactive") => {
     setLoading(true);
     try {
-      await Promise.allSettled(
+      const results = await Promise.allSettled(
         selectedIds.map((id) =>
           clientMutation(`/products/${id}/moderate`, "PATCH", {
             status: newStatus === "active" ? "approved" : "rejected",
-          }).catch(() =>
-            updateProduct(id, { status: newStatus } as any)
-          )
+          })
         )
       );
+      const failedCount = results.filter((result) => result.status === "rejected").length;
+      if (failedCount > 0) {
+        throw new Error(`${failedCount} product status update(s) failed`);
+      }
       showToast("success", `${selectedIds.length} products marked as ${newStatus}.`);
       setSelectedIds([]);
       await loadData();
@@ -257,7 +199,7 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
   };
 
   // Open Edit Modal
-  const handleOpenEdit = (p: Product) => {
+  const handleOpenEdit = (p: AdminProduct) => {
     setEditingProduct(p);
     setEditFormData({
       title: p.title || "",
@@ -335,17 +277,17 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
   };
 
   // Unique Categories
-  const categoriesList = useMemo(() => {
+  const categoriesList = (() => {
     const set = new Set<string>();
     items.forEach((p) => {
       const c = getCategoryName(p);
       if (c) set.add(c);
     });
     return Array.from(set).sort();
-  }, [items]);
+  })();
 
   // Key KPI Metrics Calculations
-  const metrics = useMemo(() => {
+  const metrics = (() => {
     const total = items.length;
     const activeCount = items.filter((p) => isProductActive(p)).length;
     const inactiveCount = total - activeCount;
@@ -361,10 +303,10 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
       totalValuation,
       activeRate,
     };
-  }, [items]);
+  })();
 
   // Filtering & Sorting
-  const filteredProducts = useMemo(() => {
+  const filteredProducts = (() => {
     return items
       .filter((p) => {
         const active = isProductActive(p);
@@ -407,14 +349,14 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
         const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
         return dateB - dateA;
       });
-  }, [items, statusFilter, categoryFilter, search, sortBy]);
+  })();
 
   // Paginated Slicing
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / itemsPerPage));
-  const paginatedProducts = useMemo(() => {
+  const paginatedProducts = (() => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredProducts.slice(start, start + itemsPerPage);
-  }, [filteredProducts, currentPage, itemsPerPage]);
+  })();
 
   const allSelected =
     filteredProducts.length > 0 && selectedIds.length === filteredProducts.length;
@@ -429,7 +371,7 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border text-sm font-semibold backdrop-blur-md ${
+            className={`fixed top-4 left-4 right-4 sm:left-auto sm:right-6 sm:top-6 z-50 flex items-center gap-3 px-4 sm:px-5 py-3.5 rounded-2xl shadow-xl border text-sm font-semibold backdrop-blur-md ${
               toast.type === "success"
                 ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
                 : "bg-rose-500/15 border-rose-500/30 text-rose-600 dark:text-rose-400"
@@ -556,165 +498,39 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
         </div>
       </div>
 
-      {/* Filter, Search & View Controls Bar */}
-      <div className="rounded-2xl border border-border bg-surface p-3.5 shadow-xs space-y-3">
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
-          
-          {/* Search Input */}
-          <div className="relative flex-1 min-w-[240px]">
-            <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted text-sm" />
-            <input
-              type="text"
-              placeholder="Search product title, SKU, brand, category, ID..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full pl-9 pr-8 py-2 text-xs rounded-xl bg-background border border-border text-text placeholder-muted focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-            />
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-text cursor-pointer"
-              >
-                <FiX size={13} />
-              </button>
-            )}
-          </div>
-
-          {/* Quick Status Filter Tabs */}
-          <div className="flex flex-wrap items-center gap-1 p-1 bg-muted-bg/50 rounded-xl border border-border/60">
-            {[
-              { key: "all", label: "All", count: items.length },
-              {
-                key: "active",
-                label: "Active",
-                count: metrics.activeCount,
-              },
-              {
-                key: "inactive",
-                label: "Inactive",
-                count: metrics.inactiveCount,
-              },
-              {
-                key: "low_stock",
-                label: "Low Stock",
-                count: metrics.lowStockCount,
-              },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => {
-                  setStatusFilter(tab.key as any);
-                  setCurrentPage(1);
-                }}
-                className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-                  statusFilter === tab.key
-                    ? "bg-surface text-primary font-bold shadow-xs border border-border"
-                    : "text-muted hover:text-text hover:bg-surface/50"
-                }`}
-              >
-                <span>{tab.label}</span>
-                <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                    statusFilter === tab.key
-                      ? "bg-primary/10 text-primary font-bold"
-                      : "bg-muted/15 text-muted"
-                  }`}
-                >
-                  {tab.count}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Second Row Filters: Category, Sort, View Mode, Per Page */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border/60 text-xs">
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Category Dropdown */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-muted font-medium">Category:</span>
-              <select
-                value={categoryFilter}
-                onChange={(e) => {
-                  setCategoryFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="px-2.5 py-1 text-xs rounded-xl bg-background border border-border text-text focus:outline-none focus:border-primary cursor-pointer"
-              >
-                <option value="all">All Categories ({items.length})</option>
-                {categoriesList.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Sort Dropdown */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-muted font-medium">Sort:</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="px-2.5 py-1 text-xs rounded-xl bg-background border border-border text-text focus:outline-none focus:border-primary cursor-pointer"
-              >
-                <option value="newest">Newest First</option>
-                <option value="price_asc">Price: Low to High</option>
-                <option value="price_desc">Price: High to Low</option>
-                <option value="stock_asc">Stock: Low to High</option>
-                <option value="stock_desc">Stock: High to Low</option>
-                <option value="name_asc">Title A-Z</option>
-              </select>
-            </div>
-          </div>
-
-          {/* View Toggle & Items Per Page */}
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-1">
-              <span className="text-muted font-medium">Show:</span>
-              <select
-                value={itemsPerPage}
-                onChange={(e) => {
-                  setItemsPerPage(Number(e.target.value));
-                  setCurrentPage(1);
-                }}
-                className="px-2 py-0.5 text-xs rounded-lg bg-background border border-border text-text focus:outline-none focus:border-primary cursor-pointer"
-              >
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-              </select>
-            </div>
-
-            {/* View Mode */}
-            <div className="flex items-center p-0.5 rounded-lg border border-border bg-background">
-              <button
-                type="button"
-                onClick={() => setViewMode("table")}
-                className={`p-1.5 rounded-md transition cursor-pointer ${
-                  viewMode === "table" ? "bg-surface text-primary shadow-xs" : "text-muted hover:text-text"
-                }`}
-                title="Table View"
-              >
-                <FiList size={13} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("grid")}
-                className={`p-1.5 rounded-md transition cursor-pointer ${
-                  viewMode === "grid" ? "bg-surface text-primary shadow-xs" : "text-muted hover:text-text"
-                }`}
-                title="Card Grid View"
-              >
-                <FiGrid size={13} />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ProductFilters
+        search={search}
+        onSearchChange={(value) => {
+          setSearch(value);
+          setCurrentPage(1);
+        }}
+        statusFilter={statusFilter}
+        onStatusChange={(value) => {
+          setStatusFilter(value);
+          setCurrentPage(1);
+        }}
+        statusCounts={{
+          all: items.length,
+          active: metrics.activeCount,
+          inactive: metrics.inactiveCount,
+          low_stock: metrics.lowStockCount,
+        }}
+        categoryFilter={categoryFilter}
+        onCategoryChange={(value) => {
+          setCategoryFilter(value);
+          setCurrentPage(1);
+        }}
+        categories={categoriesList}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        itemsPerPage={itemsPerPage}
+        onItemsPerPageChange={(value) => {
+          setItemsPerPage(value);
+          setCurrentPage(1);
+        }}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+      />
 
       {/* Floating Bulk Actions Bar */}
       <AnimatePresence>
@@ -723,13 +539,13 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
             initial={{ opacity: 0, y: 10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
-            className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-primary/10 border border-primary/30 rounded-2xl text-xs font-semibold backdrop-blur-md shadow-lg"
+            className="flex flex-col items-stretch justify-between gap-3 p-3.5 bg-primary/10 border border-primary/30 rounded-2xl text-xs font-semibold backdrop-blur-md shadow-lg sm:flex-row sm:flex-wrap sm:items-center"
           >
-            <div className="flex items-center gap-2.5">
+            <div className="flex min-w-0 items-center gap-2.5">
               <span className="px-2.5 py-1 rounded-lg bg-primary text-white font-bold text-[11px]">
                 {selectedIds.length} Selected
               </span>
-              <span className="text-text font-medium">
+              <span className="min-w-0 truncate text-text font-medium">
                 Perform bulk action on selected items
               </span>
             </div>
@@ -813,10 +629,10 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
       ) : viewMode === "table" ? (
         /* TABLE VIEW - 100% responsive, NO horizontal scrollbar */
         <div className="rounded-2xl border border-border bg-surface shadow-xs overflow-hidden w-full">
-          <table className="w-full text-left border-collapse table-fixed">
-            <thead>
-              <tr className="border-b border-border bg-muted-bg/40 text-[11px] font-extrabold uppercase tracking-wider text-muted">
-                <th className="py-3.5 pl-3 pr-1 w-8">
+          <table className="block w-full text-left border-collapse table-fixed 2xl:table">
+            <thead className="hidden 2xl:table-header-group">
+              <tr className="grid grid-cols-2 gap-x-3 gap-y-2 border-b border-border bg-muted-bg/40 p-3 text-[11px] font-extrabold uppercase tracking-wider text-muted 2xl:table-row 2xl:p-0">
+                <th className="hidden py-3.5 pl-3 pr-1 w-8 2xl:table-cell">
                   <input
                     type="checkbox"
                     checked={allSelected}
@@ -824,16 +640,16 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
                     className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary/40 cursor-pointer accent-primary"
                   />
                 </th>
-                <th className="py-3.5 px-2 w-[40%] sm:w-[36%] md:w-[32%]">Product</th>
-                <th className="py-3.5 px-2 hidden lg:table-cell w-[14%]">Store</th>
-                <th className="py-3.5 px-2 w-[18%] sm:w-[15%] md:w-[13%]">Price</th>
-                <th className="py-3.5 px-2 w-[18%] sm:w-[15%] md:w-[13%]">Stock</th>
-                <th className="py-3.5 px-2 hidden xl:table-cell w-[10%]">Trend</th>
-                <th className="py-3.5 px-2 w-[14%] sm:w-[12%] md:w-[11%]">Status</th>
-                <th className="py-3.5 pl-1 pr-3 text-right w-[10%] sm:w-[12%] md:w-[11%]">Actions</th>
+                <th className="hidden py-3.5 px-2 w-[40%] sm:w-[36%] md:w-[32%] 2xl:table-cell">Product</th>
+                <th className="hidden py-3.5 px-2 2xl:table-cell w-[14%]">Store</th>
+                <th className="hidden py-3.5 px-2 w-[18%] sm:w-[15%] md:w-[13%] 2xl:table-cell">Price</th>
+                <th className="hidden py-3.5 px-2 w-[18%] sm:w-[15%] md:w-[13%] 2xl:table-cell">Stock</th>
+                <th className="hidden py-3.5 px-2 2xl:table-cell w-[10%]">Trend</th>
+                <th className="hidden py-3.5 px-2 w-[14%] sm:w-[12%] md:w-[11%] 2xl:table-cell">Status</th>
+                <th className="hidden py-3.5 pl-1 pr-3 text-right w-[132px] 2xl:table-cell">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/60 text-xs">
+            <tbody className="block divide-y divide-border/60 text-xs 2xl:table-row-group">
               {paginatedProducts.map((p, idx) => {
                 const pid = getProductId(p);
                 const isSelected = selectedIds.includes(pid);
@@ -851,14 +667,14 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
                 return (
                   <tr
                     key={pid}
-                    className={`group transition-colors duration-150 ${
+                    className={`relative grid grid-cols-2 gap-x-3 gap-y-2 p-3 transition-colors duration-150 2xl:table-row 2xl:p-0 ${
                       isSelected
                         ? "bg-primary/5 dark:bg-primary/10"
                         : "hover:bg-muted-bg/30"
                     }`}
                   >
                     {/* 1. Checkbox */}
-                    <td className="py-3 pl-3 pr-1">
+                    <td className="absolute left-3 top-3 z-10 block 2xl:static 2xl:table-cell 2xl:py-3 2xl:pl-3 2xl:pr-1">
                       <input
                         type="checkbox"
                         checked={isSelected}
@@ -868,7 +684,7 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
                     </td>
 
                     {/* 2. Product Info (Thumbnail, Title, Category Badge, SKU) */}
-                    <td className="py-3 px-2">
+                    <td className="col-span-2 block py-0 pl-8 pr-0 2xl:table-cell 2xl:p-3 2xl:pl-2">
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="relative h-8 w-8 sm:h-9 sm:w-9 shrink-0 overflow-hidden rounded-lg border border-border bg-muted-bg flex items-center justify-center">
                           {p.images?.[0] ? (
@@ -905,19 +721,19 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
                     </td>
 
                     {/* 3. Brand */}
-                    <td className="py-3 px-2 hidden lg:table-cell">
+                    <td className="py-3 px-2 hidden 2xl:table-cell">
                       <span className="text-muted font-medium truncate block max-w-full text-[11px]" title={brand}>
                         {brand}
                       </span>
                     </td>
 
                     {/* 4. Price */}
-                    <td className="py-3 px-2 font-bold text-text truncate">
+                    <td className="block py-0 px-0 font-bold text-text truncate 2xl:table-cell 2xl:py-3 2xl:px-2">
                       ৳{price.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                     </td>
 
                     {/* 5. Stock Status */}
-                    <td className="py-3 px-2">
+                    <td className="block py-0 px-0 2xl:table-cell 2xl:py-3 2xl:px-2">
                       <div className="flex items-center gap-1.5 truncate">
                         <span
                           className={`h-2 w-2 rounded-full shrink-0 ${
@@ -943,12 +759,12 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
                     </td>
 
                     {/* 6. Velocity Trend (Ultra wide only) */}
-                    <td className="py-3 px-2 hidden xl:table-cell">
+                    <td className="py-3 px-2 hidden 2xl:table-cell">
                       <InventoryTrendChart seed={idx + 1} />
                     </td>
 
                     {/* 7. Status Toggle Pill */}
-                    <td className="py-3 px-2">
+                    <td className="block py-0 px-0 2xl:table-cell 2xl:py-3 2xl:px-2">
                       <button
                         disabled={isBusy}
                         onClick={() => handleToggleStatus(p)}
@@ -974,46 +790,14 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
                     </td>
 
                     {/* 8. Actions */}
-                    <td className="py-3 pl-1 pr-3 text-right">
-                      <div className="inline-flex items-center gap-0.5 justify-end">
-                        {/* Quick Inspect Drawer */}
-                        <button
-                          onClick={() => setInspectingProduct(p)}
-                          className="p-1 rounded-lg text-muted hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
-                          title="Inspect product details"
-                        >
-                          <FiEye size={13} />
-                        </button>
-
-                        {/* Quick Edit */}
-                        <button
-                          onClick={() => handleOpenEdit(p)}
-                          className="p-1 rounded-lg text-muted hover:text-blue-600 hover:bg-blue-500/10 transition-colors cursor-pointer"
-                          title="Edit product"
-                        >
-                          <FiEdit2 size={13} />
-                        </button>
-
-                        {/* Frontend Store View */}
-                        <Link
-                          href={`/products/${pid}`}
-                          target="_blank"
-                          className="p-1 rounded-lg text-muted hover:text-emerald-600 hover:bg-emerald-500/10 transition-colors cursor-pointer"
-                          title="Open in store"
-                        >
-                          <FiExternalLink size={13} />
-                        </Link>
-
-                        {/* Delete */}
-                        <button
-                          disabled={isBusy}
-                          onClick={() => handleDeleteProduct(pid, p.title)}
-                          className="p-1 rounded-lg text-muted hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer disabled:opacity-40"
-                          title="Delete product"
-                        >
-                          <FiTrash2 size={13} />
-                        </button>
-                      </div>
+                    <td className="col-span-2 block border-t border-border/60 pt-2 pl-0 pr-0 text-left 2xl:table-cell 2xl:border-0 2xl:py-3 2xl:pl-1 2xl:pr-3 2xl:text-right 2xl:w-[132px]">
+                      <ProductActionButtons
+                        productId={pid}
+                        isBusy={isBusy}
+                        onInspect={() => setInspectingProduct(p)}
+                        onEdit={() => handleOpenEdit(p)}
+                        onDelete={() => handleDeleteProduct(pid, p.title)}
+                      />
                     </td>
                   </tr>
                 );
@@ -1123,39 +907,14 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
 
                 {/* Card Action Buttons */}
                 <div className="mt-4 pt-3 border-t border-border flex items-center justify-between gap-2">
-                  <button
-                    onClick={() => handleOpenEdit(p)}
-                    className="flex-1 py-1.5 px-2 rounded-xl bg-muted-bg hover:bg-primary/10 hover:text-primary text-text text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <FiEdit2 size={12} />
-                    <span>Edit</span>
-                  </button>
-
-                  <button
-                    onClick={() => setInspectingProduct(p)}
-                    className="p-2 rounded-xl border border-border text-muted hover:text-text hover:bg-muted-bg transition cursor-pointer"
-                    title="View Details"
-                  >
-                    <FiEye size={13} />
-                  </button>
-
-                  <Link
-                    href={`/products/${pid}`}
-                    target="_blank"
-                    className="p-2 rounded-xl border border-border text-muted hover:text-primary hover:bg-muted-bg transition cursor-pointer"
-                    title="View in Store"
-                  >
-                    <FiExternalLink size={13} />
-                  </Link>
-
-                  <button
-                    disabled={isBusy}
-                    onClick={() => handleDeleteProduct(pid, p.title)}
-                    className="p-2 rounded-xl border border-border text-muted hover:text-rose-600 hover:bg-rose-500/10 transition cursor-pointer disabled:opacity-40"
-                    title="Delete Product"
-                  >
-                    <FiTrash2 size={13} />
-                  </button>
+                  <ProductActionButtons
+                    productId={pid}
+                    isBusy={isBusy}
+                    mobile
+                    onInspect={() => setInspectingProduct(p)}
+                    onEdit={() => handleOpenEdit(p)}
+                    onDelete={() => handleDeleteProduct(pid, p.title)}
+                  />
                 </div>
               </div>
             );
