@@ -4,6 +4,18 @@
 import React from "react";
 import { StepProps } from "@/types/seller-application";
 
+/**
+ * Masks an account number, revealing only the last 4 characters
+ * (e.g. "123456781234" -> "••••••1234"). Values of 4 or fewer characters
+ * are returned unchanged. Used to keep payout numbers off the summary view
+ * while the full value stays in `formData` for submission.
+ */
+export function maskAccountNumber(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed.length <= 4) return trimmed;
+  return "•".repeat(trimmed.length - 4) + trimmed.slice(-4);
+}
+
 export function Step4ReviewSubmit({ formData, onChange }: StepProps) {
   return (
     <div className="space-y-3">
@@ -33,7 +45,7 @@ export function Step4ReviewSubmit({ formData, onChange }: StepProps) {
           <span className="text-[9px] font-extrabold uppercase text-primary">Payout Channel</span>
           <p className="font-black text-text uppercase truncate">{formData.payoutMethod}</p>
           <p className="text-muted truncate">{formData.payoutAccountName || "N/A"}</p>
-          <p className="text-muted font-mono truncate">{formData.payoutAccountNumber || "N/A"}</p>
+          <p className="text-muted font-mono truncate">{formData.payoutAccountNumber ? maskAccountNumber(formData.payoutAccountNumber) : "N/A"}</p>
         </div>
       </div>
 

@@ -12,10 +12,57 @@ import { Step2KycLegal } from "./Step2KycLegal";
 import { Step3PayoutDetails } from "./Step3PayoutDetails";
 import { Step4ReviewSubmit } from "./Step4ReviewSubmit";
 
+interface ParsedAddress {
+  businessStreetAddress: string;
+  businessUpazila: string;
+  businessDistrict: string;
+  businessDivision: string;
+}
+
+/**
+ * Splits a stored flat `businessAddress` string (composed as
+ * "street, upazila, district, division") back into its structured parts.
+ *
+ * On a successful parse (exactly 4 comma-separated parts) the parts map to
+ * [businessStreetAddress, businessUpazila, businessDistrict, businessDivision].
+ * When the input is missing or doesn't contain the expected number of parts,
+ * the whole value is placed in `businessStreetAddress` and the remaining
+ * fields are left empty — never defaulting division to "Dhaka".
+ */
+function parseBusinessAddress(businessAddress: string | undefined): ParsedAddress {
+  if (!businessAddress) {
+    return {
+      businessStreetAddress: "",
+      businessUpazila: "",
+      businessDistrict: "",
+      businessDivision: "",
+    };
+  }
+
+  const parts = businessAddress.split(",").map((part) => part.trim());
+
+  if (parts.length !== 4) {
+    return {
+      businessStreetAddress: businessAddress,
+      businessUpazila: "",
+      businessDistrict: "",
+      businessDivision: "",
+    };
+  }
+
+  const [businessStreetAddress, businessUpazila, businessDistrict, businessDivision] = parts;
+  return { businessStreetAddress, businessUpazila, businessDistrict, businessDivision };
+}
+
 export function SellerApplicationForm({ initialData, isResubmission = false, onSuccess }: SellerApplicationFormProps) {
   const [step, setStep] = useState<ApplicationStep>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const parsedAddress =
+    isResubmission && initialData?.businessInfo?.businessAddress
+      ? parseBusinessAddress(initialData.businessInfo.businessAddress)
+      : null;
 
   const [formData, setFormData] = useState<FormDataState>({
     storeName: initialData?.storeName || "",
@@ -26,10 +73,12 @@ export function SellerApplicationForm({ initialData, isResubmission = false, onS
     ownerName: initialData?.businessInfo?.ownerName || "",
     contactPhone: initialData?.businessInfo?.contactPhone || "",
     businessAddress: initialData?.businessInfo?.businessAddress || "",
-    businessDivision: "Dhaka",
-    businessDistrict: "",
-    businessUpazila: "",
-    businessStreetAddress: initialData?.businessInfo?.businessAddress || "",
+    businessDivision: parsedAddress ? parsedAddress.businessDivision : "Dhaka",
+    businessDistrict: parsedAddress ? parsedAddress.businessDistrict : "",
+    businessUpazila: parsedAddress ? parsedAddress.businessUpazila : "",
+    businessStreetAddress: parsedAddress
+      ? parsedAddress.businessStreetAddress
+      : initialData?.businessInfo?.businessAddress || "",
     nidOrTradeLicense: initialData?.businessInfo?.nidOrTradeLicense || "",
     taxId: initialData?.businessInfo?.taxId || "",
     payoutMethod: initialData?.businessInfo?.payoutMethod || "bank",
@@ -61,8 +110,10 @@ export function SellerApplicationForm({ initialData, isResubmission = false, onS
       setError("Legal owner full name is required for verification.");
       return false;
     }
-    if (formData.contactPhone.trim().length < 6) {
-      setError("Valid official contact phone is required.");
+    // Bangladeshi phone: optionally prefixed with +880 or 0, then 10 digits.
+    const normalizedPhone = formData.contactPhone.replace(/[^\d+]/g, "");
+    if (!/^(\+880|0)?\d{10}$/.test(normalizedPhone)) {
+      setError("Please enter a valid Bangladeshi phone number (e.g. 01712345678 or +8801712345678).");
       return false;
     }
     if (formData.businessAddress.trim().length < 5) {
