@@ -17,7 +17,7 @@ export default function HomePage() {
 
 
   return (
-    <div className="space-y-10 overflow-hidden">
+    <div className="space-y-4 overflow-hidden">
       {/* 01 — Hero */}
       <BannerSection data={defaultBannerData} />
 

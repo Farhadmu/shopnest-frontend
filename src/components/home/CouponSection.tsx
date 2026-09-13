@@ -206,7 +206,7 @@ export default function CouponSection() {
   const isEmpty = coupons !== null && coupons.length === 0;
 
   return (
-    <section className="w-full py-6 sm:py-8 lg:py-10">
+    <section className="w-full pb-2 pt-6 sm:pb-3 sm:pt-8 lg:pb-4 lg:pt-10">
       {/* Section Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 gap-3">
         <div>
