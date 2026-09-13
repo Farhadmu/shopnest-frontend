@@ -290,6 +290,3 @@ export async function getUserProductReports() {
   return clientFetch<ProductReportItem[]>("/customer/reports");
 }
 
-export async function askPersonalCommerceAssistant(prompt: string) {
-  return clientMutation<{ answer: string; isFallback?: boolean }>("/customer/commerce-assistant", "POST", { prompt });
-}

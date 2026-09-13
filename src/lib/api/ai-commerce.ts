@@ -1,13 +1,5 @@
 import { clientFetch, clientMutation } from "@/lib/core/client";
 
-export interface CopilotResponse {
-  role: string;
-  query: string;
-  answer: string;
-  suggestedActions: Array<{ label: string; action: string; targetUrl?: string }>;
-  mode: string;
-}
-
 export interface IntentDetectionResult {
   extractedIntent: {
     occasion: string;
@@ -54,10 +46,6 @@ export interface CommerceMemoryData {
     canReset: boolean;
     personalizationEnabled: boolean;
   };
-}
-
-export async function askCommerceCopilot(query: string, role: string, context?: Record<string, unknown>) {
-  return clientMutation<CopilotResponse>("/ai/copilot", "POST", { query, role, context });
 }
 
 export async function detectShoppingIntent(prompt: string) {
