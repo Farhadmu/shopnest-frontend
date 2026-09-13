@@ -3,26 +3,22 @@
 import React from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Sparkles, ArrowRight, Pause, Play } from "lucide-react";
+import { Sparkles, ArrowRight } from "lucide-react";
 import { CATEGORY_TABS } from "./seller.data";
 
 interface SellerHeaderProps {
   activeTab: string;
   onTabChange: (tabId: string) => void;
-  isPaused: boolean;
-  onTogglePause: () => void;
 }
 
 export default function SellerHeader({
   activeTab,
   onTabChange,
-  isPaused,
-  onTogglePause,
 }: SellerHeaderProps) {
   return (
     <div>
       {/* Title & Actions Row */}
-      <div className="relative z-10 flex flex-col justify-between gap-6 md:flex-row md:items-end border-b border-border/60 pb-8">
+      <div className="relative z-10 flex flex-col justify-between gap-3 md:flex-row md:items-end border-b border-border/60 pb-4">
         <div>
           <motion.div
             initial={{ opacity: 0, y: -8 }}
@@ -39,12 +35,9 @@ export default function SellerHeader({
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="mt-3 text-3xl font-black tracking-tight text-text sm:text-4xl"
+            className="mt-2 text-3xl font-black tracking-tight text-text sm:text-4xl"
           >
-            Meet Trusted{" "}
-            <span className="bg-gradient-to-r from-primary via-accent to-warm bg-clip-text text-transparent">
-              Top Sellers
-            </span>
+            Meet Trusted Top Sellers
           </motion.h2>
 
           <motion.p
@@ -60,16 +53,6 @@ export default function SellerHeader({
 
         {/* Action Controls */}
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onTogglePause}
-            className="inline-flex items-center gap-2 rounded-2xl border border-border bg-muted-bg/50 px-3.5 py-2.5 text-xs font-bold text-muted transition-all duration-200 hover:border-border hover:bg-muted-bg hover:text-text"
-            title={isPaused ? "Resume infinite scroll" : "Pause infinite scroll"}
-          >
-            {isPaused ? <Play className="h-3.5 w-3.5 text-primary" /> : <Pause className="h-3.5 w-3.5" />}
-            <span className="hidden sm:inline">{isPaused ? "Resume" : "Pause"}</span>
-          </button>
-
           <Link
             href="/stores"
             className="group inline-flex items-center gap-2 rounded-2xl border border-primary/30 bg-primary/10 px-5 py-2.5 text-sm font-bold text-primary transition-all duration-300 hover:border-primary hover:bg-primary hover:text-white hover:shadow-md hover:shadow-primary/20"
@@ -81,8 +64,8 @@ export default function SellerHeader({
       </div>
 
       {/* Category Tabs & Hover Note */}
-      <div className="relative z-10 mt-6 flex flex-wrap items-center justify-between gap-2 pb-2">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="relative z-10 mt-3 flex flex-wrap items-center justify-between gap-1 pb-1">
+        <div className="flex flex-wrap items-center gap-1">
           {CATEGORY_TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -90,7 +73,7 @@ export default function SellerHeader({
               <button
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
-                className={`group relative flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200 ${
+                className={`group relative flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all duration-200 ${
                   isActive
                     ? "text-primary bg-primary/10 border border-primary/30"
                     : "text-muted hover:bg-muted-bg/60 hover:text-text border border-transparent"
@@ -105,13 +88,6 @@ export default function SellerHeader({
           })}
         </div>
 
-        <div className="hidden md:flex items-center gap-1.5 text-[11px] font-semibold text-muted">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
-          </span>
-          <span>Hover cards to pause & inspect</span>
-        </div>
       </div>
     </div>
   );

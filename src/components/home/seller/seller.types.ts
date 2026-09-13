@@ -3,6 +3,8 @@ import React from "react";
 export interface Seller {
   id: string;
   name: string;
+  logo?: string;
+  banner?: string;
   category: string;
   categorySlug: string;
   tagline: string;
@@ -18,7 +20,9 @@ export interface Seller {
   gradient: string;
   glowColor: string;
   featuredTags: string[];
+  featuredProducts?: Array<{ image: string; title: string }>;
   isTopRated?: boolean;
+  storeSlug?: string;
 }
 
 export interface SellerCategoryTab {

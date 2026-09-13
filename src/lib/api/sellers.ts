@@ -7,6 +7,31 @@ export interface SellerStore {
   trustScore: number;
 }
 
+export interface PublicSellerStore {
+  _id?: string;
+  id?: string;
+  storeName: string;
+  slug: string;
+  description: string;
+  logo?: string;
+  banner?: string;
+  bannerUrl?: string;
+  bannerImage?: string;
+  status: StoreStatus;
+  trustScore: number;
+  rating: number;
+  ratingCount: number;
+  followersCount: number;
+  businessInfo?: BusinessInfo;
+  salesNumber?: number;
+  products?: Array<{
+    title?: string;
+    category?: string;
+    tags?: string[];
+    images?: string[];
+  }>;
+}
+
 export type StoreStatus = "pending" | "approved" | "rejected" | "suspended";
 
 export interface BusinessInfo {
@@ -82,6 +107,17 @@ export async function getStoreById(storeId: string) {
   return clientFetch<SellerStore>(`/sellers/stores/${storeId}`);
 }
 
+/** Fetches approved public stores and their real product/sales summaries. */
+export async function getPublicSellerStores() {
+  return clientFetch<PublicSellerStore[]>('/sellers');
+}
+
+export async function getPublicSellerStoreBySlug(slug: string) {
+  return clientFetch<PublicSellerStore & { success?: boolean }>(
+    `/sellers/stores/${encodeURIComponent(slug)}`
+  );
+}
+
 export async function getSellerDashboardMetrics() {
   return clientFetch<{ totalSales: number; totalOrders: number; totalProducts: number }>(
     "/sellers/metrics"
@@ -117,4 +153,4 @@ export async function getAdminSellerDetails(id: string) {
 
 export async function updateAdminSellerStatus(id: string, input: { status: StoreStatus; rejectionReason?: string }) {
   return clientMutation<MyStore>(`/admin/sellers/${id}/status`, "PATCH", input);
-}
+}
