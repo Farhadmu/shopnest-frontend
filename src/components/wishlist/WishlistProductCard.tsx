@@ -5,14 +5,17 @@ import Link from "next/link";
 import { FaArrowRight, FaHeart, FaShoppingBag, FaTag, FaTrashAlt } from "react-icons/fa";
 import type { Product } from "@/lib/api/products";
 import type { WishlistItem } from "@/lib/api/wishlist";
+import type { WishlistGroupItem } from "@/lib/api/customer-intelligence-features";
 
 interface WishlistProductCardProps {
   item: WishlistItem;
   product?: Product;
+  groups: WishlistGroupItem[];
+  onToggleCollection: (group: WishlistGroupItem, productId: string) => void;
   onRemove: (productId: string) => void;
 }
 
-export function WishlistProductCard({ item, product, onRemove }: WishlistProductCardProps) {
+export function WishlistProductCard({ item, product, groups, onToggleCollection, onRemove }: WishlistProductCardProps) {
   const imageUrl = product?.images?.[0] || item.image || item.images?.[0];
   const title = product?.title || item.title || `Product #${item.productId.slice(-8)}`;
 
@@ -46,6 +49,31 @@ export function WishlistProductCard({ item, product, onRemove }: WishlistProduct
           <FaHeart className="mt-0.5 shrink-0 text-pink-500" size={11} />
         </div>
         <p className="text-[10px] font-semibold text-muted/80">Product #{item.productId.slice(-8)}</p>
+        {groups.length > 0 && (
+          <details className="relative mt-2 text-[10px]">
+            <summary className="cursor-pointer font-bold text-primary">Add to Collection</summary>
+            <div className="absolute left-0 top-5 z-20 min-w-40 rounded-xl border border-border bg-surface p-1.5 shadow-lg">
+              {groups.map((group) => {
+                const isAdded = group.productIds.includes(item.productId);
+                return (
+                  <button
+                    key={group.id}
+                    type="button"
+                    onClick={(event) => {
+                      onToggleCollection(group, item.productId);
+                      event.currentTarget.closest("details")?.removeAttribute("open");
+                    }}
+                    className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left font-semibold text-text hover:bg-muted-bg"
+                  >
+                    <span>{group.icon}</span>
+                    <span className="truncate">{group.name}</span>
+                    <span className="ml-auto text-primary">{isAdded ? "✓" : "+"}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </details>
+        )}
         {product?.category && (
           <p className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-muted">
             <FaTag size={10} /> {product.category}

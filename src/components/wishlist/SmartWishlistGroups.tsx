@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { FiFolder, FiPlus } from "react-icons/fi";
 import {
   getWishlistGroups,
@@ -12,22 +12,33 @@ import {
 export function SmartWishlistGroups({
   selectedGroupId,
   onSelectGroup,
+  onGroupsChange,
 }: {
   selectedGroupId: string | null;
   onSelectGroup: (groupId: string | null) => void;
+  onGroupsChange?: (groups: WishlistGroupItem[]) => void;
 }) {
   const [groups, setGroups] = useState<WishlistGroupItem[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupIcon, setNewGroupIcon] = useState("🎮");
 
-  const load = () => {
+  const load = useCallback(() => {
     getWishlistGroups()
-      .then((res) => setGroups(res || []))
-      .catch(() => setGroups([]));
-  };
+      .then((res) => {
+        const nextGroups = res || [];
+        setGroups(nextGroups);
+        onGroupsChange?.(nextGroups);
+      })
+      .catch(() => {
+        setGroups([]);
+        onGroupsChange?.([]);
+      });
+  }, [onGroupsChange]);
 
-  useEffect(load, []);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
