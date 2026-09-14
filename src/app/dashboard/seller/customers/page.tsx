@@ -5,18 +5,14 @@ import { DashboardShell, Panel, StatCard } from "@/components/dashboard/Dashboar
 import { sellerDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { getCustomerInsights, CustomerInsightsData } from "@/lib/api/seller-intelligence";
 import { DonutChart } from "@/components/analytics/DonutChart";
-import { FaUsers, FaUserCheck, FaHeart, FaStar, FaHistory } from "react-icons/fa";
 
 export default function SellerCustomersPage() {
   const [data, setData] = useState<CustomerInsightsData | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
     getCustomerInsights()
       .then(setData)
-      .catch(() => null)
-      .finally(() => setLoading(false));
+      .catch(() => null);
   }, []);
 
   const totalCust = data?.overview?.totalCustomers || 0;
@@ -42,7 +38,7 @@ export default function SellerCustomersPage() {
     >
       <div className="grid gap-6">
         {/* KPI Cards */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             icon="👥"
             label="Total Unique Buyers"
@@ -71,10 +67,10 @@ export default function SellerCustomersPage() {
         </div>
 
         {/* Customer Breakdown & Segments */}
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 xl:grid-cols-3">
           <Panel title="New vs Returning Buyers">
             <div className="flex flex-col items-center">
-              <DonutChart data={donutData} size={190} />
+              <DonutChart data={donutData} size={190} showLegend={false} />
               <div className="mt-4 grid w-full gap-2 text-xs">
                 <div className="flex items-center justify-between rounded-xl bg-muted-bg p-2.5">
                   <span className="font-bold text-text">New Buyers</span>
@@ -92,7 +88,7 @@ export default function SellerCustomersPage() {
             </div>
           </Panel>
 
-          <div className="lg:col-span-2">
+          <div className="xl:col-span-2">
             <Panel title="Top Buyer Demographic Segments">
               {(data?.topCustomerSegments || []).length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center text-xs text-muted">
