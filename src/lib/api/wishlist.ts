@@ -3,6 +3,11 @@ import { clientFetch, clientMutation } from "@/lib/core/client";
 export interface WishlistItem {
   productId: string;
   addedAt: string;
+  title?: string;
+  price?: number;
+  image?: string;
+  images?: string[];
+  category?: string;
 }
 
 export async function getWishlist() {

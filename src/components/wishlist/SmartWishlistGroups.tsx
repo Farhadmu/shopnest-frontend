@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FiFolder, FiPlus, FiTrash2, FiEdit2, FiCheck, FiX } from "react-icons/fi";
+import { FiFolder, FiPlus } from "react-icons/fi";
 import {
   getWishlistGroups,
   createWishlistGroup,
@@ -53,17 +53,17 @@ export function SmartWishlistGroups({
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+    <div className="space-y-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <span className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-foreground">
           <FiFolder className="text-primary" /> Wishlist Collections ({groups.length})
         </span>
         <button
           type="button"
           onClick={() => setShowCreate(!showCreate)}
-          className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+          className="flex items-center gap-1 text-xs font-black text-primary transition hover:text-primary-hover"
         >
-          {showCreate ? "Cancel" : "+ New Collection"}
+          {showCreate ? "Cancel" : <><FiPlus size={13} /> New Collection</>}
         </button>
       </div>
 
@@ -98,11 +98,11 @@ export function SmartWishlistGroups({
         </form>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         <button
           type="button"
           onClick={() => onSelectGroup(null)}
-          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
             selectedGroupId === null
               ? "bg-primary text-white shadow-sm"
               : "bg-card text-muted hover:text-foreground border border-border"
@@ -116,7 +116,7 @@ export function SmartWishlistGroups({
             key={grp.id}
             type="button"
             onClick={() => onSelectGroup(grp.id)}
-            className={`group px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+            className={`group px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
               selectedGroupId === grp.id
                 ? "bg-primary text-white shadow-sm"
                 : "bg-card text-muted hover:text-foreground border border-border"
