@@ -12,15 +12,19 @@ import {
   syncGuestDataToServer,
 } from "@/lib/guest-store";
 import { LoadingState } from "@/components/common/LoadingState";
+import { useConfirm } from "@/context/ConfirmDialogContext";
 import { SmartWishlistGroups } from "@/components/wishlist/SmartWishlistGroups";
 import { WishlistProductCard } from "@/components/wishlist/WishlistProductCard";
+import { updateWishlistGroup, WishlistGroupItem } from "@/lib/api/customer-intelligence-features";
 import { FaHeart, FaShoppingBag } from "react-icons/fa";
 
 export default function WishlistClient() {
   const { data: session, isPending } = useSession();
+  const confirm = useConfirm();
   const [items, setItems] = useState<WishlistItem[]>([]);
   const [products, setProducts] = useState<Record<string, Product>>({});
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [groups, setGroups] = useState<WishlistGroupItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadProductDetails = useCallback(async (wishlistItems: WishlistItem[]) => {
@@ -38,13 +42,13 @@ export default function WishlistClient() {
     setProducts(Object.fromEntries(entries.filter((entry): entry is readonly [string, Product] => entry !== null)));
   }, []);
 
-  const load = useCallback(() => {
+  const load = useCallback(async () => {
     setIsLoading(true);
 
     if (!session?.user) {
       const guestItems = getGuestWishlist();
       setItems(guestItems);
-      void loadProductDetails(guestItems);
+      await loadProductDetails(guestItems);
       setIsLoading(false);
       return;
     }
@@ -52,12 +56,12 @@ export default function WishlistClient() {
     const guestItems = getGuestWishlist();
     const syncPromise = guestItems.length > 0 ? syncGuestDataToServer() : Promise.resolve();
 
-    syncPromise.finally(() => {
+    syncPromise.finally(async () => {
       clearGuestWishlist();
       getWishlist()
-        .then((data) => {
+        .then(async (data) => {
           setItems(data);
-          void loadProductDetails(data);
+          await loadProductDetails(data);
           setIsLoading(false);
         })
         .catch(() => {
@@ -94,19 +98,62 @@ export default function WishlistClient() {
   }, [loadProductDetails, session]);
 
   const handleRemove = async (productId: string) => {
+    const productTitle = products[productId]?.title || `Product #${productId.slice(-8)}`;
+    const shouldRemove = await confirm({
+      title: "Remove from wishlist?",
+      message: `${productTitle} will be removed from your saved items.`,
+      confirmText: "Remove",
+      cancelText: "Keep item",
+      variant: "danger",
+    });
+
+    if (!shouldRemove) return;
+
     if (!session?.user) {
       setItems(removeGuestWishlistItem(productId));
       return;
     }
 
+    const previousItems = items;
+    setItems((currentItems) => currentItems.filter((item) => item.productId !== productId));
+
     try {
       await removeFromWishlist(productId);
       clearGuestWishlist();
-      load();
     } catch {
-      // Keep the current list when the remove request fails.
+      setItems(previousItems);
     }
   };
+
+  const handleToggleCollection = async (group: WishlistGroupItem, productId: string) => {
+    const productIds = group.productIds.includes(productId)
+      ? group.productIds.filter((id) => id !== productId)
+      : [...group.productIds, productId];
+    const previousGroups = groups;
+    const nextGroup = { ...group, productIds };
+
+    setGroups((currentGroups) =>
+      currentGroups.map((currentGroup) =>
+        currentGroup.id === group.id ? nextGroup : currentGroup
+      )
+    );
+
+    try {
+      const updatedGroup = await updateWishlistGroup(group.id, { productIds });
+      setGroups((currentGroups) =>
+        currentGroups.map((currentGroup) =>
+          currentGroup.id === updatedGroup.id ? updatedGroup : currentGroup
+        )
+      );
+    } catch {
+      setGroups(previousGroups);
+    }
+  };
+
+  const visibleItems = selectedGroup
+    ? items.filter((item) => groups.find((group) => group.id === selectedGroup)?.productIds.includes(item.productId))
+    : items;
+  const visibleItemCount = visibleItems.length;
 
   if (isPending || isLoading) {
     return <LoadingState message="Loading your wishlist..." />;
@@ -136,16 +183,20 @@ export default function WishlistClient() {
               <FaShoppingBag size={13} />
             </span>
             <span>
-              <strong className="block text-lg font-black leading-none text-text">{items.length}</strong>
+              <strong className="block text-lg font-black leading-none text-text">{visibleItemCount}</strong>
               <span className="mt-1 block text-[10px] font-bold uppercase tracking-wider text-muted">
-                Saved {items.length === 1 ? "item" : "items"}
+                Saved {visibleItemCount === 1 ? "item" : "items"}
               </span>
             </span>
           </div>
         </div>
 
         <div className="mb-5 rounded-3xl border border-border bg-surface p-3 shadow-sm sm:p-4">
-          <SmartWishlistGroups selectedGroupId={selectedGroup} onSelectGroup={setSelectedGroup} />
+          <SmartWishlistGroups
+            selectedGroupId={selectedGroup}
+            onSelectGroup={setSelectedGroup}
+            onGroupsChange={setGroups}
+          />
         </div>
 
         {items.length === 0 ? (
@@ -160,13 +211,20 @@ export default function WishlistClient() {
               Discover Products →
             </Link>
           </div>
+        ) : visibleItems.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-border bg-surface/70 p-10 text-center">
+            <p className="text-sm font-bold text-text">This collection is empty</p>
+            <p className="mt-1 text-xs text-muted">Add products to this collection from any product card.</p>
+          </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
-            {items.map((item) => (
+            {visibleItems.map((item) => (
               <WishlistProductCard
                 key={item.productId}
                 item={item}
                 product={products[item.productId]}
+                groups={groups}
+                onToggleCollection={handleToggleCollection}
                 onRemove={handleRemove}
               />
             ))}
