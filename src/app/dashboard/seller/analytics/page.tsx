@@ -137,7 +137,7 @@ export default function SellerAnalyticsPage() {
             </div>
 
             {/* Interactive Charts */}
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-6 xl:grid-cols-2">
               <Panel
                 title="Revenue Velocity & Trend"
                 action={
@@ -194,8 +194,8 @@ export default function SellerAnalyticsPage() {
             </div>
 
             {/* Category Share & Top Products */}
-            <div className="grid gap-6 lg:grid-cols-3">
-              <div className="lg:col-span-1">
+            <div className="grid gap-6 xl:grid-cols-3">
+              <div className="xl:col-span-1">
                 <Panel title="Category Revenue Share">
                   <div className="flex flex-col items-center">
                     {donutChartData.length > 0 ? (
@@ -203,6 +203,7 @@ export default function SellerAnalyticsPage() {
                         <DonutChart
                           data={donutChartData}
                           size={200}
+                          showLegend={false}
                         />
                         <div className="mt-4 grid w-full gap-2">
                           {(data.categoryPerformance || []).map((cat) => (
@@ -227,11 +228,11 @@ export default function SellerAnalyticsPage() {
                 </Panel>
               </div>
 
-              <div className="lg:col-span-2">
+              <div className="xl:col-span-2">
                 <Panel title="Top Performing Catalog Items">
                   {data.topProducts && data.topProducts.length > 0 ? (
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs">
+                      <table className="min-w-155 w-full text-left text-xs">
                         <thead>
                           <tr className="border-b border-border text-muted">
                             <th className="pb-3 font-bold">Product</th>
@@ -244,7 +245,7 @@ export default function SellerAnalyticsPage() {
                         <tbody className="divide-y divide-border/60">
                           {(data.topProducts || []).map((prod) => (
                             <tr key={prod.id} className="transition hover:bg-muted-bg/50">
-                              <td className="py-3 font-bold text-text max-w-[220px] truncate">{prod.title}</td>
+                              <td className="py-3 max-w-55 truncate font-bold text-text">{prod.title}</td>
                               <td className="py-3 font-semibold text-text">{formatCurrency(prod.price)}</td>
                               <td className="py-3 font-black text-primary">{prod.sold} units</td>
                               <td className="py-3 font-black text-success">{formatCurrency(prod.revenue)}</td>
