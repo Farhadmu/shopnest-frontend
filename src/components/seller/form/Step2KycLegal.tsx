@@ -70,8 +70,7 @@ export function Step2KycLegal({ formData, onChange }: StepProps) {
             Official Contact Phone <span className="text-error">*</span>
           </label>
           <input
-            type="number"
-            minLength={11}
+            type="tel"
             placeholder="e.g. +880 1712 345678"
             value={formData.contactPhone}
             onChange={(e) => onChange("contactPhone", e.target.value)}

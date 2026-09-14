@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { getMyStore, MyStore } from "@/lib/api/sellers";
 import { LoadingState } from "@/components/common/LoadingState";
+import { EmptyState } from "@/components/common/EmptyState";
 import {
   SellerApprovedCard,
   SellerPendingView,
@@ -26,12 +27,14 @@ type SessionUser = {
 type ApiResponse<T> = T | { data: T };
 
 export default function BecomeSellerPage() {
-  const { data: session, isPending } = useSession();
+  const { data: session, isPending, refetch } = useSession();
   const router = useRouter();
 
   const [store, setStore] = useState<MyStore | null>(null);
   const [loadingStore, setLoadingStore] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  // Guards against re-fetching in a loop when no store record is found.
+  const refetchAttempted = useRef(false);
 
   const fetchStore = async () => {
     setLoadingStore(true);
@@ -42,6 +45,9 @@ export default function BecomeSellerPage() {
       setStore(null);
     } finally {
       setLoadingStore(false);
+      // Revalidate the session so a role updated by an admin (e.g. a store
+      // suspension) is reflected without a hard reload.
+      await refetch?.();
     }
   };
 
@@ -81,6 +87,39 @@ export default function BecomeSellerPage() {
     };
   }, [session, isPending]);
 
+  // When the session says the user is a seller but no store record was found,
+  // re-fetch once before giving up — the store may exist but the initial load
+  // raced with the session becoming available. Uses a ref guard (not setState
+  // in the effect body) to avoid cascading renders and refetch loops.
+  useEffect(() => {
+    if (isPending || loadingStore) return;
+    if (!session?.user) return;
+    if (store !== null) return;
+
+    const user = session.user as SessionUser;
+    if (user.role !== "seller") return;
+    if (refetchAttempted.current) return;
+    refetchAttempted.current = true;
+
+    let isMounted = true;
+    (async () => {
+      try {
+        const data = (await getMyStore()) as ApiResponse<MyStore>;
+        if (isMounted) {
+          setStore("data" in data ? data.data : data);
+        }
+      } catch {
+        if (isMounted) {
+          setStore(null);
+        }
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [session, isPending, loadingStore, store]);
+
   if (isPending || loadingStore) {
     return <LoadingState message="Loading your seller application status..." />;
   }
@@ -92,24 +131,30 @@ export default function BecomeSellerPage() {
 
   const user = session.user as SessionUser;
 
-  // 1. APPROVED STORE: Shows "You Are Already a Seller" if store is approved or user role is seller
-  const isApproved = store?.status === "approved" || user.role === "seller";
+  // 1. APPROVED STORE: Shows "You Are Already a Seller" when the store is
+  //    approved. When store data is available, store.status is the source of
+  //    truth and takes priority over the session role; user.role is only
+  //    consulted as a fallback when no store record is loaded.
+  const isApproved = store ? store.status === "approved" : user.role === "seller";
   if (isApproved) {
-    const activeStore: MyStore = store ?? {
-      id: "my-store",
-      ownerId: session.user.id,
-      storeName: user.name ? `${user.name}'s Store` : "Verified Store",
-      slug: "seller",
-      description: "Official Verified Seller Store",
-      status: "approved",
-      trustScore: 90,
-      rating: 5,
-      ratingCount: 0,
-      followersCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    return <SellerApprovedCard store={activeStore} />;
+    if (store) {
+      return <SellerApprovedCard store={store} />;
+    }
+    // store is null but role is seller — handled by the empty state below
+  }
+
+  // 1b. Role says seller but no store record exists after re-fetch — friendly empty state
+  if (user.role === "seller" && !store) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-10">
+        <EmptyState
+          title="No store record found"
+          description="Your account is marked as a seller, but we couldn't find an active store. This may happen if the store was removed or the session is out of date."
+          actionLabel="Refresh store data"
+          onAction={fetchStore}
+        />
+      </div>
+    );
   }
 
   // 2. PENDING STORE: Immediately shown when user fills up the form or is awaiting review

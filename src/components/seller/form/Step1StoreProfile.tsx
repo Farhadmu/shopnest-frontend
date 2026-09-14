@@ -131,8 +131,8 @@ export function Step1StoreProfile({ formData, onChange }: StepProps) {
               <Image
                 src={formData.logo}
                 alt="Store Logo Preview"
-                height={10}
-                width={10}
+                height={80}
+                width={80}
                 className="h-10 w-10 rounded-md object-cover border border-border shrink-0 shadow-xs"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = "https://placehold.co/100x100?text=Logo";
@@ -214,9 +214,9 @@ export function Step1StoreProfile({ formData, onChange }: StepProps) {
               <Image
                 src={formData.banner}
                 alt="Store Banner Preview"
-                height={10}
-                width={16}
-                className="rounded-md object-cover border border-border shrink-0 shadow-xs"
+                height={64}
+                width={128}
+                className="h-16 w-32 rounded-md object-cover border border-border shrink-0 shadow-xs"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = "https://placehold.co/200x100?text=Banner";
                 }}

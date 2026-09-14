@@ -1,3 +1,5 @@
+"use client";
+
 import {
   FaCheckCircle,
   FaCommentAlt,
@@ -6,6 +8,7 @@ import {
 } from "react-icons/fa";
 
 import { StoreData } from "@/types/store";
+import { useConfirm } from "@/context/ConfirmDialogContext";
 
 interface StoreProfileHeaderProps {
   store: StoreData;
@@ -20,6 +23,19 @@ const StoreProfileHeader = ({
   onFollow,
   onMessage,
 }: StoreProfileHeaderProps) => {
+  const confirm = useConfirm();
+
+  const handleMessageClick = () => {
+    confirm({
+      title: store?.name ? `Message ${store.name}` : "Message Store",
+      message: "This Feature Will Be Coming Soon.",
+      variant: "info",
+      confirmText: "Okay",
+      cancelText: null,
+    });
+    onMessage?.();
+  };
+
   return (
     <div className="-mt-12 relative z-10">
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg dark:border-slate-800 dark:bg-slate-900">
@@ -87,7 +103,7 @@ const StoreProfileHeader = ({
 
             <button
               type="button"
-              onClick={onMessage}
+              onClick={handleMessageClick}
               className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
             >
               <FaCommentAlt />

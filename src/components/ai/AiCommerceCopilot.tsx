@@ -33,7 +33,8 @@ import {
   Star,
 } from "lucide-react";
 import { askAdminCopilot, CopilotResponse, CopilotMetric, CopilotInsight } from "@/lib/api/admin-copilot";
-import { askCommerceCopilot, CopilotResponse as BasicCopilotResponse } from "@/lib/api/ai-commerce";
+import { askCustomerCopilot, CustomerCopilotResponse } from "@/lib/api/customer-copilot";
+import { askSellerCopilot, SellerCopilotResponse } from "@/lib/api/seller-copilot";
 
 // Types
 interface Message {
@@ -41,6 +42,7 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   data?: CopilotResponse;
+  basicData?: CustomerCopilotResponse | SellerCopilotResponse;
   isLoading?: boolean;
   error?: string;
   timestamp: Date;
@@ -76,6 +78,80 @@ const FOLLOW_UP_SUGGESTIONS: Record<string, string[]> = {
   EXECUTIVE_SUMMARY: ["Dive into revenue", "Check seller risk", "Show anomalies"],
   MARKETPLACE_OVERVIEW: ["Why is revenue changing?", "Who needs attention?", "Check system health"],
 };
+
+// Lightweight markdown renderer — transforms headers, bold, lists, line breaks
+function MarkdownContent({ content }: { content: string }) {
+  const lines = content.split("\n");
+  const elements: React.ReactNode[] = [];
+  let listItems: React.ReactNode[] = [];
+  let listType: "ul" | "ol" | null = null;
+  let keyCounter = 0;
+
+  function flushList() {
+    if (listItems.length === 0) return;
+    if (listType === "ol") {
+      elements.push(<ol key={`ol-${keyCounter++}`} className="list-decimal list-inside space-y-0.5 my-1 pl-1 text-xs">{listItems}</ol>);
+    } else {
+      elements.push(<ul key={`ul-${keyCounter++}`} className="list-disc list-inside space-y-0.5 my-1 pl-1 text-xs">{listItems}</ul>);
+    }
+    listItems = [];
+    listType = null;
+  }
+
+  function parseInline(text: string): React.ReactNode[] {
+    const parts: React.ReactNode[] = [];
+    const boldRegex = /\*\*(.+?)\*\*/g;
+    let last = 0;
+    let m: RegExpExecArray | null;
+    while ((m = boldRegex.exec(text)) !== null) {
+      if (m.index > last) parts.push(text.slice(last, m.index));
+      parts.push(<strong key={`b-${m.index}`} className="font-semibold">{m[1]}</strong>);
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) parts.push(text.slice(last));
+    return parts;
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i];
+    const line = raw.trimEnd();
+
+    // Headings
+    const h3 = line.match(/^###\s+(.+)$/);
+    const h2 = line.match(/^##\s+(.+)$/);
+    const h1 = line.match(/^#\s+(.+)$/);
+    // Ordered list
+    const ol = line.match(/^\d+\.\s+(.+)$/);
+    // Unordered list (handles -, •, *)
+    const ul = line.match(/^[-•*]\s+(.+)$/);
+
+    if (h3 || h2 || h1) {
+      flushList();
+      const text = (h3 || h2 || h1)![1];
+      const cls = h1
+        ? "text-sm font-bold text-text mt-3 mb-1"
+        : h2
+        ? "text-xs font-bold text-text mt-2.5 mb-0.5 uppercase tracking-wide"
+        : "text-xs font-semibold text-text mt-2 mb-0.5";
+      elements.push(<p key={`h-${keyCounter++}`} className={cls}>{parseInline(text)}</p>);
+    } else if (ol) {
+      if (listType !== "ol") { flushList(); listType = "ol"; }
+      listItems.push(<li key={`li-${keyCounter++}`}>{parseInline(ol[1])}</li>);
+    } else if (ul) {
+      if (listType !== "ul") { flushList(); listType = "ul"; }
+      listItems.push(<li key={`li-${keyCounter++}`}>{parseInline(ul[1])}</li>);
+    } else if (line.trim() === "") {
+      flushList();
+      elements.push(<br key={`br-${keyCounter++}`} />);
+    } else {
+      flushList();
+      elements.push(<p key={`p-${keyCounter++}`} className="leading-relaxed">{parseInline(line)}</p>);
+    }
+  }
+  flushList();
+
+  return <div className="space-y-0.5 text-xs">{elements}</div>;
+}
 
 // Metric Card Component
 function MetricCard({ metric }: { metric: CopilotMetric }) {
@@ -276,35 +352,33 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
     setShowBriefing(false);
 
     try {
-      let response: CopilotResponse | BasicCopilotResponse;
-
       if (role === "admin") {
-        response = await askAdminCopilot(prompt.trim());
-      } else {
-        const basicRes = await askCommerceCopilot(prompt.trim(), role);
-        response = {
-          answer: basicRes.answer,
-          summary: basicRes.answer.substring(0, 100),
-          intent: "GENERAL",
-          confidence: 0.8,
-          timeRange: { field: "created_at", from: "", to: "", label: "all time" },
-          metrics: [],
-          insights: [],
-          sources: [],
-          suggestedActions: basicRes.suggestedActions || [],
-          isFallback: false,
+        const response = await askAdminCopilot(prompt.trim());
+
+        const assistantMessage: Message = {
+          id: "assistant-" + Date.now(),
+          role: "assistant",
+          content: response.answer,
+          data: response,
+          timestamp: new Date(),
         };
+
+        setMessages((prev) => [...prev.slice(0, -1), assistantMessage]);
+      } else {
+        const response = role === "seller"
+          ? await askSellerCopilot(prompt.trim())
+          : await askCustomerCopilot(prompt.trim());
+
+        const assistantMessage: Message = {
+          id: "assistant-" + Date.now(),
+          role: "assistant",
+          content: response.answer,
+          basicData: response,
+          timestamp: new Date(),
+        };
+
+        setMessages((prev) => [...prev.slice(0, -1), assistantMessage]);
       }
-
-      const assistantMessage: Message = {
-        id: "assistant-" + Date.now(),
-        role: "assistant",
-        content: response.answer,
-        data: response as CopilotResponse,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev.slice(0, -1), assistantMessage]);
     } catch (error) {
       const errorMessage: Message = {
         id: "error-" + Date.now(),
@@ -378,7 +452,11 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
                   ? "bg-primary text-white font-medium"
                   : "bg-muted-bg text-text border border-border/60")
               }>
-                <p className="whitespace-pre-wrap">{m.content}</p>
+                {isUser ? (
+                  <p className="whitespace-pre-wrap">{m.content}</p>
+                ) : (
+                  <MarkdownContent content={m.content} />
+                )}
               </div>
 
               {/* Error */}
@@ -474,9 +552,9 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
               )}
 
               {/* Basic copilot actions for non-admin */}
-              {m.data?.suggestedActions && m.data.suggestedActions.length > 0 && role !== "admin" && (
+              {m.basicData?.suggestedActions && m.basicData.suggestedActions.length > 0 && role !== "admin" && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
-                  {m.data.suggestedActions.map((act, i) => (
+                  {m.basicData.suggestedActions.map((act, i) => (
                     <button
                       key={i}
                       onClick={() => handleSend("Tell me more about " + act.label)}

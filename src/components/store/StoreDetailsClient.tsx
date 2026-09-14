@@ -116,7 +116,6 @@ export default function StoreDetailsClient({ store }: { store: StoreData }) {
           store={store}
           followed={followed}
           onFollow={toggleFollow}
-          onMessage={() => setMessageOpen(true)}
         />
         <StoreTabs activeTab={activeTab} onTabChange={setActiveTab} />
 

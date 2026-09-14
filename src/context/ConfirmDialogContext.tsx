@@ -9,7 +9,7 @@ export interface ConfirmOptions {
   title: string;
   message: string;
   confirmText?: string;
-  cancelText?: string;
+  cancelText?: string | null;
   variant?: ConfirmVariant;
   onConfirm?: () => Promise<void> | void;
 }
@@ -59,7 +59,7 @@ export function ConfirmDialogProvider({ children }: { children: React.ReactNode 
       setState({
         ...options,
         confirmText: options.confirmText ?? "Confirm",
-        cancelText: options.cancelText ?? "Cancel",
+        cancelText: options.cancelText === null ? null : (options.cancelText ?? "Cancel"),
         variant: options.variant ?? "danger",
         resolve,
         isOpen: true,
@@ -164,14 +164,16 @@ export function ConfirmDialogProvider({ children }: { children: React.ReactNode 
               </div>
 
               <div className="flex items-center justify-end gap-2 border-t border-border bg-background/60 px-6 py-4">
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  disabled={isLoading}
-                  className="cursor-pointer rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold text-text transition-colors hover:bg-background disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {state.cancelText}
-                </button>
+                {state.cancelText && (
+                  <button
+                    type="button"
+                    onClick={handleClose}
+                    disabled={isLoading}
+                    className="cursor-pointer rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold text-text transition-colors hover:bg-background disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {state.cancelText}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={handleConfirm}
