@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useSyncExternalStore } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { FaBars, FaTimes, FaSearch } from "react-icons/fa";
 import { useSession, signOut } from "@/lib/auth-client";
@@ -53,19 +53,19 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [cartCount, setCartCount] = useState(0);
+  const isHydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   const { data: session } = useSession();
   const user = session?.user as
     | { id?: string; name?: string; email?: string; role?: "customer" | "seller" | "admin"; image?: string }
     | undefined;
 
-  const role: UserRole = user?.role || (user ? "customer" : "guest");
-  const isAuthenticated = !!user;
-
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [pathname]);
+  const role: UserRole = isHydrated ? user?.role || (user ? "customer" : "guest") : "guest";
+  const isAuthenticated = isHydrated && !!user;
 
   // Sync cart count
   useEffect(() => {
@@ -142,9 +142,9 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
   const totalCartCount = drawerItemCount || cartCount;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/80 bg-background/90 backdrop-blur-xl">
-      <div className="mx-auto max-w-360 px-4 sm:px-6 lg:px-8">
-        <div className="flex min-h-16 items-center justify-between gap-3 lg:gap-5">
+    <header className="sticky top-0 z-50 w-full overflow-hidden border-b border-border/80 bg-background/90 backdrop-blur-xl">
+      <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-8">
+        <div className="flex min-h-16 items-center justify-between gap-2 lg:gap-4 xl:gap-5">
 
           {/* Brand + desktop search */}
           <NavbarBrand
@@ -183,7 +183,7 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
                 type="button"
                 onClick={() => setMobileMenuOpen((v) => !v)}
                 aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-                className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-surface text-text xl:hidden"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-surface text-text lg:hidden"
               >
                 {mobileMenuOpen ? <FaTimes /> : <FaBars />}
               </button>
@@ -214,6 +214,7 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
 
         {/* Mobile dropdown */}
         <NavbarMobileMenu
+          key={pathname}
           open={mobileMenuOpen}
           isAuthenticated={isAuthenticated}
           user={user}

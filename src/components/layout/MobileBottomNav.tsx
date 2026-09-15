@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FiHome, FiGrid, FiShoppingCart, FiHeart, FiUser } from "react-icons/fi";
@@ -17,7 +17,12 @@ export function MobileBottomNav() {
   const { openCart, itemCount: drawerItemCount } = useCartDrawer();
   const [cartCount, setCartCount] = useState<number>(0);
   const [wishlistCount, setWishlistCount] = useState<number>(0);
-  const isAuthenticated = Boolean(session?.user);
+  const isHydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+  const isAuthenticated = isHydrated && Boolean(session?.user);
 
   useEffect(() => {
     let isMounted = true;
@@ -61,7 +66,7 @@ export function MobileBottomNav() {
   }, [isAuthenticated, pathname]);
 
   const role = (session?.user as { role?: string } | undefined)?.role ?? "customer";
-  if (role === "seller" || role === "admin") return null;
+  if (!isHydrated || role === "seller" || role === "admin") return null;
 
   const currentCartCount = drawerItemCount || cartCount;
 

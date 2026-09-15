@@ -37,7 +37,7 @@ export function NavbarMobileMenu({
   if (!open) return null;
 
   return (
-    <div className="border-t border-border py-3 xl:hidden">
+    <div className="border-t border-border py-3 lg:hidden">
       <div className="grid gap-1">
         {/* Server-rendered category accordion */}
         {categoryMenuSlot}
