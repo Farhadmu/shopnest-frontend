@@ -161,6 +161,10 @@ a {
 @keyframes shopnest-float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-9px) } }
 .shopnest-float { animation: shopnest-float 4s ease-in-out infinite; }
 
+@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }
+
+@keyframes indeterminate { 0% { left: -33%; width: 33%; } 50% { left: 50%; width: 50%; } 100% { left: 100%; width: 33%; } }
+
 @keyframes pulse-glow {
   0%, 100% {
     box-shadow: 0 0 15px rgba(91, 92, 240, 0.35), 0 0 30px rgba(139, 92, 246, 0.15);

@@ -12,7 +12,7 @@ import {
   HeroSlide,
   PromoCard as PromoCardType,
 } from "@/lib/constants/banner";
-import { getCategories } from "@/lib/api/categories";
+import { getCategories, type Category } from "@/lib/api/categories";
 import { getHeroBanners, HeroBanner } from "@/lib/api/hero-banners";
 
 // ---------------------------------------------------------------------------
@@ -445,13 +445,24 @@ function CategorySidebar({
 // BannerSection
 // ---------------------------------------------------------------------------
 
-export default function BannerSection({ data }: { data: BannerSectionData }) {
+export default function BannerSection({
+  data,
+  initialCategories,
+}: {
+  data: BannerSectionData;
+  /** Pre-fetched categories from HomeDataContext. When provided the component
+   *  skips its own getCategories() call, eliminating a duplicate network request. */
+  initialCategories?: Category[];
+}) {
   const { heroSlides, sideCards, bottomCards } = data;
 
   const [categories, setCategories] = useState<BannerCategory[]>(() =>
     (data.categories ?? FALLBACK_CATEGORIES).slice(0, MAX_CATEGORIES)
   );
-  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesLoading, setCategoriesLoading] = useState(() =>
+    // If caller has already supplied categories, no loading needed.
+    !initialCategories || initialCategories.length === 0
+  );
   const [customBanners, setCustomBanners] = useState<HeroBanner[]>([]);
   const [bannerCategoryId, setBannerCategoryId] = useState<string | null>(null);
   const [bannersLoading, setBannersLoading] = useState(false);
@@ -464,6 +475,22 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    // If categories were pre-fetched by the parent, apply them directly.
+    if (initialCategories && initialCategories.length > 0) {
+      const slicedCats = initialCategories.slice(0, MAX_CATEGORIES);
+      setCategories(
+        slicedCats.map((c, i) => ({
+          ...(FALLBACK_CATEGORIES[i % FALLBACK_CATEGORIES.length] ?? FALLBACK_CATEGORIES[0]),
+          id: c.id,
+          label: c.name,
+          href: `/products?category=${encodeURIComponent(c.name)}`,
+        }))
+      );
+      setCategoriesLoading(false);
+      return;
+    }
+
+    // Fallback: fetch independently (backward-compatible).
     let cancelled = false;
     getCategories()
       .then((cats) => {

@@ -22,9 +22,12 @@ import { useSession } from "@/lib/auth-client";
 import { ProductCard } from "@/components/products/ProductCard";
 import ProductSkeleton from "@/components/home/ProductSkeleton";
 
-export default function JustForYouSection() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function JustForYouSection({ initialProducts }: {
+  /** Pre-fetched products from HomeDataContext. Skips own fetch when provided. */
+  initialProducts?: Product[];
+}) {
+  const [products, setProducts] = useState<Product[]>(() => initialProducts ?? []);
+  const [loading, setLoading] = useState(() => !initialProducts || initialProducts.length === 0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
 
@@ -39,6 +42,13 @@ export default function JustForYouSection() {
   const router = useRouter();
 
   useEffect(() => {
+    // If initial products were provided and this is the first mount (retryKey===0), skip fetch.
+    if (initialProducts && initialProducts.length > 0 && retryKey === 0) {
+      setProducts(initialProducts);
+      setLoading(false);
+      return;
+    }
+
     async function fetchProducts() {
       try {
         setLoading(true);
@@ -77,6 +87,7 @@ export default function JustForYouSection() {
     }
 
     fetchProducts();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [retryKey]);
 
   const showToast = (msg: string, type: "success" | "error" = "success") => {

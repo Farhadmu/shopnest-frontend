@@ -25,11 +25,14 @@ import { useSession } from "@/lib/auth-client";
 import TrendingCard from "./TrendingCard";
 import TrendingSkeleton from "./TrendingSkeleton";
 
-export default function TrendingSection() {
+export default function TrendingSection({ initialProducts }: {
+  /** Pre-fetched trending products from HomeDataContext. Skips own fetch when provided. */
+  initialProducts?: Product[];
+}) {
   const router = useRouter();
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(() => initialProducts ?? []);
+  const [loading, setLoading] = useState(() => !initialProducts || initialProducts.length === 0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
 
@@ -49,6 +52,13 @@ export default function TrendingSection() {
 
 
   useEffect(() => {
+    // If initial products were provided and this is the first mount (retryKey===0), skip fetch.
+    if (initialProducts && initialProducts.length > 0 && retryKey === 0) {
+      setProducts(initialProducts);
+      setLoading(false);
+      return;
+    }
+
     async function fetchTrendingProducts() {
       try {
         setLoading(true);
@@ -76,6 +86,7 @@ export default function TrendingSection() {
     }
 
     fetchTrendingProducts();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [retryKey]);
 
  
