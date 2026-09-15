@@ -9,6 +9,7 @@ import { useSession } from "@/lib/auth-client";
 import type { CouponScope } from "@/types/coupon";
 
 interface CouponScopeFieldsProps {
+  mode: "seller" | "admin";
   scope: CouponScope;
   category: string;
   categories?: string[];
@@ -29,6 +30,7 @@ const SCOPE_OPTIONS: { id: CouponScope; label: string }[] = [
 
 /** Reusable "what does this coupon apply to" block: scope select + the matching conditional picker. */
 export function CouponScopeFields({
+  mode,
   scope,
   category,
   categories: selectedCategories = [],
@@ -151,10 +153,17 @@ export function CouponScopeFields({
       <div className="rounded-xl border border-primary/15 bg-primary/5 p-4">
         {scope === "specific-products" && (
           <div className="flex flex-col gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-text">
-              Select Eligible Products
-            </span>
-            <ProductPickerList selectedIds={productIds} onToggle={onToggleProduct} />
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-text">
+                Select Eligible Products
+              </span>
+              {productIds.length > 0 && (
+                <span className="text-[11px] font-semibold text-primary">
+                  {productIds.length} product{productIds.length !== 1 ? "s" : ""} selected
+                </span>
+              )}
+            </div>
+            <ProductPickerList mode={mode} selectedIds={productIds} onToggle={onToggleProduct} />
           </div>
         )}
 
