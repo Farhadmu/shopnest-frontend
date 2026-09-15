@@ -60,6 +60,11 @@ export async function getProducts(params?: Record<string, string | number | bool
   return clientFetch<Product[]>("/products", { params });
 }
 
+/** The authenticated seller's own catalog. Ownership is enforced server-side from the session. */
+export async function getMyProducts() {
+  return clientFetch<Product[]>("/products/mine");
+}
+
 export interface PagedProducts {
   items: Product[];
   total: number;

@@ -29,7 +29,7 @@ import {
   AbExperimentData,
   createAbExperiment,
 } from "@/lib/api/seller-intelligence";
-import { getProducts, Product } from "@/lib/api/products";
+import { getMyProducts, Product } from "@/lib/api/products";
 import { useSession } from "@/lib/auth-client";
 import { clientFetch } from "@/lib/core/client";
 import { GaugeMeter } from "@/components/analytics/GaugeMeter";
@@ -65,6 +65,7 @@ type ActiveTabType =
 
 export default function SellerDashboard() {
   const { data: session } = useSession();
+  const currentUserId = (session?.user as any)?.id;
   const [activeTab, setActiveTab] = useState<ActiveTabType>("overview");
 
   // Core Data State
@@ -119,12 +120,10 @@ export default function SellerDashboard() {
     else setRefreshing(true);
 
     try {
-      const currentUserId = (session?.user as any)?.id;
-
-      // 1. Fetch seller orders & products in parallel
+      // 1. Fetch the authenticated seller's own orders & products in parallel.
       const [ordersRes, prodsRes] = await Promise.allSettled([
         clientFetch<any[]>("/orders/seller/mine"),
-        getProducts({ page: 1, limit: 100 }),
+        getMyProducts(),
       ]);
 
       const resolvedOrders =
@@ -133,20 +132,16 @@ export default function SellerDashboard() {
           : [];
       setOrders(resolvedOrders);
 
-      if (prodsRes.status === "fulfilled" && Array.isArray(prodsRes.value)) {
-        const userProds = currentUserId
-          ? prodsRes.value.filter((p) => !p.sellerId || p.sellerId === currentUserId)
-          : prodsRes.value;
-        const finalProds = userProds.length > 0 ? userProds : prodsRes.value;
-        setProducts(finalProds);
+      const resolvedProducts =
+        prodsRes.status === "fulfilled" && Array.isArray(prodsRes.value) ? prodsRes.value : [];
+      setProducts(resolvedProducts);
 
-        // Auto-select first product for simulators if not set
-        if (finalProds.length > 0 && !selectedProdSim) {
-          const first = finalProds[0];
-          setSelectedProdSim(first.id);
-          setSimPrice(first.discountPrice || first.price);
-          setSimNewPrice(Math.round((first.discountPrice || first.price) * 0.9));
-        }
+      // Auto-select first product for simulators if not set
+      if (resolvedProducts.length > 0 && !selectedProdSim) {
+        const first = resolvedProducts[0];
+        setSelectedProdSim(first.id);
+        setSimPrice(first.discountPrice || first.price);
+        setSimNewPrice(Math.round((first.discountPrice || first.price) * 0.9));
       }
 
       // 2. Fetch Intelligence features
@@ -184,7 +179,7 @@ export default function SellerDashboard() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [session, heatmapTimeframe, selectedProdSim]);
+  }, [heatmapTimeframe, selectedProdSim]);
 
   useEffect(() => {
     loadDashboardData();
@@ -307,24 +302,22 @@ export default function SellerDashboard() {
     }
   };
 
-  // Real KPI Aggregates
+  // Real KPI Aggregates — scoped strictly to this seller's own order items.
+  const sellerProductIds = useMemo(() => new Set(products.map((p) => p.id)), [products]);
+
   const totalStoreRevenue = useMemo(() => {
-    const currentUserId = (session?.user as any)?.id;
     return orders.reduce((sum, o) => {
-      // If order has items breakdown, sum seller items
-      if (Array.isArray(o.items) && o.items.length > 0) {
-        const sellerItems = currentUserId
-          ? o.items.filter((it: any) => it.sellerId === currentUserId)
-          : o.items;
-        const itemsTotal = (sellerItems.length > 0 ? sellerItems : o.items).reduce(
-          (s: number, it: any) => s + (it.price || 0) * (it.quantity || 1),
-          0
-        );
-        return sum + (itemsTotal || o.totalAmount || 0);
-      }
-      return sum + (o.totalAmount || 0);
+      const items = Array.isArray(o.items) ? o.items : [];
+      const sellerItems = items.filter(
+        (it: any) => (currentUserId && it.sellerId === currentUserId) || sellerProductIds.has(it.productId)
+      );
+      const itemsTotal = sellerItems.reduce(
+        (s: number, it: any) => s + (it.price || 0) * (it.quantity || 1),
+        0
+      );
+      return sum + itemsTotal;
     }, 0);
-  }, [orders, session]);
+  }, [orders, currentUserId, sellerProductIds]);
 
   const deliveredOrdersCount = useMemo(
     () => orders.filter((o) => o.status === "delivered").length,
@@ -640,9 +633,17 @@ export default function SellerDashboard() {
                 data={heatmapData.heatmapData}
                 days={heatmapData.days || ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]}
               />
-            ) : (
+            ) : loading ? (
               <div className="flex h-40 items-center justify-center text-xs text-muted">
                 Loading category demand matrix...
+              </div>
+            ) : (
+              <div className="flex h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-surface/50 text-center">
+                <FaCalendarAlt className="text-3xl text-muted/50 mb-2" />
+                <p className="text-xs font-bold text-text">No Demand Data Yet</p>
+                <p className="text-[11px] text-muted max-w-sm mt-1">
+                  List products and record orders for your store to build your category demand matrix.
+                </p>
               </div>
             )}
 
@@ -650,19 +651,19 @@ export default function SellerDashboard() {
               <div className="rounded-2xl border border-border bg-surface p-4">
                 <p className="text-xs font-bold text-muted uppercase">Peak Shopping Windows</p>
                 <p className="mt-1 text-sm font-black text-text">
-                  {heatmapData?.peakDays || "Friday & Saturday (Weekend Evening Peaks)"}
+                  {heatmapData?.peakDays || "No data yet"}
                 </p>
                 <p className="mt-1 text-[11px] text-muted">
-                  Higher buyer checkout frequency observed during weekend evenings.
+                  Derived from your own store order timestamps.
                 </p>
               </div>
               <div className="rounded-2xl border border-border bg-surface p-4">
                 <p className="text-xs font-bold text-muted uppercase">Top Demand Category</p>
                 <p className="mt-1 text-sm font-black text-primary">
-                  {heatmapData?.topCategory || "General Catalog"}
+                  {heatmapData?.topCategory || "No data yet"}
                 </p>
                 <p className="mt-1 text-[11px] text-muted">
-                  Highest engagement density category on marketplace.
+                  Highest order density category in your catalog.
                 </p>
               </div>
             </div>

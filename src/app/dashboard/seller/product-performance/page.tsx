@@ -5,10 +5,8 @@ import Link from "next/link";
 import { DashboardShell, Panel } from "@/components/dashboard/DashboardUI";
 import { sellerDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { LoadingTable, ErrorState, EmptyState } from "@/components/dashboard/DashboardStates";
-import { getProducts } from "@/lib/api/products";
-import { getMyStore } from "@/lib/api/sellers";
+import { getMyProducts } from "@/lib/api/products";
 import { clientFetch } from "@/lib/core/client";
-import { useSession } from "@/lib/auth-client";
 import { FaPlus, FaBox, FaEdit, FaSortAmountDown } from "react-icons/fa";
 
 interface ProductPerformance {
@@ -34,39 +32,34 @@ export default function ProductPerformancePage() {
   const [products, setProducts] = useState<ProductPerformance[]>([]);
   const [sortKey, setSortKey] = useState<SortKey>("sold");
   const [filter, setFilter] = useState<"all" | "low_stock" | "out_of_stock">("all");
-  const { data: session } = useSession();
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [productsRes, ordersRes, storeRes] = await Promise.allSettled([
-        getProducts({ limit: 100 }),
+      const [productsRes, ordersRes] = await Promise.allSettled([
+        getMyProducts(),
         clientFetch<any[]>("/orders/seller/mine"),
-        getMyStore(),
       ]);
 
-      const allProducts = productsRes.status === "fulfilled" ? (productsRes.value || []) : [];
-      const orders = ordersRes.status === "fulfilled" ? ((ordersRes.value as any)?.data ?? ordersRes.value ?? []) : [];
-      const store = storeRes.status === "fulfilled" ? storeRes.value : null;
+      const sellerProducts = productsRes.status === "fulfilled" ? (productsRes.value || []) : [];
+      const orders =
+        ordersRes.status === "fulfilled"
+          ? ((ordersRes.value as any)?.data ?? ordersRes.value ?? [])
+          : [];
 
-      const userId = (session?.user as any)?.id;
-      const validStoreIds = new Set([
-        store?.id,
-        store?._id,
-        store?.slug,
-        store?.ownerId,
-        userId,
-      ].filter(Boolean));
-
-      // Filter products strictly belonging to this seller
-      const sellerProducts = allProducts.filter((p: any) =>
-        validStoreIds.has(p.storeId) || validStoreIds.has(p.sellerId) || (!p.sellerId && !p.storeId && userId)
-      );
-
-      const productStats: ProductPerformance[] = (sellerProducts.length > 0 ? sellerProducts : allProducts.slice(0, 10)).map((p: any) => {
-        const productOrders = orders.filter((o: any) => (o.items || []).some((i: any) => i.productId === p.id || i.productId === p._id));
-        const soldFromOrders = productOrders.reduce((sum: number, o: any) => sum + ((o.items || []).filter((i: any) => i.productId === p.id || i.productId === p._id).reduce((s: number, i: any) => s + (i.quantity || 0), 0)), 0);
+      const productStats: ProductPerformance[] = sellerProducts.map((p: any) => {
+        const productOrders = orders.filter((o: any) =>
+          (o.items || []).some((i: any) => i.productId === p.id || i.productId === p._id)
+        );
+        const soldFromOrders = productOrders.reduce(
+          (sum: number, o: any) =>
+            sum +
+            (o.items || [])
+              .filter((i: any) => i.productId === p.id || i.productId === p._id)
+              .reduce((s: number, i: any) => s + (i.quantity || 0), 0),
+          0
+        );
         const actualSold = Math.max(soldFromOrders, p.sold || 0);
         const unitPrice = p.discountPrice || p.price || 0;
         const revenue = actualSold * unitPrice;
@@ -80,7 +73,7 @@ export default function ProductPerformancePage() {
           sold: actualSold,
           revenue,
           orders: productOrders.length || (actualSold > 0 ? 1 : 0),
-          rating: p.ratingAvg || store?.rating || 5.0,
+          rating: p.ratingAvg || 0,
           reviews: p.ratingCount || 0,
           status: p.status || "approved",
           category: p.category || "General",
@@ -93,7 +86,7 @@ export default function ProductPerformancePage() {
     } finally {
       setLoading(false);
     }
-  }, [session]);
+  }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
 
