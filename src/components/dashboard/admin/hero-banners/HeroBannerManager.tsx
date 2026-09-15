@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { Link2, UploadCloud } from "lucide-react";
-import { ChangeEvent, DragEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { Link2, UploadCloud, Trash2, Loader2 } from "lucide-react";
+import { ChangeEvent, FormEvent, KeyboardEvent, useEffect, useMemo, useState } from "react";
 import {
   createHeroBanner,
   deleteHeroBanner,
@@ -72,10 +72,12 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
   const [editing, setEditing] = useState<HeroBanner | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [imageMode, setImageMode] = useState<"upload" | "url">("upload");
+  const [imageUrlInput, setImageUrlInput] = useState("");
 
   const categoryName = useMemo(
     () => new Map(categories.map((category) => [idOf(category), category.name])),
@@ -97,19 +99,19 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
 
   useEffect(() => {
     void Promise.resolve().then(load);
-    // load is intentionally scoped to the selected category.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoryId]);
 
   const resetForm = (nextCategoryId = categoryId) => {
     setEditing(null);
     setImageMode("upload");
+    setImageUrlInput("");
     setForm({ ...emptyForm, categoryId: nextCategoryId });
   };
 
   const edit = (banner: HeroBanner) => {
     setEditing(banner);
     setImageMode(banner.imageUrl.startsWith("/uploads/") ? "upload" : "url");
+    setImageUrlInput(banner.imageUrl);
     setForm({
       categoryId: banner.categoryId ?? "",
       placement: banner.placement,
@@ -134,26 +136,46 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const chooseImage = async (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) return setError("Choose an image file.");
-    setSaving(true);
-    setError(null);
+
     try {
+      setUploadingImage(true);
+      setError(null);
       const result = await uploadImageToImgBB(file);
-      setForm((current) => ({ ...current, imageUrl: result.url }));
-      setNotice("Image uploaded. Review the preview before saving.");
+      setForm((prev) => ({ ...prev, imageUrl: result.url }));
+      setImageUrlInput(result.url);
+      setNotice("Image uploaded successfully.");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Image upload failed.");
+      setError(cause instanceof Error ? cause.message : "Image upload failed. Please try again.");
     } finally {
-      setSaving(false);
+      setUploadingImage(false);
+    }
+  };
+
+  const handleUrlSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (imageUrlInput.trim()) {
+      setForm((prev) => ({ ...prev, imageUrl: imageUrlInput.trim() }));
+      setNotice("Image URL applied.");
+    }
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleUrlSubmit(event);
     }
   };
 
   const save = async (event: FormEvent) => {
     event.preventDefault();
-    if (!form.categoryId || !form.imageUrl) return setError("Category and image are required.");
+
+    if (!form.categoryId || !form.imageUrl) {
+      return setError("Category and image are required.");
+    }
+
     setSaving(true);
     setError(null);
     try {
@@ -228,7 +250,7 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
     }
   };
 
-  const onDrop = (event: DragEvent<HTMLDivElement>, targetId: string) => {
+  const onDrop = (event: React.DragEvent<HTMLDivElement>, targetId: string) => {
     event.preventDefault();
     if (draggedId) void reorder(draggedId, targetId);
     setDraggedId(null);
@@ -246,7 +268,7 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
                 setCategoryId(event.target.value);
                 resetForm(event.target.value);
               }}
-              className="rounded-xl border border-border bg-background px-4 py-3 font-normal"
+              className="rounded-xl border border-border bg-background px-4 py-3 font-normal cursor-pointer"
             >
               <option value="">Select a category</option>
               {categories.map((category) => (
@@ -259,7 +281,7 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
           <button
             type="button"
             onClick={() => resetForm()}
-            className="rounded-xl bg-primary px-5 py-3 font-bold text-white"
+            className="rounded-xl bg-primary px-5 py-3 font-bold text-white cursor-pointer"
           >
             {editing ? "New banner" : "Add hero banner"}
           </button>
@@ -268,7 +290,9 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
 
       {(error || notice) && (
         <div
-          className={`rounded-xl px-4 py-3 text-sm font-semibold ${error ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}
+          className={`rounded-xl px-4 py-3 text-sm font-semibold ${
+            error ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"
+          }`}
         >
           {error ?? notice}
         </div>
@@ -286,7 +310,7 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
               onChange={(event) =>
                 setForm({ ...form, placement: event.target.value as FormState["placement"] })
               }
-              className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
+              className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal cursor-pointer"
             >
               <option value="hero">Hero</option>
               <option value="side">Right side card</option>
@@ -373,7 +397,7 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
               onChange={(event) =>
                 setForm({ ...form, textTheme: event.target.value as FormState["textTheme"] })
               }
-              className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
+              className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal cursor-pointer"
             >
               <option value="light">Light</option>
               <option value="dark">Dark</option>
@@ -391,11 +415,16 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
           <fieldset className="text-sm font-bold text-text sm:col-span-2">
             <legend>Text colors by mode</legend>
             <div className="mt-2 grid gap-3 sm:grid-cols-2">
-              {([
-                ["lightTextColor", "Light / white mode", "#ffffff"],
-                ["darkTextColor", "Dark mode", "#111827"],
-              ] as const).map(([field, label, defaultColor]) => (
-                <div key={field} className="flex items-center gap-3 rounded-xl border border-border bg-background p-3">
+              {(
+                [
+                  ["lightTextColor", "Light / white mode", "#ffffff"],
+                  ["darkTextColor", "Dark mode", "#111827"],
+                ] as const
+              ).map(([field, label, defaultColor]) => (
+                <div
+                  key={field}
+                  className="flex items-center gap-3 rounded-xl border border-border bg-background p-3"
+                >
                   <input
                     type="color"
                     value={form[field] || defaultColor}
@@ -407,7 +436,11 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
                   <button
                     type="button"
                     onClick={() => setForm({ ...form, [field]: "" })}
-                    className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-bold ${!form[field] ? "border-primary bg-primary/10 text-primary" : "border-border text-muted"}`}
+                    className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-bold cursor-pointer ${
+                      !form[field]
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted"
+                    }`}
                   >
                     Default
                   </button>
@@ -428,7 +461,11 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
               <button
                 type="button"
                 onClick={() => setForm({ ...form, overlayColor: "" })}
-                className={`rounded-lg border px-3 py-2 text-xs font-bold ${!form.overlayColor ? "border-primary bg-primary/10 text-primary" : "border-border text-muted"}`}
+                className={`rounded-lg border px-3 py-2 text-xs font-bold cursor-pointer ${
+                  !form.overlayColor
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border text-muted"
+                }`}
               >
                 None
               </button>
@@ -445,7 +482,7 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
                 value={form.overlayOpacity}
                 onChange={(event) => setForm({ ...form, overlayOpacity: event.target.value })}
                 disabled={!form.overlayColor}
-                className="w-full accent-primary disabled:opacity-40"
+                className="w-full accent-primary disabled:opacity-40 cursor-pointer"
                 aria-label="Choose image overlay opacity"
               />
               <span className="w-12 text-right text-xs font-semibold text-muted">
@@ -463,15 +500,17 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
               className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
             />
           </label>
-          <label className="flex items-center gap-3 pt-7 text-sm font-bold text-text">
+          <label className="flex items-center gap-3 pt-7 text-sm font-bold text-text cursor-pointer">
             <input
               type="checkbox"
               checked={form.isActive}
               onChange={(event) => setForm({ ...form, isActive: event.target.checked })}
-              className="h-4 w-4"
+              className="h-4 w-4 cursor-pointer"
             />
             Active banner
           </label>
+
+          {/* Banner Image Section */}
           <div className="sm:col-span-2 rounded-2xl border border-border bg-background p-4">
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm font-bold text-text">Banner image</span>
@@ -479,7 +518,9 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
                 <button
                   type="button"
                   onClick={() => setImageMode("upload")}
-                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors ${imageMode === "upload" ? "bg-primary text-white" : "text-muted hover:text-text"}`}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors cursor-pointer ${
+                    imageMode === "upload" ? "bg-primary text-white" : "text-muted hover:text-text"
+                  }`}
                 >
                   <UploadCloud className="h-3.5 w-3.5" />
                   Upload
@@ -487,7 +528,9 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
                 <button
                   type="button"
                   onClick={() => setImageMode("url")}
-                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors ${imageMode === "url" ? "bg-primary text-white" : "text-muted hover:text-text"}`}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors cursor-pointer ${
+                    imageMode === "url" ? "bg-primary text-white" : "text-muted hover:text-text"
+                  }`}
                 >
                   <Link2 className="h-3.5 w-3.5" />
                   URL
@@ -495,39 +538,83 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
               </div>
             </div>
 
-            {imageMode === "upload" ? (
-              <label
-                htmlFor="hero-banner-image"
-                className="mt-3 flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-surface px-4 py-5 text-center transition-colors hover:border-primary/50 hover:bg-primary/5"
-              >
-                <UploadCloud className="h-8 w-8 text-primary" />
-                <span className="mt-2 text-sm font-semibold text-text">Click to upload image</span>
-                <span className="mt-1 text-xs text-muted">PNG, JPG, WEBP up to 32MB</span>
+            {form.imageUrl ? (
+              <div className="mt-3 flex items-center gap-3 rounded-xl border border-border bg-surface p-3 shadow-xs">
+                <Image
+                  src={form.imageUrl}
+                  alt="Banner preview"
+                  height={64}
+                  width={128}
+                  className="h-16 w-32 rounded-lg object-cover border border-border shrink-0 shadow-xs"
+                />
+                <div className="flex-1 min-w-0">
+                  <span className="text-xs font-bold text-text block">Banner Image Attached</span>
+                  <p className="text-[11px] text-muted truncate font-mono">{form.imageUrl}</p>
+                </div>
+                <button
+                  type="button"
+                  title="Remove image"
+                  onClick={() => {
+                    setForm((prev) => ({ ...prev, imageUrl: "" }));
+                    setImageUrlInput("");
+                  }}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-red-600 hover:bg-red-50 transition cursor-pointer shrink-0"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            ) : imageMode === "upload" ? (
+              <label className="mt-3 flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-surface px-4 py-5 text-center transition-colors hover:border-primary/50 hover:bg-primary/5">
+                {uploadingImage ? (
+                  <span className="flex items-center gap-2 text-sm font-semibold text-primary">
+                    <Loader2 className="h-5 w-5 animate-spin" /> Uploading to ImgBB...
+                  </span>
+                ) : (
+                  <>
+                    <UploadCloud className="h-8 w-8 text-primary" />
+                    <span className="mt-2 text-sm font-semibold text-text">
+                      Click to upload image
+                    </span>
+                    <span className="mt-1 text-xs text-muted">PNG, JPG, WEBP up to 32MB</span>
+                  </>
+                )}
                 <input
-                  id="hero-banner-image"
                   type="file"
                   accept="image/png,image/jpeg,image/webp,image/gif"
-                  onChange={chooseImage}
+                  disabled={uploadingImage}
+                  onChange={handleFileUpload}
                   className="sr-only"
                 />
               </label>
             ) : (
-              <label className="mt-3 block text-xs font-semibold text-muted">
-                Image URL
+              <div className="mt-3 flex gap-2">
                 <input
                   type="url"
-                  value={form.imageUrl}
-                  onChange={(event) => setForm({ ...form, imageUrl: event.target.value })}
-                  placeholder="https://example.com/banner.jpg"
-                  className="mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm font-normal text-text outline-none focus:border-primary"
+                  value={imageUrlInput}
+                  onChange={(event) => setImageUrlInput(event.target.value)}
+                  onBlur={() => {
+                    if (imageUrlInput.trim()) setForm((prev) => ({ ...prev, imageUrl: imageUrlInput.trim() }));
+                  }}
+                  onKeyDown={handleKeyDown}
+                  placeholder="https://i.ibb.co/..."
+                  className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 text-sm font-normal text-text outline-none focus:border-primary"
                 />
-              </label>
+                <button
+                  type="button"
+                  onClick={handleUrlSubmit}
+                  className="rounded-xl bg-primary px-4 py-3 text-xs font-bold text-white hover:bg-primary/90 transition cursor-pointer"
+                >
+                  Add
+                </button>
+              </div>
             )}
           </div>
+
           <div className="flex gap-3 sm:col-span-2">
             <button
-              disabled={saving || !categoryId}
-              className="rounded-xl bg-primary px-5 py-3 font-bold text-white disabled:opacity-50"
+              type="submit"
+              disabled={saving || uploadingImage || !categoryId}
+              className="rounded-xl bg-primary px-5 py-3 font-bold text-white disabled:opacity-50 cursor-pointer"
             >
               {saving ? "Saving..." : editing ? "Save changes" : "Create banner"}
             </button>
@@ -535,13 +622,15 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
               <button
                 type="button"
                 onClick={() => resetForm()}
-                className="rounded-xl border border-border px-5 py-3 font-bold text-text"
+                className="rounded-xl border border-border px-5 py-3 font-bold text-text cursor-pointer"
               >
                 Cancel
               </button>
             )}
           </div>
         </div>
+
+        {/* Live Preview Card */}
         <div className="relative aspect-video overflow-hidden rounded-xl bg-muted-bg">
           {form.imageUrl ? (
             <>
@@ -564,7 +653,9 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
                 }
               />
               <div
-                className={`relative z-10 flex h-full flex-col justify-end p-5 ${form.textTheme === "dark" ? "text-text" : "text-white"}`}
+                className={`relative z-10 flex h-full flex-col justify-end p-5 ${
+                  form.textTheme === "dark" ? "text-text" : "text-white"
+                }`}
                 style={{
                   color:
                     (form.textTheme === "light" ? form.lightTextColor : form.darkTextColor) || undefined,
@@ -606,7 +697,7 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
               onDragStart={() => setDraggedId(banner.id)}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => onDrop(event, banner.id)}
-              className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:flex-row sm:items-center"
+              className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:flex-row sm:items-center cursor-grab active:cursor-grabbing"
             >
               <div className="relative h-28 w-full shrink-0 overflow-hidden rounded-lg bg-muted-bg sm:w-48">
                 <Image
@@ -626,7 +717,9 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
                     #{index + 1}
                   </span>
                   <span
-                    className={`rounded-md px-2 py-1 text-xs font-bold ${banner.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}
+                    className={`rounded-md px-2 py-1 text-xs font-bold ${
+                      banner.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
+                    }`}
                   >
                     {banner.isActive ? "Active" : "Inactive"}
                   </span>
@@ -642,21 +735,21 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
                 <button
                   type="button"
                   onClick={() => toggle(banner)}
-                  className="rounded-lg border border-border px-3 py-2 text-xs font-bold"
+                  className="rounded-lg border border-border px-3 py-2 text-xs font-bold cursor-pointer"
                 >
                   {banner.isActive ? "Deactivate" : "Activate"}
                 </button>
                 <button
                   type="button"
                   onClick={() => edit(banner)}
-                  className="rounded-lg border border-border px-3 py-2 text-xs font-bold"
+                  className="rounded-lg border border-border px-3 py-2 text-xs font-bold cursor-pointer"
                 >
                   Edit
                 </button>
                 <button
                   type="button"
                   onClick={() => remove(banner)}
-                  className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700"
+                  className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 cursor-pointer"
                 >
                   Delete
                 </button>
