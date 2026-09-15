@@ -6,7 +6,6 @@ import { Eye, Info, MessageSquare, Pencil } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { CouponPlacementChip, CouponStatusChip } from "./CouponStatusChip";
 import { CouponDetailModal } from "./CouponDetailModal";
-import { useConfirm } from "@/context/ConfirmDialogContext";
 import type { Coupon } from "@/types/coupon";
 
 interface CouponTableProps {
@@ -36,24 +35,17 @@ function scopeLabel(coupon: Coupon): string {
 export function CouponTable({ coupons, showOwner, onDelete, onEdit, onApprove, onReject, onReport, onResolveReport }: CouponTableProps) {
   const [viewingCoupon, setViewingCoupon] = useState<Coupon | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const confirm = useConfirm();
 
+  // NOTE: onDelete (passed in from the seller/admin coupons pages) already
+  // shows its own confirm() dialog before calling the API. Don't wrap it in
+  // a second confirm() here — the two dialogs share the same
+  // ConfirmDialogProvider state, so stacking them left the second dialog's
+  // buttons stuck disabled (isLoading from the first dialog's still-pending
+  // onConfirm), making delete look broken.
   const handleDeleteClick = async (id: string) => {
-    const confirmed = await confirm({
-      title: "Delete Coupon?",
-      message: "Are you sure you want to delete this coupon? This action cannot be undone.",
-      confirmText: "Yes, Delete",
-      cancelText: "Cancel",
-      variant: "danger",
-      onConfirm: async () => {
-        setDeletingId(id);
-        await onDelete?.(id);
-        setDeletingId(null);
-      },
-    });
-    if (!confirmed) {
-      return;
-    }
+    setDeletingId(id);
+    await onDelete?.(id);
+    setDeletingId(null);
   };
 
   if (coupons.length === 0) return null;
