@@ -37,11 +37,12 @@ export default function HomePageLoader({ progress, visible }: HomePageLoaderProp
       {/* ── Logo ── */}
       <div className="relative mb-8 h-14 w-40 sm:h-16 sm:w-48">
         <Image
-          src="/logo.png"
+          src="/shopnest-logo.png"
           alt="ShopNest"
           fill
           className="object-contain"
           priority
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
       </div>
 
