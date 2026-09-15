@@ -101,6 +101,20 @@ export async function getHeroBanners(categoryId?: string): Promise<HeroBanner[]>
   return listFrom(response);
 }
 
+/**
+ * Category ids that have at least one active, admin-configured banner image.
+ * The homepage banner uses this to list only admin-configured categories.
+ */
+export async function getBannerCategoryIds(): Promise<string[]> {
+  const response = await clientFetch<unknown>("/hero-banners/categories");
+  const body = payload(response);
+  const ids =
+    body && typeof body === "object" && "categoryIds" in body
+      ? (body as { categoryIds?: unknown }).categoryIds
+      : undefined;
+  return Array.isArray(ids) ? ids.map((id) => String(id)) : [];
+}
+
 export async function createHeroBanner(payload: Omit<HeroBanner, "id" | "createdAt" | "updatedAt">) {
   const response = await clientMutation<unknown>("/hero-banners", "POST", payload);
   return oneFrom(response);

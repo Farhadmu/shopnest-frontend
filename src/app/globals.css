@@ -175,6 +175,49 @@ a {
 }
 .shopnest-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 
+/* Premium shimmer used by loading skeletons. Moves a soft, theme-tinted
+   highlight across the surface — no hard flashing, no layout impact. */
+@keyframes shopnest-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.shimmer {
+  background-color: var(--color-muted-bg);
+  background-image: linear-gradient(
+    100deg,
+    var(--color-muted-bg) 20%,
+    color-mix(in srgb, var(--color-muted) 16%, var(--color-muted-bg)) 42%,
+    color-mix(in srgb, var(--color-primary) 12%, var(--color-muted-bg)) 52%,
+    color-mix(in srgb, var(--color-muted) 16%, var(--color-muted-bg)) 62%,
+    var(--color-muted-bg) 80%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  background-position: 200% 0;
+  animation: shopnest-shimmer 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer {
+    animation: none;
+    background-image: none;
+  }
+}
+
+/* Gentle ease-in used when the banner switches category. */
+@keyframes banner-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-banner-enter {
+  animation: banner-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-banner-enter { animation: none; }
+}
+
 @keyframes shopnest-marquee {
   0% {
     transform: translateX(0%);
@@ -192,6 +235,15 @@ a {
     transform: translateX(0%);
   }
 }
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow { animation: spin-slow 3s linear infinite; }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 .animate-marquee {
   display: flex;

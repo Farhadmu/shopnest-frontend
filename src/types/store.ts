@@ -81,6 +81,9 @@ export interface StoreData {
 
   trustScore: TrustScore;
 
+  // Share of this store's reviews that recommend it (rating >= 4). 0 when there are no reviews.
+  recommendationPercent?: number;
+
   merchantAssurance: MerchantAssuranceItem[];
 
   storeVoucher: StoreVoucher;
