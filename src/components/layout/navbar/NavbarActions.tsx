@@ -27,11 +27,11 @@ export function NavbarActions({
   mobileToggle,
 }: NavbarActionsProps) {
   return (
-    <div className="flex shrink-0 items-center gap-2">
+    <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
       {isAuthenticated && (
         <Link
           href={dashboardHref}
-          className="hidden h-10 items-center gap-1.5 rounded-xl border border-border bg-surface px-3 text-xs font-bold text-text transition hover:border-primary/40 hover:text-primary md:flex"
+          className="hidden h-10 items-center gap-1.5 rounded-xl border border-border bg-surface px-3 text-xs font-bold text-text transition hover:border-primary/40 hover:text-primary xl:flex"
         >
           Dashboard
         </Link>
@@ -41,7 +41,7 @@ export function NavbarActions({
         href="/wishlist"
         aria-label="Wishlist"
         title="Wishlist"
-        className="hidden h-10 w-10 place-items-center rounded-xl border border-border bg-surface text-muted transition hover:border-primary/40 hover:text-primary sm:grid"
+        className="hidden h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-surface text-muted transition hover:border-primary/40 hover:text-primary lg:grid"
       >
         <FaHeart size={14} />
       </Link>
@@ -52,7 +52,7 @@ export function NavbarActions({
         onClick={onOpenCart}
         aria-label={`Shopping Cart (${cartCount} items)`}
         title="Shopping Cart"
-        className="relative grid h-10 w-10 place-items-center rounded-xl border border-border bg-surface text-muted transition hover:border-primary/40 hover:text-primary cursor-pointer active:scale-95"
+        className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-surface text-muted transition hover:border-primary/40 hover:text-primary cursor-pointer active:scale-95"
       >
         <FaShoppingBag size={14} />
         {cartCount > 0 && (
