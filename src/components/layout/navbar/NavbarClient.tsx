@@ -142,7 +142,7 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
   const totalCartCount = drawerItemCount || cartCount;
 
   return (
-    <header className="sticky top-0 z-50 w-full overflow-hidden border-b border-border/80 bg-background/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 w-full border-b border-border/80 bg-background/90 backdrop-blur-xl">
       <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-8">
         <div className="flex min-h-16 items-center justify-between gap-2 lg:gap-4 xl:gap-5">
 
