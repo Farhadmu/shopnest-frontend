@@ -55,7 +55,7 @@ export function NavbarLinks({ role, isAuthenticated, categoryMenu }: NavbarLinks
   const navLinks = isAuthenticated ? mainNavItems[role] : mainNavItems.guest;
 
   return (
-    <nav className="hidden items-center gap-1.5 lg:flex mx-auto" aria-label="Main navigation">
+    <nav className="hidden min-w-0 items-center gap-1 lg:gap-1.5 lg:flex xl:mx-auto" aria-label="Main navigation">
       {categoryMenu}
       {navLinks.map((item: NavItem) => {
         const active =
@@ -65,7 +65,7 @@ export function NavbarLinks({ role, isAuthenticated, categoryMenu }: NavbarLinks
           <Link
             key={item.href}
             href={item.href}
-            className={`rounded-xl px-3.5 py-2 text-sm font-semibold transition ${
+            className={`shrink-0 rounded-xl px-2.5 py-2 text-sm font-semibold transition xl:px-3.5 ${
               active
                 ? "bg-primary/10 text-primary"
                 : "text-muted hover:bg-muted-bg hover:text-text"

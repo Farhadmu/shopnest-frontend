@@ -111,11 +111,11 @@ export const NotificationBell: React.FC = () => {
   if (isPending || !session?.user) return null;
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className="relative shrink-0" ref={containerRef}>
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg text-foreground hover:bg-muted/10 transition-colors"
+        className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-foreground hover:bg-muted/10 transition-colors"
         aria-label="Notifications"
       >
         <span className="text-lg">🔔</span>

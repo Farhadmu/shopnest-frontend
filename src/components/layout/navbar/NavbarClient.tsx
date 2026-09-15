@@ -142,9 +142,9 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
   const totalCartCount = drawerItemCount || cartCount;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/80 bg-background/90 backdrop-blur-xl">
-      <div className="mx-auto max-w-360 px-4 sm:px-6 lg:px-8">
-        <div className="flex min-h-16 items-center justify-between gap-3 lg:gap-5">
+    <header className="sticky top-0 z-50 w-full overflow-hidden border-b border-border/80 bg-background/90 backdrop-blur-xl">
+      <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-8">
+        <div className="flex min-h-16 items-center justify-between gap-2 lg:gap-4 xl:gap-5">
 
           {/* Brand + desktop search */}
           <NavbarBrand
@@ -183,7 +183,7 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
                 type="button"
                 onClick={() => setMobileMenuOpen((v) => !v)}
                 aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-                className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-surface text-text xl:hidden"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-surface text-text lg:hidden"
               >
                 {mobileMenuOpen ? <FaTimes /> : <FaBars />}
               </button>
