@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   BannerCategory,
   BannerSectionData,
+  FALLBACK_CATEGORIES,
   HeroSlide,
   PromoCard as PromoCardType,
 } from "@/lib/constants/banner";
