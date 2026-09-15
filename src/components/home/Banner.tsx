@@ -8,12 +8,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   BannerCategory,
   BannerSectionData,
-  FALLBACK_CATEGORIES,
   HeroSlide,
   PromoCard as PromoCardType,
 } from "@/lib/constants/banner";
 import { getCategories } from "@/lib/api/categories";
-import { getHeroBanners, HeroBanner } from "@/lib/api/hero-banners";
+import { getBannerCategoryIds, getHeroBanners, HeroBanner } from "@/lib/api/hero-banners";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -448,9 +447,7 @@ function CategorySidebar({
 export default function BannerSection({ data }: { data: BannerSectionData }) {
   const { heroSlides, sideCards, bottomCards } = data;
 
-  const [categories, setCategories] = useState<BannerCategory[]>(() =>
-    (data.categories ?? FALLBACK_CATEGORIES).slice(0, MAX_CATEGORIES)
-  );
+  const [categories, setCategories] = useState<BannerCategory[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [customBanners, setCustomBanners] = useState<HeroBanner[]>([]);
   const [bannerCategoryId, setBannerCategoryId] = useState<string | null>(null);
@@ -465,29 +462,29 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
 
   useEffect(() => {
     let cancelled = false;
-    getCategories()
-      .then((cats) => {
+    // Only categories that have an admin-configured banner image are listed.
+    Promise.all([getCategories(), getBannerCategoryIds()])
+      .then(([cats, bannerCategoryIds]) => {
         if (cancelled) return;
-        const slicedCats = cats.slice(0, MAX_CATEGORIES);
+        const withBanner = new Set(bannerCategoryIds);
         setCategories(
-          slicedCats.map((c, i) => ({
-            ...(FALLBACK_CATEGORIES[i % FALLBACK_CATEGORIES.length] ?? FALLBACK_CATEGORIES[0]),
-            id: c.id,
-            label: c.name,
-            href: `/products?category=${encodeURIComponent(c.name)}`,
-          }))
+          cats
+            .filter((c) => withBanner.has(c.id))
+            .slice(0, MAX_CATEGORIES)
+            .map((c) => ({
+              id: c.id,
+              label: c.name,
+              href: `/products?category=${encodeURIComponent(c.name)}`,
+            }))
         );
       })
       .catch(() => {
-        if (!cancelled) {
-          setCategories((data.categories ?? FALLBACK_CATEGORIES).slice(0, MAX_CATEGORIES));
-        }
+        if (!cancelled) setCategories([]);
       })
       .finally(() => {
         if (!cancelled) setCategoriesLoading(false);
       });
     return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
