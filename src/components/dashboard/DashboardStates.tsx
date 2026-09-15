@@ -2,24 +2,35 @@
 
 import { ReactNode } from "react";
 
-export function LoadingCard({ height = "h-24" }: { height?: string }) {
+/**
+ * Skeleton placeholder that mirrors <StatCard />'s vertical structure and
+ * height, so stat/KPI grids neither overflow nor shift when loading.
+ */
+export function LoadingCard() {
   return (
-    <div className={`rounded-2xl border border-border bg-surface p-5 animate-pulse ${height}`}>
-      <div className="flex items-center gap-3 mb-3">
+    <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm animate-pulse">
+      <div className="flex items-start justify-between gap-3">
         <div className="h-10 w-10 rounded-xl bg-muted-bg" />
-        <div className="h-4 w-24 rounded-lg bg-muted-bg" />
+        <div className="h-5 w-12 rounded-md bg-muted-bg" />
       </div>
-      <div className="h-8 w-32 rounded-lg bg-muted-bg mb-2" />
-      <div className="h-3 w-20 rounded-lg bg-muted-bg" />
+      <div className="mt-4 h-4 w-20 rounded bg-muted-bg" />
+      <div className="mt-1 h-8 w-28 rounded bg-muted-bg" />
+      <div className="mt-1 h-4 w-24 rounded bg-muted-bg" />
     </div>
   );
 }
 
-export function LoadingGrid({ count = 6, height = "h-24" }: { count?: number; height?: string }) {
+export function LoadingGrid({
+  count = 6,
+  className = "grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+}: {
+  count?: number;
+  className?: string;
+}) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className={className}>
       {Array.from({ length: count }).map((_, i) => (
-        <LoadingCard key={i} height={height} />
+        <LoadingCard key={i} />
       ))}
     </div>
   );

@@ -136,8 +136,21 @@ export async function getPublicStores(): Promise<{ stores: Store[]; categories: 
 export async function getPublicStoreDetails(identifier: string): Promise<StoreData> {
   const store = await publicFetch<BackendStoreDetails>(`/sellers/stores/${encodeURIComponent(identifier)}`);
   const products = store.products.map(normalizeProduct);
-  const rating = Number(store.rating || 0).toFixed(1);
-  const trust = Math.min(5, Math.max(0, Number(store.trustScore || 0) / 20)).toFixed(1);
+
+  // Trust metrics are derived from this store's own reviews only — never from the
+  // account-level trustScore (0-100) or any hardcoded/fallback value.
+  const reviewRatings = (store.reviews || [])
+    .map((review) => Number(review.rating))
+    .filter((value) => Number.isFinite(value) && value > 0);
+  const hasReviews = reviewRatings.length > 0;
+  const avgRating = hasReviews
+    ? reviewRatings.reduce((sum, value) => sum + value, 0) / reviewRatings.length
+    : 0;
+  const recommendationPercent = hasReviews
+    ? Math.round((reviewRatings.filter((value) => value >= 4).length / reviewRatings.length) * 100)
+    : 0;
+  const metricValue = hasReviews ? avgRating.toFixed(1) : "N/A";
+  const rating = hasReviews ? avgRating.toFixed(1) : Number(store.rating || 0).toFixed(1);
 
   return {
     id: store.slug || store.id,
@@ -156,10 +169,11 @@ export async function getPublicStoreDetails(identifier: string): Promise<StoreDa
     reviewsCountNum: String(store.ratingCount || store.reviews.length),
     products,
     trustScore: {
-      itemAsDescribed: trust,
-      communication: trust,
-      packaging: trust,
+      itemAsDescribed: metricValue,
+      communication: metricValue,
+      packaging: metricValue,
     },
+    recommendationPercent,
     merchantAssurance: [],
     storeVoucher: {
       discount: "No active voucher",

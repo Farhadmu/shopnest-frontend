@@ -19,9 +19,11 @@ export default function SellerStoreHealthPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const overall = data?.overallHealth ?? 100;
+  const overall = data?.overallHealth ?? null;
   const healthTier =
-    overall >= 80
+    overall === null
+      ? { label: "Not enough data", color: "text-muted" }
+      : overall >= 80
       ? { label: "Excellent (Ready for Growth)", color: "text-emerald-600 dark:text-emerald-400" }
       : overall >= 60
       ? { label: "Good (Steady Performance)", color: "text-primary" }
@@ -29,10 +31,15 @@ export default function SellerStoreHealthPage() {
       ? { label: "Fair (Improvement Recommended)", color: "text-amber-500" }
       : { label: "Needs Urgent Attention", color: "text-rose-500" };
 
-  const satScore = data?.metrics?.customerSatisfaction?.score ?? 100;
-  const delScore = data?.metrics?.deliveryReliability?.score ?? 100;
-  const resScore = data?.metrics?.responseRate?.score ?? 100;
-  const retScore = data?.metrics?.returnRate?.score ?? 0;
+  const satScore = data?.metrics?.customerSatisfaction?.score ?? null;
+  const delScore = data?.metrics?.deliveryReliability?.score ?? null;
+  const resScore = data?.metrics?.responseRate?.score ?? null;
+  const retScore = data?.metrics?.returnRate?.score ?? null;
+
+  const formatScore = (value: number | null) =>
+    typeof value === "number" && Number.isFinite(value) ? `${value}%` : "N/A";
+  const barWidth = (value: number | null) =>
+    typeof value === "number" && Number.isFinite(value) ? `${value}%` : "0%";
 
   return (
     <DashboardShell
@@ -46,7 +53,16 @@ export default function SellerStoreHealthPage() {
         <div className="grid gap-6 lg:grid-cols-3">
           <Panel title="Composite Store Health">
             <div className="flex flex-col items-center justify-center p-4">
-              <GaugeMeter score={overall} title="Store Health" maxScore={100} size={190} />
+              {overall === null ? (
+                <div className="flex h-44 flex-col items-center justify-center px-4 text-center">
+                  <p className="text-2xl font-black text-muted">N/A</p>
+                  <p className="mt-1 text-[11px] text-muted">
+                    Not enough store data to calculate a health score yet.
+                  </p>
+                </div>
+              ) : (
+                <GaugeMeter score={overall} title="Store Health" maxScore={100} size={190} />
+              )}
               <p className="mt-4 text-center text-xs font-black text-text">
                 Store Status: <span className={healthTier.color}>{healthTier.label}</span>
               </p>
@@ -65,11 +81,11 @@ export default function SellerStoreHealthPage() {
                       <FaStar className="text-amber-500" /> Customer Satisfaction
                     </span>
                     <span className="font-mono text-sm font-black text-primary">
-                      {satScore}%
+                      {formatScore(satScore)}
                     </span>
                   </div>
                   <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted-bg">
-                    <div className="h-full rounded-full bg-primary" style={{ width: `${satScore}%` }} />
+                    <div className="h-full rounded-full bg-primary" style={{ width: barWidth(satScore) }} />
                   </div>
                   <p className="mt-2 text-[10px] text-muted">
                     {data?.metrics?.customerSatisfaction?.status || "Based on customer reviews"}
@@ -82,11 +98,11 @@ export default function SellerStoreHealthPage() {
                       <FaTruck className="text-emerald-500" /> Delivery Reliability
                     </span>
                     <span className="font-mono text-sm font-black text-emerald-600 dark:text-emerald-400">
-                      {delScore}%
+                      {formatScore(delScore)}
                     </span>
                   </div>
                   <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted-bg">
-                    <div className="h-full rounded-full bg-emerald-500" style={{ width: `${delScore}%` }} />
+                    <div className="h-full rounded-full bg-emerald-500" style={{ width: barWidth(delScore) }} />
                   </div>
                   <p className="mt-2 text-[10px] text-muted">
                     {data?.metrics?.deliveryReliability?.status || "On-time order dispatch"}
@@ -99,11 +115,11 @@ export default function SellerStoreHealthPage() {
                       <FaComments className="text-purple-500" /> Store Profile & KYC
                     </span>
                     <span className="font-mono text-sm font-black text-purple-600 dark:text-purple-400">
-                      {resScore}%
+                      {formatScore(resScore)}
                     </span>
                   </div>
                   <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted-bg">
-                    <div className="h-full rounded-full bg-purple-500" style={{ width: `${resScore}%` }} />
+                    <div className="h-full rounded-full bg-purple-500" style={{ width: barWidth(resScore) }} />
                   </div>
                   <p className="mt-2 text-[10px] text-muted">
                     {data?.metrics?.responseRate?.status || "Store identity readiness"}
@@ -116,11 +132,11 @@ export default function SellerStoreHealthPage() {
                       <FaCheckCircle className="text-blue-500" /> Return Rate Control
                     </span>
                     <span className="font-mono text-sm font-black text-blue-600 dark:text-blue-400">
-                      {retScore}%
+                      {formatScore(retScore)}
                     </span>
                   </div>
                   <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted-bg">
-                    <div className="h-full rounded-full bg-blue-500" style={{ width: `${Math.max(10, 100 - retScore * 5)}%` }} />
+                    <div className="h-full rounded-full bg-blue-500" style={{ width: retScore === null ? "0%" : `${Math.max(10, 100 - retScore * 5)}%` }} />
                   </div>
                   <p className="mt-2 text-[10px] text-muted">
                     {data?.metrics?.returnRate?.status || "Dispute & cancellation control"}

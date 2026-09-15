@@ -324,7 +324,7 @@ export default function SellerCommandCenter() {
       <section className="mt-6">
         <h2 className="text-xs font-black uppercase tracking-wider text-muted mb-3">Core Performance KPIs</h2>
         {loading ? (
-          <LoadingGrid count={6} />
+          <LoadingGrid count={6} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6" />
         ) : metrics ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             <StatCard

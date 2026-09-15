@@ -32,6 +32,8 @@ export default function SellerSecurityCenter() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [events, setEvents] = useState<SecurityEvent[]>([]);
   const [securityScore, setSecurityScore] = useState(85);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [revokingAll, setRevokingAll] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -54,23 +56,39 @@ export default function SellerSecurityCenter() {
   useEffect(() => { loadData(); }, [loadData]);
 
   const handleRevokeSession = async (id: string) => {
+    setActionError(null);
     try {
       await clientMutation(`/security/sessions/${id}`, "DELETE");
-      setSessions((prev) => prev.filter((s) => s.id !== id));
-    } catch { /* ignore */ }
+      await loadData();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to revoke the session. Please try again.");
+    }
   };
 
   const handleRevokeAll = async () => {
+    if (revokingAll) return;
+    setRevokingAll(true);
+    setActionError(null);
     try {
       await clientMutation("/security/sessions/revoke-all", "POST");
-      setSessions((prev) => prev.map((s) => (s.isCurrentSession ? s : { ...s, status: "revoked" })));
-    } catch { /* ignore */ }
+      await loadData();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to revoke other sessions. Please try again.");
+    } finally {
+      setRevokingAll(false);
+    }
   };
 
   return (
     <DashboardShell role="Seller" title="Security Center" subtitle="Monitor sessions, devices, and security events" links={sellerDashboardLinks}>
       <div className="space-y-6">
         {error && <ErrorState message={error} onRetry={loadData} />}
+
+        {actionError && (
+          <div className="rounded-2xl border border-rose-500/30 bg-rose-500/5 p-4 text-sm font-bold text-rose-600 dark:text-rose-400">
+            {actionError}
+          </div>
+        )}
 
         {/* Security Score */}
         <div className="grid gap-4 sm:grid-cols-3">
@@ -119,8 +137,12 @@ export default function SellerSecurityCenter() {
                 </div>
               ))}
               {sessions.filter((s) => !s.isCurrentSession).length > 0 && (
-                <button onClick={handleRevokeAll} className="w-full rounded-xl bg-red-500/10 py-2.5 text-sm font-bold text-red-600 hover:bg-red-500/20 transition">
-                  Revoke All Other Sessions
+                <button
+                  onClick={handleRevokeAll}
+                  disabled={revokingAll}
+                  className="w-full rounded-xl bg-red-500/10 py-2.5 text-sm font-bold text-red-600 hover:bg-red-500/20 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {revokingAll ? "Revoking..." : "Revoke All Other Sessions"}
                 </button>
               )}
             </div>

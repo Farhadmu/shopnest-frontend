@@ -44,8 +44,9 @@ const StoreTrustCard = ({
 
       <div className="mt-5 space-y-4">
         {scores.map((score) => {
-          const percentage =
-            (Number(score.value) / 5) * 100;
+          const numeric = Number(score.value);
+          const hasValue = score.value !== "N/A" && Number.isFinite(numeric);
+          const percentage = hasValue ? (numeric / 5) * 100 : 0;
 
           return (
             <div key={score.label}>
@@ -55,7 +56,7 @@ const StoreTrustCard = ({
                 </span>
 
                 <span className="text-sm font-bold text-slate-900 dark:text-white">
-                  {score.value}/5
+                  {hasValue ? `${score.value}/5` : "N/A"}
                 </span>
               </div>
 
@@ -75,7 +76,7 @@ const StoreTrustCard = ({
       <div className="mt-5 flex items-center gap-2 rounded-xl bg-green-50 p-3 text-sm text-green-700 dark:bg-green-500/10 dark:text-green-400">
         <FaCheckCircle />
         <span>
-          99.2% of customers recommend this store
+          {store.recommendationPercent ?? 0}% of customers recommend this store
         </span>
       </div>
     </div>

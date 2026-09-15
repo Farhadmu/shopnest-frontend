@@ -42,7 +42,7 @@ export function CategoryMegaMenu({ className = "" }: { className?: string }) {
       </Link>
 
       {/* Flyout mega-menu — shown on CSS :hover, no JS needed */}
-      <div className="invisible absolute left-0 top-full z-40 pt-2 opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100">
+      <div className="invisible absolute left-0 top-full z-50 pt-2 opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100">
         <div className="w-max max-w-[min(90vw,56rem)] rounded-2xl border border-border bg-surface p-5 shadow-2xl shadow-black/10 backdrop-blur-xl">
           <div
             className="grid gap-x-8 gap-y-5"
