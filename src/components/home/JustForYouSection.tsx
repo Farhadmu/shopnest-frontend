@@ -179,7 +179,7 @@ export default function JustForYouSection() {
             <motion.span
               animate={{ scaleX: [0.7, 1.2, 0.7], opacity: [0.5, 1, 0.5] }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              className="h-[2px] w-8 origin-left rounded-full bg-gradient-to-r from-primary to-violet-500"
+              className="h-0.5 w-8 origin-left rounded-full bg-linear-to-r from-primary to-violet-500"
             />
           </motion.div>
 
