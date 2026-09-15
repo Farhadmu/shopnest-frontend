@@ -22,6 +22,7 @@ export function SmartWishlistGroups({
   const [showCreate, setShowCreate] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupIcon, setNewGroupIcon] = useState("🎮");
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     getWishlistGroups()
@@ -42,16 +43,26 @@ export function SmartWishlistGroups({
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newGroupName.trim()) return;
+    const trimmedName = newGroupName.trim();
+    if (!trimmedName) return;
+
+    setCreateError(null);
+
     try {
       await createWishlistGroup({
-        name: newGroupName.trim(),
+        name: trimmedName,
+        description: "Wishlist collection",
         icon: newGroupIcon,
+        color: "#8b5cf6",
+        productIds: [],
       });
       setNewGroupName("");
       setShowCreate(false);
       load();
-    } catch {}
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Collection could not be created.";
+      setCreateError(message);
+    }
   };
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
@@ -79,33 +90,36 @@ export function SmartWishlistGroups({
       </div>
 
       {showCreate && (
-        <form onSubmit={handleCreate} className="p-3 rounded-2xl bg-card border border-border flex items-center gap-2 text-xs">
-          <select
-            value={newGroupIcon}
-            onChange={(e) => setNewGroupIcon(e.target.value)}
-            className="px-2 py-1.5 rounded-xl border border-border bg-surface text-base"
-          >
-            <option value="🎮">🎮</option>
-            <option value="💻">💻</option>
-            <option value="👗">👗</option>
-            <option value="🎁">🎁</option>
-            <option value="🏠">🏠</option>
-            <option value="⭐">⭐</option>
-          </select>
-          <input
-            type="text"
-            placeholder="Collection name (e.g. Gaming Setup)..."
-            value={newGroupName}
-            onChange={(e) => setNewGroupName(e.target.value)}
-            className="flex-1 px-3 py-1.5 rounded-xl border border-border bg-surface text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-          <button
-            type="submit"
-            disabled={!newGroupName.trim()}
-            className="px-3 py-1.5 bg-primary text-white font-bold rounded-xl disabled:opacity-50"
-          >
-            Create
-          </button>
+        <form onSubmit={handleCreate} className="p-3 rounded-2xl bg-card border border-border flex flex-col gap-2 text-xs">
+          <div className="flex items-center gap-2">
+            <select
+              value={newGroupIcon}
+              onChange={(e) => setNewGroupIcon(e.target.value)}
+              className="px-2 py-1.5 rounded-xl border border-border bg-surface text-base"
+            >
+              <option value="🎮">🎮</option>
+              <option value="💻">💻</option>
+              <option value="👗">👗</option>
+              <option value="🎁">🎁</option>
+              <option value="🏠">🏠</option>
+              <option value="⭐">⭐</option>
+            </select>
+            <input
+              type="text"
+              placeholder="Collection name (e.g. Gaming Setup)..."
+              value={newGroupName}
+              onChange={(e) => setNewGroupName(e.target.value)}
+              className="flex-1 px-3 py-1.5 rounded-xl border border-border bg-surface text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            <button
+              type="submit"
+              disabled={!newGroupName.trim()}
+              className="px-3 py-1.5 bg-primary text-white font-bold rounded-xl disabled:opacity-50"
+            >
+              Create
+            </button>
+          </div>
+          {createError && <p className="text-[11px] text-red-400">{createError}</p>}
         </form>
       )}
 
