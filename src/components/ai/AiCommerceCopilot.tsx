@@ -35,6 +35,7 @@ import {
 import { askAdminCopilot, CopilotResponse, CopilotMetric, CopilotInsight } from "@/lib/api/admin-copilot";
 import { askCustomerCopilot, CustomerCopilotResponse } from "@/lib/api/customer-copilot";
 import { askSellerCopilot, SellerCopilotResponse } from "@/lib/api/seller-copilot";
+import { useSession } from "@/lib/auth-client";
 
 // Types
 interface Message {
@@ -284,12 +285,17 @@ function ExecutiveBriefing({ data }: { data: CopilotResponse }) {
 
 // Main Component
 export function AiCommerceCopilot({ role = "customer", compact = false }: AiCommerceCopilotProps) {
+  const { data: session } = useSession();
+  const sessionRole = (session?.user as any)?.role as "customer" | "seller" | "admin" | undefined;
+  const effectiveRole = sessionRole || role;
+
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [showBriefing, setShowBriefing] = useState(true);
+  const [conversationId, setConversationId] = useState<string | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -299,16 +305,16 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
       const welcomeMsg: Message = {
         id: "welcome",
         role: "assistant",
-        content: role === "admin"
+        content: effectiveRole === "admin"
           ? "Good morning, Admin. I'm your Marketplace Intelligence Copilot. I have live access to your marketplace data.\n\nHere's what needs your attention today."
-          : role === "seller"
+          : effectiveRole === "seller"
           ? "Welcome Seller! I'm your Business Intelligence Copilot. Ask me about sales, forecasts, or store health."
           : "Hi there! I'm your ShopNest Smart Shopping Copilot. I can help you find products, compare items, or build a budget setup.",
         timestamp: new Date(),
       };
       setMessages([welcomeMsg]);
     }
-  }, [role]);
+  }, [effectiveRole]);
 
   // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -352,7 +358,7 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
     setShowBriefing(false);
 
     try {
-      if (role === "admin") {
+      if (effectiveRole === "admin") {
         const response = await askAdminCopilot(prompt.trim());
 
         const assistantMessage: Message = {
@@ -365,9 +371,13 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
 
         setMessages((prev) => [...prev.slice(0, -1), assistantMessage]);
       } else {
-        const response = role === "seller"
-          ? await askSellerCopilot(prompt.trim())
-          : await askCustomerCopilot(prompt.trim());
+        const response = effectiveRole === "seller"
+          ? await askSellerCopilot(prompt.trim(), conversationId)
+          : await askCustomerCopilot(prompt.trim(), conversationId);
+
+        if (response.conversationId) {
+          setConversationId(response.conversationId);
+        }
 
         const assistantMessage: Message = {
           id: "assistant-" + Date.now(),
@@ -410,6 +420,7 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
       timestamp: new Date(),
     }]);
     setShowBriefing(false);
+    setConversationId(undefined);
   };
 
   // Get follow-up suggestions
@@ -467,7 +478,7 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
               )}
 
               {/* Data-rich response for admin */}
-              {m.data && role === "admin" && (
+              {m.data && effectiveRole === "admin" && (
                 <div className="mt-2 space-y-3">
                   {/* Executive briefing style for overview/briefing intents */}
                   {(m.data.intent === "EXECUTIVE_SUMMARY" || m.data.intent === "MARKETPLACE_OVERVIEW") && showBriefing ? (
@@ -506,16 +517,28 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
                   {/* Suggested Actions */}
                   {m.data.suggestedActions && m.data.suggestedActions.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
-                      {m.data.suggestedActions.map((action, i) => (
-                        <a
-                          key={i}
-                          href={action.targetUrl || "#"}
-                          className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary hover:bg-primary/20 transition-colors border border-primary/20"
-                        >
-                          {action.label}
-                          <ChevronRight className="h-2.5 w-2.5" />
-                        </a>
-                      ))}
+                      {m.data.suggestedActions.map((action, i) =>
+                        action.targetUrl ? (
+                          <a
+                            key={i}
+                            href={action.targetUrl}
+                            className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary hover:bg-primary/20 transition-colors border border-primary/20"
+                          >
+                            {action.label}
+                            <ChevronRight className="h-2.5 w-2.5" />
+                          </a>
+                        ) : (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => {}}
+                            className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary hover:bg-primary/20 transition-colors border border-primary/20 cursor-pointer"
+                          >
+                            {action.label}
+                            <ChevronRight className="h-2.5 w-2.5" />
+                          </button>
+                        )
+                      )}
                     </div>
                   )}
 
@@ -551,18 +574,78 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
                 </div>
               )}
 
-              {/* Basic copilot actions for non-admin */}
-              {m.basicData?.suggestedActions && m.basicData.suggestedActions.length > 0 && role !== "admin" && (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {m.basicData.suggestedActions.map((act, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleSend("Tell me more about " + act.label)}
-                      className="rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary hover:bg-primary/20 transition-colors"
-                    >
-                      {act.label}
-                    </button>
-                  ))}
+              {/* Data-rich response for seller/customer */}
+              {m.basicData && role !== "admin" && (
+                <div className="mt-2 space-y-3">
+                  {/* Metrics */}
+                  {m.basicData.metrics && m.basicData.metrics.length > 0 && (
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                      {m.basicData.metrics.slice(0, 6).map((metric, i) => (
+                        <MetricCard key={i} metric={metric} />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Insights */}
+                  {m.basicData.insights && m.basicData.insights.length > 0 && (
+                    <div className="space-y-2">
+                      {m.basicData.insights.slice(0, 4).map((insight, i) => (
+                        <InsightCard key={i} insight={insight} />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Sources */}
+                  {m.basicData.sources && m.basicData.sources.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {m.basicData.sources.map((source, i) => (
+                        <SourceBadge key={i} source={source} />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Suggested Actions */}
+                  {m.basicData.suggestedActions && m.basicData.suggestedActions.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {m.basicData.suggestedActions.map((action, i) =>
+                        action.targetUrl ? (
+                          <a
+                            key={i}
+                            href={action.targetUrl}
+                            className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary hover:bg-primary/20 transition-colors border border-primary/20"
+                          >
+                            {action.label}
+                            <ChevronRight className="h-2.5 w-2.5" />
+                          </a>
+                        ) : (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => {}}
+                            className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary hover:bg-primary/20 transition-colors border border-primary/20 cursor-pointer"
+                          >
+                            {action.label}
+                            <ChevronRight className="h-2.5 w-2.5" />
+                          </button>
+                        )
+                      )}
+                    </div>
+                  )}
+
+                  {/* Confidence & Time Range */}
+                  <div className="flex items-center gap-2 text-[9px] text-muted">
+                    <span className="font-medium">{m.basicData.intent || "COPILOT"}</span>
+                    <span>·</span>
+                    <span>{Math.round((m.basicData.confidence || 0) * 100)}% confidence</span>
+                    <span>·</span>
+                    <span>{m.basicData.timeRange?.label || "all time"}</span>
+                    {m.basicData.isFallback && (
+                      <>
+                        <span>·</span>
+                        <span className="text-yellow-500">fallback mode</span>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
             </>
@@ -578,11 +661,18 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
       { label: "Build gaming setup", query: "Build a complete gaming setup under ৳50,000" },
       { label: "Check compatibility", query: "Check compatibility between Laptop and DDR5 RAM" },
       { label: "Find coupons", query: "Find best available coupons for my cart" },
+      { label: "Track my order", query: "Where is my latest order?" },
+      { label: "Show wishlist", query: "Show my wishlist items" },
     ],
     seller: [
       { label: "Sales forecast", query: "What is my 30-day projected sales forecast?" },
       { label: "Campaign sim", query: "Simulate a 15% discount campaign for 7 days" },
       { label: "Store health", query: "How can I improve my store health score to 95+?" },
+      { label: "Store overview", query: "How is my store doing this month?" },
+      { label: "Top products", query: "Which products are performing best?" },
+      { label: "Low stock", query: "Which products are running low on stock?" },
+      { label: "Pending orders", query: "Show my pending orders" },
+      { label: "Review summary", query: "Summarize my recent reviews" },
     ],
     admin: ADMIN_QUICK_ACTIONS,
   };
@@ -618,12 +708,12 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className={
-              compact
-                ? "w-full space-y-4"
-                : "w-full max-w-2xl rounded-3xl border border-border bg-surface shadow-2xl flex flex-col " +
-                  (isMinimized ? "h-auto" : "h-[90vh] max-h-[700px]")
-            }
+             className={
+               compact
+                 ? "w-full space-y-4"
+                 : "w-full max-w-2xl rounded-3xl border border-border bg-surface shadow-2xl flex flex-col " +
+                   (isMinimized ? "h-auto" : "h-[85vh] max-h-[600px] md:max-h-[700px]")
+             }
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border p-4 pb-3">
@@ -633,11 +723,11 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
                 </div>
                 <div>
                   <h3 className="font-bold text-text flex items-center gap-2">
-                    ShopNest {role === "admin" ? "Admin" : role === "seller" ? "Seller" : "Shopping"} Copilot
+                    ShopNest {effectiveRole === "admin" ? "Admin" : effectiveRole === "seller" ? "Seller" : "Shopping"} Copilot
                   </h3>
                   <p className="text-[10px] font-medium text-muted flex items-center gap-1.5">
                     <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-                    {role === "admin" ? "Live marketplace context" : "AI-Powered Assistant"}
+                    {effectiveRole === "admin" ? "Live marketplace context" : "AI-Powered Assistant"}
                   </p>
                 </div>
               </div>
@@ -682,7 +772,7 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
                     <div className="flex items-center gap-2 text-xs text-muted font-semibold pl-2">
                       <span className="animate-spin text-sm">✨</span>
                       <span>
-                        {role === "admin" ? "Analyzing marketplace intelligence..." : "Thinking..."}
+                        {effectiveRole === "admin" ? "Analyzing marketplace intelligence..." : "Thinking..."}
                       </span>
                     </div>
                   )}
@@ -694,7 +784,7 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
                 {messages.length <= 2 && (
                   <div className="px-4 pb-2">
                     <div className="text-[10px] font-bold text-muted uppercase tracking-wider mb-2">
-                      {role === "admin" ? "Quick Intelligence" : "Quick Prompts"}
+                      {effectiveRole === "admin" ? "Quick Intelligence" : "Quick Prompts"}
                     </div>
                     <div className="flex gap-2 overflow-x-auto pb-2">
                       {(quickPrompts[role] || quickPrompts.customer).map((p, idx) => (
@@ -725,9 +815,9 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
                       onChange={(e) => setQuery(e.target.value)}
                       onKeyDown={handleKeyDown}
                       placeholder={
-                        role === "admin"
+                        effectiveRole === "admin"
                           ? "Ask about revenue, sellers, risks, anomalies..."
-                          : `Ask ${role} copilot anything...`
+                          : `Ask ${effectiveRole} copilot anything...`
                       }
                       className="flex-1 rounded-xl border border-border bg-background px-3.5 py-2.5 text-xs text-text placeholder:text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
                       disabled={loading}
@@ -744,10 +834,10 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
                   <div className="mt-2 flex items-center justify-between text-[9px] text-muted">
                     <span className="flex items-center gap-1">
                       <Shield className="h-2.5 w-2.5" />
-                      {role === "admin" ? "Admin-only access · Secured" : "AI-powered assistance"}
+                      {effectiveRole === "admin" ? "Admin-only access · Secured" : "AI-powered assistance"}
                     </span>
                     <span>
-                      {role === "admin" ? "Real-time database queries" : "Conversational AI"}
+                      {effectiveRole === "admin" ? "Real-time database queries" : "Conversational AI"}
                     </span>
                   </div>
                 </div>

@@ -25,6 +25,15 @@ export interface SuggestedProduct {
   stock?: number;
   images?: string[];
   imageUrl?: string;
+  matchScore?: number;
+  reason?: string;
+  strengths?: string[];
+  weaknesses?: string[];
+  bestFor?: string;
+  specifications?: Record<string, string>;
+  warrantyMonths?: number;
+  freeDelivery?: boolean;
+  sentiment?: { positive: number; neutral: number; negative: number };
 }
 
 interface ChatMessage {
@@ -97,6 +106,8 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
 
       if (suggested.length > 0) {
         setActiveProducts(suggested);
+      } else if (data?.noMatch) {
+        setActiveProducts([]);
       }
 
       const aiMsg: ChatMessage = {
@@ -157,7 +168,7 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
       {/* Main Grid: Chat Area + Recommendations Panel */}
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         {/* Left Column: Chat Conversation */}
-        <div className="flex h-[600px] flex-col rounded-3xl border border-border bg-surface shadow-xl shadow-black/5">
+        <div className="flex min-h-[400px] h-[60vh] md:h-[600px] flex-col rounded-3xl border border-border bg-surface shadow-xl shadow-black/5">
           {/* Top Bar */}
           <div className="flex items-center justify-between border-b border-border px-6 py-4 bg-muted-bg/30">
             <div className="flex items-center gap-3">
@@ -263,7 +274,7 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
         </div>
 
         {/* Right Column: Suggested Products */}
-        <div className="flex h-[600px] flex-col rounded-3xl border border-border bg-surface p-6 shadow-xl shadow-black/5">
+        <div className="flex min-h-[400px] h-[60vh] md:h-[600px] flex-col rounded-3xl border border-border bg-surface p-6 shadow-xl shadow-black/5">
           <div className="flex items-center justify-between border-b border-border pb-4">
             <div className="flex items-center gap-2">
               <FaShoppingBag className="text-primary" />
@@ -305,6 +316,22 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
                       </span>
                     </div>
 
+                    {p.matchScore !== undefined && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <div className="h-2 flex-1 rounded-full bg-muted-bg overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-primary transition-all"
+                            style={{ width: `${Math.min(100, p.matchScore)}%` }}
+                          />
+                        </div>
+                        <span className="text-[11px] font-bold text-primary">{p.matchScore}%</span>
+                      </div>
+                    )}
+
+                    {p.reason && (
+                      <p className="mt-2 text-[11px] text-muted leading-relaxed">{p.reason}</p>
+                    )}
+
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
                       <span className="rounded-md bg-muted-bg px-2 py-0.5 text-[10px] font-bold uppercase text-muted">
                         {p.category}
@@ -319,7 +346,34 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
                           {p.stock} in stock
                         </span>
                       )}
+                      {p.freeDelivery && (
+                        <span className="text-[10px] font-bold text-primary">Free delivery</span>
+                      )}
                     </div>
+
+                    {p.strengths && p.strengths.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {p.strengths.slice(0, 3).map((s, i) => (
+                          <span key={i} className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {p.weaknesses && p.weaknesses.length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {p.weaknesses.slice(0, 2).map((s, i) => (
+                          <span key={i} className="rounded-md bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold text-red-600 dark:text-red-400">
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {p.bestFor && (
+                      <p className="mt-2 text-[10px] text-muted italic">Best for: {p.bestFor}</p>
+                    )}
                   </Link>
                 );
               })
