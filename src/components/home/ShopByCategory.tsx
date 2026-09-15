@@ -23,15 +23,28 @@ function CategoryImage({ category }: { category: Category }) {
   );
 }
 
-export default function ShopByCategory() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function ShopByCategory({ initialCategories }: { 
+  /** Pre-fetched categories from HomeDataContext. Skips own getCategories() call when provided. */
+  initialCategories?: Category[];
+}) {
+  const [categories, setCategories] = useState<Category[]>(() =>
+    initialCategories ? initialCategories.filter((c) => !c.parent) : []
+  );
+  const [loading, setLoading] = useState(() => !initialCategories || initialCategories.length === 0);
   const [error, setError] = useState(false);
   const carouselRef = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
 
   useEffect(() => {
+    // If categories were pre-fetched, apply and skip fetch.
+    if (initialCategories && initialCategories.length > 0) {
+      setCategories(initialCategories.filter((c) => !c.parent));
+      setLoading(false);
+      return;
+    }
+
+    // Fallback: self-fetch (backward-compatible).
     let cancelled = false;
     getCategories()
       .then((items) => {
@@ -44,6 +57,7 @@ export default function ShopByCategory() {
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
