@@ -336,9 +336,11 @@ export default function SellerDashboard() {
     [orders]
   );
 
-  const rawHealthScore = healthData?.overallHealth ?? 0;
+  const rawHealthScore = healthData?.overallHealth ?? null;
   const healthTierNote =
-    rawHealthScore >= 80
+    rawHealthScore === null
+      ? "Not enough store data yet"
+      : rawHealthScore >= 80
       ? "Optimal rating tier"
       : rawHealthScore >= 50
       ? "Ready for Growth"
@@ -416,7 +418,7 @@ export default function SellerDashboard() {
         <StatCard
           icon="🛡️"
           label="Seller Health Index"
-          value={`${rawHealthScore}/100`}
+          value={rawHealthScore === null ? "N/A" : `${rawHealthScore}/100`}
           note={healthTierNote}
         />
         <StatCard
@@ -433,20 +435,35 @@ export default function SellerDashboard() {
           <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
             {/* Health Score Gauge & Breakdown */}
             <Panel title="🩺 Store Health Index">
-              <div className="py-2">
-                <GaugeMeter
-                  score={rawHealthScore}
-                  title="Store Health Index"
-                  size={170}
-                  type="health"
-                />
-              </div>
+              {rawHealthScore === null ? (
+                <div className="flex h-44 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-surface/50 px-6 text-center">
+                  <p className="text-2xl font-black text-muted">N/A</p>
+                  <p className="mt-1 text-[11px] text-muted max-w-xs">
+                    Not enough store data to calculate a health score yet. Add products and fulfill orders to unlock it.
+                  </p>
+                </div>
+              ) : (
+                <div className="py-2">
+                  <GaugeMeter
+                    score={rawHealthScore}
+                    title="Store Health Index"
+                    size={170}
+                    type="health"
+                  />
+                </div>
+              )}
 
               <div className="mt-4 space-y-2">
                 {healthData &&
                   Object.entries(healthData.metrics).map(([key, m]) => {
                     const formattedKey = key.replace(/([A-Z])/g, " $1");
-                    const isOptimal = m.score >= m.target;
+                    const hasScore = typeof m.score === "number" && Number.isFinite(m.score);
+                    const isOptimal = hasScore && (m.score as number) >= m.target;
+                    const isInactive =
+                      !hasScore ||
+                      m.status === "unrated" ||
+                      m.status === "pending_orders" ||
+                      m.status === "insufficient_data";
                     return (
                       <div
                         key={key}
@@ -455,19 +472,14 @@ export default function SellerDashboard() {
                         <div className="flex items-center gap-2">
                           <span
                             className={`h-2 w-2 rounded-full ${
-                              m.status === "unrated" || m.status === "pending_orders"
-                                ? "bg-muted"
-                                : isOptimal
-                                ? "bg-emerald-500"
-                                : "bg-amber-500"
+                              isInactive ? "bg-muted" : isOptimal ? "bg-emerald-500" : "bg-amber-500"
                             }`}
                           />
                           <span className="text-muted capitalize">{formattedKey}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="font-extrabold text-text">
-                            {m.score}
-                            {m.unit}
+                            {hasScore ? `${m.score}${m.unit}` : "N/A"}
                           </span>
                           <span className="text-[10px] text-muted">/ target {m.target}{m.unit}</span>
                         </div>
@@ -579,7 +591,9 @@ export default function SellerDashboard() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="rounded-xl bg-surface border border-border px-3 py-1 text-xs font-black text-primary shadow-xs">
-                  {forecastData?.confidenceScore ?? 50}% Model Confidence
+                  {forecastData?.forecastDaily && forecastData.forecastDaily.length > 0
+                    ? `${forecastData.confidenceScore}% Model Confidence`
+                    : "Confidence: N/A"}
                 </span>
               </div>
             </div>
@@ -1248,7 +1262,7 @@ export default function SellerDashboard() {
                         }`}
                       >
                         {exp.winner === "variantB"
-                          ? `Winner: Variant B (+${(exp as any).liftPercent || 15}% Lift)`
+                          ? `Winner: Variant B (+${(exp as any).liftPercent || 0}% Lift)`
                           : exp.winner === "variantA"
                           ? "Winner: Variant A (Baseline)"
                           : "Status: Live Experimenting"}

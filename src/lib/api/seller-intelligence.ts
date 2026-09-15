@@ -1,14 +1,22 @@
 import { clientFetch, clientMutation } from "@/lib/core/client";
 
+export interface HealthMetric {
+  score: number | null;
+  unit: string;
+  target: number;
+  status: string;
+}
+
 export interface SellerHealthData {
   storeName: string;
-  overallHealth: number;
+  overallHealth: number | null;
   metrics: {
-    customerSatisfaction: { score: number; unit: string; target: number; status: string };
-    responseRate: { score: number; unit: string; target: number; status: string };
-    deliveryReliability: { score: number; unit: string; target: number; status: string };
-    productQuality: { score: number; unit: string; target: number; status: string };
-    returnRate: { score: number; unit: string; target: number; status: string };
+    customerSatisfaction: HealthMetric;
+    responseRate: HealthMetric;
+    deliveryReliability: HealthMetric;
+    catalogReadiness: HealthMetric;
+    returnRate: HealthMetric;
+    [key: string]: HealthMetric;
   };
   recommendations: string[];
 }
