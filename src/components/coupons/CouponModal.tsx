@@ -542,6 +542,7 @@ export function CouponModal({ mode, isOpen, onClose, onCreated, couponToEdit }: 
 
           {/* Scope Fields */}
           <CouponScopeFields
+            mode={mode}
             scope={form.scope}
             category={form.category}
             categories={form.categories}
