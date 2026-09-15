@@ -3,7 +3,6 @@
 import BannerSection from "@/components/home/Banner";
 import ShopByCategory from "@/components/home/ShopByCategory";
 import TrustFeatures from "@/components/home/TrustFeatures";
-import VisualSearchSection from "@/components/home/VisualSearchSection";
 import SellersSection from "@/components/home/SellersSection";
 import HowItWorksSection from "@/components/home/HowItWorksSection";
 import ProofSection from "@/components/home/ProofSection";
@@ -12,49 +11,73 @@ import AiIntelligenceSection from "@/components/home/AiIntelligenceSection";
 import TrendingSection from "@/components/home/Trending/TrendingSection";
 import CouponSection from "@/components/home/CouponSection";
 import JustForYouSection from "@/components/home/JustForYouSection";
+import HomePageLoader from "@/components/common/HomePageLoader";
+import { HomeDataProvider, useHomeData } from "@/context/HomeDataContext";
 
-export default function HomePage() {
+// ---------------------------------------------------------------------------
+// Inner page content — reads from HomeDataContext
+// ---------------------------------------------------------------------------
 
+function HomePageContent() {
+  const { categories, trendingProducts, justForYouProducts, loadingProgress, isHomeReady } =
+    useHomeData();
 
   return (
-    <div className="space-y-4 overflow-hidden">
-      {/* 01 — Hero */}
-      <BannerSection data={defaultBannerData} />
+    <>
+      {/* Full-screen loader: visible while isHomeReady is false */}
+      <HomePageLoader progress={loadingProgress} visible={!isHomeReady} />
 
+      {/* Homepage content: fades in once isHomeReady */}
+      <div
+        className={[
+          "space-y-4 overflow-hidden",
+          "transition-opacity duration-500",
+          isHomeReady ? "opacity-100" : "opacity-0",
+        ].join(" ")}
+        aria-hidden={!isHomeReady}
+      >
+        {/* 01 — Hero */}
+        <BannerSection data={defaultBannerData} initialCategories={categories} />
 
+        {/* 02 — Trust */}
+        <TrustFeatures />
 
-      {/* 02 — Trust */}
-      <TrustFeatures />
+        {/* 03 — Categories */}
+        <ShopByCategory initialCategories={categories} />
 
-      {/* 03 — Categories */}
-      <ShopByCategory />
+        {/* 04 — Trending */}
+        <TrendingSection initialProducts={trendingProducts} />
 
-      {/* 04 — Trending */}
-      <TrendingSection />
+        {/* 05 — Just For You */}
+        <JustForYouSection initialProducts={justForYouProducts} />
 
-      {/* 05 — Just For You */}
-      <JustForYouSection />
+        {/* 06 — Coupon (non-critical: self-fetches with own skeleton) */}
+        <CouponSection />
 
+        {/* 07 — Sellers (non-critical: self-fetches) */}
+        <SellersSection />
 
-      {/* 06 — Coupon */}
-      <CouponSection />
+        {/* 08 — How it works (static) */}
+        <HowItWorksSection />
 
-      {/* 0 — Sellers */}
-      <SellersSection />
+        {/* 09 — AI (static/scripted UI) */}
+        <AiIntelligenceSection />
 
-      {/* 08 — Visual search */}
-      {/* <VisualSearchSection /> */}
+        {/* 10 — Reviews (static) */}
+        <ProofSection />
+      </div>
+    </>
+  );
+}
 
+// ---------------------------------------------------------------------------
+// Default export — wraps content in the data provider
+// ---------------------------------------------------------------------------
 
-      {/* 9 — How it works */}
-      <HowItWorksSection />
-
-      {/* 10 — AI */}
-      <AiIntelligenceSection />
-      
-      {/* 11 — review */}
-      <ProofSection />
-
-    </div>
+export default function HomePage() {
+  return (
+    <HomeDataProvider>
+      <HomePageContent />
+    </HomeDataProvider>
   );
 }

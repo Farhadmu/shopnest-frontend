@@ -158,7 +158,7 @@ export function CheckoutClient({ initialCart, initialAddresses }: CheckoutClient
           </div>
 
           {/* Right Column: Order Summary */}
-          <div>
+          <div className="">
             <OrderSummary
               cart={initialCart}
               division={division}
