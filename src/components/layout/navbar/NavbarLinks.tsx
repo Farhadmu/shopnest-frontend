@@ -16,7 +16,7 @@ export interface DropdownItem {
   isPrimary?: boolean;
 }
 
-export type UserRole = "customer" | "seller" | "admin" | "guest";
+export type UserRole = "customer" | "seller" | "admin" | "delivery_man" | "delivery" | "guest";
 
 export const mainNavItems: Record<UserRole, NavItem[]> = {
   guest: [
@@ -41,6 +41,18 @@ export const mainNavItems: Record<UserRole, NavItem[]> = {
     { href: "/compare", label: "Compare" },
     { href: "/dashboard/user/ai-advisor", label: "AI Advisor" },
   ],
+  delivery_man: [
+    { href: "/dashboard/delivery", label: "Delivery Cockpit" },
+    { href: "/dashboard/delivery/available", label: "Available Orders" },
+    { href: "/dashboard/delivery/my-deliveries", label: "My Missions" },
+    { href: "/dashboard/delivery/copilot", label: "AI Copilot" },
+  ],
+  delivery: [
+    { href: "/dashboard/delivery", label: "Delivery Cockpit" },
+    { href: "/dashboard/delivery/available", label: "Available Orders" },
+    { href: "/dashboard/delivery/my-deliveries", label: "My Missions" },
+    { href: "/dashboard/delivery/copilot", label: "AI Copilot" },
+  ],
 };
 
 interface NavbarLinksProps {
@@ -52,7 +64,7 @@ interface NavbarLinksProps {
 
 export function NavbarLinks({ role, isAuthenticated, categoryMenu }: NavbarLinksProps) {
   const pathname = usePathname();
-  const navLinks = isAuthenticated ? mainNavItems[role] : mainNavItems.guest;
+  const navLinks = (isAuthenticated ? mainNavItems[role] : mainNavItems.guest) || mainNavItems.guest;
 
   return (
     <nav className="hidden min-w-0 items-center gap-1 lg:gap-1.5 lg:flex xl:mx-auto" aria-label="Main navigation">

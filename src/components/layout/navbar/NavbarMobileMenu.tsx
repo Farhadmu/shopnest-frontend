@@ -32,7 +32,7 @@ export function NavbarMobileMenu({
   roleBadge,
 }: NavbarMobileMenuProps) {
   const pathname = usePathname();
-  const navLinks = isAuthenticated ? mainNavItems[role] : mainNavItems.guest;
+  const navLinks = (isAuthenticated ? mainNavItems[role] : mainNavItems.guest) || mainNavItems.guest;
 
   if (!open) return null;
 

@@ -38,6 +38,12 @@ function RoleBadge({ role }: { role: UserRole }) {
         Seller
       </span>
     );
+  if (role === "delivery_man" || role === "delivery")
+    return (
+      <span className="rounded-md bg-sky-500/15 px-2 py-0.5 text-[10px] font-black uppercase text-sky-600 dark:text-sky-400">
+        Delivery Partner
+      </span>
+    );
   return (
     <span className="rounded-md bg-primary/15 px-2 py-0.5 text-[10px] font-black uppercase text-primary">
       Customer
@@ -61,10 +67,10 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
 
   const { data: session } = useSession();
   const user = session?.user as
-    | { id?: string; name?: string; email?: string; role?: "customer" | "seller" | "admin"; image?: string }
+    | { id?: string; name?: string; email?: string; role?: "customer" | "seller" | "admin" | "delivery_man" | "delivery"; image?: string }
     | undefined;
 
-  const role: UserRole = isHydrated ? user?.role || (user ? "customer" : "guest") : "guest";
+  const role: UserRole = isHydrated ? (user?.role as UserRole) || (user ? "customer" : "guest") : "guest";
   const isAuthenticated = isHydrated && !!user;
 
   // Sync cart count
@@ -136,6 +142,7 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
   const getDashboardHref = () => {
     if (role === "admin") return "/dashboard/admin";
     if (role === "seller") return "/dashboard/seller";
+    if (role === "delivery_man" || role === "delivery") return "/dashboard/delivery";
     return "/dashboard/user";
   };
 
