@@ -14,6 +14,10 @@ export function Step1StoreProfile({ formData, onChange }: StepProps) {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
 
+  // Local state for URL inputs to prevent updating parent on every keystroke
+  const [logoUrlInput, setLogoUrlInput] = useState(formData.logo || "");
+  const [bannerUrlInput, setBannerUrlInput] = useState(formData.banner || "");
+
   const slugPreview = formData.storeName
     .toLowerCase()
     .trim()
@@ -36,6 +40,20 @@ export function Step1StoreProfile({ formData, onChange }: StepProps) {
       alert("Image upload failed. Please try again or paste direct URL.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLogoUrlSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (logoUrlInput.trim()) {
+      onChange("logo", logoUrlInput.trim());
+    }
+  };
+
+  const handleBannerUrlSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (bannerUrlInput.trim()) {
+      onChange("banner", bannerUrlInput.trim());
     }
   };
 
@@ -74,7 +92,7 @@ export function Step1StoreProfile({ formData, onChange }: StepProps) {
             value={formData.category}
             onChange={(e) => onChange("category", e.target.value)}
             required
-            className="w-full rounded-md border border-border bg-surface px-3.5 py-2 text-xs text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition"
+            className="w-full rounded-md border border-border bg-surface px-3.5 py-2 text-xs text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition cursor-pointer"
           >
             {CATEGORIES.map((cat) => (
               <option key={cat} value={cat}>
@@ -108,7 +126,7 @@ export function Step1StoreProfile({ formData, onChange }: StepProps) {
               <button
                 type="button"
                 onClick={() => setLogoMode("upload")}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded-md transition ${
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-md transition cursor-pointer ${
                   logoMode === "upload" ? "bg-primary text-white font-bold" : "text-muted hover:text-text"
                 }`}
               >
@@ -117,7 +135,7 @@ export function Step1StoreProfile({ formData, onChange }: StepProps) {
               <button
                 type="button"
                 onClick={() => setLogoMode("url")}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded-md transition ${
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-md transition cursor-pointer ${
                   logoMode === "url" ? "bg-primary text-white font-bold" : "text-muted hover:text-text"
                 }`}
               >
@@ -145,7 +163,10 @@ export function Step1StoreProfile({ formData, onChange }: StepProps) {
               <button
                 type="button"
                 title="Remove logo"
-                onClick={() => onChange("logo", "")}
+                onClick={() => {
+                  onChange("logo", "");
+                  setLogoUrlInput("");
+                }}
                 className="flex h-7 w-7 items-center justify-center rounded-md text-error hover:bg-error/10 transition cursor-pointer shrink-0"
               >
                 <FiTrash2 size={13} />
@@ -173,13 +194,24 @@ export function Step1StoreProfile({ formData, onChange }: StepProps) {
               />
             </label>
           ) : (
-            <input
-              type="url"
-              placeholder="https://i.ibb.co/..."
-              value={formData.logo}
-              onChange={(e) => onChange("logo", e.target.value)}
-              className="w-full rounded-md border border-border bg-surface px-3 py-2 text-xs text-text placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition"
-            />
+            <form onSubmit={handleLogoUrlSubmit} className="flex gap-1.5">
+              <input
+                type="url"
+                placeholder="https://i.ibb.co/..."
+                value={logoUrlInput}
+                onChange={(e) => setLogoUrlInput(e.target.value)}
+                onBlur={() => {
+                  if (logoUrlInput.trim()) onChange("logo", logoUrlInput.trim());
+                }}
+                className="flex-1 rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-text placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition"
+              />
+              <button
+                type="submit"
+                className="rounded-md bg-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-primary/90 transition cursor-pointer"
+              >
+                Add
+              </button>
+            </form>
           )}
         </div>
 
@@ -191,7 +223,7 @@ export function Step1StoreProfile({ formData, onChange }: StepProps) {
               <button
                 type="button"
                 onClick={() => setBannerMode("upload")}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded-md transition ${
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-md transition cursor-pointer ${
                   bannerMode === "upload" ? "bg-primary text-white font-bold" : "text-muted hover:text-text"
                 }`}
               >
@@ -200,7 +232,7 @@ export function Step1StoreProfile({ formData, onChange }: StepProps) {
               <button
                 type="button"
                 onClick={() => setBannerMode("url")}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded-md transition ${
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-md transition cursor-pointer ${
                   bannerMode === "url" ? "bg-primary text-white font-bold" : "text-muted hover:text-text"
                 }`}
               >
@@ -228,7 +260,10 @@ export function Step1StoreProfile({ formData, onChange }: StepProps) {
               <button
                 type="button"
                 title="Remove banner"
-                onClick={() => onChange("banner", "")}
+                onClick={() => {
+                  onChange("banner", "");
+                  setBannerUrlInput("");
+                }}
                 className="flex h-7 w-7 items-center justify-center rounded-md text-error hover:bg-error/10 transition cursor-pointer shrink-0"
               >
                 <FiTrash2 size={13} />
@@ -256,13 +291,24 @@ export function Step1StoreProfile({ formData, onChange }: StepProps) {
               />
             </label>
           ) : (
-            <input
-              type="url"
-              placeholder="https://i.ibb.co/..."
-              value={formData.banner}
-              onChange={(e) => onChange("banner", e.target.value)}
-              className="w-full rounded-md border border-border bg-surface px-3 py-2 text-xs text-text placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition"
-            />
+            <form onSubmit={handleBannerUrlSubmit} className="flex gap-1.5">
+              <input
+                type="url"
+                placeholder="https://i.ibb.co/..."
+                value={bannerUrlInput}
+                onChange={(e) => setBannerUrlInput(e.target.value)}
+                onBlur={() => {
+                  if (bannerUrlInput.trim()) onChange("banner", bannerUrlInput.trim());
+                }}
+                className="flex-1 rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-text placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition"
+              />
+              <button
+                type="submit"
+                className="rounded-md bg-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-primary/90 transition cursor-pointer"
+              >
+                Add
+              </button>
+            </form>
           )}
         </div>
       </div>
