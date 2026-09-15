@@ -116,7 +116,7 @@ export function NavbarUserMenu({ user, role, onOpenCart, onSignOut }: NavbarUser
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-border bg-surface p-2 shadow-2xl shadow-black/10 backdrop-blur-xl animate-in fade-in zoom-in-95">
+        <div className="absolute right-0 z-50 mt-2 w-64 rounded-2xl border border-border bg-surface p-2 shadow-2xl shadow-black/10 backdrop-blur-xl animate-in fade-in zoom-in-95">
           {/* User info header */}
           <div className="mb-2 rounded-xl bg-muted-bg p-3">
             <div className="flex items-center justify-between gap-2">
