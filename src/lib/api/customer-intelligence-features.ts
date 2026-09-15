@@ -255,7 +255,15 @@ export async function getWishlistGroups() {
 }
 
 export async function createWishlistGroup(data: { name: string; description?: string; icon?: string; color?: string; productIds?: string[] }) {
-  return clientMutation<WishlistGroupItem>("/customer/wishlist-groups", "POST", data);
+  const payload = {
+    name: data.name.trim(),
+    description: data.description || "Wishlist collection",
+    icon: data.icon || "🎁",
+    color: data.color || "#8b5cf6",
+    productIds: data.productIds || [],
+  };
+
+  return clientMutation<WishlistGroupItem>("/customer/wishlist-groups", "POST", payload);
 }
 
 export async function updateWishlistGroup(id: string, data: Partial<WishlistGroupItem>) {
