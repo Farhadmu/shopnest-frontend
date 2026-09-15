@@ -184,7 +184,7 @@ function AnimatedPromoCard({
           initial={{ x: "100%", opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: "-100%", opacity: 0 }}
-          transition={{ duration: 0.55, ease: SWIPE_EASE }}
+          transition={{ duration: 0.1, ease: SWIPE_EASE }}
           className="h-full"
         >
           <PromoCard card={card} imageSizes={imageSizes} className="h-full" />
@@ -497,6 +497,7 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
   const [customBanners, setCustomBanners] = useState<HeroBanner[]>([]);
   const [bannerCategoryId, setBannerCategoryId] = useState<string | null>(null);
   const [bannersLoading, setBannersLoading] = useState(false);
+  const [bannersError, setBannersError] = useState(false);
   const bannerCache = useRef(new Map<string, HeroBanner[]>());
 
   const [activeIdx, setActiveIdx] = useState(0);
@@ -570,27 +571,24 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
       setBannerCategoryId(activeCategoryId);
       setCustomBanners(cached);
       setBannersLoading(false);
+      setBannersError(false);
       return;
     }
 
     let cancelled = false;
     setBannersLoading(true);
+    setBannersError(false);
     getHeroBanners(activeCategoryId)
       .then((categoryBanners) => {
-        if (cancelled) return;
         if (cancelled) return;
         bannerCache.current.set(activeCategoryId, categoryBanners);
         setBannerCategoryId(activeCategoryId);
         setCustomBanners(categoryBanners);
       })
       .catch(() => {
-        if (!cancelled) {
-          // Mark the category as resolved (with no banners) so the skeleton
-          // never gets stuck if this request fails.
-          bannerCache.current.set(activeCategoryId, []);
-          setBannerCategoryId(activeCategoryId);
-          setCustomBanners([]);
-        }
+        // Keep whatever is already on screen and just flag the failure so the
+        // skeleton cannot get stuck on the very first load.
+        if (!cancelled) setBannersError(true);
       })
       .finally(() => {
         if (!cancelled) setBannersLoading(false);
@@ -598,18 +596,24 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
     return () => { cancelled = true; };
   }, [activeCat?.id]);
 
-  const categoryLabel = activeCat?.label ?? "ShopNest";
   const isApiCategory = Boolean(activeCat?.id && /^[a-f\d]{24}$/i.test(activeCat.id));
-  const categoryBanners = bannerCategoryId === activeCat?.id ? customBanners : [];
+
+  // Banners currently on screen. During a category switch these stay put until
+  // the next set is ready, so the swap animates instead of flashing a skeleton.
+  const categoryBanners = customBanners;
+  const hasDisplayedBanners = categoryBanners.length > 0;
   const heroBanners = categoryBanners.filter((banner) => banner.placement === "hero");
   const sideBanners = categoryBanners.filter((banner) => banner.placement === "side");
   const bottomBanners = categoryBanners.filter((banner) => banner.placement === "bottom");
-  const dynamicHeroSlides = heroBanners.length > 0
+
+  const displayedCategory = categories.find((c) => c.id === bannerCategoryId);
+  const categoryLabel = (displayedCategory ?? activeCat)?.label ?? "ShopNest";
+
+  const activeHeroSlides = heroBanners.length > 0
     ? customBannerSlides(heroBanners, categoryLabel)
-    : activeCat?.heroSlides ?? heroSlides;
-  const activeHeroSlides = isApiCategory 
-    ? (bannersLoading || heroBanners.length === 0 ? [] : customBannerSlides(heroBanners, categoryLabel))
-    : dynamicHeroSlides;
+    : isApiCategory
+      ? []
+      : activeCat?.heroSlides ?? heroSlides;
   const activeSideCards = sideBanners.length > 0
     ? customPromoCards(sideBanners, categoryLabel).slice(0, MAX_PROMO_CARDS)
     : isApiCategory
@@ -621,11 +625,12 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
       ? []
       : activeCat?.bottomCards ?? bottomCards;
 
-  // Show the skeleton until the active category's banners are actually ready,
-  // so the hero/cards never collapse for a frame before the data arrives.
+  // Show the skeleton only when there is nothing to display yet (first paint /
+  // first category). Switches keep the current banner and animate the swap.
   const bannersReadyForActive =
     !bannersLoading && Boolean(activeCat?.id) && bannerCategoryId === activeCat?.id;
-  const showBannerSkeleton = categoriesLoading || (isApiCategory && !bannersReadyForActive);
+  const showBannerSkeleton =
+    categoriesLoading || (isApiCategory && !hasDisplayedBanners && !bannersReadyForActive && !bannersError);
 
   return (
     <section
@@ -644,8 +649,16 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
 
       {/* ── Centre: Hero + bottom cards ── */}
       <div className="col-span-2 flex flex-col gap-4 sm:col-span-4 lg:col-span-7">
-        <div className="flex-1">
-          {showBannerSkeleton ? <HeroSkeleton /> : <HeroCarousel slides={activeHeroSlides} />}
+        <div className="flex-1 min-h-56 sm:min-h-72 lg:min-h-80">
+          {showBannerSkeleton ? (
+            <HeroSkeleton />
+          ) : (
+            // Remount on category change so the new banner eases in smoothly
+            // (keyed animation; no layout impact).
+            <div key={bannerCategoryId ?? "default"} className="h-full animate-banner-enter">
+              <HeroCarousel slides={activeHeroSlides} />
+            </div>
+          )}
         </div>
 
         {showBannerSkeleton ? (
