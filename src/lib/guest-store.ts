@@ -165,6 +165,11 @@ export function addGuestWishlistItem(item: {
   const newItem: WishlistItem = {
     productId: item.productId,
     addedAt: new Date().toISOString(),
+    title: item.title,
+    price: item.price,
+    image: item.image || item.images?.[0],
+    images: item.images,
+    category: item.category,
   };
   const updated = [...current, newItem];
   return saveGuestWishlist(updated);
