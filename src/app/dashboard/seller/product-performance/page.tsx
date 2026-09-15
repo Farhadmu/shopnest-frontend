@@ -137,11 +137,11 @@ export default function ProductPerformancePage() {
                 onChange={(e) => setSortKey(e.target.value as SortKey)}
                 className="bg-transparent text-xs font-bold text-text outline-none cursor-pointer"
               >
-                <option value="sold">Sort by: Best Selling</option>
-                <option value="revenue">Sort by: Highest Revenue</option>
-                <option value="rating">Sort by: Highest Rated</option>
-                <option value="stock">Sort by: Lowest Stock First</option>
-                <option value="orders">Sort by: Most Orders</option>
+                <option value="sold" className="bg-surface text-text">Sort by: Best Selling</option>
+                <option value="revenue" className="bg-surface text-text">Sort by: Highest Revenue</option>
+                <option value="rating" className="bg-surface text-text">Sort by: Highest Rated</option>
+                <option value="stock" className="bg-surface text-text">Sort by: Lowest Stock First</option>
+                <option value="orders" className="bg-surface text-text">Sort by: Most Orders</option>
               </select>
             </div>
 
