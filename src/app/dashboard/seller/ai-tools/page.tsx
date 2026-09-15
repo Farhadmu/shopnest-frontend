@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DashboardShell, Panel } from "@/components/dashboard/DashboardUI";
@@ -50,9 +50,11 @@ export default function SellerAiProductFinderPage() {
   const [targetLang, setTargetLang] = useState<"bn" | "en">("bn");
 
   const canStart = images.length > 0 && !loading;
+  const submittingRef = useRef(false);
 
   const handleStartResearch = async () => {
-    if (!canStart) return;
+    if (!canStart || submittingRef.current) return;
+    submittingRef.current = true;
     setLoading(true);
     setError(null);
     setResult(null);
@@ -76,10 +78,11 @@ export default function SellerAiProductFinderPage() {
       } else {
         setStep("upload");
       }
-    } catch {
-      setError("Research failed. Please try again with clearer images.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Research failed. Please try again with clearer images.");
       setStep("upload");
     } finally {
+      submittingRef.current = false;
       setLoading(false);
     }
   };
