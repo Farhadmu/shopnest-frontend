@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { authClient } from "@/lib/auth-client";
 import { normalizeAuthRedirect } from "@/lib/auth-redirect";
@@ -154,7 +154,6 @@ const letterReveal = {
   }),
 };
 
-import { useSearchParams } from "next/navigation";
 import { syncGuestDataToServer } from "@/lib/guest-store";
 
 /* ─── Main Login Page Component ───────────────────────────────────────────── */
@@ -167,6 +166,7 @@ export default function LoginPage() {
 }
 
 function LoginForm() {
+  const [selectedRole, setSelectedRole] = useState<"customer" | "seller" | "delivery_man">("customer");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -176,7 +176,13 @@ function LoginForm() {
   const [errorMsg, setErrorMsg] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = normalizeAuthRedirect(searchParams.get("next"));
+  const nextParam = searchParams.get("next");
+  const roleParam = searchParams.get("role");
+
+  useEffect(() => {
+    if (roleParam === "delivery_man") setSelectedRole("delivery_man");
+    else if (roleParam === "seller") setSelectedRole("seller");
+  }, [roleParam]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -188,7 +194,6 @@ function LoginForm() {
         email: email.trim().toLowerCase(),
         password,
         rememberMe,
-        callbackURL: next,
       });
       if (result.error) {
         setErrorMsg(result.error.message || "Invalid email or password.");
@@ -196,7 +201,34 @@ function LoginForm() {
       }
       // Sync guest cart & wishlist to database
       await syncGuestDataToServer();
-      router.replace(next);
+
+      // Check user role and route accordingly
+      const user = (result.data as any)?.user;
+      const userRole = user?.role || selectedRole;
+
+      if (userRole === "delivery_man" || selectedRole === "delivery_man") {
+        try {
+          const profileRes = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1"}/delivery/profile`,
+            { credentials: "include" }
+          );
+          const profileJson = await profileRes.json();
+          const deliveryProfile = profileJson.data?.profile || profileJson.profile;
+          if (deliveryProfile?.status === "approved") {
+            router.replace(nextParam || "/dashboard/delivery");
+          } else {
+            router.replace("/delivery/pending");
+          }
+        } catch {
+          router.replace("/delivery/pending");
+        }
+      } else if (userRole === "seller" || selectedRole === "seller") {
+        router.replace(nextParam || "/dashboard/seller");
+      } else if (userRole === "admin") {
+        router.replace(nextParam || "/dashboard/admin");
+      } else {
+        router.replace(normalizeAuthRedirect(nextParam));
+      }
       router.refresh();
     } catch (err) {
       console.error("Sign in error:", err);
@@ -206,12 +238,13 @@ function LoginForm() {
     }
   };
 
+
   const handleGoogleSignIn = async () => {
     if (isLoading || socialLoading) return;
     setErrorMsg("");
     setSocialLoading("google");
     try {
-      const callbackURL = `/sync?next=${encodeURIComponent(next)}`;
+      const callbackURL = `/sync?next=${encodeURIComponent(nextParam || "/")}`;
       const res = await authClient.signIn.social({
         provider: "google",
         callbackURL,
@@ -232,7 +265,7 @@ function LoginForm() {
     setErrorMsg("");
     setSocialLoading("facebook");
     try {
-      const callbackURL = `/sync?next=${encodeURIComponent(next)}`;
+      const callbackURL = `/sync?next=${encodeURIComponent(nextParam || "/")}`;
       const res = await authClient.signIn.social({
         provider: "facebook",
         callbackURL,
@@ -537,6 +570,47 @@ function LoginForm() {
                 Welcome back! Enter your details to continue.
               </motion.p>
             </motion.div>
+
+            {/* Role tabs */}
+            <motion.div
+              custom={s++}
+              variants={fadeUp}
+              initial="hidden"
+              animate="show"
+              className="relative flex p-0.5 rounded-full mb-2 bg-muted-bg border border-border"
+              role="tablist"
+              aria-label="Account type"
+            >
+              {[
+                { id: "customer", label: "🛍 Customer" },
+                { id: "seller", label: "🏪 Seller" },
+                { id: "delivery_man", label: "🚚 Rider" },
+              ].map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={selectedRole === r.id}
+                  onClick={() => {
+                    setSelectedRole(r.id as any);
+                    setErrorMsg("");
+                  }}
+                  className={`relative flex-1 z-10 rounded-full py-1 text-[11px] font-bold transition-colors duration-200 cursor-pointer ${
+                    selectedRole === r.id ? "text-white" : "text-muted hover:text-text"
+                  }`}
+                >
+                  {selectedRole === r.id && (
+                    <motion.span
+                      layoutId="login-pill"
+                      className="absolute inset-0 rounded-full bg-linear-to-r from-primary to-accent shadow-sm"
+                      transition={{ type: "spring", stiffness: 420, damping: 32 }}
+                    />
+                  )}
+                  <span className="relative z-10">{r.label}</span>
+                </button>
+              ))}
+            </motion.div>
+
 
             {/* Error alert */}
             <AnimatePresence mode="wait">

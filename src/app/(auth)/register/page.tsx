@@ -176,7 +176,7 @@ import { syncGuestDataToServer } from "@/lib/guest-store";
 import Image from "next/image";
 
 /* ─── Types ──────────────────────────────────────────────────────────────────── */
-type Role = "customer" | "seller";
+type Role = "customer" | "seller" | "delivery_man";
 
 /* ═══════════════════════════════════════════════════════════════════════════════
    Register Page Component
@@ -235,10 +235,9 @@ function RegisterForm() {
       }
       // Sync guest cart & wishlist to database
       await syncGuestDataToServer();
-      // "Seller" is only an intent here — the account role stays "customer"
-      // until the seller application form is actually submitted and
-      // approved. Selecting it just routes them straight to that form.
-      if (role === "seller") {
+      if (role === "delivery_man") {
+        router.replace("/delivery/register");
+      } else if (role === "seller") {
         router.replace("/become-seller");
       } else {
         router.replace(next);
@@ -251,6 +250,7 @@ function RegisterForm() {
       setLoading(false);
     }
   };
+
 
   const onGoogle = async () => {
     if (loading || socialLoading) return;
@@ -373,29 +373,36 @@ function RegisterForm() {
               role="tablist"
               aria-label="Account type"
             >
-              {(["customer", "seller"] as Role[]).map((r) => (
+              {[
+                { id: "customer", label: "🛍 Customer" },
+                { id: "seller", label: "🏪 Seller" },
+                { id: "delivery_man", label: "🚚 Rider" },
+              ].map((r) => (
                 <button
-                  key={r}
+                  key={r.id}
                   type="button"
                   role="tab"
-                  aria-selected={role === r}
-                  onClick={() => { setRole(r); setError(""); }}
-                  className={`relative flex-1 z-10 rounded-full py-0.5 sm:py-1 text-[11px] font-bold transition-colors duration-200 ${role === r
-                      ? "text-white"
-                      : "text-muted hover:text-text"
-                    }`}
+                  aria-selected={role === r.id}
+                  onClick={() => {
+                    setRole(r.id as Role);
+                    setError("");
+                  }}
+                  className={`relative flex-1 z-10 rounded-full py-0.5 sm:py-1 text-[11px] font-bold transition-colors duration-200 cursor-pointer ${
+                    role === r.id ? "text-white" : "text-muted hover:text-text"
+                  }`}
                 >
-                  {role === r && (
+                  {role === r.id && (
                     <motion.span
                       layoutId="reg-pill"
                       className="absolute inset-0 rounded-full bg-linear-to-r from-primary to-accent shadow-sm"
                       transition={{ type: "spring", stiffness: 420, damping: 32 }}
                     />
                   )}
-                  <span className="relative z-10">{r === "customer" ? "🛍 Customer" : "🏪 Seller"}</span>
+                  <span className="relative z-10">{r.label}</span>
                 </button>
               ))}
             </motion.div>
+
 
             {/* Error alert */}
             <AnimatePresence mode="wait">
