@@ -393,11 +393,7 @@ function CategorySidebar({
   return (
     <aside className="col-span-2 rounded-xl border border-border bg-surface p-4 sm:col-span-4 sm:p-5 lg:col-span-2">
       {loading ? (
-        <ul className="space-y-3">
-          {[...Array(MAX_CATEGORIES)].map((_, n) => (
-            <li key={n} className="h-4 w-24 animate-pulse rounded bg-muted-bg" />
-          ))}
-        </ul>
+        <CategorySidebarSkeleton />
       ) : categories.length === 0 ? (
         <p className="text-sm text-muted">No categories found.</p>
       ) : (
@@ -437,6 +433,55 @@ function CategorySidebar({
         </ul>
       )}
     </aside>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Premium loading skeletons — mirror the real banner dimensions exactly so the
+// section does not shift when content arrives.
+// ---------------------------------------------------------------------------
+
+function CategorySidebarSkeleton() {
+  return (
+    <ul
+      className="flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:overflow-visible lg:pb-0"
+      aria-hidden="true"
+    >
+      {Array.from({ length: MAX_CATEGORIES }).map((_, n) => (
+        <li key={n} className="shrink-0 lg:shrink">
+          <div className="shimmer h-8 w-24 rounded-lg sm:h-9 sm:w-28 lg:w-full" />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function HeroSkeleton() {
+  return (
+    <div className="shimmer relative h-full min-h-56 overflow-hidden rounded-xl border border-border sm:min-h-72 lg:min-h-80">
+      <div className="relative z-10 flex h-full flex-col justify-center gap-2.5 p-5 sm:gap-3 sm:p-6 lg:max-w-[55%] lg:p-8">
+        <div className="h-4 w-24 rounded-full bg-surface/50" />
+        <div className="h-7 w-11/12 rounded-md bg-surface/55 sm:h-8 lg:h-9" />
+        <div className="h-5 w-2/3 rounded-md bg-surface/45 sm:h-6 lg:h-7" />
+        <div className="mt-1 h-3 w-4/5 rounded bg-surface/40" />
+        <div className="mt-2 h-9 w-28 rounded-md bg-surface/55 sm:mt-3 sm:h-10 sm:w-32" />
+      </div>
+    </div>
+  );
+}
+
+function PromoCardSkeleton({ className = "" }: { className?: string }) {
+  return (
+    <div className={`shimmer relative overflow-hidden rounded-xl border border-border ${className}`}>
+      <div className="relative z-10 flex h-full flex-col justify-between p-4 sm:p-5">
+        <div className="space-y-2">
+          <div className="h-3 w-16 rounded-full bg-surface/50" />
+          <div className="h-4 w-3/4 rounded bg-surface/55" />
+          <div className="h-3 w-1/2 rounded bg-surface/40" />
+        </div>
+        <div className="h-7 w-20 rounded-md bg-surface/50 sm:h-8 sm:w-24" />
+      </div>
+    </div>
   );
 }
 
@@ -539,7 +584,13 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
         setCustomBanners(categoryBanners);
       })
       .catch(() => {
-        if (!cancelled) setBannersLoading(false);
+        if (!cancelled) {
+          // Mark the category as resolved (with no banners) so the skeleton
+          // never gets stuck if this request fails.
+          bannerCache.current.set(activeCategoryId, []);
+          setBannerCategoryId(activeCategoryId);
+          setCustomBanners([]);
+        }
       })
       .finally(() => {
         if (!cancelled) setBannersLoading(false);
@@ -570,6 +621,12 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
       ? []
       : activeCat?.bottomCards ?? bottomCards;
 
+  // Show the skeleton until the active category's banners are actually ready,
+  // so the hero/cards never collapse for a frame before the data arrives.
+  const bannersReadyForActive =
+    !bannersLoading && Boolean(activeCat?.id) && bannerCategoryId === activeCat?.id;
+  const showBannerSkeleton = categoriesLoading || (isApiCategory && !bannersReadyForActive);
+
   return (
     <section
       ref={sectionRef}
@@ -588,10 +645,15 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
       {/* ── Centre: Hero + bottom cards ── */}
       <div className="col-span-2 flex flex-col gap-4 sm:col-span-4 lg:col-span-7">
         <div className="flex-1">
-          <HeroCarousel slides={activeHeroSlides} />
+          {showBannerSkeleton ? <HeroSkeleton /> : <HeroCarousel slides={activeHeroSlides} />}
         </div>
 
-        {activeBottomCards.length > 0 && (
+        {showBannerSkeleton ? (
+          <div className="grid grid-cols-2 gap-4">
+            <PromoCardSkeleton className="min-h-28 sm:min-h-36" />
+            <PromoCardSkeleton className="min-h-28 sm:min-h-36" />
+          </div>
+        ) : activeBottomCards.length > 0 ? (
           <div className="grid grid-cols-2 gap-4">
             {activeBottomCards.map((card) => (
               <AnimatedPromoCard
@@ -602,11 +664,16 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
               />
             ))}
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* ── Right: Side cards ── */}
-      {activeSideCards.length > 0 && (
+      {showBannerSkeleton ? (
+        <div className="col-span-2 grid grid-cols-2 gap-4 sm:col-span-4 lg:col-span-3 lg:flex lg:flex-col">
+          <PromoCardSkeleton className="min-h-36 sm:min-h-48 lg:flex-1" />
+          <PromoCardSkeleton className="min-h-36 sm:min-h-48 lg:flex-1" />
+        </div>
+      ) : activeSideCards.length > 0 ? (
         <div className="col-span-2 grid grid-cols-2 gap-4 sm:col-span-4 lg:col-span-3 lg:flex lg:flex-col">
             {activeSideCards.map((card) => (
               <AnimatedPromoCard
@@ -617,7 +684,7 @@ export default function BannerSection({ data }: { data: BannerSectionData }) {
               />
             ))}
         </div>
-      )}
+      ) : null}
     </section>
   );
 }
