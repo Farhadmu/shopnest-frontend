@@ -40,7 +40,7 @@ export interface BusinessInfo {
   businessAddress?: string;
   nidOrTradeLicense?: string;
   taxId?: string;
-  category?: string;
+  categoryId?: string;
   payoutMethod?: "bank" | "bkash" | "nagad" | "rocket" | string;
   payoutAccountNumber?: string;
   payoutAccountName?: string;

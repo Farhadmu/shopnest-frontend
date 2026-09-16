@@ -3,16 +3,17 @@
 
 import React, { useState } from "react";
 import { FiUploadCloud, FiLink, FiTrash2, FiLoader } from "react-icons/fi";
-import { CATEGORIES } from "@/lib/constants/seller-application";
 import { uploadImageToImgBB } from "@/lib/utils/imgbb";
 import { StepProps } from "@/types/seller-application";
 import Image from "next/image";
+import { useCategories } from "@/hooks/useCategories";
 
 export function Step1StoreProfile({ formData, onChange }: StepProps) {
   const [logoMode, setLogoMode] = useState<"upload" | "url">("upload");
   const [bannerMode, setBannerMode] = useState<"upload" | "url">("upload");
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const { categories, loading: categoriesLoading, error: categoriesError } = useCategories();
 
   // Local state for URL inputs to prevent updating parent on every keystroke
   const [logoUrlInput, setLogoUrlInput] = useState(formData.logo || "");
@@ -84,23 +85,27 @@ export function Step1StoreProfile({ formData, onChange }: StepProps) {
           )}
         </div>
 
-        <div className="space-y-1">
-          <label className="block text-[11px] font-bold text-text">
-            Primary Category <span className="text-error">*</span>
-          </label>
-          <select
-            value={formData.category}
-            onChange={(e) => onChange("category", e.target.value)}
-            required
-            className="w-full rounded-md border border-border bg-surface px-3.5 py-2 text-xs text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition cursor-pointer"
-          >
-            {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
+          <div className="space-y-1">
+            <label className="block text-[11px] font-bold text-text">
+              Primary Category <span className="text-error">*</span>
+            </label>
+<select
+              value={formData.categoryId}
+              onChange={(e) => onChange("categoryId", e.target.value)}
+              required
+              disabled={categoriesLoading}
+              className="w-full rounded-md border border-border bg-surface px-3.5 py-2 text-xs text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <option value="" disabled hidden>
+                {categoriesLoading ? "Loading categories..." : categoriesError || "Select a category"}
               </option>
-            ))}
-          </select>
-        </div>
+                {categories.map((cat) => (
+                 <option key={cat.id} value={cat.id}>
+                   {cat.name}
+                 </option>
+               ))}
+            </select>
+          </div>
       </div>
 
       <div className="space-y-1">
