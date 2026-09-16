@@ -10,6 +10,7 @@ import {
   updateDeliveryStatus,
   verifyDeliveryOtp,
   updateDeliveryLocation,
+  uploadDeliveryProof,
   type DeliveryRequest,
 } from "@/lib/api/delivery";
 import {
@@ -163,13 +164,7 @@ export default function DeliveryRequestDetailPage() {
     if (!proofFile || !id) return;
     setUploadingProof(true);
     try {
-      const formData = new FormData();
-      formData.append("proof", proofFile);
-      const res = await fetch(`/api/v1/delivery/requests/${id}/proof`, {
-        method: "POST",
-        body: formData,
-      });
-      if (!res.ok) throw new Error("Failed to upload proof photo");
+      await uploadDeliveryProof(id, proofFile);
       alert("📸 Delivery proof image uploaded successfully!");
       setProofFile(null);
       await loadDelivery();

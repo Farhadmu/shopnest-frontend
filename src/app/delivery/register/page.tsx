@@ -8,6 +8,7 @@ import { useSession } from "@/lib/auth-client";
 import {
   getDeliveryProfile,
   updateDeliveryProfile,
+  uploadDeliveryDocument,
   DeliveryManPersonalInfo,
   DeliveryManIdentityInfo,
   DeliveryManLicenseInfo,
@@ -163,7 +164,7 @@ export default function DeliveryRegistrationPage() {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      alert("File size exceeds 5MB limit.");
+      setErrorMsg("File size exceeds 5MB limit.");
       return;
     }
 
@@ -171,23 +172,11 @@ export default function DeliveryRegistrationPage() {
     setErrorMsg("");
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1"}/delivery/upload-document`,
-        {
-          method: "POST",
-          body: formData,
-          credentials: "include",
-        }
-      );
-
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || "Failed to upload document");
-
-      const fileUrl = json.data?.url || json.url;
-      fieldSetter(fileUrl);
+      const res = await uploadDeliveryDocument(file);
+      const fileUrl = (res as any)?.data?.url || (res as any)?.url || "";
+      if (fileUrl) {
+        fieldSetter(fileUrl);
+      }
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to upload document");
     } finally {

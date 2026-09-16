@@ -243,6 +243,18 @@ export async function updateDeliveryProfile(data: {
   );
 }
 
+export async function uploadDeliveryDocument(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return clientMutation<{ url: string; filename: string }>("/delivery/upload-document", "POST", formData);
+}
+
+export async function uploadDeliveryProof(id: string, file: File) {
+  const formData = new FormData();
+  formData.append("proofImage", file);
+  return clientMutation<{ deliveryProofImage: string }>(`/delivery/requests/${id}/proof`, "POST", formData);
+}
+
 export async function setDeliveryAvailability(data: {
   availabilityStatus?: "offline" | "available" | "busy";
   isActive?: boolean;
