@@ -12,8 +12,8 @@ import {
   HeroSlide,
   PromoCard as PromoCardType,
 } from "@/lib/constants/banner";
-import { getCategories, type Category } from "@/lib/api/categories";
-import { getBannerCategoryIds, getHeroBanners, HeroBanner } from "@/lib/api/hero-banners";
+import { getCategories } from "@/lib/api/categories";
+import { getHeroBanners, HeroBanner } from "@/lib/api/hero-banners";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -21,9 +21,9 @@ import { getBannerCategoryIds, getHeroBanners, HeroBanner } from "@/lib/api/hero
 
 const CATEGORY_CYCLE_MS = 7000;
 const HERO_ADVANCE_MS   = 7000;
-const MAX_CATEGORIES    = 10;
-const MAX_PROMO_CARDS    = 2;
-const SWIPE_EASE = [0.22, 1, 0.36, 1] as const;
+const MAX_VISIBLE_CATEGORIES = 10;
+const MAX_PROMO_CARDS        = 2;
+const SWIPE_EASE             = [0.22, 1, 0.36, 1] as const;
 
 // ---------------------------------------------------------------------------
 // PromoCard
@@ -40,6 +40,7 @@ function PromoCard({
 }) {
   const isLight = card.textTheme === "light";
   const customTextColor = isLight ? card.lightTextColor : card.darkTextColor;
+  const customButtonColor = isLight ? card.lightButtonColor : card.darkButtonColor;
 
   return (
     <div
@@ -140,12 +141,14 @@ function PromoCard({
 
         {card.buttonText && card.buttonLink && (
           <Link
-            style={customTextColor ? { color: customTextColor } : undefined}
+            style={customButtonColor ? { backgroundColor: customButtonColor } : undefined}
             href={card.buttonLink}
             className={`mt-2 inline-block rounded-md px-3 py-1.5 text-[10px] font-bold tracking-wide transition-colors sm:mt-3 sm:px-4 sm:py-2 sm:text-[11px] ${
-              isLight
-                ? "bg-surface text-text hover:bg-muted-bg"
-                : "bg-primary text-surface hover:bg-primary-hover"
+              customButtonColor
+                ? "text-white"
+                : isLight
+                  ? "bg-surface text-text hover:bg-muted-bg"
+                  : "bg-primary text-surface hover:bg-primary-hover"
             }`}
           >
             {card.buttonText}
@@ -168,6 +171,8 @@ function PromoCard({
   );
 }
 
+const PAGE_FLIP_EASE = [0.33, 1, 0.68, 1] as const;
+
 function AnimatedPromoCard({
   card,
   imageSizes,
@@ -178,17 +183,29 @@ function AnimatedPromoCard({
   className?: string;
 }) {
   return (
-    <div className={`relative h-full overflow-hidden rounded-xl ${className}`}>
-      <AnimatePresence mode="sync" initial={false}>
+    <div
+      className={`relative h-full overflow-hidden rounded-xl [perspective:1200px] ${className}`}
+    >
+      <AnimatePresence mode="popLayout" initial={false}>
         <motion.div
-          key={card.id}
-          initial={{ x: "100%", opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: "-100%", opacity: 0 }}
-          transition={{ duration: 0.1, ease: SWIPE_EASE }}
-          className="h-full"
+          key={card.id || card.image}
+          initial={{ rotateY: 35, opacity: 0, scale: 0.96 }}
+          animate={{ rotateY: 0, opacity: 1, scale: 1 }}
+          exit={{ rotateY: -35, opacity: 0, scale: 0.96 }}
+          transition={{ duration: 0.95, ease: PAGE_FLIP_EASE }}
+          style={{ transformOrigin: "left center", transformStyle: "preserve-3d", backfaceVisibility: "hidden" }}
+          className="relative h-full w-full"
         >
           <PromoCard card={card} imageSizes={imageSizes} className="h-full" />
+
+          {/* Soft 3D page turn shadow */}
+          <motion.div
+            initial={{ opacity: 0.4 }}
+            animate={{ opacity: 0 }}
+            exit={{ opacity: 0.5 }}
+            transition={{ duration: 0.8 }}
+            className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-transparent rounded-xl"
+          />
         </motion.div>
       </AnimatePresence>
     </div>
@@ -204,6 +221,10 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   const total = slides.length;
 
   useEffect(() => {
+    setActive(0);
+  }, [slides]);
+
+  useEffect(() => {
     if (total <= 1) return;
     const timer = setInterval(() => {
       setActive((prev) => (prev + 1) % total);
@@ -217,88 +238,121 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   const slide = slides[currentIndex];
   const isLight = slide.textTheme !== "dark";
   const customTextColor = isLight ? slide.lightTextColor : slide.darkTextColor;
+  const customButtonColor = isLight ? slide.lightButtonColor : slide.darkButtonColor;
   const goTo = (index: number) => setActive((index + total) % total);
 
   return (
     <div
-      className={`group relative h-full min-h-56 overflow-hidden rounded-xl sm:min-h-72 lg:min-h-80 ${
+      className={`group relative h-full min-h-56 overflow-hidden rounded-xl sm:min-h-72 lg:min-h-80 [perspective:1400px] ${
         slide.bgClassName ?? "bg-muted-bg"
       }`}
     >
-      <div className="absolute inset-0">
-        <Image
-          src={slide.image}
-          alt={slide.title}
-          fill
-          sizes="(max-width: 1024px) 100vw, 60vw"
-          quality={100}
-          className="object-cover"
-          priority
-        />
-        <div
-          className={`absolute inset-0 ${
-            slide.overlayColor === undefined
-              ? isLight
-                ? "bg-secondary/50"
-                : "bg-surface/70"
-              : ""
-          }`}
-          style={
-            slide.overlayColor
-              ? {
-                  backgroundColor: slide.overlayColor,
-                  opacity: (slide.overlayOpacity ?? 50) / 100,
-                }
-              : undefined
-          }
-        />
+      {/* 3D Smooth Page Flip Background & Image */}
+      <div className="absolute inset-0 overflow-hidden">
+        <AnimatePresence initial={false}>
+          <motion.div
+            key={slide.id + "-" + slide.image + "-" + currentIndex}
+            initial={{ rotateY: 45, opacity: 0, x: 20, scale: 0.97 }}
+            animate={{ rotateY: 0, opacity: 1, x: 0, scale: 1 }}
+            exit={{ rotateY: -45, opacity: 0, x: -20, scale: 0.97 }}
+            transition={{ duration: 1.15, ease: PAGE_FLIP_EASE }}
+            style={{ transformOrigin: "left center", transformStyle: "preserve-3d", backfaceVisibility: "hidden" }}
+            className="absolute inset-0 shadow-2xl"
+          >
+            <Image
+              src={slide.image}
+              alt={slide.title}
+              fill
+              sizes="(max-width: 1024px) 100vw, 60vw"
+              quality={100}
+              className="object-cover"
+              priority
+            />
+            <div
+              className={`absolute inset-0 ${
+                slide.overlayColor === undefined
+                  ? isLight
+                    ? "bg-secondary/50"
+                    : "bg-surface/70"
+                  : ""
+              }`}
+              style={
+                slide.overlayColor
+                  ? {
+                      backgroundColor: slide.overlayColor,
+                      opacity: (slide.overlayOpacity ?? 50) / 100,
+                    }
+                  : undefined
+              }
+            />
+
+            {/* Page Spine & Book Fold Shadow during smooth turning */}
+            <motion.div
+              initial={{ opacity: 0.55 }}
+              animate={{ opacity: 0 }}
+              exit={{ opacity: 0.65 }}
+              transition={{ duration: 1.0 }}
+              className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/45 via-black/10 to-transparent"
+            />
+          </motion.div>
+        </AnimatePresence>
       </div>
 
-      <div
-        className="relative z-10 flex h-full flex-col justify-center gap-2 max-w-[85%] p-5 sm:max-w-[70%] sm:gap-3 sm:p-6 lg:max-w-[55%] lg:p-8"
-        style={customTextColor ? { color: customTextColor } : undefined}
-      >
-        <h2
-          style={customTextColor ? { color: customTextColor } : undefined}
-          className={`text-xl font-extrabold leading-tight sm:text-2xl lg:text-3xl ${
-            isLight ? "text-surface" : "text-text"
-          }`}
+      {/* Slide text content turning into view with the page */}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={`content-${slide.id}-${currentIndex}`}
+          initial={{ opacity: 0, x: 25, filter: "blur(3px)" }}
+          animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+          exit={{ opacity: 0, x: -15, filter: "blur(3px)" }}
+          transition={{ duration: 0.75, ease: PAGE_FLIP_EASE }}
+          className="relative z-10 flex h-full flex-col justify-center gap-2 max-w-[85%] p-5 sm:max-w-[70%] sm:gap-3 sm:p-6 lg:max-w-[55%] lg:p-8"
+          style={customTextColor ? { color: customTextColor, transformOrigin: "left center" } : { transformOrigin: "left center" }}
         >
-          {slide.title}
-        </h2>
-        {slide.subtitle && (
-          <p
+          <h2
             style={customTextColor ? { color: customTextColor } : undefined}
-            className={`text-lg font-extrabold leading-tight sm:text-xl lg:text-2xl ${
+            className={`text-xl font-extrabold leading-tight sm:text-2xl lg:text-3xl ${
               isLight ? "text-surface" : "text-text"
             }`}
           >
-            {slide.subtitle}
-          </p>
-        )}
-        {slide.description && (
-          <p
-            style={customTextColor ? { color: customTextColor } : undefined}
-            className={`mt-1 text-xs leading-relaxed sm:text-sm ${
-              isLight ? "text-surface/80" : "text-muted"
+            {slide.title}
+          </h2>
+          {slide.subtitle && (
+            <p
+              style={customTextColor ? { color: customTextColor } : undefined}
+              className={`text-lg font-extrabold leading-tight sm:text-xl lg:text-2xl ${
+                isLight ? "text-surface" : "text-text"
+              }`}
+            >
+              {slide.subtitle}
+            </p>
+          )}
+          {slide.description && (
+            <p
+              style={customTextColor ? { color: customTextColor } : undefined}
+              className={`mt-1 text-xs leading-relaxed sm:text-sm ${
+                isLight ? "text-surface/80" : "text-muted"
+              }`}
+            >
+              {slide.description}
+            </p>
+          )}
+
+          <Link
+            style={customButtonColor ? { backgroundColor: customButtonColor } : undefined}
+            href={slide.buttonLink}
+            className={`mt-3 inline-block w-fit rounded-md px-4 py-2 text-xs font-bold tracking-wide transition-colors sm:mt-4 sm:px-6 sm:py-3 sm:text-sm ${
+              customButtonColor
+                ? "text-white"
+                : isLight
+                  ? "bg-surface text-text hover:bg-muted-bg"
+                  : "bg-primary text-surface hover:bg-primary-hover"
             }`}
           >
-            {slide.description}
-          </p>
-        )}
-
-        <Link
-          style={customTextColor ? { color: customTextColor } : undefined}
-          href={slide.buttonLink}
-          className={`mt-3 inline-block w-fit rounded-md px-4 py-2 text-xs font-bold tracking-wide transition-colors sm:mt-4 sm:px-6 sm:py-3 sm:text-sm ${
-            isLight
-              ? "bg-surface text-text hover:bg-muted-bg"
-              : "bg-primary text-surface hover:bg-primary-hover"
-          }`}
-        >
-          {slide.buttonText}
-        </Link>
-      </div>
+            {slide.buttonText}
+          </Link>
+        </motion.div>
+      </AnimatePresence>
 
       {total > 1 && (
         <>
@@ -345,6 +399,8 @@ function customBannerSlides(banners: HeroBanner[], categoryLabel: string): HeroS
     overlayOpacity: banner.overlayColor ? banner.overlayOpacity ?? 50 : null,
     lightTextColor: banner.lightTextColor ?? null,
     darkTextColor: banner.darkTextColor ?? null,
+    lightButtonColor: banner.lightButtonColor ?? null,
+    darkButtonColor: banner.darkButtonColor ?? null,
     textTheme: banner.textTheme,
   }));
 }
@@ -365,6 +421,8 @@ function customPromoCards(banners: HeroBanner[], categoryLabel: string): PromoCa
     overlayOpacity: banner.overlayColor ? banner.overlayOpacity ?? 50 : null,
     lightTextColor: banner.lightTextColor ?? null,
     darkTextColor: banner.darkTextColor ?? null,
+    lightButtonColor: banner.lightButtonColor ?? null,
+    darkButtonColor: banner.darkButtonColor ?? null,
     textTheme: banner.textTheme,
   }));
 }
@@ -384,17 +442,38 @@ function CategorySidebar({
   loading: boolean;
   onSelect: (idx: number) => void;
 }) {
+  const total = categories.length;
+
+  // Sliding loop window of 10 items if total > 10
+  const visibleCategories = (() => {
+    if (total <= MAX_VISIBLE_CATEGORIES) {
+      return categories.map((cat, idx) => ({ cat, originalIdx: idx }));
+    }
+    const items = [];
+    for (let i = 0; i < MAX_VISIBLE_CATEGORIES; i++) {
+      const idx = (activeIdx + i) % total;
+      items.push({ cat: categories[idx], originalIdx: idx });
+    }
+    return items;
+  })();
+
   const listRef = useRef<HTMLUListElement>(null);
   useEffect(() => {
     if (!listRef.current) return;
-    const li = listRef.current.children[activeIdx] as HTMLElement | undefined;
-    li?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-  }, [activeIdx]);
+    if (total <= MAX_VISIBLE_CATEGORIES) {
+      const li = listRef.current.children[activeIdx] as HTMLElement | undefined;
+      li?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }
+  }, [activeIdx, total]);
 
   return (
     <aside className="col-span-2 rounded-xl border border-border bg-surface p-4 sm:col-span-4 sm:p-5 lg:col-span-2">
       {loading ? (
-        <CategorySidebarSkeleton />
+        <ul className="space-y-3">
+          {[...Array(MAX_VISIBLE_CATEGORIES)].map((_, n) => (
+            <li key={n} className="h-4 w-24 animate-pulse rounded bg-muted-bg" />
+          ))}
+        </ul>
       ) : categories.length === 0 ? (
         <p className="text-sm text-muted">No categories found.</p>
       ) : (
@@ -402,87 +481,48 @@ function CategorySidebar({
           ref={listRef}
           className="flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:overflow-visible lg:pb-0"
         >
-          {categories.map((cat, idx) => {
-            const isActive = idx === activeIdx;
-            return (
-              <li key={cat.id} className="shrink-0 lg:shrink">
-                <button
-                  type="button"
-                  title={cat.label}
-                  onClick={() => onSelect(idx)}
-                  className={`relative w-full rounded-lg px-2.5 py-2 text-left text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
-                    isActive
-                      ? "bg-primary text-surface"
-                      : "text-text hover:bg-muted-bg hover:text-primary"
-                  }`}
+          <AnimatePresence mode="popLayout" initial={false}>
+            {visibleCategories.map(({ cat, originalIdx }) => {
+              const isActive = originalIdx === activeIdx;
+              return (
+                <motion.li
+                  key={cat.id}
+                  layout
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.35, ease: "easeInOut" }}
+                  className="shrink-0 lg:shrink"
                 >
-                  <span className="block truncate pr-1">{cat.label}</span>
+                  <button
+                    type="button"
+                    title={cat.label}
+                    onClick={() => onSelect(originalIdx)}
+                    className={`relative w-full rounded-lg px-2.5 py-2 text-left text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
+                      isActive
+                        ? "bg-primary text-surface"
+                        : "text-text hover:bg-muted-bg hover:text-primary"
+                    }`}
+                  >
+                    <span className="block truncate pr-1">{cat.label}</span>
 
-                  {isActive && (
-                    <motion.span
-                      key={`progress-${idx}`}
-                      className="absolute bottom-0 left-0 h-0.75 rounded-b-lg bg-surface/40"
-                      initial={{ width: "0%" }}
-                      animate={{ width: "100%" }}
-                      transition={{ duration: CATEGORY_CYCLE_MS / 1000, ease: "linear" }}
-                    />
-                  )}
-                </button>
-              </li>
-            );
-          })}
+                    {isActive && (
+                      <motion.span
+                        key={`progress-${originalIdx}`}
+                        className="absolute bottom-0 left-0 h-0.75 rounded-b-lg bg-surface/40"
+                        initial={{ width: "0%" }}
+                        animate={{ width: "100%" }}
+                        transition={{ duration: CATEGORY_CYCLE_MS / 1000, ease: "linear" }}
+                      />
+                    )}
+                  </button>
+                </motion.li>
+              );
+            })}
+          </AnimatePresence>
         </ul>
       )}
     </aside>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Premium loading skeletons — mirror the real banner dimensions exactly so the
-// section does not shift when content arrives.
-// ---------------------------------------------------------------------------
-
-function CategorySidebarSkeleton() {
-  return (
-    <ul
-      className="flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:overflow-visible lg:pb-0"
-      aria-hidden="true"
-    >
-      {Array.from({ length: MAX_CATEGORIES }).map((_, n) => (
-        <li key={n} className="shrink-0 lg:shrink">
-          <div className="shimmer h-8 w-24 rounded-lg sm:h-9 sm:w-28 lg:w-full" />
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function HeroSkeleton() {
-  return (
-    <div className="shimmer relative h-full min-h-56 overflow-hidden rounded-xl border border-border sm:min-h-72 lg:min-h-80">
-      <div className="relative z-10 flex h-full flex-col justify-center gap-2.5 p-5 sm:gap-3 sm:p-6 lg:max-w-[55%] lg:p-8">
-        <div className="h-4 w-24 rounded-full bg-surface/50" />
-        <div className="h-7 w-11/12 rounded-md bg-surface/55 sm:h-8 lg:h-9" />
-        <div className="h-5 w-2/3 rounded-md bg-surface/45 sm:h-6 lg:h-7" />
-        <div className="mt-1 h-3 w-4/5 rounded bg-surface/40" />
-        <div className="mt-2 h-9 w-28 rounded-md bg-surface/55 sm:mt-3 sm:h-10 sm:w-32" />
-      </div>
-    </div>
-  );
-}
-
-function PromoCardSkeleton({ className = "" }: { className?: string }) {
-  return (
-    <div className={`shimmer relative overflow-hidden rounded-xl border border-border ${className}`}>
-      <div className="relative z-10 flex h-full flex-col justify-between p-4 sm:p-5">
-        <div className="space-y-2">
-          <div className="h-3 w-16 rounded-full bg-surface/50" />
-          <div className="h-4 w-3/4 rounded bg-surface/55" />
-          <div className="h-3 w-1/2 rounded bg-surface/40" />
-        </div>
-        <div className="h-7 w-20 rounded-md bg-surface/50 sm:h-8 sm:w-24" />
-      </div>
-    </div>
   );
 }
 
@@ -495,21 +535,34 @@ export default function BannerSection({
   initialCategories,
 }: {
   data: BannerSectionData;
-  /** Pre-fetched categories from HomeDataContext. When provided the component
-   *  skips its own getCategories() call, eliminating a duplicate network request. */
-  initialCategories?: Category[];
+  /** Pre-fetched categories from HomeDataContext — skips own fetch when provided. */
+  initialCategories?: import("@/lib/api/categories").Category[];
 }) {
   const { heroSlides, sideCards, bottomCards } = data;
 
-  const [categories, setCategories] = useState<BannerCategory[]>([]);
+  // Map all parent categories (without slicing to 10), so full list cycles in sidebar
+  const mapApiCategories = (cats: import("@/lib/api/categories").Category[]): BannerCategory[] =>
+    cats
+      .filter((c) => !c.parent) // only top-level (parent) categories
+      .map((c, i) => ({
+        ...(FALLBACK_CATEGORIES[i % FALLBACK_CATEGORIES.length] ?? FALLBACK_CATEGORIES[0]),
+        id: c.id,
+        label: c.name,
+        href: `/products?category=${encodeURIComponent(c.name)}`,
+      }));
+
+  const [categories, setCategories] = useState<BannerCategory[]>(() => {
+    if (initialCategories && initialCategories.length > 0) {
+      return mapApiCategories(initialCategories);
+    }
+    return data.categories ?? FALLBACK_CATEGORIES;
+  });
   const [categoriesLoading, setCategoriesLoading] = useState(
-    // If caller has already supplied categories, skip the loading state.
-    !initialCategories || initialCategories.length === 0
+    () => !initialCategories || initialCategories.length === 0
   );
   const [customBanners, setCustomBanners] = useState<HeroBanner[]>([]);
   const [bannerCategoryId, setBannerCategoryId] = useState<string | null>(null);
-  const [bannersLoading, setBannersLoading] = useState(false);
-  const [bannersError, setBannersError] = useState(false);
+  const [, setBannersLoading] = useState(false);
   const bannerCache = useRef(new Map<string, HeroBanner[]>());
 
   const [activeIdx, setActiveIdx] = useState(0);
@@ -519,47 +572,33 @@ export default function BannerSection({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    // If categories were pre-fetched by the parent, apply them directly.
+    // If pre-fetched categories are available, apply them and skip fetch.
     if (initialCategories && initialCategories.length > 0) {
-      const slicedCats = initialCategories.slice(0, MAX_CATEGORIES);
-      setCategories(
-        slicedCats.map((c, i) => ({
-          ...(FALLBACK_CATEGORIES[i % FALLBACK_CATEGORIES.length] ?? FALLBACK_CATEGORIES[0]),
-          id: c.id,
-          label: c.name,
-          href: `/products?category=${encodeURIComponent(c.name)}`,
-        }))
-      );
+      setCategories(mapApiCategories(initialCategories));
       setCategoriesLoading(false);
       return;
     }
 
-    // Fallback: fetch independently (backward-compatible).
+    // Fallback: self-fetch when no initialCategories provided.
     let cancelled = false;
-    // Only categories that have an admin-configured banner image are listed.
-    Promise.all([getCategories(), getBannerCategoryIds()])
-      .then(([cats, bannerCategoryIds]) => {
+    getCategories()
+      .then((cats) => {
         if (cancelled) return;
-        const withBanner = new Set(bannerCategoryIds);
-        setCategories(
-          cats
-            .filter((c) => withBanner.has(c.id))
-            .slice(0, MAX_CATEGORIES)
-            .map((c) => ({
-              id: c.id,
-              label: c.name,
-              href: `/products?category=${encodeURIComponent(c.name)}`,
-            }))
-        );
+        setCategories(mapApiCategories(cats));
       })
       .catch(() => {
-        if (!cancelled) setCategories([]);
+        if (!cancelled) {
+          setCategories(data.categories ?? FALLBACK_CATEGORIES);
+        }
       })
       .finally(() => {
         if (!cancelled) setCategoriesLoading(false);
       });
-    return () => { cancelled = true; };
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialCategories]);
 
   useEffect(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -599,13 +638,11 @@ export default function BannerSection({
       setBannerCategoryId(activeCategoryId);
       setCustomBanners(cached);
       setBannersLoading(false);
-      setBannersError(false);
       return;
     }
 
     let cancelled = false;
     setBannersLoading(true);
-    setBannersError(false);
     getHeroBanners(activeCategoryId)
       .then((categoryBanners) => {
         if (cancelled) return;
@@ -614,9 +651,7 @@ export default function BannerSection({
         setCustomBanners(categoryBanners);
       })
       .catch(() => {
-        // Keep whatever is already on screen and just flag the failure so the
-        // skeleton cannot get stuck on the very first load.
-        if (!cancelled) setBannersError(true);
+        if (!cancelled) setBannersLoading(false);
       })
       .finally(() => {
         if (!cancelled) setBannersLoading(false);
@@ -624,48 +659,30 @@ export default function BannerSection({
     return () => { cancelled = true; };
   }, [activeCat?.id]);
 
-  const isApiCategory = Boolean(activeCat?.id && /^[a-f\d]{24}$/i.test(activeCat.id));
-
-  // Banners currently on screen. During a category switch these stay put until
-  // the next set is ready, so the swap animates instead of flashing a skeleton.
-  const categoryBanners = customBanners;
-  const hasDisplayedBanners = categoryBanners.length > 0;
+  const categoryLabel = activeCat?.label ?? "ShopNest";
+  const categoryBanners = bannerCategoryId === activeCat?.id ? customBanners : [];
   const heroBanners = categoryBanners.filter((banner) => banner.placement === "hero");
   const sideBanners = categoryBanners.filter((banner) => banner.placement === "side");
   const bottomBanners = categoryBanners.filter((banner) => banner.placement === "bottom");
 
-  const displayedCategory = categories.find((c) => c.id === bannerCategoryId);
-  const categoryLabel = (displayedCategory ?? activeCat)?.label ?? "ShopNest";
-
   const activeHeroSlides = heroBanners.length > 0
     ? customBannerSlides(heroBanners, categoryLabel)
-    : isApiCategory
-      ? []
-      : activeCat?.heroSlides ?? heroSlides;
-  const activeSideCards = sideBanners.length > 0
-    ? customPromoCards(sideBanners, categoryLabel).slice(0, MAX_PROMO_CARDS)
-    : isApiCategory
-      ? []
-      : activeCat?.sideCards ?? sideCards;
-  const activeBottomCards = bottomBanners.length > 0
-    ? customPromoCards(bottomBanners, categoryLabel).slice(0, MAX_PROMO_CARDS)
-    : isApiCategory
-      ? []
-      : activeCat?.bottomCards ?? bottomCards;
+    : activeCat?.heroSlides ?? heroSlides;
 
-  // Show the skeleton only when there is nothing to display yet (first paint /
-  // first category). Switches keep the current banner and animate the swap.
-  const bannersReadyForActive =
-    !bannersLoading && Boolean(activeCat?.id) && bannerCategoryId === activeCat?.id;
-  const showBannerSkeleton =
-    categoriesLoading || (isApiCategory && !hasDisplayedBanners && !bannersReadyForActive && !bannersError);
+  const activeSideCards = (sideBanners.length > 0
+    ? customPromoCards(sideBanners, categoryLabel)
+    : activeCat?.sideCards ?? sideCards
+  ).slice(0, MAX_PROMO_CARDS);
+
+  const activeBottomCards = (bottomBanners.length > 0
+    ? customPromoCards(bottomBanners, categoryLabel)
+    : activeCat?.bottomCards ?? bottomCards
+  ).slice(0, MAX_PROMO_CARDS);
 
   return (
     <section
       ref={sectionRef}
       className="grid grid-cols-2 gap-4 pb-8 sm:grid-cols-4 lg:grid-cols-12"
-      onMouseEnter={() => { isPaused.current = true; }}
-      onMouseLeave={() => { isPaused.current = false; }}
     >
       {/* ── Left: Category sidebar ── */}
       <CategorySidebar
@@ -677,55 +694,37 @@ export default function BannerSection({
 
       {/* ── Centre: Hero + bottom cards ── */}
       <div className="col-span-2 flex flex-col gap-4 sm:col-span-4 lg:col-span-7">
-        <div className="flex-1 min-h-56 sm:min-h-72 lg:min-h-80">
-          {showBannerSkeleton ? (
-            <HeroSkeleton />
-          ) : (
-            // Remount on category change so the new banner eases in smoothly
-            // (keyed animation; no layout impact).
-            <div key={bannerCategoryId ?? "default"} className="h-full animate-banner-enter">
-              <HeroCarousel slides={activeHeroSlides} />
-            </div>
-          )}
+        <div className="flex-1">
+          <HeroCarousel slides={activeHeroSlides} />
         </div>
 
-        {showBannerSkeleton ? (
+        {activeBottomCards.length > 0 && (
           <div className="grid grid-cols-2 gap-4">
-            <PromoCardSkeleton className="min-h-28 sm:min-h-36" />
-            <PromoCardSkeleton className="min-h-28 sm:min-h-36" />
-          </div>
-        ) : activeBottomCards.length > 0 ? (
-          <div className="grid grid-cols-2 gap-4">
-            {activeBottomCards.map((card) => (
+            {activeBottomCards.map((card, idx) => (
               <AnimatedPromoCard
-                key={card.id}
+                key={`bottom-slot-${idx}`}
                 card={card}
                 imageSizes="(max-width: 1024px) 50vw, 25vw"
                 className="min-h-28 sm:min-h-36"
               />
             ))}
           </div>
-        ) : null}
+        )}
       </div>
 
       {/* ── Right: Side cards ── */}
-      {showBannerSkeleton ? (
+      {activeSideCards.length > 0 && (
         <div className="col-span-2 grid grid-cols-2 gap-4 sm:col-span-4 lg:col-span-3 lg:flex lg:flex-col">
-          <PromoCardSkeleton className="min-h-36 sm:min-h-48 lg:flex-1" />
-          <PromoCardSkeleton className="min-h-36 sm:min-h-48 lg:flex-1" />
+          {activeSideCards.map((card, idx) => (
+            <AnimatedPromoCard
+              key={`side-slot-${idx}`}
+              card={card}
+              imageSizes="(max-width: 1024px) 50vw, 25vw"
+              className="min-h-36 sm:min-h-48 lg:flex-1"
+            />
+          ))}
         </div>
-      ) : activeSideCards.length > 0 ? (
-        <div className="col-span-2 grid grid-cols-2 gap-4 sm:col-span-4 lg:col-span-3 lg:flex lg:flex-col">
-            {activeSideCards.map((card) => (
-              <AnimatedPromoCard
-                key={card.id}
-                card={card}
-                imageSizes="(max-width: 1024px) 50vw, 25vw"
-                className="min-h-36 sm:min-h-48 lg:flex-1"
-              />
-            ))}
-        </div>
-      ) : null}
+      )}
     </section>
   );
 }
