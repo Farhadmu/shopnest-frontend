@@ -17,6 +17,7 @@ import { NavbarActions } from "./NavbarActions";
 import { NavbarUserMenu, NavbarAuthButtons } from "./NavbarUserMenu";
 import { NavbarMobileMenu } from "./NavbarMobileMenu";
 import type { UserRole } from "./NavbarLinks";
+import { motion, AnimatePresence } from "motion/react";
 
 interface NavbarClientProps {
   /** Server-rendered CategoryMegaMenu for desktop nav */
@@ -59,6 +60,9 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [cartCount, setCartCount] = useState(0);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
   const isHydrated = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -72,6 +76,39 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
 
   const role: UserRole = isHydrated ? (user?.role as UserRole) || (user ? "customer" : "guest") : "guest";
   const isAuthenticated = isHydrated && !!user;
+
+  // Scroll detection with 24px threshold and passive RAF throttling
+  useEffect(() => {
+    let ticking = false;
+
+    const updateScroll = () => {
+      const scrolled = window.scrollY > 24;
+      setIsScrolled((prev) => (prev !== scrolled ? scrolled : prev));
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(updateScroll);
+        ticking = true;
+      }
+    };
+
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    updateScroll();
+    checkMobile();
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", checkMobile, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", checkMobile);
+    };
+  }, []);
 
   // Sync cart count
   useEffect(() => {
@@ -147,92 +184,141 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
   };
 
   const totalCartCount = drawerItemCount || cartCount;
+  const isPill = isScrolled && !mobileMenuOpen;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-indigo-500/20 bg-linear-to-r from-indigo-600/90 via-violet-600/90 to-purple-600/90 backdrop-blur-xl">
-      <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-8">
-        <div className="flex min-h-16 items-center justify-between gap-2 lg:gap-4 xl:gap-5">
+    <motion.header
+      className="fixed top-0 z-50 w-full pointer-events-none flex justify-center"
+      initial={false}
+      animate={{
+        paddingTop: isPill ? (isMobile ? 8 : 12) : 0,
+        paddingLeft: isPill ? (isMobile ? 10 : 20) : 0,
+        paddingRight: isPill ? (isMobile ? 10 : 20) : 0,
+      }}
+      transition={{
+        duration: 0.35,
+        ease: [0.25, 0.1, 0.25, 1],
+      }}
+    >
+      <motion.div
+        className="pointer-events-auto relative w-full border border-indigo-500/20 bg-linear-to-r from-indigo-600/90 via-violet-600/90 to-purple-600/90 dark:from-indigo-950/90 dark:via-purple-950/90 dark:to-violet-950/90 backdrop-blur-xl transition-colors duration-300"
+        initial={false}
+        animate={{
+          maxWidth: isPill ? 1400 : 99999,
+          borderRadius: isPill ? 9999 : (isScrolled && mobileMenuOpen ? 24 : 0),
+          borderColor: isScrolled
+            ? "rgba(255, 255, 255, 0.28)"
+            : "rgba(99, 102, 241, 0.2)",
+          boxShadow: isScrolled
+            ? "0 14px 36px -8px rgba(0, 0, 0, 0.28), 0 4px 14px -2px rgba(79, 70, 229, 0.18)"
+            : "0 0 0 0 rgba(0, 0, 0, 0)",
+          borderBottomWidth: 1,
+          borderTopWidth: isPill ? 1 : (isScrolled && mobileMenuOpen ? 1 : 0),
+          borderLeftWidth: isPill ? 1 : (isScrolled && mobileMenuOpen ? 1 : 0),
+          borderRightWidth: isPill ? 1 : (isScrolled && mobileMenuOpen ? 1 : 0),
+        }}
+        transition={{
+          duration: 0.35,
+          ease: [0.25, 0.1, 0.25, 1],
+        }}
+      >
+        <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-8">
+          <div className="flex min-h-16 items-center justify-between gap-2 lg:gap-4 xl:gap-5">
 
-          {/* Brand + desktop search */}
-          <NavbarBrand
-            onClose={() => setMobileMenuOpen(false)}
-            search={search}
-            setSearch={setSearch}
-          />
+            {/* Brand + desktop search */}
+            <NavbarBrand
+              onClose={() => setMobileMenuOpen(false)}
+              search={search}
+              setSearch={setSearch}
+              isScrolled={isScrolled}
+            />
 
-          {/* Desktop nav links + server category menu */}
-          <NavbarLinks
-            role={role}
-            isAuthenticated={isAuthenticated}
-            categoryMenu={desktopCategoryMenu}
-          />
+            {/* Desktop nav links + server category menu */}
+            <NavbarLinks
+              role={role}
+              isAuthenticated={isAuthenticated}
+              categoryMenu={desktopCategoryMenu}
+            />
 
-          {/* Right-side actions */}
-          <NavbarActions
-            isAuthenticated={isAuthenticated}
-            dashboardHref={getDashboardHref()}
-            cartCount={totalCartCount}
-            onOpenCart={openCart}
-            userSlot={
-              isAuthenticated ? (
-                <NavbarUserMenu
-                  user={user}
-                  role={role}
-                  onOpenCart={openCart}
-                  onSignOut={handleSignOut}
-                />
-              ) : (
-                <NavbarAuthButtons onClose={() => setMobileMenuOpen(false)} />
-              )
-            }
-            mobileToggle={
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen((v) => !v)}
-                aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/25 bg-white/15 text-white transition hover:bg-white/25 lg:hidden"
-              >
-                {mobileMenuOpen ? <FaTimes /> : <FaBars />}
-              </button>
-            }
-          />
-        </div>
-
-        {/* Mobile search bar */}
-          <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const q = search.trim();
-            router.push(q ? `/products?search=${encodeURIComponent(q)}` : "/products");
-            setMobileMenuOpen(false);
-          }}
-          className="pb-3 md:hidden"
-        >
-          <div className="flex h-11 items-center rounded-xl border border-white/25 bg-white/15 px-3 focus-within:bg-white/25">
-            <FaSearch className="text-white/70" size={14} />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search ShopNest..."
-              className="min-w-0 flex-1 bg-transparent px-3 text-sm text-white outline-none placeholder:text-white/50"
+            {/* Right-side actions */}
+            <NavbarActions
+              isAuthenticated={isAuthenticated}
+              dashboardHref={getDashboardHref()}
+              cartCount={totalCartCount}
+              onOpenCart={openCart}
+              userSlot={
+                isAuthenticated ? (
+                  <NavbarUserMenu
+                    user={user}
+                    role={role}
+                    onOpenCart={openCart}
+                    onSignOut={handleSignOut}
+                  />
+                ) : (
+                  <NavbarAuthButtons onClose={() => setMobileMenuOpen(false)} />
+                )
+              }
+              mobileToggle={
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen((v) => !v)}
+                  aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/25 bg-white/15 text-white transition hover:bg-white/25 lg:hidden"
+                >
+                  {mobileMenuOpen ? <FaTimes /> : <FaBars />}
+                </button>
+              }
             />
           </div>
-        </form>
 
-        {/* Mobile dropdown */}
-        <NavbarMobileMenu
-          key={pathname}
-          open={mobileMenuOpen}
-          isAuthenticated={isAuthenticated}
-          user={user}
-          role={role}
-          dashboardHref={getDashboardHref()}
-          onClose={() => setMobileMenuOpen(false)}
-          onSignOut={handleSignOut}
-          categoryMenuSlot={mobileCategoryMenu}
-          roleBadge={<RoleBadge role={role} />}
-        />
-      </div>
-    </header>
+          {/* Mobile search bar */}
+          <AnimatePresence>
+            {(!isScrolled || mobileMenuOpen) && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25, ease: "easeInOut" }}
+                className="overflow-hidden md:hidden"
+              >
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const q = search.trim();
+                    router.push(q ? `/products?search=${encodeURIComponent(q)}` : "/products");
+                    setMobileMenuOpen(false);
+                  }}
+                  className="pb-3"
+                >
+                  <div className="flex h-11 items-center rounded-xl border border-white/25 bg-white/15 px-3 focus-within:bg-white/25">
+                    <FaSearch className="text-white/70" size={14} />
+                    <input
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Search ShopNest..."
+                      className="min-w-0 flex-1 bg-transparent px-3 text-sm text-white outline-none placeholder:text-white/50"
+                    />
+                  </div>
+                </form>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Mobile dropdown */}
+          <NavbarMobileMenu
+            key={pathname}
+            open={mobileMenuOpen}
+            isAuthenticated={isAuthenticated}
+            user={user}
+            role={role}
+            dashboardHref={getDashboardHref()}
+            onClose={() => setMobileMenuOpen(false)}
+            onSignOut={handleSignOut}
+            categoryMenuSlot={mobileCategoryMenu}
+            roleBadge={<RoleBadge role={role} />}
+          />
+        </div>
+      </motion.div>
+    </motion.header>
   );
 }
