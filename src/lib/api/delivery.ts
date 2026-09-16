@@ -53,6 +53,9 @@ export interface DeliveryManVehicleInfo {
   vehicleBackPhoto?: string;
   vehicleFitnessExpiryDate?: string;
   vehicleCapacity?: number;
+  packageCapacity?: number;
+  weightCapacityKg?: number;
+  volumeCapacityLiters?: number;
 }
 
 export interface DeliveryManBankInfo {
@@ -95,10 +98,13 @@ export interface DeliveryManDetails {
   bank?: DeliveryManBankInfo;
   preferences?: DeliveryManPreferences;
   isActive: boolean;
-  availabilityStatus: "offline" | "available" | "busy";
+  availabilityStatus: "offline" | "available" | "busy" | "full_capacity" | "on_break" | "suspended";
   currentLocation?: {
     latitude: number;
     longitude: number;
+    speed?: number;
+    heading?: number;
+    accuracy?: number;
     updatedAt?: string;
   };
   rating: number;
@@ -110,7 +116,7 @@ export interface DeliveryManDetails {
 }
 
 export interface DeliveryStats {
-  availabilityStatus: "offline" | "available" | "busy";
+  availabilityStatus: "offline" | "available" | "busy" | "full_capacity" | "on_break" | "suspended";
   isActive: boolean;
   totalDeliveries: number;
   completedDeliveries: number;
@@ -157,21 +163,34 @@ export interface DeliveryRequest {
   priority: "normal" | "high" | "urgent";
   pickupAddress?: string;
   deliveryAddress?: string;
+  pickupCoordinates?: { latitude: number; longitude: number } | null;
+  deliveryCoordinates?: { latitude: number; longitude: number } | null;
   pickupContact?: string;
   deliveryContact?: string;
-  estimatedDistance?: number;
   deliveryFee?: number;
-  sellerNotes?: string;
+  estimatedDistance?: number;
+  distanceKm?: number;
   packageInfo?: {
     weight?: number;
     dimensions?: string;
-    specialInstructions?: string;
     fragile?: boolean;
+    specialInstructions?: string;
   };
-  pickupCoordinates?: { latitude: number; longitude: number } | null;
-  deliveryCoordinates?: { latitude: number; longitude: number } | null;
-  createdAt: string;
-  updatedAt: string;
+  ranking?: {
+    pickupDistanceKm?: number | null;
+    estimatedTravelMinutes?: number | null;
+    fitsCapacity?: boolean;
+    fitsWeight?: boolean;
+    routeCompatibility?: string;
+    remainingSlots?: number;
+    remainingWeightKg?: number;
+  };
+  facts?: Record<string, any>;
+  calculations?: Record<string, any>;
+  inferences?: Record<string, any>;
+  sellerNotes?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface DeliveryIncident {
@@ -446,4 +465,26 @@ export async function markOrderReadyForPickup(orderId: string, data?: { packageI
     "POST",
     data || {}
   );
+}
+
+// ─── Admin Delivery Demand Heatmap ──────────────────────────────────────────
+
+export interface DeliveryHeatmapPoint {
+  latitude: number;
+  longitude: number;
+  weight: number;
+  count: number;
+  address?: string;
+}
+
+export interface DeliveryHeatmapResponse {
+  timeRange: string;
+  totalDeliveriesAnalyzed: number;
+  pointCount: number;
+  points: DeliveryHeatmapPoint[];
+}
+
+export async function getAdminDeliveryHeatmap(timeRange: "today" | "7d" | "30d" | "all" = "30d"): Promise<DeliveryHeatmapResponse> {
+  const res = await clientFetch<{ data: DeliveryHeatmapResponse }>(`/delivery/admin/heatmap?timeRange=${timeRange}`);
+  return (res as any)?.data ?? res;
 }
