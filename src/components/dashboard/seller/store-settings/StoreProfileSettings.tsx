@@ -1,36 +1,15 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { FaStore } from "react-icons/fa";
-import { FiImage, FiTag, FiFileText } from "react-icons/fi";
-
-const CATEGORIES = [
-  "Electronics & Gadgets",
-  "Fashion & Apparel",
-  "Home & Living",
-  "Beauty & Personal Care",
-  "Groceries & Food",
-  "Sports & Outdoors",
-  "Books & Stationery",
-  "Automotive & Accessories",
-  "Toys & Baby",
-];
-
-const LOGO_PRESETS = [
-  "https://images.unsplash.com/photo-1534723452862-4c874018d66d?w=150&q=80",
-  "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=150&q=80",
-  "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=150&q=80",
-];
-
-const BANNER_PRESETS = [
-  "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80",
-  "https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=800&q=80",
-  "https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=800&q=80",
-];
+import { FiTag, FiFileText, FiUploadCloud, FiLink, FiTrash2, FiLoader } from "react-icons/fi";
+import { uploadImageToImgBB } from "@/lib/utils/imgbb";
+import Image from "next/image";
+import { useCategories } from "@/hooks/useCategories";
 
 export interface StoreProfileFormData {
   storeName: string;
-  category: string;
+  categoryId: string;
   description: string;
   logo: string;
   banner: string;
@@ -42,20 +21,48 @@ export interface StoreProfileSettingsProps {
 }
 
 export function StoreProfileSettings({ form, onChange }: StoreProfileSettingsProps) {
+  const [logoMode, setLogoMode] = useState<"upload" | "url">("upload");
+  const [bannerMode, setBannerMode] = useState<"upload" | "url">("upload");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [logoUrlInput, setLogoUrlInput] = useState(form.logo || "");
+  const [bannerUrlInput, setBannerUrlInput] = useState(form.banner || "");
+  const { categories, loading: categoriesLoading, error: categoriesError } = useCategories();
+
   const generatedSlug = form.storeName
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
+  const handleFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: "logo" | "banner",
+    setLoading: (loading: boolean) => void
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setLoading(true);
+      const result = await uploadImageToImgBB(file);
+      onChange({ [field]: result.url });
+    } catch {
+      alert("Image upload failed. Please try again or paste a direct URL.");
+    } finally {
+      setLoading(false);
+      e.target.value = "";
+    }
+  };
+
   return (
     <div className="rounded-3xl border border-border bg-surface p-6 sm:p-8 shadow-sm space-y-6">
+      {/* Section Header */}
       <div className="flex items-center gap-3 border-b border-border pb-4">
         <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           <FaStore size={18} />
         </div>
         <div>
-          <h2 className="text-base font-black text-text">Store Identity & Branding</h2>
+          <h2 className="text-base font-black text-text">Store Identity &amp; Branding</h2>
           <p className="text-xs text-muted">Configure public store profile, bio description, logo, and banner assets.</p>
         </div>
       </div>
@@ -90,20 +97,24 @@ export function StoreProfileSettings({ form, onChange }: StoreProfileSettingsPro
             </label>
             <select
               id="categorySelect"
-              value={form.category}
-              onChange={(e) => onChange({ category: e.target.value })}
-              className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-xs text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition cursor-pointer"
+              value={form.categoryId}
+              onChange={(e) => onChange({ categoryId: e.target.value })}
+              disabled={categoriesLoading}
+              className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-xs text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
+              <option value="" disabled hidden>
+                {categoriesLoading ? "Loading categories..." : categoriesError || "Select a category"}
+              </option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
                 </option>
               ))}
             </select>
           </div>
         </div>
 
-        {/* Store Description / Bio */}
+        {/* Store Description */}
         <div>
           <label htmlFor="storeDescInput" className="block text-xs font-bold text-text mb-1.5 flex items-center justify-between">
             <span className="flex items-center gap-1"><FiFileText size={13} /> Store Description / Bio</span>
@@ -122,87 +133,193 @@ export function StoreProfileSettings({ form, onChange }: StoreProfileSettingsPro
 
         {/* Branding Assets: Logo & Banner */}
         <div className="grid gap-6 sm:grid-cols-2 pt-2 border-t border-border">
-          {/* Logo URL */}
-          <div className="space-y-3">
-            <label htmlFor="logoUrlInput" className="block text-xs font-bold text-text flex items-center gap-1">
-              <FiImage size={13} /> Store Logo Image URL
-            </label>
-            <input
-              id="logoUrlInput"
-              type="url"
-              value={form.logo}
-              onChange={(e) => onChange({ logo: e.target.value })}
-              placeholder="https://example.com/logo.jpg"
-              className="w-full rounded-2xl border border-border bg-surface px-4 py-2.5 text-xs text-text placeholder:text-muted focus:border-primary focus:outline-none transition"
-            />
 
-            <div className="flex items-center gap-3">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-border bg-muted-bg/30 text-muted overflow-hidden">
-                {form.logo ? (
-                  <img src={form.logo} alt="Logo Preview" className="h-full w-full object-cover" />
-                ) : (
-                  <FaStore size={22} />
-                )}
-              </div>
-              <div className="space-y-1">
-                <span className="text-[10px] text-muted font-bold block">Or pick sample preset logo:</span>
-                <div className="flex items-center gap-1.5">
-                  {LOGO_PRESETS.map((preset, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => onChange({ logo: preset })}
-                      className="h-7 w-7 rounded-lg border border-border overflow-hidden hover:scale-105 transition cursor-pointer"
-                    >
-                      <img src={preset} alt={`Preset ${idx}`} className="h-full w-full object-cover" />
-                    </button>
-                  ))}
-                </div>
+          {/* ── Store Logo ── */}
+          <div className="space-y-3 rounded-2xl border border-border bg-muted-bg/30 p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-text">Store Logo</span>
+              <div className="flex items-center gap-1 rounded-xl bg-surface p-0.5 border border-border text-[10px]">
+                <button
+                  type="button"
+                  onClick={() => setLogoMode("upload")}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition cursor-pointer font-bold ${
+                    logoMode === "upload" ? "bg-primary text-white" : "text-muted hover:text-text"
+                  }`}
+                >
+                  <FiUploadCloud size={11} /> Upload
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLogoMode("url")}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition cursor-pointer font-bold ${
+                    logoMode === "url" ? "bg-primary text-white" : "text-muted hover:text-text"
+                  }`}
+                >
+                  <FiLink size={11} /> URL
+                </button>
               </div>
             </div>
+
+            {form.logo ? (
+              <div className="flex items-center gap-3 rounded-xl border border-border bg-surface p-2.5 shadow-xs">
+                <Image
+                  src={form.logo}
+                  alt="Store Logo Preview"
+                  height={80}
+                  width={80}
+                  className="h-12 w-12 rounded-xl object-cover border border-border shrink-0 shadow-xs"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "https://placehold.co/100x100?text=Logo";
+                  }}
+                />
+                <div className="flex-1 min-w-0">
+                  <span className="text-[10px] font-bold text-text block">Logo Attached</span>
+                  <p className="text-[9px] text-muted truncate font-mono">{form.logo}</p>
+                </div>
+                <button
+                  type="button"
+                  title="Remove logo"
+                  onClick={() => { onChange({ logo: "" }); setLogoUrlInput(""); }}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-rose-500 hover:bg-rose-500/10 transition cursor-pointer shrink-0"
+                >
+                  <FiTrash2 size={13} />
+                </button>
+              </div>
+            ) : logoMode === "upload" ? (
+              <label className="flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-border bg-surface p-5 cursor-pointer hover:border-primary hover:bg-primary/5 transition group">
+                {uploadingLogo ? (
+                  <span className="flex items-center gap-2 text-xs text-primary font-semibold">
+                    <FiLoader className="animate-spin" size={16} /> Uploading to ImgBB...
+                  </span>
+                ) : (
+                  <>
+                    <FiUploadCloud size={22} className="text-primary group-hover:scale-110 transition-transform" />
+                    <span className="text-[11px] font-bold text-text">Click to upload logo</span>
+                    <span className="text-[9px] text-muted">PNG, JPG, WEBP – up to 32 MB</span>
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={uploadingLogo}
+                  onChange={(e) => handleFileUpload(e, "logo", setUploadingLogo)}
+                />
+              </label>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  placeholder="https://i.ibb.co/..."
+                  value={logoUrlInput}
+                  onChange={(e) => setLogoUrlInput(e.target.value)}
+                  onBlur={() => { if (logoUrlInput.trim()) onChange({ logo: logoUrlInput.trim() }); }}
+                  className="flex-1 rounded-xl border border-border bg-surface px-3 py-2 text-xs text-text placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => { if (logoUrlInput.trim()) onChange({ logo: logoUrlInput.trim() }); }}
+                  className="rounded-xl bg-primary px-3 py-2 text-xs font-bold text-white hover:bg-primary/90 transition cursor-pointer"
+                >
+                  Add
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Banner URL */}
-          <div className="space-y-3">
-            <label htmlFor="bannerUrlInput" className="block text-xs font-bold text-text flex items-center gap-1">
-              <FiImage size={13} /> Store Hero Banner URL
-            </label>
-            <input
-              id="bannerUrlInput"
-              type="url"
-              value={form.banner}
-              onChange={(e) => onChange({ banner: e.target.value })}
-              placeholder="https://example.com/banner.jpg"
-              className="w-full rounded-2xl border border-border bg-surface px-4 py-2.5 text-xs text-text placeholder:text-muted focus:border-primary focus:outline-none transition"
-            />
-
-            <div className="space-y-2">
-              <div className="h-14 w-full rounded-2xl border border-border bg-muted-bg/30 overflow-hidden relative">
-                {form.banner ? (
-                  <img src={form.banner} alt="Banner Preview" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center text-[10px] text-muted">
-                    Banner Preview
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center justify-between text-[10px] text-muted">
-                <span>Sample presets:</span>
-                <div className="flex items-center gap-1.5">
-                  {BANNER_PRESETS.map((preset, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => onChange({ banner: preset })}
-                      className="rounded-md border border-border px-2 py-0.5 text-[9px] font-bold hover:bg-primary/10 hover:text-primary transition cursor-pointer"
-                    >
-                      Banner {idx + 1}
-                    </button>
-                  ))}
-                </div>
+          {/* ── Store Banner ── */}
+          <div className="space-y-3 rounded-2xl border border-border bg-muted-bg/30 p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-text">Store Hero Banner</span>
+              <div className="flex items-center gap-1 rounded-xl bg-surface p-0.5 border border-border text-[10px]">
+                <button
+                  type="button"
+                  onClick={() => setBannerMode("upload")}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition cursor-pointer font-bold ${
+                    bannerMode === "upload" ? "bg-primary text-white" : "text-muted hover:text-text"
+                  }`}
+                >
+                  <FiUploadCloud size={11} /> Upload
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBannerMode("url")}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition cursor-pointer font-bold ${
+                    bannerMode === "url" ? "bg-primary text-white" : "text-muted hover:text-text"
+                  }`}
+                >
+                  <FiLink size={11} /> URL
+                </button>
               </div>
             </div>
+
+            {form.banner ? (
+              <div className="flex items-center gap-3 rounded-xl border border-border bg-surface p-2.5 shadow-xs">
+                <Image
+                  src={form.banner}
+                  alt="Store Banner Preview"
+                  height={64}
+                  width={128}
+                  className="h-14 w-28 rounded-xl object-cover border border-border shrink-0 shadow-xs"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "https://placehold.co/200x100?text=Banner";
+                  }}
+                />
+                <div className="flex-1 min-w-0">
+                  <span className="text-[10px] font-bold text-text block">Banner Attached</span>
+                  <p className="text-[9px] text-muted truncate font-mono">{form.banner}</p>
+                </div>
+                <button
+                  type="button"
+                  title="Remove banner"
+                  onClick={() => { onChange({ banner: "" }); setBannerUrlInput(""); }}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-rose-500 hover:bg-rose-500/10 transition cursor-pointer shrink-0"
+                >
+                  <FiTrash2 size={13} />
+                </button>
+              </div>
+            ) : bannerMode === "upload" ? (
+              <label className="flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-border bg-surface p-5 cursor-pointer hover:border-primary hover:bg-primary/5 transition group">
+                {uploadingBanner ? (
+                  <span className="flex items-center gap-2 text-xs text-primary font-semibold">
+                    <FiLoader className="animate-spin" size={16} /> Uploading to ImgBB...
+                  </span>
+                ) : (
+                  <>
+                    <FiUploadCloud size={22} className="text-primary group-hover:scale-110 transition-transform" />
+                    <span className="text-[11px] font-bold text-text">Click to upload banner</span>
+                    <span className="text-[9px] text-muted">PNG, JPG, WEBP – up to 32 MB · Recommended 1200×400</span>
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={uploadingBanner}
+                  onChange={(e) => handleFileUpload(e, "banner", setUploadingBanner)}
+                />
+              </label>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  placeholder="https://i.ibb.co/..."
+                  value={bannerUrlInput}
+                  onChange={(e) => setBannerUrlInput(e.target.value)}
+                  onBlur={() => { if (bannerUrlInput.trim()) onChange({ banner: bannerUrlInput.trim() }); }}
+                  className="flex-1 rounded-xl border border-border bg-surface px-3 py-2 text-xs text-text placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => { if (bannerUrlInput.trim()) onChange({ banner: bannerUrlInput.trim() }); }}
+                  className="rounded-xl bg-primary px-3 py-2 text-xs font-bold text-white hover:bg-primary/90 transition cursor-pointer"
+                >
+                  Add
+                </button>
+              </div>
+            )}
           </div>
+
         </div>
       </div>
     </div>

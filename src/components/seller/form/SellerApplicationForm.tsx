@@ -66,7 +66,7 @@ export function SellerApplicationForm({ initialData, isResubmission = false, onS
 
   const [formData, setFormData] = useState<FormDataState>({
     storeName: initialData?.storeName || "",
-    category: initialData?.businessInfo?.category || "Electronics & Gadgets",
+    categoryId: initialData?.businessInfo?.categoryId || "",
     description: initialData?.description || "",
     logo: initialData?.logo || "",
     banner: initialData?.banner || "",
@@ -170,7 +170,7 @@ export function SellerApplicationForm({ initialData, isResubmission = false, onS
         businessAddress: formData.businessAddress.trim(),
         nidOrTradeLicense: formData.nidOrTradeLicense.trim(),
         taxId: formData.taxId.trim() || undefined,
-        category: formData.category,
+        categoryId: formData.categoryId,
         payoutMethod: formData.payoutMethod,
         payoutAccountName: formData.payoutAccountName.trim(),
         payoutAccountNumber: formData.payoutAccountNumber.trim(),

@@ -5,12 +5,14 @@ export type ApplicationStep = 1 | 2 | 3 | 4;
 
 export interface StepProps {
   formData: FormDataState;
-  onChange: (field: keyof FormDataState, value: any) => void;
+  onChange: (field: keyof FormDataState, value: FormDataState[keyof FormDataState]) => void;
 }
 
 export interface FormDataState {
   storeName: string;
-  category: string;
+  /** Primary category selected by the seller.
+   *  Holds the Category document's `_id` (ObjectId string), NOT its display name. */
+  categoryId: string;
   description: string;
   logo: string;
   banner: string;
