@@ -6,6 +6,7 @@ import { adminDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { clientFetch, clientMutation } from "@/lib/core/client";
 import { getDeliverySocket } from "@/lib/socket/delivery-socket";
 import { LiveDeliveryMap, FleetRiderMarkerData } from "@/components/delivery/LiveDeliveryMap";
+import { getAdminDeliveryHeatmap, DeliveryHeatmapPoint } from "@/lib/api/delivery";
 import {
   FaSyncAlt,
   FaUser,
@@ -128,10 +129,31 @@ export default function AdminDeliveryMenPage() {
   const [filter, setFilter] = useState("all");
   const [selectedApplicant, setSelectedApplicant] = useState<DeliveryManItem | null>(null);
 
+  // Demand Heatmap State
+  const [showHeatmap, setShowHeatmap] = useState(false);
+  const [heatmapTimeRange, setHeatmapTimeRange] = useState<"today" | "7d" | "30d" | "all">("30d");
+  const [heatmapPoints, setHeatmapPoints] = useState<DeliveryHeatmapPoint[]>([]);
+  const [loadingHeatmap, setLoadingHeatmap] = useState(false);
+
   // Rejection modal
   const [rejectingUserId, setRejectingUserId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+
+  useEffect(() => {
+    if (!showHeatmap) return;
+    setLoadingHeatmap(true);
+    getAdminDeliveryHeatmap(heatmapTimeRange)
+      .then((res) => {
+        setHeatmapPoints(res?.points || []);
+      })
+      .catch(() => {
+        setHeatmapPoints([]);
+      })
+      .finally(() => {
+        setLoadingHeatmap(false);
+      });
+  }, [showHeatmap, heatmapTimeRange]);
 
   const loadDeliveryMen = useCallback(async () => {
     setLoading(true);
@@ -307,22 +329,55 @@ export default function AdminDeliveryMenPage() {
           />
         </div>
 
-        {/* ─── Real Google Map Fleet Radar Cockpit ────────────────────────────── */}
+        {/* ─── Real Google Map Fleet Radar Cockpit & Heatmap ────────────────── */}
         <Panel
           title="Active Logistics Fleet Radar (Bangladesh Real-Time)"
           action={
-            <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>{fleetMarkers.length} Online GPS Riders</span>
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowHeatmap((prev) => !prev)}
+                className={`px-3 py-1 rounded-lg text-xs font-bold border transition cursor-pointer flex items-center gap-1.5 ${
+                  showHeatmap
+                    ? "bg-rose-500 text-white border-rose-600 shadow-sm"
+                    : "bg-surface border-border text-foreground hover:bg-muted-bg"
+                }`}
+              >
+                <span>🔥 Demand Heatmap</span>
+                {loadingHeatmap && <FaSyncAlt className="animate-spin text-[10px]" />}
+              </button>
+
+              {showHeatmap && (
+                <div className="flex items-center gap-1 bg-surface border border-border p-0.5 rounded-lg text-[10px] font-bold">
+                  {(["today", "7d", "30d"] as const).map((tr) => (
+                    <button
+                      key={tr}
+                      type="button"
+                      onClick={() => setHeatmapTimeRange(tr)}
+                      className={`px-2 py-0.5 rounded ${
+                        heatmapTimeRange === tr ? "bg-primary text-white" : "text-muted hover:text-foreground"
+                      }`}
+                    >
+                      {tr.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>{fleetMarkers.length} GPS Riders</span>
+              </span>
+            </div>
           }
         >
           <div className="space-y-3">
             <p className="text-xs text-muted">
-              Live geographic positioning of active delivery fleet across Bangladesh. Click any rider marker to inspect speed, active order, and contact info.
+              Live geographic positioning of active delivery fleet across Bangladesh with demand density heatmap clustering.
             </p>
             <LiveDeliveryMap
               fleetRiders={fleetMarkers}
+              heatmapPoints={showHeatmap ? heatmapPoints : undefined}
               trackingState={fleetMarkers.length > 0 ? "LIVE" : "LOCATION_UNAVAILABLE"}
               height="h-80 sm:h-96"
             />
