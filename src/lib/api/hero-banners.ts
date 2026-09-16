@@ -17,6 +17,8 @@ export interface HeroBanner {
   overlayOpacity?: number | null;
   lightTextColor?: string | null;
   darkTextColor?: string | null;
+  lightButtonColor?: string | null;
+  darkButtonColor?: string | null;
   bgClassName?: string | null;
   textTheme: "light" | "dark";
   isActive: boolean;
@@ -45,6 +47,8 @@ interface RawHeroBanner {
   overlayOpacity?: number | null;
   lightTextColor?: string | null;
   darkTextColor?: string | null;
+  lightButtonColor?: string | null;
+  darkButtonColor?: string | null;
   isActive: boolean;
   displayOrder?: number;
   createdAt?: string;
@@ -69,6 +73,8 @@ function normalize(raw: RawHeroBanner): HeroBanner {
     overlayOpacity: raw.overlayOpacity ?? null,
     lightTextColor: raw.lightTextColor ?? null,
     darkTextColor: raw.darkTextColor ?? null,
+    lightButtonColor: raw.lightButtonColor ?? null,
+    darkButtonColor: raw.darkButtonColor ?? null,
     bgClassName: raw.bgClassName ?? null,
     textTheme: raw.textTheme ?? "light",
     isActive: Boolean(raw.isActive),
@@ -101,18 +107,10 @@ export async function getHeroBanners(categoryId?: string): Promise<HeroBanner[]>
   return listFrom(response);
 }
 
-/**
- * Category ids that have at least one active, admin-configured banner image.
- * The homepage banner uses this to list only admin-configured categories.
- */
-export async function getBannerCategoryIds(): Promise<string[]> {
-  const response = await clientFetch<unknown>("/hero-banners/categories");
-  const body = payload(response);
-  const ids =
-    body && typeof body === "object" && "categoryIds" in body
-      ? (body as { categoryIds?: unknown }).categoryIds
-      : undefined;
-  return Array.isArray(ids) ? ids.map((id) => String(id)) : [];
+/** Admin only — every banner across every category in one request. */
+export async function getAllHeroBannersForAdmin(): Promise<HeroBanner[]> {
+  const response = await clientFetch<unknown>("/hero-banners/admin/all");
+  return listFrom(response);
 }
 
 export async function createHeroBanner(payload: Omit<HeroBanner, "id" | "createdAt" | "updatedAt">) {

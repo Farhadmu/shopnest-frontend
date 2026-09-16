@@ -1,6 +1,6 @@
 import { protectedFetch } from "@/lib/core/server";
 import type { CategoryItem } from "@/types/category";
-import { HeroBannerManager } from "@/components/dashboard/admin/hero-banners/HeroBannerManager";
+import { HeroBannersOverview } from "@/components/dashboard/admin/hero-banners/HeroBannersOverview";
 
 export const dynamic = "force-dynamic";
 
@@ -13,11 +13,5 @@ export default async function AdminHeroBannersPage() {
     categories = [];
   }
 
-  return (
-    <div>
-      <h1 className="text-3xl font-black text-text">Hero Banner Management</h1>
-      <p className="mt-2 text-sm text-muted">Create category-specific campaigns and control their display order.</p>
-      <HeroBannerManager categories={categories} />
-    </div>
-  );
+  return <HeroBannersOverview categories={categories} />;
 }
