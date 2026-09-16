@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Sparkles } from "lucide-react";
 import type { NavItem, UserRole } from "./NavbarLinks";
 import { mainNavItems } from "./NavbarLinks";
 
@@ -32,7 +33,7 @@ export function NavbarMobileMenu({
   roleBadge,
 }: NavbarMobileMenuProps) {
   const pathname = usePathname();
-  const navLinks = isAuthenticated ? mainNavItems[role] : mainNavItems.guest;
+  const navLinks = (isAuthenticated ? mainNavItems[role] : mainNavItems.guest) || mainNavItems.guest;
 
   if (!open) return null;
 
@@ -55,9 +56,29 @@ export function NavbarMobileMenu({
 
         {/* Nav links */}
         {navLinks.map((item: NavItem) => {
+          const isAiAdvisor = item.label === "AI Advisor";
           const active =
             pathname === item.href ||
             (item.href !== "/" && pathname.startsWith(`${item.href}/`));
+
+          if (isAiAdvisor) {
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onClose}
+                className={`flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition my-1 ${
+                  active
+                    ? "border-primary/40 bg-primary/15 text-primary"
+                    : "border-primary/25 bg-primary/5 text-primary hover:bg-primary/10"
+                }`}
+              >
+                <Sparkles className="h-4 w-4 text-amber-500 fill-amber-500/80" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          }
+
           return (
             <Link
               key={item.href}

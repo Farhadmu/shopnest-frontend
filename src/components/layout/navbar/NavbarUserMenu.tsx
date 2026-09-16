@@ -57,6 +57,22 @@ const userDropdownItems: Record<Exclude<UserRole, "guest">, DropdownItem[]> = {
     { icon: "📦", label: "Order Operations", href: "/dashboard/admin/orders" },
     { icon: FaUser, label: "Profile Settings", href: "/dashboard/admin/profile" },
   ],
+  delivery_man: [
+    { icon: "🛵", label: "Delivery Cockpit", href: "/dashboard/delivery" },
+    { icon: "📦", label: "Available Orders", href: "/dashboard/delivery/available" },
+    { icon: "🎯", label: "My Missions", href: "/dashboard/delivery/my-deliveries" },
+    { icon: "🤖", label: "AI Delivery Copilot", href: "/dashboard/delivery/copilot" },
+    { icon: "🚨", label: "Incident Reports", href: "/dashboard/delivery/incidents" },
+    { icon: FaUser, label: "Partner Profile", href: "/dashboard/delivery/profile" },
+  ],
+  delivery: [
+    { icon: "🛵", label: "Delivery Cockpit", href: "/dashboard/delivery" },
+    { icon: "📦", label: "Available Orders", href: "/dashboard/delivery/available" },
+    { icon: "🎯", label: "My Missions", href: "/dashboard/delivery/my-deliveries" },
+    { icon: "🤖", label: "AI Delivery Copilot", href: "/dashboard/delivery/copilot" },
+    { icon: "🚨", label: "Incident Reports", href: "/dashboard/delivery/incidents" },
+    { icon: FaUser, label: "Partner Profile", href: "/dashboard/delivery/profile" },
+  ],
 };
 
 interface NavbarUserMenuProps {
@@ -64,7 +80,7 @@ interface NavbarUserMenuProps {
     id?: string;
     name?: string;
     email?: string;
-    role?: "customer" | "seller" | "admin";
+    role?: "customer" | "seller" | "admin" | "delivery_man" | "delivery";
     image?: string;
   };
   role: UserRole;
@@ -85,6 +101,12 @@ function RoleBadge({ role }: { role: UserRole }) {
         Seller
       </span>
     );
+  if (role === "delivery_man" || role === "delivery")
+    return (
+      <span className="rounded-md bg-sky-500/15 px-2 py-0.5 text-[10px] font-black uppercase text-sky-600 dark:text-sky-400">
+        Delivery Partner
+      </span>
+    );
   return (
     <span className="rounded-md bg-primary/15 px-2 py-0.5 text-[10px] font-black uppercase text-primary">
       Customer
@@ -102,17 +124,17 @@ export function NavbarUserMenu({ user, role, onOpenCart, onSignOut }: NavbarUser
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-surface p-1.5 transition hover:border-primary/50 hover:bg-muted-bg"
+        className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-white/25 bg-white/15 p-1.5 transition hover:bg-white/25"
         aria-expanded={open}
         aria-label="Open account menu"
       >
         <div className="grid h-7 w-7 place-items-center rounded-lg bg-linear-to-br from-primary to-violet-600 text-xs font-black text-white">
           {user?.name ? user.name.charAt(0).toUpperCase() : <FaUser size={12} />}
         </div>
-        <span className="hidden max-w-25 truncate text-xs font-bold text-text md:inline">
+        <span className="hidden max-w-25 truncate text-xs font-bold text-white md:inline">
           {user?.name || "Account"}
         </span>
-        <FaChevronDown size={10} className={`hidden text-muted transition-transform sm:inline ${open ? "rotate-180" : ""}`} />
+        <FaChevronDown size={10} className={`hidden text-white/70 transition-transform sm:inline ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
@@ -192,16 +214,14 @@ export function NavbarAuthButtons({ onClose }: NavbarAuthButtonsProps) {
       <Link
         href="/login"
         onClick={onClose}
-        className="hidden shrink-0 rounded-xl px-3 py-2 text-sm font-semibold text-muted transition hover:text-text lg:inline"
+        className="hidden shrink-0 rounded-xl px-3 py-2 text-sm font-semibold text-white/90 transition hover:text-white hover:bg-white/15 lg:inline"
       >
         Log in
       </Link>
-      <Link
-        href="/register">
+      <Link href="/register">
         <Button
-
           size="sm"
-          className="hidden shrink-0 bg-primary rounded-xl px-3 sm:px-4 text-sm font-bold text-white shadow-lg shadow-primary md:flex"
+          className="hidden shrink-0 rounded-xl border border-white/30 bg-white/20 px-3 sm:px-4 text-sm font-bold text-white backdrop-blur-sm hover:bg-white/30 transition shadow-none md:flex"
           onClick={onClose}
         >
           Get started

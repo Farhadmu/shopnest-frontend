@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { authClient } from "@/lib/auth-client";
 import { normalizeAuthRedirect } from "@/lib/auth-redirect";
@@ -154,7 +154,6 @@ const letterReveal = {
   }),
 };
 
-import { useSearchParams } from "next/navigation";
 import { syncGuestDataToServer } from "@/lib/guest-store";
 
 /* ─── Main Login Page Component ───────────────────────────────────────────── */
@@ -176,7 +175,7 @@ function LoginForm() {
   const [errorMsg, setErrorMsg] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = normalizeAuthRedirect(searchParams.get("next"));
+  const nextParam = searchParams.get("next");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -188,7 +187,6 @@ function LoginForm() {
         email: email.trim().toLowerCase(),
         password,
         rememberMe,
-        callbackURL: next,
       });
       if (result.error) {
         setErrorMsg(result.error.message || "Invalid email or password.");
@@ -196,7 +194,34 @@ function LoginForm() {
       }
       // Sync guest cart & wishlist to database
       await syncGuestDataToServer();
-      router.replace(next);
+
+      // Check user role and route accordingly
+      const user = (result.data as any)?.user;
+      const userRole = user?.role;
+
+      if (userRole === "delivery_man") {
+        try {
+          const profileRes = await fetch(
+            `/api/v1/delivery/profile`,
+            { credentials: "include" }
+          );
+          const profileJson = await profileRes.json();
+          const deliveryProfile = profileJson.data?.profile || profileJson.profile;
+          if (deliveryProfile?.status === "approved") {
+            router.replace(nextParam || "/dashboard/delivery");
+          } else {
+            router.replace("/delivery/pending");
+          }
+        } catch {
+          router.replace("/delivery/pending");
+        }
+      } else if (userRole === "seller") {
+        router.replace(nextParam || "/dashboard/seller");
+      } else if (userRole === "admin") {
+        router.replace(nextParam || "/dashboard/admin");
+      } else {
+        router.replace(normalizeAuthRedirect(nextParam));
+      }
       router.refresh();
     } catch (err) {
       console.error("Sign in error:", err);
@@ -206,12 +231,13 @@ function LoginForm() {
     }
   };
 
+
   const handleGoogleSignIn = async () => {
     if (isLoading || socialLoading) return;
     setErrorMsg("");
     setSocialLoading("google");
     try {
-      const callbackURL = `/sync?next=${encodeURIComponent(next)}`;
+      const callbackURL = `/sync?next=${encodeURIComponent(nextParam || "/")}`;
       const res = await authClient.signIn.social({
         provider: "google",
         callbackURL,
@@ -232,7 +258,7 @@ function LoginForm() {
     setErrorMsg("");
     setSocialLoading("facebook");
     try {
-      const callbackURL = `/sync?next=${encodeURIComponent(next)}`;
+      const callbackURL = `/sync?next=${encodeURIComponent(nextParam || "/")}`;
       const res = await authClient.signIn.social({
         provider: "facebook",
         callbackURL,

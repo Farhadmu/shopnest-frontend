@@ -1,4 +1,5 @@
 import { clientFetch, clientMutation } from "@/lib/core/client";
+import { getDeviceId } from "@/lib/device-id";
 
 export interface SecurityOverviewData {
   userId: string;
@@ -21,7 +22,7 @@ export interface SecurityOverviewData {
 export interface DeviceSessionItem {
   id: string;
   userId: string;
-  sessionToken: string;
+  deviceId?: string;
   deviceName: string;
   deviceType: string;
   browser: string;
@@ -67,8 +68,21 @@ export async function getActiveSessions() {
   return clientFetch<DeviceSessionItem[]>("/security/sessions");
 }
 
+/**
+ * Registers this browser as a device for the signed-in user.
+ *
+ * Idempotent by design: the backend recognizes an already-known device and
+ * only raises "New Device Detected" the first time a device is ever seen, so
+ * this is safe to call on every login and page load.
+ */
 export async function recordSession() {
-  return clientMutation<{ sessionToken: string; status: string }>("/security/sessions/record", "POST", {});
+  const deviceId = getDeviceId();
+  return clientMutation<{ status: string; deviceName?: string }>(
+    "/security/sessions/record",
+    "POST",
+    {},
+    deviceId ? { headers: { "x-device-id": deviceId } } : undefined
+  );
 }
 
 export async function revokeSession(id: string) {

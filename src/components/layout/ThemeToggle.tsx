@@ -48,7 +48,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
         onClick={toggle}
         aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
         title={dark ? "Switch to light mode" : "Switch to dark mode"}
-        className="group relative inline-flex h-8 w-14 shrink-0 cursor-pointer items-center rounded-full border border-border bg-muted-bg p-1 shadow-inner transition-colors duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:w-14"
+        className="group relative inline-flex h-8 w-14 shrink-0 cursor-pointer items-center rounded-full border border-white/25 bg-white/15 p-1 shadow-inner transition-colors duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent hover:bg-white/25 sm:w-14"
       >
         {/* Background Decorative Icons */}
         <div className="absolute inset-0 flex items-center justify-between px-2 text-[10px]">
