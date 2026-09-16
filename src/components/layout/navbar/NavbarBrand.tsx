@@ -11,9 +11,10 @@ interface NavbarBrandProps {
   onClose?: () => void;
   search: string;
   setSearch: (v: string) => void;
+  isScrolled?: boolean;
 }
 
-export function NavbarBrand({ onClose, search, setSearch }: NavbarBrandProps) {
+export function NavbarBrand({ onClose, search, setSearch, isScrolled = false }: NavbarBrandProps) {
   const router = useRouter();
 
   const submitSearch = (e: React.FormEvent) => {
@@ -46,8 +47,8 @@ export function NavbarBrand({ onClose, search, setSearch }: NavbarBrandProps) {
         </span>
       </Link>
 
-      {/* Expand-on-hover desktop search */}
-      <form onSubmit={submitSearch} className="hidden min-w-0 shrink-0 items-center md:flex">
+      {/* Expand-on-hover desktop / mobile-scrolled search */}
+      <form onSubmit={submitSearch} className={`${isScrolled ? "flex" : "hidden md:flex"} min-w-0 shrink-0 items-center`}>
         <div className="group relative flex h-11 w-11 shrink-0 items-center overflow-hidden rounded-full border border-white/25 bg-white/15 transition-all duration-300 ease-in-out hover:w-56 focus-within:w-56 xl:hover:w-72 xl:focus-within:w-72 2xl:hover:w-80 2xl:focus-within:w-80 focus-within:bg-white/25 pr-3">
           <button
             type="submit"
