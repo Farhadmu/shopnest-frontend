@@ -287,9 +287,9 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
       </div>
 
       {/* Main Grid: Chat Area + Recommendations Panel */}
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+      <div className="grid gap-4 lg:gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         {/* Left Column: Chat Conversation */}
-        <div className="flex min-h-[400px] h-[60vh] md:h-[600px] flex-col rounded-3xl border border-border bg-surface shadow-xl shadow-black/5">
+        <div className="flex min-h-[50vh] md:min-h-[550px] md:h-[600px] flex-col rounded-3xl border border-border bg-surface shadow-xl shadow-black/5">
           {/* Top Bar */}
           <div className="flex items-center justify-between border-b border-border px-6 py-4 bg-muted-bg/30">
             <div className="flex items-center gap-3">
@@ -398,7 +398,7 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
         </div>
 
         {/* Right Column: Context Panel */}
-        <div className="flex min-h-[400px] h-[60vh] md:h-[600px] flex-col rounded-3xl border border-border bg-surface p-6 shadow-xl shadow-black/5">
+        <div className="flex min-h-[50vh] md:min-h-[550px] md:h-[600px] flex-col rounded-3xl border border-border bg-surface p-4 sm:p-6 shadow-xl shadow-black/5">
           <div className="flex items-center justify-between border-b border-border pb-4">
             <div className="flex items-center gap-2">
               <FaShoppingBag className="text-primary" />
