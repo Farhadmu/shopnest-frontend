@@ -14,7 +14,6 @@ import {
   FaHome,
   FaCompass,
   FaLocationArrow,
-  FaExclamationTriangle,
   FaRoute,
   FaExpand,
   FaCompress,
@@ -30,6 +29,7 @@ export interface FleetRiderMarkerData {
   heading?: number;
   accuracy?: number;
   status?: string;
+  isActive?: boolean;
   activeDeliveryId?: string;
   activeOrderId?: string;
   phone?: string;
@@ -38,12 +38,29 @@ export interface FleetRiderMarkerData {
   updatedAt?: string;
 }
 
+export interface MultiDeliveryItem {
+  id: string;
+  orderId: string;
+  pickupAddress?: string;
+  deliveryAddress?: string;
+  pickupCoordinates?: { latitude: number; longitude: number } | null;
+  deliveryCoordinates?: { latitude: number; longitude: number } | null;
+  status: string;
+  customerName?: string;
+  riderName?: string;
+  riderPhone?: string;
+  riderLocation?: { latitude: number; longitude: number; updatedAt?: string } | null;
+  deliveryFee?: number;
+}
+
 export interface GoogleDeliveryMapProps {
   riderLocation?: LiveLocationData | null;
   pickupAddress?: string;
   deliveryAddress?: string;
   pickupCoordinates?: { latitude: number; longitude: number } | null;
   deliveryCoordinates?: { latitude: number; longitude: number } | null;
+  sellerLocation?: { latitude: number; longitude: number } | null;
+  storeLocation?: { latitude: number; longitude: number } | null;
   status?: string;
   orderId?: string;
   deliveryId?: string;
@@ -52,6 +69,7 @@ export interface GoogleDeliveryMapProps {
   trackingState?: LiveTrackingStatus;
   secondsSinceLastUpdate?: number;
   fleetRiders?: FleetRiderMarkerData[];
+  multiDeliveries?: MultiDeliveryItem[];
   className?: string;
   height?: string;
   showControls?: boolean;
@@ -63,6 +81,8 @@ export function GoogleDeliveryMap({
   deliveryAddress = "Customer Destination",
   pickupCoordinates,
   deliveryCoordinates,
+  sellerLocation,
+  storeLocation,
   status = "in_transit",
   orderId,
   deliveryId,
@@ -71,6 +91,7 @@ export function GoogleDeliveryMap({
   trackingState = "CONNECTING",
   secondsSinceLastUpdate = 0,
   fleetRiders,
+  multiDeliveries,
   className = "",
   height = "h-80 sm:h-96",
   showControls = true,
@@ -82,8 +103,16 @@ export function GoogleDeliveryMap({
     pickup?: google.maps.Marker;
     destination?: google.maps.Marker;
     rider?: google.maps.Marker;
+    seller?: google.maps.Marker;
+    store?: google.maps.Marker;
     fleet?: Map<string, google.maps.Marker>;
-  }>({ fleet: new Map() });
+    multiPickups?: Map<string, google.maps.Marker>;
+    multiDestinations?: Map<string, google.maps.Marker>;
+  }>({
+    fleet: new Map(),
+    multiPickups: new Map(),
+    multiDestinations: new Map(),
+  });
   const activeInfoWindowRef = useRef<google.maps.InfoWindow | null>(null);
 
   const [mapsLoaded, setMapsLoaded] = useState<boolean>(false);
@@ -115,8 +144,10 @@ export function GoogleDeliveryMap({
           const initialCenter =
             riderLocation?.latitude && riderLocation?.longitude
               ? { lat: riderLocation.latitude, lng: riderLocation.longitude }
-              : pickupCoordinates
+              : pickupCoordinates?.latitude && pickupCoordinates?.longitude
               ? { lat: pickupCoordinates.latitude, lng: pickupCoordinates.longitude }
+              : deliveryCoordinates?.latitude && deliveryCoordinates?.longitude
+              ? { lat: deliveryCoordinates.latitude, lng: deliveryCoordinates.longitude }
               : BD_DEFAULT_CENTER;
 
           const map = new maps.Map(mapContainerRef.current, {
@@ -159,9 +190,11 @@ export function GoogleDeliveryMap({
     };
   }, []);
 
-  // ─── 2. Update Pickup & Destination Markers ──────────────────────────────────
+  // ─── 2. Single Delivery: Pickup & Destination Markers ────────────────────────
   useEffect(() => {
     if (!mapsLoaded || !mapInstanceRef.current || !window.google?.maps) return;
+    if (multiDeliveries && multiDeliveries.length > 0) return;
+
     const maps = window.google.maps;
     const map = mapInstanceRef.current;
 
@@ -190,7 +223,7 @@ export function GoogleDeliveryMap({
         const infoWindow = new maps.InfoWindow({
           content: `
             <div style="color: #0f172a; padding: 6px; font-family: sans-serif;">
-              <strong style="font-size: 12px; color: #2563eb;">📦 Pickup Store</strong>
+              <strong style="font-size: 12px; color: #2563eb;">📦 Store Pickup Location</strong>
               <p style="margin: 4px 0 0; font-size: 11px; color: #475569;">${pickupAddress}</p>
             </div>
           `,
@@ -205,7 +238,10 @@ export function GoogleDeliveryMap({
         markersRef.current.pickup = marker;
       } else {
         markersRef.current.pickup.setPosition(pos);
+        markersRef.current.pickup.setVisible(true);
       }
+    } else if (markersRef.current.pickup) {
+      markersRef.current.pickup.setVisible(false);
     }
 
     // Destination Marker
@@ -248,11 +284,14 @@ export function GoogleDeliveryMap({
         markersRef.current.destination = marker;
       } else {
         markersRef.current.destination.setPosition(pos);
+        markersRef.current.destination.setVisible(true);
       }
+    } else if (markersRef.current.destination) {
+      markersRef.current.destination.setVisible(false);
     }
-  }, [mapsLoaded, pickupCoordinates, deliveryCoordinates, pickupAddress, deliveryAddress]);
+  }, [mapsLoaded, pickupCoordinates, deliveryCoordinates, pickupAddress, deliveryAddress, multiDeliveries]);
 
-  // ─── 3. Update Real Rider Marker (Single Delivery Mode) ─────────────────────
+  // ─── 3. Single Rider Marker (Live GPS / Last Known) ──────────────────────────
   useEffect(() => {
     if (!mapsLoaded || !mapInstanceRef.current || !window.google?.maps) return;
     const maps = window.google.maps;
@@ -260,6 +299,9 @@ export function GoogleDeliveryMap({
 
     if (riderLocation?.latitude && riderLocation?.longitude && !isDelivered) {
       const pos = { lat: riderLocation.latitude, lng: riderLocation.longitude };
+      const isRiderLive = isLive;
+      const fillColor = isRiderLive ? "#f59e0b" : "#64748b";
+      const ringColor = isRiderLive ? "#10b981" : "#cbd5e1";
 
       if (!markersRef.current.rider) {
         const marker = new maps.Marker({
@@ -270,32 +312,33 @@ export function GoogleDeliveryMap({
             url:
               "data:image/svg+xml;charset=UTF-8," +
               encodeURIComponent(
-                `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
-                  <circle cx="20" cy="20" r="18" fill="#f59e0b" stroke="#ffffff" stroke-width="2.5"/>
-                  <circle cx="20" cy="20" r="12" fill="#d97706"/>
-                  <text x="20" y="25" font-size="16" text-anchor="middle" fill="#ffffff">🛵</text>
+                `<svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 42 42">
+                  <circle cx="21" cy="21" r="19" fill="${fillColor}" stroke="${ringColor}" stroke-width="3"/>
+                  <circle cx="21" cy="21" r="13" fill="#ffffff" opacity="0.2"/>
+                  <text x="21" y="27" font-size="18" text-anchor="middle" fill="#ffffff">🛵</text>
                 </svg>`
               ),
-            scaledSize: new maps.Size(40, 40),
-            anchor: new maps.Point(20, 20),
+            scaledSize: new maps.Size(42, 42),
+            anchor: new maps.Point(21, 21),
           },
           zIndex: 999,
         });
 
         const infoWindow = new maps.InfoWindow({
           content: `
-            <div style="color: #0f172a; padding: 8px; font-family: sans-serif; min-width: 180px;">
+            <div style="color: #0f172a; padding: 8px; font-family: sans-serif; min-width: 190px;">
               <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                <span style="font-size: 14px;">🛵</span>
+                <span style="font-size: 15px;">🛵</span>
                 <strong style="font-size: 13px; color: #0f172a;">${riderName}</strong>
               </div>
-              <div style="font-size: 11px; color: #64748b; line-height: 1.4;">
+              <div style="font-size: 11px; color: #475569; line-height: 1.5;">
+                <div><strong>State:</strong> <span style="color: ${isRiderLive ? '#10b981' : '#64748b'}; font-weight: bold;">${isRiderLive ? '🟢 LIVE BROADCAST' : '⚪ LAST KNOWN LOCATION'}</span></div>
                 ${orderId ? `<div><strong>Order:</strong> #${orderId}</div>` : ""}
-                ${deliveryId ? `<div><strong>Delivery ID:</strong> #${deliveryId.slice(-6)}</div>` : ""}
+                ${deliveryId ? `<div><strong>Mission ID:</strong> #${deliveryId.slice(-6)}</div>` : ""}
                 <div><strong>Status:</strong> <span style="text-transform: uppercase; color: #2563eb; font-weight: bold;">${status.replace(/_/g, " ")}</span></div>
                 ${riderLocation.speed !== undefined ? `<div><strong>Speed:</strong> ${riderLocation.speed} km/h</div>` : ""}
                 ${riderLocation.accuracy !== undefined ? `<div><strong>GPS Accuracy:</strong> ±${Math.round(riderLocation.accuracy)}m</div>` : ""}
-                <div><strong>Last Update:</strong> ${new Date(riderLocation.updatedAt).toLocaleTimeString()}</div>
+                <div><strong>Recorded At:</strong> ${new Date(riderLocation.updatedAt).toLocaleTimeString()}</div>
               </div>
             </div>
           `,
@@ -317,9 +360,138 @@ export function GoogleDeliveryMap({
         markersRef.current.rider.setVisible(false);
       }
     }
-  }, [mapsLoaded, riderLocation, riderName, orderId, deliveryId, status, isDelivered]);
+  }, [mapsLoaded, riderLocation, riderName, orderId, deliveryId, status, isDelivered, isLive]);
 
-  // ─── 4. Multi-Rider Fleet Markers (Admin Mode) ──────────────────────────────
+  // ─── 4. Multi-Delivery Mode (Delivery Partner / Seller Multi-Orders) ─────────
+  useEffect(() => {
+    if (!mapsLoaded || !mapInstanceRef.current || !window.google?.maps) return;
+    if (!multiDeliveries) return;
+
+    const maps = window.google.maps;
+    const map = mapInstanceRef.current;
+
+    const currentPickups = markersRef.current.multiPickups || new Map();
+    const currentDestinations = markersRef.current.multiDestinations || new Map();
+    const activeDelIds = new Set(multiDeliveries.map((d) => d.id));
+
+    // Cleanup unassigned/finished deliveries
+    currentPickups.forEach((marker, id) => {
+      if (!activeDelIds.has(id)) {
+        marker.setMap(null);
+        currentPickups.delete(id);
+      }
+    });
+
+    currentDestinations.forEach((marker, id) => {
+      if (!activeDelIds.has(id)) {
+        marker.setMap(null);
+        currentDestinations.delete(id);
+      }
+    });
+
+    // Render pickup & customer destination pins for each active order
+    multiDeliveries.forEach((del) => {
+      // Store Pickup Pin
+      if (del.pickupCoordinates?.latitude && del.pickupCoordinates?.longitude) {
+        const pPos = { lat: del.pickupCoordinates.latitude, lng: del.pickupCoordinates.longitude };
+        const existingP = currentPickups.get(del.id);
+
+        if (existingP) {
+          existingP.setPosition(pPos);
+        } else {
+          const pMarker = new maps.Marker({
+            position: pPos,
+            map,
+            title: `Pickup #${del.orderId.slice(-6)}: ${del.pickupAddress || ""}`,
+            icon: {
+              url:
+                "data:image/svg+xml;charset=UTF-8," +
+                encodeURIComponent(
+                  `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 34 34">
+                    <circle cx="17" cy="17" r="15" fill="#2563eb" stroke="#ffffff" stroke-width="2"/>
+                    <text x="17" y="22" font-size="14" text-anchor="middle" fill="#ffffff">📦</text>
+                  </svg>`
+                ),
+              scaledSize: new maps.Size(34, 34),
+              anchor: new maps.Point(17, 17),
+            },
+          });
+
+          const pInfo = new maps.InfoWindow({
+            content: `
+              <div style="color: #0f172a; padding: 6px; font-family: sans-serif; font-size: 11px;">
+                <strong style="color: #2563eb;">📦 Store Pickup (Order #${del.orderId.slice(-6)})</strong>
+                <p style="margin: 3px 0 0; color: #475569;">${del.pickupAddress || "Merchant Store"}</p>
+                <div style="margin-top: 4px; font-size: 10px; color: #64748b;">Status: <strong>${del.status}</strong></div>
+              </div>
+            `,
+          });
+
+          pMarker.addListener("click", () => {
+            activeInfoWindowRef.current?.close();
+            pInfo.open(map, pMarker);
+            activeInfoWindowRef.current = pInfo;
+          });
+
+          currentPickups.set(del.id, pMarker);
+        }
+      }
+
+      // Customer Destination Pin
+      if (del.deliveryCoordinates?.latitude && del.deliveryCoordinates?.longitude) {
+        const dPos = { lat: del.deliveryCoordinates.latitude, lng: del.deliveryCoordinates.longitude };
+        const existingD = currentDestinations.get(del.id);
+
+        if (existingD) {
+          existingD.setPosition(dPos);
+        } else {
+          const dMarker = new maps.Marker({
+            position: dPos,
+            map,
+            title: `Destination #${del.orderId.slice(-6)}: ${del.deliveryAddress || ""}`,
+            icon: {
+              url:
+                "data:image/svg+xml;charset=UTF-8," +
+                encodeURIComponent(
+                  `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 34 34">
+                    <circle cx="17" cy="17" r="15" fill="#10b981" stroke="#ffffff" stroke-width="2"/>
+                    <text x="17" y="22" font-size="14" text-anchor="middle" fill="#ffffff">🏠</text>
+                  </svg>`
+                ),
+              scaledSize: new maps.Size(34, 34),
+              anchor: new maps.Point(17, 17),
+            },
+          });
+
+          const dInfo = new maps.InfoWindow({
+            content: `
+              <div style="color: #0f172a; padding: 6px; font-family: sans-serif; font-size: 11px;">
+                <strong style="color: #10b981;">🏠 Customer Destination (Order #${del.orderId.slice(-6)})</strong>
+                <p style="margin: 3px 0 0; color: #475569;">${del.deliveryAddress || "Customer Address"}</p>
+                <div style="margin-top: 4px; font-size: 10px; color: #64748b;">
+                  <div>Status: <strong>${del.status.replace(/_/g, " ")}</strong></div>
+                  ${del.riderName ? `<div>Assigned Rider: <strong>${del.riderName}</strong></div>` : ""}
+                </div>
+              </div>
+            `,
+          });
+
+          dMarker.addListener("click", () => {
+            activeInfoWindowRef.current?.close();
+            dInfo.open(map, dMarker);
+            activeInfoWindowRef.current = dInfo;
+          });
+
+          currentDestinations.set(del.id, dMarker);
+        }
+      }
+    });
+
+    markersRef.current.multiPickups = currentPickups;
+    markersRef.current.multiDestinations = currentDestinations;
+  }, [mapsLoaded, multiDeliveries]);
+
+  // ─── 5. Admin Multi-Rider Fleet Markers (Live vs Last Known Location) ────────
   useEffect(() => {
     if (!mapsLoaded || !mapInstanceRef.current || !window.google?.maps) return;
     if (!fleetRiders) return;
@@ -329,7 +501,7 @@ export function GoogleDeliveryMap({
     const currentFleetMap = markersRef.current.fleet || new Map();
     const activeIds = new Set(fleetRiders.map((r) => r.id));
 
-    // Remove markers that are no longer active
+    // Remove obsolete markers
     currentFleetMap.forEach((marker, riderId) => {
       if (!activeIds.has(riderId)) {
         marker.setMap(null);
@@ -337,9 +509,13 @@ export function GoogleDeliveryMap({
       }
     });
 
-    // Add or update markers
+    // Add or update rider markers with honest Live / Last Known distinction
     fleetRiders.forEach((rider) => {
       const pos = { lat: rider.latitude, lng: rider.longitude };
+      const isOnline = rider.isActive || rider.status === "available" || rider.status === "busy";
+      const fillColor = isOnline ? "#f59e0b" : "#64748b";
+      const ringColor = isOnline ? "#10b981" : "#cbd5e1";
+
       const existing = currentFleetMap.get(rider.id);
 
       if (existing) {
@@ -348,30 +524,39 @@ export function GoogleDeliveryMap({
         const marker = new maps.Marker({
           position: pos,
           map,
-          title: rider.name,
+          title: `${rider.name} (${isOnline ? "Live" : "Last Known"})`,
           icon: {
             url:
               "data:image/svg+xml;charset=UTF-8," +
               encodeURIComponent(
-                `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
-                  <circle cx="18" cy="18" r="16" fill="#f59e0b" stroke="#ffffff" stroke-width="2"/>
-                  <text x="18" y="23" font-size="14" text-anchor="middle" fill="#ffffff">🛵</text>
+                `<svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 38 38">
+                  <circle cx="19" cy="19" r="17" fill="${fillColor}" stroke="${ringColor}" stroke-width="2.5"/>
+                  <text x="19" y="24" font-size="15" text-anchor="middle" fill="#ffffff">🛵</text>
                 </svg>`
               ),
-            scaledSize: new maps.Size(36, 36),
-            anchor: new maps.Point(18, 18),
+            scaledSize: new maps.Size(38, 38),
+            anchor: new maps.Point(19, 19),
           },
         });
 
+        const updateTimeStr = rider.updatedAt ? new Date(rider.updatedAt).toLocaleTimeString() : "Recent";
+
         const infoWindow = new maps.InfoWindow({
           content: `
-            <div style="color: #0f172a; padding: 8px; font-family: sans-serif; min-width: 170px;">
-              <strong style="font-size: 13px; color: #0f172a;">${rider.name}</strong>
-              <div style="font-size: 11px; color: #64748b; margin-top: 4px; line-height: 1.4;">
-                ${rider.activeOrderId ? `<div><strong>Active Order:</strong> #${rider.activeOrderId}</div>` : "<div><strong>Status:</strong> Online (Available)</div>"}
+            <div style="color: #0f172a; padding: 8px; font-family: sans-serif; min-width: 180px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                <strong style="font-size: 13px; color: #0f172a;">${rider.name}</strong>
+                <span style="font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background: ${isOnline ? '#dcfce7; color: #166534;' : '#f1f5f9; color: #475569;'}">
+                  ${isOnline ? '🟢 LIVE' : '⚪ LAST KNOWN'}
+                </span>
+              </div>
+              <div style="font-size: 11px; color: #64748b; margin-top: 4px; line-height: 1.5;">
+                ${rider.activeOrderId ? `<div><strong>Active Order:</strong> #${rider.activeOrderId}</div>` : `<div><strong>Availability:</strong> ${rider.status || "Offline"}</div>`}
                 ${rider.speed !== undefined ? `<div><strong>Speed:</strong> ${rider.speed} km/h</div>` : ""}
-                ${rider.phone ? `<div><strong>Phone:</strong> ${rider.phone}</div>` : ""}
+                ${rider.accuracy !== undefined ? `<div><strong>GPS Accuracy:</strong> ±${Math.round(rider.accuracy)}m</div>` : ""}
+                ${rider.phone ? `<div><strong>Contact:</strong> ${rider.phone}</div>` : ""}
                 ${rider.rating ? `<div><strong>Rating:</strong> ⭐ ${rider.rating.toFixed(1)}</div>` : ""}
+                <div style="margin-top: 3px; font-size: 10px; color: #94a3b8;">Last GPS Update: ${updateTimeStr}</div>
               </div>
             </div>
           `,
@@ -390,7 +575,7 @@ export function GoogleDeliveryMap({
     markersRef.current.fleet = currentFleetMap;
   }, [mapsLoaded, fleetRiders]);
 
-  // ─── 5. Auto Fit Bounds ──────────────────────────────────────────────────────
+  // ─── 6. Auto Fit Bounds Across All Active Markers ────────────────────────────
   const handleFitBounds = useCallback(() => {
     if (!mapsLoaded || !mapInstanceRef.current || !window.google?.maps) return;
     const maps = window.google.maps;
@@ -418,6 +603,19 @@ export function GoogleDeliveryMap({
       });
     }
 
+    if (multiDeliveries && multiDeliveries.length > 0) {
+      multiDeliveries.forEach((d) => {
+        if (d.pickupCoordinates?.latitude && d.pickupCoordinates?.longitude) {
+          bounds.extend({ lat: d.pickupCoordinates.latitude, lng: d.pickupCoordinates.longitude });
+          count++;
+        }
+        if (d.deliveryCoordinates?.latitude && d.deliveryCoordinates?.longitude) {
+          bounds.extend({ lat: d.deliveryCoordinates.latitude, lng: d.deliveryCoordinates.longitude });
+          count++;
+        }
+      });
+    }
+
     if (count > 1) {
       map.fitBounds(bounds, 50);
     } else if (count === 1) {
@@ -427,33 +625,32 @@ export function GoogleDeliveryMap({
       map.setCenter(BD_DEFAULT_CENTER);
       map.setZoom(12);
     }
-  }, [mapsLoaded, riderLocation, pickupCoordinates, deliveryCoordinates, fleetRiders, isDelivered]);
+  }, [mapsLoaded, riderLocation, pickupCoordinates, deliveryCoordinates, fleetRiders, multiDeliveries, isDelivered]);
 
   useEffect(() => {
     handleFitBounds();
   }, [handleFitBounds]);
 
-  // ─── 6. Real Directions Route Calculation ───────────────────────────────────
+  // ─── 7. Directions Route Polyline (Single Delivery) ──────────────────────────
   useEffect(() => {
     if (!mapsLoaded || !mapInstanceRef.current || !directionsRendererRef.current) return;
-    if (isDelivered) {
+    if (isDelivered || (multiDeliveries && multiDeliveries.length > 1)) {
       directionsRendererRef.current.setDirections({ routes: [] } as any);
       setRouteAvailable(null);
       return;
     }
 
-    // Origin: Rider location or Pickup location
     const origin =
       riderLocation?.latitude && riderLocation?.longitude
         ? { lat: riderLocation.latitude, lng: riderLocation.longitude }
-        : pickupCoordinates
+        : pickupCoordinates?.latitude && pickupCoordinates?.longitude
         ? { lat: pickupCoordinates.latitude, lng: pickupCoordinates.longitude }
         : null;
 
-    // Destination: Customer destination
-    const destination = deliveryCoordinates
-      ? { lat: deliveryCoordinates.latitude, lng: deliveryCoordinates.longitude }
-      : null;
+    const destination =
+      deliveryCoordinates?.latitude && deliveryCoordinates?.longitude
+        ? { lat: deliveryCoordinates.latitude, lng: deliveryCoordinates.longitude }
+        : null;
 
     if (origin && destination) {
       calculateDrivingRoute(origin, destination)
@@ -481,9 +678,8 @@ export function GoogleDeliveryMap({
       setRouteAvailable(null);
       setRouteInfo(null);
     }
-  }, [mapsLoaded, riderLocation, pickupCoordinates, deliveryCoordinates, isDelivered]);
+  }, [mapsLoaded, riderLocation, pickupCoordinates, deliveryCoordinates, isDelivered, multiDeliveries]);
 
-  // Fallback Center on User Current Location
   const handleCenterOnRider = () => {
     if (!mapInstanceRef.current) return;
     if (riderLocation?.latitude && riderLocation?.longitude) {
@@ -568,18 +764,19 @@ export function GoogleDeliveryMap({
             {trackingState}
           </div>
 
+          {/* Multi-Order Count Badge */}
+          {multiDeliveries && multiDeliveries.length > 0 && (
+            <div className="hidden sm:inline-flex items-center gap-1.5 bg-slate-900/80 px-2.5 py-1 rounded-full border border-slate-700/50 backdrop-blur-sm text-[11px] font-semibold text-blue-400">
+              <span>{multiDeliveries.length} Active Missions</span>
+            </div>
+          )}
+
           {/* Route Status / Duration HUD */}
           {routeInfo?.duration && (
             <div className="hidden sm:inline-flex items-center gap-1.5 bg-slate-900/80 px-2.5 py-1 rounded-full border border-slate-700/50 backdrop-blur-sm text-[11px] font-semibold text-emerald-400">
               <FaRoute className="text-xs" />
               <span>{routeInfo.duration} ({routeInfo.distance})</span>
             </div>
-          )}
-
-          {routeAvailable === false && (
-            <span className="hidden sm:inline-block text-[10px] text-amber-400 bg-slate-900/80 px-2 py-1 rounded-md backdrop-blur-sm border border-slate-700/50">
-              ROUTE_UNAVAILABLE
-            </span>
           )}
 
           {/* Freshness Timestamp */}
@@ -602,7 +799,7 @@ export function GoogleDeliveryMap({
             </button>
             <button
               onClick={handleFitBounds}
-              title="Fit Route Bounds"
+              title="Fit All Route Bounds"
               className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-300 transition cursor-pointer"
             >
               <FaCompass size={12} />
@@ -618,21 +815,23 @@ export function GoogleDeliveryMap({
         )}
       </div>
 
-      {/* Bottom Route Summary Bar */}
-      <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between bg-slate-900/90 backdrop-blur-md px-3.5 py-2.5 rounded-xl border border-slate-700/60 text-xs z-20">
-        <div className="flex items-center gap-2 truncate">
-          <FaStore className="text-blue-400 flex-shrink-0" />
-          <span className="truncate text-slate-300 text-[11px]">{pickupAddress}</span>
-          <span className="text-slate-500">➔</span>
-          <FaHome className="text-emerald-400 flex-shrink-0" />
-          <span className="truncate text-slate-300 text-[11px]">{deliveryAddress}</span>
+      {/* Bottom Summary Bar */}
+      {(!multiDeliveries || multiDeliveries.length <= 1) && (
+        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between bg-slate-900/90 backdrop-blur-md px-3.5 py-2.5 rounded-xl border border-slate-700/60 text-xs z-20">
+          <div className="flex items-center gap-2 truncate">
+            <FaStore className="text-blue-400 flex-shrink-0" />
+            <span className="truncate text-slate-300 text-[11px]">{pickupAddress}</span>
+            <span className="text-slate-500">➔</span>
+            <FaHome className="text-emerald-400 flex-shrink-0" />
+            <span className="truncate text-slate-300 text-[11px]">{deliveryAddress}</span>
+          </div>
+          <div className="flex-shrink-0 pl-2 text-right">
+            <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider">
+              {status.replace(/_/g, " ")}
+            </span>
+          </div>
         </div>
-        <div className="flex-shrink-0 pl-2 text-right">
-          <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider">
-            {status.replace(/_/g, " ")}
-          </span>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
