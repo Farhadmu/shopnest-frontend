@@ -356,14 +356,17 @@ export async function verifyDeliveryOtp(id: string, otp: string) {
 }
 
 export async function reportDeliveryIncident(
-  deliveryId: string,
+  deliveryId: string | undefined,
   data: {
     category: string;
-    severity: "low" | "medium" | "high" | "critical";
+    severity?: "low" | "medium" | "high" | "critical";
     description: string;
     evidenceImages?: string[];
   }
 ) {
+  if (!deliveryId || deliveryId === "general") {
+    return clientMutation<{ incident: DeliveryIncident }>("/delivery/incidents", "POST", data);
+  }
   return clientMutation<{ incident: DeliveryIncident }>(
     `/delivery/requests/${deliveryId}/incident`,
     "POST",
@@ -371,8 +374,24 @@ export async function reportDeliveryIncident(
   );
 }
 
+export async function createGeneralIncident(data: {
+  category: string;
+  severity?: "low" | "medium" | "high" | "critical";
+  description: string;
+  evidenceImages?: string[];
+  deliveryRequestId?: string;
+  orderId?: string;
+}) {
+  return clientMutation<{ incident: DeliveryIncident }>("/delivery/incidents", "POST", data);
+}
+
 export async function getMyIncidents() {
   return clientFetch<DeliveryIncident[]>("/delivery/incidents");
+}
+
+export async function getSellerActiveDeliveries(status?: string) {
+  const query = status && status !== "all" ? `?status=${encodeURIComponent(status)}` : "";
+  return clientFetch<DeliveryRequest[]>(`/delivery/seller/active-deliveries${query}`);
 }
 
 export async function getDeliveryTracking(orderId: string) {
@@ -380,7 +399,7 @@ export async function getDeliveryTracking(orderId: string) {
 }
 
 export async function rateDelivery(
-  deliveryId: string,
+  orderOrDeliveryId: string,
   data: {
     rating: number;
     professionalism?: number;
@@ -389,7 +408,7 @@ export async function rateDelivery(
     comment?: string;
   }
 ) {
-  return clientMutation(`/delivery/requests/${deliveryId}/rate`, "POST", data);
+  return clientMutation(`/delivery/orders/${orderOrDeliveryId}/rate`, "POST", data);
 }
 
 // ─── AI Delivery Copilot API ──────────────────────────────────────────────────
