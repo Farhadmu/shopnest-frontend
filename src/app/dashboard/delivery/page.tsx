@@ -812,10 +812,10 @@ export default function DeliveryDashboard() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {availableDeliveries.map((req) => {
-                const pkgWeight = req.packageInfo?.weight || 0;
+                const pkgWeight = req.packageInfo?.weight || req.facts?.packageWeightKg || 0;
                 const canFitWeight = pkgWeight === 0 || pkgWeight <= remainingWeight;
                 const canFitParcels = currentParcelCount < maxParcels;
-                const isEligible = canFitWeight && canFitParcels;
+                const isEligible = req.ranking?.fitsCapacity !== undefined ? req.ranking.fitsCapacity : (canFitWeight && canFitParcels);
 
                 return (
                   <div
@@ -824,9 +824,22 @@ export default function DeliveryDashboard() {
                   >
                     <div>
                       <div className="flex items-center justify-between border-b border-border/50 pb-3 mb-3">
-                        <span className="font-black text-sm text-foreground">Order #{req.orderId}</span>
-                        <span className="font-black text-xs text-emerald-600 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
-                          ৳{req.deliveryFee || 60}
+                        <div className="flex items-center gap-2">
+                          <span className="font-black text-sm text-foreground">Order #{req.orderId}</span>
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                              req.priority === "urgent"
+                                ? "bg-red-500/10 text-red-600"
+                                : req.priority === "high"
+                                ? "bg-amber-500/10 text-amber-600"
+                                : "bg-blue-500/10 text-blue-600"
+                            }`}
+                          >
+                            {req.priority}
+                          </span>
+                        </div>
+                        <span className="font-black text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
+                          ৳{req.deliveryFee || req.facts?.deliveryFee || 60}
                         </span>
                       </div>
 
@@ -841,18 +854,49 @@ export default function DeliveryDashboard() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 text-[11px] mb-4">
+                      {/* Smart Ranking Intelligence Metrics */}
+                      <div className="grid grid-cols-2 gap-2 mb-3 bg-muted-bg/50 p-2.5 rounded-xl border border-border/40 text-[11px]">
+                        <div>
+                          <span className="text-muted block text-[10px]">Pickup Distance</span>
+                          <strong className="text-foreground font-semibold">
+                            {req.ranking?.pickupDistanceKm !== undefined && req.ranking?.pickupDistanceKm !== null
+                              ? `${req.ranking.pickupDistanceKm} km`
+                              : "Distance calc..."}
+                          </strong>
+                        </div>
+                        <div>
+                          <span className="text-muted block text-[10px]">Est. Travel Time</span>
+                          <strong className="text-foreground font-semibold">
+                            {req.ranking?.estimatedTravelMinutes !== undefined && req.ranking?.estimatedTravelMinutes !== null
+                              ? `${req.ranking.estimatedTravelMinutes} min`
+                              : "Pending GPS"}
+                          </strong>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] mb-4">
                         <span className="px-2 py-0.5 rounded bg-muted-bg text-foreground font-semibold">
                           📦 {pkgWeight > 0 ? `${pkgWeight}kg` : "Standard parcel"}
                         </span>
                         <span
                           className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            isEligible ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"
+                            isEligible ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-red-500/10 text-red-600"
                           }`}
                         >
                           {isEligible ? "Fits Capacity" : "Capacity Full"}
                         </span>
+                        {req.ranking?.routeCompatibility === "High" && (
+                          <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 text-[10px] font-bold">
+                            High Route Overlap
+                          </span>
+                        )}
                       </div>
+
+                      {req.inferences?.recommendationReason && (
+                        <p className="text-[10px] text-muted italic mb-3">
+                          💡 {req.inferences.recommendationReason}
+                        </p>
+                      )}
                     </div>
 
                     <button
