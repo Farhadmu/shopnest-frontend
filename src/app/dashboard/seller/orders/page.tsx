@@ -98,6 +98,14 @@ export default function SellerOrdersPage() {
 
   useEffect(() => {
     loadOrders();
+    const interval = setInterval(() => {
+      getSellerActiveDeliveries()
+        .then((res) => {
+          if (res) setSellerActiveDeliveries(res);
+        })
+        .catch(() => {});
+    }, 12000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleAdvanceStatus = async (orderId: string, newStatus: string) => {
@@ -248,12 +256,14 @@ export default function SellerOrdersPage() {
               </p>
               <LiveDeliveryMap
                 multiDeliveries={sellerActiveDeliveries.map((d: any) => ({
-                  id: d.id,
+                  id: d.id || d._id,
                   orderId: d.orderId,
-                  pickupAddress: d.pickupAddress,
+                  pickupAddress: d.pickupAddress || storeInfo?.name || "Merchant Store",
                   deliveryAddress: d.deliveryAddress,
                   pickupCoordinates: d.pickupCoordinates,
                   deliveryCoordinates: d.deliveryCoordinates,
+                  currentLocation: d.currentLocation,
+                  assignedRider: d.assignedRider,
                   status: d.status,
                   riderName: d.assignedRider?.name,
                   riderPhone: d.assignedRider?.phone,

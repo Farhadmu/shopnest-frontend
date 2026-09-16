@@ -6,6 +6,7 @@ import {
   BD_DEFAULT_CENTER,
   SHOPNEST_DARK_MAP_STYLE,
   calculateDrivingRoute,
+  getApproxCoordinatesFromAddress,
 } from "@/lib/maps/google-maps-loader";
 import { LiveTrackingStatus, LiveLocationData } from "@/hooks/delivery/useDeliveryLiveTracking";
 import {
@@ -51,9 +52,13 @@ export interface MultiDeliveryItem {
   deliveryCoordinates?: { latitude: number; longitude: number } | null;
   status: string;
   customerName?: string;
+  customerPhone?: string;
+  sellerStoreName?: string;
   riderName?: string;
   riderPhone?: string;
-  riderLocation?: { latitude: number; longitude: number; updatedAt?: string } | null;
+  riderLocation?: { latitude: number; longitude: number; speed?: number; updatedAt?: string } | null;
+  currentLocation?: { latitude: number; longitude: number; speed?: number; heading?: number; accuracy?: number; updatedAt?: string } | null;
+  assignedRider?: { name?: string; phone?: string; vehicleType?: string; rating?: number } | null;
   deliveryFee?: number;
 }
 
@@ -112,10 +117,12 @@ export function GoogleDeliveryMap({
     fleet?: Map<string, google.maps.Marker>;
     multiPickups?: Map<string, google.maps.Marker>;
     multiDestinations?: Map<string, google.maps.Marker>;
+    multiRiders?: Map<string, google.maps.Marker>;
   }>({
     fleet: new Map(),
     multiPickups: new Map(),
     multiDestinations: new Map(),
+    multiRiders: new Map(),
   });
   const activeInfoWindowRef = useRef<google.maps.InfoWindow | null>(null);
 
@@ -145,13 +152,22 @@ export function GoogleDeliveryMap({
         if (!mapContainerRef.current) return;
 
         if (!mapInstanceRef.current) {
+          const resolvedP =
+            pickupCoordinates?.latitude && pickupCoordinates?.longitude
+              ? pickupCoordinates
+              : getApproxCoordinatesFromAddress(pickupAddress);
+          const resolvedD =
+            deliveryCoordinates?.latitude && deliveryCoordinates?.longitude
+              ? deliveryCoordinates
+              : getApproxCoordinatesFromAddress(deliveryAddress);
+
           const initialCenter =
             riderLocation?.latitude && riderLocation?.longitude
               ? { lat: riderLocation.latitude, lng: riderLocation.longitude }
-              : pickupCoordinates?.latitude && pickupCoordinates?.longitude
-              ? { lat: pickupCoordinates.latitude, lng: pickupCoordinates.longitude }
-              : deliveryCoordinates?.latitude && deliveryCoordinates?.longitude
-              ? { lat: deliveryCoordinates.latitude, lng: deliveryCoordinates.longitude }
+              : resolvedP?.latitude && resolvedP?.longitude
+              ? { lat: resolvedP.latitude, lng: resolvedP.longitude }
+              : resolvedD?.latitude && resolvedD?.longitude
+              ? { lat: resolvedD.latitude, lng: resolvedD.longitude }
               : BD_DEFAULT_CENTER;
 
           const map = new maps.Map(mapContainerRef.current, {
@@ -202,9 +218,34 @@ export function GoogleDeliveryMap({
     const maps = window.google.maps;
     const map = mapInstanceRef.current;
 
+    const rawP =
+      pickupCoordinates?.latitude && pickupCoordinates?.longitude
+        ? pickupCoordinates
+        : getApproxCoordinatesFromAddress(pickupAddress);
+    const rawD =
+      deliveryCoordinates?.latitude && deliveryCoordinates?.longitude
+        ? deliveryCoordinates
+        : getApproxCoordinatesFromAddress(deliveryAddress);
+
+    let pCoords = rawP;
+    let dCoords = rawD;
+
+    // Slight separation offset if pickup and dropoff coordinates are identical
+    if (
+      pCoords &&
+      dCoords &&
+      Math.abs(pCoords.latitude - dCoords.latitude) < 0.0008 &&
+      Math.abs(pCoords.longitude - dCoords.longitude) < 0.0008
+    ) {
+      dCoords = {
+        latitude: dCoords.latitude + 0.0025,
+        longitude: dCoords.longitude + 0.0025,
+      };
+    }
+
     // Pickup Marker
-    if (pickupCoordinates?.latitude && pickupCoordinates?.longitude) {
-      const pos = { lat: pickupCoordinates.latitude, lng: pickupCoordinates.longitude };
+    if (pCoords?.latitude && pCoords?.longitude) {
+      const pos = { lat: pCoords.latitude, lng: pCoords.longitude };
       if (!markersRef.current.pickup) {
         const marker = new maps.Marker({
           position: pos,
@@ -249,8 +290,8 @@ export function GoogleDeliveryMap({
     }
 
     // Destination Marker
-    if (deliveryCoordinates?.latitude && deliveryCoordinates?.longitude) {
-      const pos = { lat: deliveryCoordinates.latitude, lng: deliveryCoordinates.longitude };
+    if (dCoords?.latitude && dCoords?.longitude) {
+      const pos = { lat: dCoords.latitude, lng: dCoords.longitude };
       if (!markersRef.current.destination) {
         const marker = new maps.Marker({
           position: pos,
@@ -376,6 +417,7 @@ export function GoogleDeliveryMap({
 
     const currentPickups = markersRef.current.multiPickups || new Map();
     const currentDestinations = markersRef.current.multiDestinations || new Map();
+    const currentMultiRiders = markersRef.current.multiRiders || new Map();
     const activeDelIds = new Set(multiDeliveries.map((d) => d.id));
 
     // Cleanup unassigned/finished deliveries
@@ -393,11 +435,43 @@ export function GoogleDeliveryMap({
       }
     });
 
-    // Render pickup & customer destination pins for each active order
-    multiDeliveries.forEach((del) => {
+    currentMultiRiders.forEach((marker, id) => {
+      if (!activeDelIds.has(id)) {
+        marker.setMap(null);
+        currentMultiRiders.delete(id);
+      }
+    });
+
+    // Render pickup, customer destination & assigned courier pins for each active order
+    multiDeliveries.forEach((del, idx) => {
+      const rawP =
+        del.pickupCoordinates?.latitude && del.pickupCoordinates?.longitude
+          ? del.pickupCoordinates
+          : getApproxCoordinatesFromAddress(del.pickupAddress);
+
+      let rawD =
+        del.deliveryCoordinates?.latitude && del.deliveryCoordinates?.longitude
+          ? del.deliveryCoordinates
+          : getApproxCoordinatesFromAddress(del.deliveryAddress);
+
+      let pCoords = rawP;
+      let dCoords = rawD;
+
+      if (
+        pCoords &&
+        dCoords &&
+        Math.abs(pCoords.latitude - dCoords.latitude) < 0.0008 &&
+        Math.abs(pCoords.longitude - dCoords.longitude) < 0.0008
+      ) {
+        dCoords = {
+          latitude: dCoords.latitude + 0.0025 * (idx + 1),
+          longitude: dCoords.longitude + 0.0025 * (idx + 1),
+        };
+      }
+
       // Store Pickup Pin
-      if (del.pickupCoordinates?.latitude && del.pickupCoordinates?.longitude) {
-        const pPos = { lat: del.pickupCoordinates.latitude, lng: del.pickupCoordinates.longitude };
+      if (pCoords?.latitude && pCoords?.longitude) {
+        const pPos = { lat: pCoords.latitude, lng: pCoords.longitude };
         const existingP = currentPickups.get(del.id);
 
         if (existingP) {
@@ -426,7 +500,7 @@ export function GoogleDeliveryMap({
               <div style="color: #0f172a; padding: 6px; font-family: sans-serif; font-size: 11px;">
                 <strong style="color: #2563eb;">📦 Store Pickup (Order #${del.orderId.slice(-6)})</strong>
                 <p style="margin: 3px 0 0; color: #475569;">${del.pickupAddress || "Merchant Store"}</p>
-                <div style="margin-top: 4px; font-size: 10px; color: #64748b;">Status: <strong>${del.status}</strong></div>
+                <div style="margin-top: 4px; font-size: 10px; color: #64748b;">Status: <strong>${del.status.replace(/_/g, " ")}</strong></div>
               </div>
             `,
           });
@@ -442,8 +516,8 @@ export function GoogleDeliveryMap({
       }
 
       // Customer Destination Pin
-      if (del.deliveryCoordinates?.latitude && del.deliveryCoordinates?.longitude) {
-        const dPos = { lat: del.deliveryCoordinates.latitude, lng: del.deliveryCoordinates.longitude };
+      if (dCoords?.latitude && dCoords?.longitude) {
+        const dPos = { lat: dCoords.latitude, lng: dCoords.longitude };
         const existingD = currentDestinations.get(del.id);
 
         if (existingD) {
@@ -474,7 +548,8 @@ export function GoogleDeliveryMap({
                 <p style="margin: 3px 0 0; color: #475569;">${del.deliveryAddress || "Customer Address"}</p>
                 <div style="margin-top: 4px; font-size: 10px; color: #64748b;">
                   <div>Status: <strong>${del.status.replace(/_/g, " ")}</strong></div>
-                  ${del.riderName ? `<div>Assigned Rider: <strong>${del.riderName}</strong></div>` : ""}
+                  ${del.customerName ? `<div>Customer: <strong>${del.customerName}</strong></div>` : ""}
+                  ${del.assignedRider?.name || del.riderName ? `<div>Courier: <strong>${del.assignedRider?.name || del.riderName}</strong></div>` : ""}
                 </div>
               </div>
             `,
@@ -489,10 +564,66 @@ export function GoogleDeliveryMap({
           currentDestinations.set(del.id, dMarker);
         }
       }
+
+      // Assigned Courier Live Pin (For multi-order view / seller radar)
+      const rCoords = del.currentLocation || del.riderLocation;
+      if (rCoords?.latitude && rCoords?.longitude && del.status !== "delivered") {
+        const rPos = { lat: rCoords.latitude, lng: rCoords.longitude };
+        const existingR = currentMultiRiders.get(del.id);
+        const rName = del.assignedRider?.name || del.riderName || "Delivery Partner";
+
+        if (existingR) {
+          existingR.setPosition(rPos);
+        } else {
+          const rMarker = new maps.Marker({
+            position: rPos,
+            map,
+            title: `Courier: ${rName} (Order #${del.orderId.slice(-6)})`,
+            icon: {
+              url:
+                "data:image/svg+xml;charset=UTF-8," +
+                encodeURIComponent(
+                  `<svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 38 38">
+                    <circle cx="19" cy="19" r="17" fill="#f59e0b" stroke="#10b981" stroke-width="2.5"/>
+                    <text x="19" y="24" font-size="15" text-anchor="middle" fill="#ffffff">🛵</text>
+                  </svg>`
+                ),
+              scaledSize: new maps.Size(38, 38),
+              anchor: new maps.Point(19, 19),
+            },
+            zIndex: 900,
+          });
+
+          const rInfo = new maps.InfoWindow({
+            content: `
+              <div style="color: #0f172a; padding: 6px; font-family: sans-serif; font-size: 11px;">
+                <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 3px;">
+                  <span>🛵</span> <strong style="color: #f59e0b;">${rName}</strong>
+                </div>
+                <div style="color: #475569; line-height: 1.4;">
+                  <div>Order: <strong>#${del.orderId.slice(-6)}</strong></div>
+                  <div>Status: <span style="color: #2563eb; font-weight: bold; text-transform: uppercase;">${del.status.replace(/_/g, " ")}</span></div>
+                  ${rCoords.speed !== undefined ? `<div>Speed: <strong>${rCoords.speed} km/h</strong></div>` : ""}
+                  ${del.assignedRider?.phone ? `<div>Phone: <strong>${del.assignedRider.phone}</strong></div>` : ""}
+                </div>
+              </div>
+            `,
+          });
+
+          rMarker.addListener("click", () => {
+            activeInfoWindowRef.current?.close();
+            rInfo.open(map, rMarker);
+            activeInfoWindowRef.current = rInfo;
+          });
+
+          currentMultiRiders.set(del.id, rMarker);
+        }
+      }
     });
 
     markersRef.current.multiPickups = currentPickups;
     markersRef.current.multiDestinations = currentDestinations;
+    markersRef.current.multiRiders = currentMultiRiders;
   }, [mapsLoaded, multiDeliveries]);
 
   // ─── 5. Admin Multi-Rider Fleet Markers (Live vs Last Known Location) ────────
@@ -591,12 +722,22 @@ export function GoogleDeliveryMap({
       bounds.extend({ lat: riderLocation.latitude, lng: riderLocation.longitude });
       count++;
     }
-    if (pickupCoordinates?.latitude && pickupCoordinates?.longitude) {
-      bounds.extend({ lat: pickupCoordinates.latitude, lng: pickupCoordinates.longitude });
+
+    const resolvedP =
+      pickupCoordinates?.latitude && pickupCoordinates?.longitude
+        ? pickupCoordinates
+        : getApproxCoordinatesFromAddress(pickupAddress);
+    const resolvedD =
+      deliveryCoordinates?.latitude && deliveryCoordinates?.longitude
+        ? deliveryCoordinates
+        : getApproxCoordinatesFromAddress(deliveryAddress);
+
+    if (resolvedP?.latitude && resolvedP?.longitude) {
+      bounds.extend({ lat: resolvedP.latitude, lng: resolvedP.longitude });
       count++;
     }
-    if (deliveryCoordinates?.latitude && deliveryCoordinates?.longitude) {
-      bounds.extend({ lat: deliveryCoordinates.latitude, lng: deliveryCoordinates.longitude });
+    if (resolvedD?.latitude && resolvedD?.longitude) {
+      bounds.extend({ lat: resolvedD.latitude, lng: resolvedD.longitude });
       count++;
     }
 
@@ -609,12 +750,26 @@ export function GoogleDeliveryMap({
 
     if (multiDeliveries && multiDeliveries.length > 0) {
       multiDeliveries.forEach((d) => {
-        if (d.pickupCoordinates?.latitude && d.pickupCoordinates?.longitude) {
-          bounds.extend({ lat: d.pickupCoordinates.latitude, lng: d.pickupCoordinates.longitude });
+        const mp =
+          d.pickupCoordinates?.latitude && d.pickupCoordinates?.longitude
+            ? d.pickupCoordinates
+            : getApproxCoordinatesFromAddress(d.pickupAddress);
+        const md =
+          d.deliveryCoordinates?.latitude && d.deliveryCoordinates?.longitude
+            ? d.deliveryCoordinates
+            : getApproxCoordinatesFromAddress(d.deliveryAddress);
+        const mr = d.currentLocation || d.riderLocation;
+
+        if (mp?.latitude && mp?.longitude) {
+          bounds.extend({ lat: mp.latitude, lng: mp.longitude });
           count++;
         }
-        if (d.deliveryCoordinates?.latitude && d.deliveryCoordinates?.longitude) {
-          bounds.extend({ lat: d.deliveryCoordinates.latitude, lng: d.deliveryCoordinates.longitude });
+        if (md?.latitude && md?.longitude) {
+          bounds.extend({ lat: md.latitude, lng: md.longitude });
+          count++;
+        }
+        if (mr?.latitude && mr?.longitude) {
+          bounds.extend({ lat: mr.latitude, lng: mr.longitude });
           count++;
         }
       });
@@ -629,7 +784,7 @@ export function GoogleDeliveryMap({
       map.setCenter(BD_DEFAULT_CENTER);
       map.setZoom(12);
     }
-  }, [mapsLoaded, riderLocation, pickupCoordinates, deliveryCoordinates, fleetRiders, multiDeliveries, isDelivered]);
+  }, [mapsLoaded, riderLocation, pickupCoordinates, deliveryCoordinates, pickupAddress, deliveryAddress, fleetRiders, multiDeliveries, isDelivered]);
 
   useEffect(() => {
     handleFitBounds();
@@ -644,16 +799,25 @@ export function GoogleDeliveryMap({
       return;
     }
 
+    const resolvedP =
+      pickupCoordinates?.latitude && pickupCoordinates?.longitude
+        ? pickupCoordinates
+        : getApproxCoordinatesFromAddress(pickupAddress);
+    const resolvedD =
+      deliveryCoordinates?.latitude && deliveryCoordinates?.longitude
+        ? deliveryCoordinates
+        : getApproxCoordinatesFromAddress(deliveryAddress);
+
     const origin =
       riderLocation?.latitude && riderLocation?.longitude
         ? { lat: riderLocation.latitude, lng: riderLocation.longitude }
-        : pickupCoordinates?.latitude && pickupCoordinates?.longitude
-        ? { lat: pickupCoordinates.latitude, lng: pickupCoordinates.longitude }
+        : resolvedP?.latitude && resolvedP?.longitude
+        ? { lat: resolvedP.latitude, lng: resolvedP.longitude }
         : null;
 
     const destination =
-      deliveryCoordinates?.latitude && deliveryCoordinates?.longitude
-        ? { lat: deliveryCoordinates.latitude, lng: deliveryCoordinates.longitude }
+      resolvedD?.latitude && resolvedD?.longitude
+        ? { lat: resolvedD.latitude, lng: resolvedD.longitude }
         : null;
 
     if (origin && destination) {
