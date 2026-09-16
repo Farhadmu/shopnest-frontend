@@ -890,6 +890,16 @@ export default function DeliveryDashboard() {
               riderName={details?.personal?.fullName || session?.user?.name || "Delivery Partner"}
               status={selectedMission?.status || "in_transit"}
               trackingState={isBroadcastingLocation ? "LIVE" : "LOCATION_UNAVAILABLE"}
+              multiDeliveries={activeMissions.map((m) => ({
+                id: m.id,
+                orderId: m.orderId,
+                pickupAddress: m.pickupAddress,
+                deliveryAddress: m.deliveryAddress,
+                pickupCoordinates: m.pickupCoordinates,
+                deliveryCoordinates: m.deliveryCoordinates,
+                status: m.status,
+                deliveryFee: m.deliveryFee,
+              }))}
               riderLocation={
                 lastCoords
                   ? {
