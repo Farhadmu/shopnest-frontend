@@ -149,7 +149,7 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
   const totalCartCount = drawerItemCount || cartCount;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/80 bg-background/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 w-full border-b border-indigo-500/20 bg-linear-to-r from-indigo-600/90 via-violet-600/90 to-purple-600/90 backdrop-blur-xl">
       <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-8">
         <div className="flex min-h-16 items-center justify-between gap-2 lg:gap-4 xl:gap-5">
 
@@ -190,7 +190,7 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
                 type="button"
                 onClick={() => setMobileMenuOpen((v) => !v)}
                 aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-surface text-text lg:hidden"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/25 bg-white/15 text-white transition hover:bg-white/25 lg:hidden"
               >
                 {mobileMenuOpen ? <FaTimes /> : <FaBars />}
               </button>
@@ -199,7 +199,7 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
         </div>
 
         {/* Mobile search bar */}
-        <form
+          <form
           onSubmit={(e) => {
             e.preventDefault();
             const q = search.trim();
@@ -208,13 +208,13 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
           }}
           className="pb-3 md:hidden"
         >
-          <div className="flex h-11 items-center rounded-xl border border-border bg-surface px-3 focus-within:border-primary/60 focus-within:ring-4 focus-within:ring-primary/10">
-            <FaSearch className="text-muted" size={14} />
+          <div className="flex h-11 items-center rounded-xl border border-white/25 bg-white/15 px-3 focus-within:bg-white/25">
+            <FaSearch className="text-white/70" size={14} />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search ShopNest..."
-              className="min-w-0 flex-1 bg-transparent px-3 text-sm text-text outline-none placeholder:text-muted"
+              className="min-w-0 flex-1 bg-transparent px-3 text-sm text-white outline-none placeholder:text-white/50"
             />
           </div>
         </form>
