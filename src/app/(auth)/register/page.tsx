@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { authClient } from "@/lib/auth-client";
 import { normalizeAuthRedirect } from "@/lib/auth-redirect";
+import { bdMobileSchema, getBdMobileError, PHONE_INVALID_MESSAGE } from "@/lib/phone";
 
 /* ─── SVG Icons ─────────────────────────────────────────────────────────────── */
 const GoogleIcon = ({ className }: { className?: string }) => (
@@ -132,8 +133,9 @@ interface FieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   right?: React.ReactNode;
   err?: boolean;
   ok?: boolean;
+  error?: string;
 }
-function F({ id, label, icon, right, err, ok, ...rest }: FieldProps) {
+function F({ id, label, icon, right, err, ok, error, ...rest }: FieldProps) {
   return (
     <div className="flex flex-col gap-0.5">
       <label htmlFor={id} className="text-[9px] sm:text-[10px] font-bold text-muted uppercase tracking-[.1em] pl-0.5">
@@ -155,6 +157,15 @@ function F({ id, label, icon, right, err, ok, ...rest }: FieldProps) {
         />
         {right && <span className="absolute right-2">{right}</span>}
       </div>
+      {error && (
+        <p
+          id={`${id}-error`}
+          role="alert"
+          className="text-[9px] font-semibold text-rose-600 dark:text-rose-400 pl-0.5"
+        >
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -194,6 +205,7 @@ function RegisterForm() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
   const [pw, setPw] = useState("");
   const [cf, setCf] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -208,10 +220,17 @@ function RegisterForm() {
 
   const pwOk = cf !== "" && pw === cf;
   const pwBad = cf !== "" && pw !== cf;
+  const phoneError = phoneTouched ? getBdMobileError(phone) : null;
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (loading || socialLoading) return;
+    setPhoneTouched(true);
+    const parsedPhone = bdMobileSchema.safeParse(phone);
+    if (!parsedPhone.success) {
+      setError(parsedPhone.error.issues[0]?.message ?? PHONE_INVALID_MESSAGE);
+      return;
+    }
     if (!agreed) {
       setError("Please accept the Terms & Conditions.");
       return;
@@ -226,6 +245,7 @@ function RegisterForm() {
       const res = await authClient.signUp.email({
         name: fullName.trim(),
         email: email.trim().toLowerCase(),
+        phone: parsedPhone.data,
         password: pw,
         callbackURL: next,
       });
@@ -459,12 +479,23 @@ function RegisterForm() {
                 <F
                   id="reg-phone"
                   label="Phone"
-                  type="number"
+                  type="tel"
+                  inputMode="tel"
+                  required
                   autoComplete="tel"
                   placeholder="Phone number"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    setPhoneTouched(true);
+                  }}
+                  onBlur={() => setPhoneTouched(true)}
                   icon={<PhoneIcon c="w-3.5 h-3.5" />}
+                  err={Boolean(phoneError)}
+                  ok={phoneTouched && !phoneError}
+                  error={phoneError ?? undefined}
+                  aria-invalid={Boolean(phoneError)}
+                  aria-describedby={phoneError ? "reg-phone-error" : undefined}
                 />
 
                 {/* Password */}
