@@ -1,64 +1,179 @@
 "use client";
 
-import { FaCheckCircle, FaStar } from "react-icons/fa";
+import { useEffect, useState } from "react";
+import { motion } from "motion/react";
+import { FaStar } from "react-icons/fa";
+import { getPlatformStats, PlatformSampleReview } from "@/lib/api/platform";
 
-interface StatItem {
-  label: string;
-  value: string;
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
 
-const stats: StatItem[] = [
-  { label: "Fast discovery", value: "94%" },
-  { label: "Trusted sellers", value: "91%" },
-  { label: "Easy checkout", value: "96%" },
-];
+function getTimeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.max(0, Math.round((now.getTime() - date.getTime()) / 1000));
+  const minutes = Math.round(seconds / 60);
+  const hours = Math.round(minutes / 60);
+  const days = Math.round(hours / 24);
+
+  if (seconds < 60) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days === 1) return "1 day ago";
+  return `${days} days ago`;
+}
+
+function formatCount(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M+`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K+`;
+  return `${n}+`;
+}
 
 export default function ProofSection() {
+  const [stats, setStats] = useState<{
+    avgRating: number;
+    totalReviews: number;
+    sampleReviews: PlatformSampleReview[];
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    getPlatformStats()
+      .then((data) => {
+        if (!cancelled) setStats(data);
+      })
+      .catch(() => setStats(null))
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+ 
+  const reviews: PlatformSampleReview[] = stats?.sampleReviews ?? [];
+  const marqueeReviews = reviews.length > 0 ? [...reviews, ...reviews] : [];
+
+  const totalReviews = stats?.totalReviews ?? 0;
+
   return (
-    <section className="py-10">
-      <div className="grid gap-5 lg:grid-cols-[1fr_1.4fr]">
-        <div className="rounded-[2rem] border border-border bg-surface p-7 sm:p-9">
-          <FaStar className="text-warning" />
-          <p className="mt-5 text-3xl font-black text-text">4.8/5</p>
-          <p className="mt-1 text-sm text-muted">Average shopper experience</p>
-          <div className="mt-7 space-y-3">
-            {stats.map(({ label, value }) => (
-              <div key={label}>
-                <div className="mb-1 flex justify-between text-xs font-semibold">
-                  <span className="text-text">{label}</span>
-                  <span className="text-muted">{value}</span>
-                </div>
-                <div className="h-2 rounded-full bg-muted-bg">
-                  <div className="h-2 w-[94%] rounded-full bg-primary" />
+    <section className="py-10 overflow-hidden bg-muted-bg">
+      <div className="text-center mb-8 px-4">
+        <h2 className="text-3xl md:text-4xl font-black text-text tracking-tight">
+          What Our Users Say
+        </h2>
+        <p className="mt-2 text-sm md:text-base text-muted max-w-xl mx-auto">
+          Real stories from real shoppers who love ShopNest
+        </p>
+      </div>
+
+      {/* Auto-moving marquee container */}
+      <div className="relative w-full overflow-hidden flex">
+        {loading || marqueeReviews.length === 0 ? (
+          <div className="flex gap-4 w-full px-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="w-[260px] sm:w-[290px] lg:w-[320px] shrink-0 h-60 animate-pulse rounded-2xl border border-border bg-surface"
+              />
+            ))}
+          </div>
+        ) : (
+          <motion.div
+            className="flex gap-4 shrink-0"
+            animate={{ x: ["0%", "-50%"] }}
+            transition={{
+              repeat: Infinity,
+              ease: "linear",
+              duration: 25,
+            }}
+            style={{ width: "max-content" }}
+          >
+            {marqueeReviews.map((review, index) => (
+              <div
+                key={`${review.id}-${index}`}
+                className="w-[260px] sm:w-[290px] lg:w-[320px] group relative overflow-hidden rounded-2xl border border-border bg-surface p-5 shadow-sm flex flex-col justify-between shrink-0 transition-all duration-300 hover:border-primary/50 hover:shadow-lg"
+              >
+                {/* Purple hover glow matching the site theme */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 z-[1] rounded-2xl opacity-0 transition-all duration-500 group-hover:opacity-100"
+                  style={{
+                    background: `radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.15), transparent 70%)`,
+                  }}
+                />
+
+                <div className="relative z-10">
+                  <header className="flex items-center gap-3 mb-4">
+{review.avatarUrl ? (
+                    <img
+                      src={review.avatarUrl}
+                      alt={review.userName}
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                      className="h-12 w-12 rounded-full object-cover border-2 border-border ring-2 ring-primary/20"
+                      onError={(e) => {
+                      
+                        const el = e.currentTarget;
+                        el.style.display = "none";
+                        const parent = el.parentElement;
+                        if (parent && !parent.querySelector("[data-initials]")) {
+                          const badge = document.createElement("div");
+                          badge.dataset.initials = "1";
+                          badge.className =
+                            "flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary ring-2 ring-border";
+                          badge.textContent = initials(review.userName);
+                          parent.prepend(badge);
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary ring-2 ring-border">
+                      {initials(review.userName)}
+                    </div>
+                  )}
+                    <div>
+                      <p className="text-sm font-bold text-text">
+                        {review.userName}
+                      </p>
+                      <time className="text-xs text-muted">
+                        {getTimeAgo(review.createdAt)}
+                      </time>
+                    </div>
+                  </header>
+
+                  <div className="flex items-center gap-1 text-amber-500 mb-3">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <FaStar
+                        key={i}
+                        size={14}
+                        className={i < review.rating ? "" : "opacity-30"}
+                      />
+                    ))}
+                  </div>
+
+                  <blockquote>
+                    <p className="text-xs sm:text-sm leading-relaxed text-muted line-clamp-4 font-medium">
+                      “{review.comment}”
+                    </p>
+                  </blockquote>
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-        <div className="rounded-[2rem] border border-border bg-muted-bg p-7 sm:p-9">
-          <div className="flex items-center gap-2 text-sm font-bold text-primary">
-            <FaCheckCircle /> What shoppers say
-          </div>
-          <div className="mt-7 grid gap-4 sm:grid-cols-2">
-            <blockquote className="rounded-2xl border border-border bg-surface p-5">
-              <p className="text-sm leading-6 text-muted">
-                “The AI comparison made it much easier to decide without reading dozens of product
-                pages.”
-              </p>
-              <footer className="mt-5 text-xs font-bold text-text">
-                — Ayesha, verified shopper
-              </footer>
-            </blockquote>
-            <blockquote className="rounded-2xl border border-border bg-surface p-5">
-              <p className="text-sm leading-6 text-muted">
-                “The seller trust signals give me much more confidence before ordering.”
-              </p>
-              <footer className="mt-5 text-xs font-bold text-text">
-                — Rahim, verified shopper
-              </footer>
-            </blockquote>
-          </div>
-        </div>
+          </motion.div>
+        )}
+      </div>
+
+      <div className="mt-8 text-center border-t border-border pt-6 px-4">
+        <p className="text-sm text-muted font-medium">
+          Join <span className="font-bold text-text">{formatCount(totalReviews)}</span> happy shoppers
+        </p>
       </div>
     </section>
   );
