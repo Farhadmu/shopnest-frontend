@@ -106,10 +106,9 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
     setLoading(true);
 
     try {
-      const res = await askCommerceCompanion(query, undefined, { route: "/ai-advisor" });
-      const data = (res as { data?: CommerceCompanionResponse } | CommerceCompanionResponse)?.data ?? res;
-      const replyText = data?.reply || "I couldn't process that. Could you try rephrasing?";
-      const thinkingText = data?.thinking;
+      const data = await askCommerceCompanion(query, undefined, { route: "/ai-advisor" });
+      const replyText = data.reply || "I couldn't process that. Could you try rephrasing?";
+      const thinkingText = data.thinking;
 
       if (data?.products && data.products.length > 0) {
         setActiveProducts(data.products);
