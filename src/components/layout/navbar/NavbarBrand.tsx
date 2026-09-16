@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FaSearch } from "react-icons/fa";
-import { APP_NAME } from "@/lib/constants";
+
 
 interface NavbarBrandProps {
   onClose?: () => void;
@@ -24,34 +24,35 @@ export function NavbarBrand({ onClose, search, setSearch }: NavbarBrandProps) {
   };
 
   return (
-    <div className="flex min-w-0 items-center gap-2 sm:gap-3 lg:gap-5">
+    <div className="flex min-w-0 items-center gap-2.5 sm:gap-3.5 lg:gap-5">
       {/* Logo */}
       <Link
         href="/"
-        className="group flex shrink-0 items-center gap-2 sm:gap-2.5"
+        className="group flex shrink-0 items-center gap-1.5 sm:gap-2"
         onClick={onClose}
       >
-        <div className="relative grid h-10 w-10 place-items-center overflow-hidden rounded-xl dark:bg-linear-to-br from-primary to-violet-500 shadow-lg shadow-primary/20">
+        <div className="relative aspect-square h-8 w-8 shrink-0 transition-transform duration-200 group-hover:scale-105 sm:h-9 sm:w-9 xl:h-10 xl:w-10">
           <Image
-            src="/shopnest-logo.png"
-            width={40}
-            height={40}
+            src="/logo-white.png"
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             alt="ShopNest"
-            className="h-10 w-10 object-contain"
+            priority
+            className="object-contain drop-shadow-[0_1px_3px_rgba(0,0,0,0.3)]"
           />
         </div>
-        <span className="hidden bg-linear-to-r from-text via-primary to-violet-500 bg-clip-text text-lg font-black tracking-tight text-transparent sm:inline xl:text-xl">
-          {APP_NAME}
+        <span className="bg-linear-to-r from-white via-slate-100 to-violet-400 bg-clip-text text-lg font-black tracking-tight text-transparent sm:text-xl xl:text-2xl">
+          ShopNest
         </span>
       </Link>
 
       {/* Expand-on-hover desktop search */}
       <form onSubmit={submitSearch} className="hidden min-w-0 shrink-0 items-center md:flex">
-        <div className="group relative flex h-11 w-11 shrink-0 items-center overflow-hidden rounded-xl border border-border bg-surface transition-all duration-300 ease-in-out hover:w-56 focus-within:w-56 xl:hover:w-72 xl:focus-within:w-72 2xl:hover:w-80 2xl:focus-within:w-80 focus-within:border-primary/60 focus-within:ring-4 focus-within:ring-primary/10 pr-3">
+        <div className="group relative flex h-11 w-11 shrink-0 items-center overflow-hidden rounded-full border border-white/25 bg-white/15 transition-all duration-300 ease-in-out hover:w-56 focus-within:w-56 xl:hover:w-72 xl:focus-within:w-72 2xl:hover:w-80 2xl:focus-within:w-80 focus-within:bg-white/25 pr-3">
           <button
             type="submit"
             aria-label="Search"
-            className="grid h-11 w-11 shrink-0 place-items-center text-muted transition-colors hover:text-primary"
+            className="grid h-11 w-11 shrink-0 place-items-center text-white/70 transition-colors hover:text-white"
           >
             <FaSearch size={14} />
           </button>
@@ -59,7 +60,7 @@ export function NavbarBrand({ onClose, search, setSearch }: NavbarBrandProps) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search products, stores..."
-            className="w-full min-w-0 bg-transparent pr-3 text-sm text-text outline-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100 placeholder:text-muted"
+            className="w-full min-w-0 bg-transparent pr-3 text-sm text-white outline-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100 placeholder:text-white/50"
             aria-label="Search ShopNest"
           />
         </div>
