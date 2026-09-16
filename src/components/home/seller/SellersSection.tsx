@@ -28,7 +28,7 @@ function normalizeMediaUrl(value?: string) {
 }
 
 function toSeller(store: Awaited<ReturnType<typeof getPublicSellerStores>>[number], index: number): Seller {
-  const category = store.businessInfo?.category || store.products?.[0]?.category || "Marketplace Store";
+  const category = store.businessInfo?.categoryId || store.products?.[0]?.category || "Marketplace Store";
   const categorySlug = category.toLowerCase().includes("elect") ? "electronics" : category.toLowerCase().includes("fashion") || category.toLowerCase().includes("beaut") ? "fashion" : category.toLowerCase().includes("home") || category.toLowerCase().includes("decor") ? "home" : "all";
   const style = CARD_STYLES[index % CARD_STYLES.length];
   const initials = store.storeName.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
