@@ -30,7 +30,7 @@ export function Step4ReviewSubmit({ formData, onChange }: StepProps) {
         <div className="rounded-xl border border-border bg-muted-bg/50 p-2.5 text-[11px] space-y-1">
           <span className="text-[9px] font-extrabold uppercase text-primary">Store Info</span>
           <p className="font-black text-text truncate">{formData.storeName || "N/A"}</p>
-          <p className="text-muted truncate">{formData.category}</p>
+          <p className="text-muted truncate">{formData.categoryId}</p>
           <p className="text-muted line-clamp-1">{formData.description || "N/A"}</p>
         </div>
 

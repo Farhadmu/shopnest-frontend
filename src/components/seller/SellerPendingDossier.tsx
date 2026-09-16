@@ -42,7 +42,7 @@ export function SellerPendingDossier({
         <div className="rounded-2xl border border-border bg-muted-bg/30 p-4 space-y-2">
           <p className="font-bold text-text">Store Identity</p>
           <p className="text-muted">
-            <strong className="text-text">Category:</strong> {store.businessInfo?.category || "General"}
+            <strong className="text-text">Category:</strong> {store.businessInfo?.categoryId || "General"}
           </p>
           <p className="text-muted">
             <strong className="text-text">Description:</strong> {store.description}

@@ -91,7 +91,7 @@ export function SellerTable({
                       <span>/store/{s.slug}</span>
                       <span className="text-border">·</span>
                       <span className="text-primary font-sans font-semibold">
-                        {s.businessInfo?.category || "General"}
+                        {s.businessInfo?.categoryId || "General"}
                       </span>
                     </div>
                   </div>
