@@ -31,7 +31,7 @@ export function CategoryMegaMenu({ className = "" }: { className?: string }) {
       {/* Trigger — pure CSS hover via Tailwind group */}
       <Link
         href="/products"
-        className="flex shrink-0 items-center gap-1.5 rounded-xl px-2.5 py-2 text-sm font-semibold text-muted transition hover:bg-muted-bg hover:text-text xl:px-3.5"
+        className="flex shrink-0 items-center gap-1.5 rounded-xl px-2 py-1.5 text-xs font-semibold text-white/80 transition hover:bg-white/15 hover:text-white xl:px-3 xl:py-2 xl:text-sm"
       >
         <FaLayerGroup size={12} />
         Categories

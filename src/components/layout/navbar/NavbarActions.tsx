@@ -31,7 +31,7 @@ export function NavbarActions({
       {isAuthenticated && (
         <Link
           href={dashboardHref}
-          className="hidden h-10 items-center gap-1.5 rounded-xl border border-border bg-surface px-3 text-xs font-bold text-text transition hover:border-primary/40 hover:text-primary xl:flex"
+          className="hidden h-10 items-center gap-1.5 rounded-xl border border-white/25 bg-white/15 px-3 text-xs font-bold text-white transition hover:bg-white/25 xl:flex"
         >
           Dashboard
         </Link>
@@ -41,7 +41,7 @@ export function NavbarActions({
         href="/wishlist"
         aria-label="Wishlist"
         title="Wishlist"
-        className="hidden h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-surface text-muted transition hover:border-primary/40 hover:text-primary lg:grid"
+        className="hidden h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/25 bg-white/15 text-white transition hover:bg-white/25 lg:grid"
       >
         <FaHeart size={14} />
       </Link>
@@ -52,11 +52,11 @@ export function NavbarActions({
         onClick={onOpenCart}
         aria-label={`Shopping Cart (${cartCount} items)`}
         title="Shopping Cart"
-        className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-surface text-muted transition hover:border-primary/40 hover:text-primary cursor-pointer active:scale-95"
+        className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/25 bg-white/15 text-white transition hover:bg-white/25 cursor-pointer active:scale-95"
       >
         <FaShoppingBag size={14} />
         {cartCount > 0 && (
-          <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#7C3AED] px-1 text-[11px] font-black text-white shadow-sm shadow-purple-500/25 animate-in zoom-in">
+          <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[11px] font-black text-violet-600 shadow-sm shadow-purple-500/25 animate-in zoom-in">
             {cartCount > 99 ? "99+" : cartCount}
           </span>
         )}
