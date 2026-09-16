@@ -20,6 +20,10 @@ import {
   FaCheckCircle,
 } from "react-icons/fa";
 
+/** Map animation and rendering defaults */
+export const MAP_TRANSITION_DURATION_MS = 300;
+export const MAP_DEFAULT_ZOOM_FALLBACK = 13;
+
 export interface FleetRiderMarkerData {
   id: string;
   name: string;
