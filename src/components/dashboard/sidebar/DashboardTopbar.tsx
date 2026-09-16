@@ -1,6 +1,7 @@
 import Image from "next/image";
 import React, { ReactNode } from "react";
-import { FaBars, FaTimes, FaBell } from "react-icons/fa";
+import { FaBars, FaTimes } from "react-icons/fa";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 export interface DashboardTopbarProps {
   role: string;
@@ -37,14 +38,7 @@ export function DashboardTopbar({
         {mobileMenuOpen ? <FaTimes size={14} /> : <FaBars size={14} />}
       </button>
       <div className="ml-auto flex items-center gap-2">
-        <button
-          type="button"
-          className="relative grid h-9 w-9 place-items-center rounded-lg text-muted transition hover:bg-muted-bg hover:text-text"
-          aria-label="Notifications"
-        >
-          <FaBell size={14} />
-          <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-error" />
-        </button>
+        <NotificationBell />
         <div className="hidden items-center gap-2 sm:flex">
           {userImage ? (
             <Image
