@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { clientFetch, clientMutation } from "@/lib/core/client";
 import { getMyStore } from "@/lib/api/sellers";
-import { markOrderReadyForPickup, getDeliveryTracking, DeliveryTrackingResponse } from "@/lib/api/delivery";
+import { markOrderReadyForPickup, getDeliveryTracking, getSellerActiveDeliveries, DeliveryTrackingResponse, DeliveryRequest } from "@/lib/api/delivery";
 import { LiveDeliveryMap } from "@/components/delivery/LiveDeliveryMap";
 import { useSession } from "@/lib/auth-client";
 import {
@@ -42,6 +42,26 @@ export default function SellerOrdersPage() {
   const [sellerTrackingData, setSellerTrackingData] = useState<DeliveryTrackingResponse | null>(null);
   const [loadingTracking, setLoadingTracking] = useState(false);
 
+  // Multi-Order Live Radar State
+  const [sellerActiveDeliveries, setSellerActiveDeliveries] = useState<DeliveryRequest[]>([]);
+  const [showLiveRadar, setShowLiveRadar] = useState(true);
+  const [sellerGeoLocation, setSellerGeoLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setSellerGeoLocation({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          });
+        },
+        () => {},
+        { timeout: 10000 }
+      );
+    }
+  }, []);
+
   const handleOpenTrackingModal = async (order: any) => {
     const orderId = String(order._id || order.id);
     setTrackingModalOrder(order);
@@ -59,14 +79,16 @@ export default function SellerOrdersPage() {
   const loadOrders = async () => {
     setLoading(true);
     try {
-      const [ordersRes, storeRes] = await Promise.allSettled([
+      const [ordersRes, storeRes, deliveriesRes] = await Promise.allSettled([
         clientFetch<any[]>("/orders/seller/mine"),
         getMyStore(),
+        getSellerActiveDeliveries(),
       ]);
 
       const orderList = ordersRes.status === "fulfilled" ? ((ordersRes.value as any)?.data ?? ordersRes.value ?? []) : [];
       setOrders(orderList);
       if (storeRes.status === "fulfilled") setStoreInfo(storeRes.value);
+      if (deliveriesRes.status === "fulfilled") setSellerActiveDeliveries(deliveriesRes.value || []);
     } catch {
       setOrders([]);
     } finally {
@@ -192,6 +214,57 @@ export default function SellerOrdersPage() {
           <button type="button" onClick={() => setNotification(null)} className="text-muted hover:text-foreground text-xs">
             ✕
           </button>
+        </div>
+      )}
+
+      {/* Store Active Logistics Radar */}
+      {sellerActiveDeliveries.length > 0 && (
+        <div className="rounded-2xl border border-primary/30 bg-card p-5 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FaMotorcycle className="text-primary text-base" />
+              <h3 className="text-sm font-black text-foreground">
+                Store Active Logistics Radar ({sellerActiveDeliveries.length} Active Missions)
+              </h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                🟢 Live Real-Time Telemetry
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowLiveRadar(!showLiveRadar)}
+                className="px-3 py-1 bg-surface border border-border text-foreground text-xs font-bold rounded-lg hover:border-primary transition cursor-pointer"
+              >
+                {showLiveRadar ? "Hide Map" : "Show Map"}
+              </button>
+            </div>
+          </div>
+
+          {showLiveRadar && (
+            <div className="space-y-3">
+              <p className="text-xs text-muted">
+                Displaying genuine GPS dispatch telemetry for your store orders across Bangladesh. Pickups (📦) and Customer Dropoffs (🏠) are scoped strictly to your store.
+              </p>
+              <LiveDeliveryMap
+                multiDeliveries={sellerActiveDeliveries.map((d: any) => ({
+                  id: d.id,
+                  orderId: d.orderId,
+                  pickupAddress: d.pickupAddress,
+                  deliveryAddress: d.deliveryAddress,
+                  pickupCoordinates: d.pickupCoordinates,
+                  deliveryCoordinates: d.deliveryCoordinates,
+                  status: d.status,
+                  riderName: d.assignedRider?.name,
+                  riderPhone: d.assignedRider?.phone,
+                }))}
+                sellerLocation={sellerGeoLocation}
+                storeLocation={storeInfo?.location ? { latitude: storeInfo.location.latitude, longitude: storeInfo.location.longitude } : null}
+                trackingState="LIVE"
+                height="h-80 sm:h-96"
+              />
+            </div>
+          )}
         </div>
       )}
 
