@@ -248,23 +248,28 @@ export default function AdminDeliveryMenPage() {
     .filter(
       (dm) =>
         dm.currentLocation?.latitude !== undefined &&
+        dm.currentLocation?.latitude !== null &&
         dm.currentLocation?.longitude !== undefined &&
-        (dm.isActive || dm.availabilityStatus === "available" || dm.availabilityStatus === "busy")
+        dm.currentLocation?.longitude !== null
     )
-    .map((dm) => ({
-      id: dm.profile.userId,
-      name: dm.personal?.fullName || dm.name || "Delivery Partner",
-      latitude: dm.currentLocation!.latitude,
-      longitude: dm.currentLocation!.longitude,
-      speed: dm.currentLocation!.speed,
-      heading: dm.currentLocation!.heading,
-      accuracy: dm.currentLocation!.accuracy,
-      status: dm.availabilityStatus,
-      phone: dm.personal?.phone,
-      rating: dm.rating,
-      vehicleType: dm.vehicle?.vehicleType,
-      updatedAt: dm.currentLocation!.updatedAt,
-    }));
+    .map((dm) => {
+      const isOnline = dm.isActive || dm.availabilityStatus === "available" || dm.availabilityStatus === "busy";
+      return {
+        id: dm.profile.userId,
+        name: dm.personal?.fullName || dm.name || "Delivery Partner",
+        latitude: dm.currentLocation!.latitude,
+        longitude: dm.currentLocation!.longitude,
+        speed: dm.currentLocation!.speed,
+        heading: dm.currentLocation!.heading,
+        accuracy: dm.currentLocation!.accuracy,
+        status: isOnline ? (dm.availabilityStatus || "available") : "offline",
+        isActive: isOnline,
+        phone: dm.personal?.phone,
+        rating: dm.rating,
+        vehicleType: dm.vehicle?.vehicleType,
+        updatedAt: dm.currentLocation!.updatedAt,
+      };
+    });
 
   return (
     <DashboardShell
