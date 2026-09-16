@@ -13,6 +13,8 @@ import {
   uploadDeliveryProof,
   type DeliveryRequest,
 } from "@/lib/api/delivery";
+import { getDeliverySocket } from "@/lib/socket/delivery-socket";
+import { LiveDeliveryMap } from "@/components/delivery/LiveDeliveryMap";
 import {
   FaArrowLeft,
   FaCheckCircle,
@@ -81,6 +83,8 @@ export default function DeliveryRequestDetailPage() {
     loadDelivery();
   }, [loadDelivery]);
 
+  const [currentCoords, setCurrentCoords] = useState<{ lat: number; lng: number; speed?: number; accuracy?: number } | null>(null);
+
   // GPS broadcaster for this specific delivery
   const toggleGpsBroadcast = () => {
     if (isBroadcasting) {
@@ -98,9 +102,21 @@ export default function DeliveryRequestDetailPage() {
       setIsBroadcasting(true);
       setGpsError(null);
 
+      const socket = getDeliverySocket();
       const watchId = navigator.geolocation.watchPosition(
         async (pos) => {
           const { latitude, longitude, accuracy, speed, heading } = pos.coords;
+          setCurrentCoords({ lat: latitude, lng: longitude, speed: speed ? Math.round(speed * 3.6) : undefined, accuracy: accuracy || undefined });
+          if (socket.connected) {
+            socket.emit("location:update", {
+              latitude,
+              longitude,
+              accuracy: accuracy || undefined,
+              speed: speed || undefined,
+              heading: heading || undefined,
+              deliveryRequestId: id,
+            });
+          }
           try {
             await updateDeliveryLocation({
               latitude,
@@ -258,6 +274,40 @@ export default function DeliveryRequestDetailPage() {
             {gpsError}
           </div>
         )}
+
+        {/* Live Radar Map */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs px-1">
+            <span className="font-bold text-foreground flex items-center gap-1.5">
+              <FaCompass className="text-primary" /> Realtime Mission Radar
+            </span>
+            <span className="text-muted text-[11px]">
+              {isBroadcasting ? "Broadcasting Live GPS" : "GPS Broadcaster Standby"}
+            </span>
+          </div>
+          <LiveDeliveryMap
+            pickupAddress={delivery.pickupAddress || "Merchant Pickup"}
+            deliveryAddress={delivery.deliveryAddress || "Customer Destination"}
+            pickupCoordinates={delivery.pickupCoordinates}
+            deliveryCoordinates={delivery.deliveryCoordinates}
+            orderId={delivery.orderId}
+            deliveryId={delivery.id}
+            status={delivery.status}
+            trackingState={isBroadcasting ? "LIVE" : "LOCATION_UNAVAILABLE"}
+            riderLocation={
+              currentCoords
+                ? {
+                    latitude: currentCoords.lat,
+                    longitude: currentCoords.lng,
+                    speed: currentCoords.speed,
+                    accuracy: currentCoords.accuracy,
+                    updatedAt: new Date().toISOString(),
+                  }
+                : null
+            }
+            height="h-72 sm:h-80"
+          />
+        </div>
 
         {/* Mission Banner & Progress */}
         <Panel title="Mission Progress & Handover State">

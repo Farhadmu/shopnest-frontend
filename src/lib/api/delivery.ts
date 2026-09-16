@@ -163,6 +163,8 @@ export interface DeliveryRequest {
     specialInstructions?: string;
     fragile?: boolean;
   };
+  pickupCoordinates?: { latitude: number; longitude: number } | null;
+  deliveryCoordinates?: { latitude: number; longitude: number } | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -218,6 +220,8 @@ export interface DeliveryTrackingResponse {
   };
   pickupAddress?: string;
   deliveryAddress?: string;
+  pickupCoordinates?: { latitude: number; longitude: number } | null;
+  deliveryCoordinates?: { latitude: number; longitude: number } | null;
 }
 
 // ─── API Client Functions ──────────────────────────────────────────────────────
