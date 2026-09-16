@@ -1,19 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { getCategories, Category } from "@/lib/api/categories";
 
-/** Loads the real category list from the backend — single source of truth wherever a category picker is needed. */
 export function useCategories() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     getCategories()
-      .then(setCategories)
-      .catch(() => setCategories([]))
-      .finally(() => setLoading(false));
+      .then((cats) => {
+        if (!cancelled) {
+          // Filter for parent categories only (no parent)
+          const parentCategories = cats.filter((cat) => !cat.parent);
+          setCategories(parentCategories);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setError("Failed to load categories.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  return { categories, loading };
+  return { categories, loading, error };
 }

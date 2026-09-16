@@ -26,7 +26,7 @@ export function StoreSettingsClient({ initialStore }: StoreSettingsClientProps) 
   // Form State
   const [form, setForm] = useState({
     storeName: initialStore?.storeName || "",
-    category: initialStore?.businessInfo?.category || "Electronics & Gadgets",
+    categoryId: initialStore?.businessInfo?.categoryId || "",
     description: initialStore?.description || "",
     logo: initialStore?.logo || "",
     banner: initialStore?.banner || "",
@@ -63,7 +63,7 @@ export function StoreSettingsClient({ initialStore }: StoreSettingsClientProps) 
         businessAddress: form.businessAddress.trim() || undefined,
         nidOrTradeLicense: form.nidOrTradeLicense.trim() || undefined,
         taxId: form.taxId.trim() || undefined,
-        category: form.category,
+        categoryId: form.categoryId,
         payoutMethod: form.payoutMethod,
         payoutAccountName: form.payoutAccountName.trim() || undefined,
         payoutAccountNumber: form.payoutAccountNumber.trim() || undefined,
@@ -101,7 +101,7 @@ export function StoreSettingsClient({ initialStore }: StoreSettingsClientProps) 
           storeName: form.storeName || store?.storeName || "",
           logo: form.logo || store?.logo,
           banner: form.banner || store?.banner,
-          businessInfo: { category: form.category || store?.businessInfo?.category },
+          businessInfo: { categoryId: form.categoryId || store?.businessInfo?.categoryId },
         }}
       />
 
@@ -121,23 +121,6 @@ export function StoreSettingsClient({ initialStore }: StoreSettingsClientProps) 
       {/* MODE 1: READ-ONLY OVERVIEW (Default View) */}
       {!isEditing ? (
         <div className="space-y-6">
-          <div className="flex items-center justify-between rounded-3xl border border-border bg-surface p-4 sm:p-6 shadow-xs">
-            <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-primary">Overview Mode</span>
-              <h2 className="text-sm font-black text-text">Store Details Summary</h2>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab("profile");
-                setIsEditing(true);
-              }}
-              className="flex items-center gap-2 rounded-2xl bg-primary px-5 py-2.5 text-xs font-black text-white hover:bg-primary-hover shadow-lg shadow-primary/25 transition cursor-pointer"
-            >
-              <FiEdit3 size={14} /> Edit Store Settings
-            </button>
-          </div>
-
           <StoreOverviewCard
             store={
               store || {
@@ -153,7 +136,7 @@ export function StoreSettingsClient({ initialStore }: StoreSettingsClientProps) 
                   businessAddress: form.businessAddress,
                   nidOrTradeLicense: form.nidOrTradeLicense,
                   taxId: form.taxId,
-                  category: form.category,
+                  categoryId: form.categoryId,
                   payoutMethod: form.payoutMethod,
                   payoutAccountName: form.payoutAccountName,
                   payoutAccountNumber: form.payoutAccountNumber,
@@ -245,7 +228,7 @@ export function StoreSettingsClient({ initialStore }: StoreSettingsClientProps) 
               </div>
               <div>
                 <h3 className="text-xl font-black text-text">{form.storeName || "Store Name"}</h3>
-                <p className="text-xs text-primary font-bold">Category: {form.category}</p>
+                <p className="text-xs text-primary font-bold">Category: {form.categoryId}</p>
                 <p className="text-xs text-muted max-w-md mx-auto mt-2 leading-relaxed">
                   {form.description || "No store description provided yet."}
                 </p>
