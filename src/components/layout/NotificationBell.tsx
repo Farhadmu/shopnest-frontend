@@ -13,11 +13,11 @@ import {
   markAdminNotificationRead,
   type Notification,
 } from "@/lib/api/notifications";
-import { getErrorMessage } from "@/lib/core/errors";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 
 const POLL_INTERVAL_MS = 30000;
+const LOAD_ERROR_MESSAGE = "Unable to load notifications.";
 
 export const NotificationBell: React.FC = () => {
   const router = useRouter();
@@ -47,7 +47,10 @@ export const NotificationBell: React.FC = () => {
       const res = isAdmin ? await getAdminNotifications({ limit: 10 }) : await getNotifications({ page: 1, limit: 10 });
       setItems(res.items);
     } catch (err) {
-      setError(getErrorMessage(err));
+      // Keep the real error in the console for debugging; show a friendly
+      // message in the dropdown.
+      console.error("[Notifications] Failed to load notifications:", err);
+      setError(LOAD_ERROR_MESSAGE);
     } finally {
       setIsLoading(false);
     }
@@ -117,6 +120,8 @@ export const NotificationBell: React.FC = () => {
         onClick={() => setIsOpen((prev) => !prev)}
         className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-foreground hover:bg-muted/10 transition-colors"
         aria-label="Notifications"
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
       >
         <span className="text-lg">🔔</span>
         {unreadCount > 0 && (
@@ -127,14 +132,14 @@ export const NotificationBell: React.FC = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 max-w-[90vw] rounded-xl border border-border bg-background shadow-lg z-50">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <div className="absolute right-0 mt-2 w-80 max-w-[90vw] rounded-xl border border-border bg-surface shadow-lg z-50">
+          <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border">
             <h3 className="text-sm font-semibold text-foreground">Notifications</h3>
             {items.some((n) => !n.isRead) && (
               <button
                 type="button"
                 onClick={handleMarkAllRead}
-                className="text-xs font-medium text-primary hover:underline"
+                className="shrink-0 text-xs font-medium text-primary hover:underline"
               >
                 Mark all read
               </button>
@@ -142,7 +147,9 @@ export const NotificationBell: React.FC = () => {
           </div>
 
           <div className="max-h-96 overflow-y-auto">
-            {isLoading && <p className="px-4 py-6 text-center text-sm text-muted">Loading...</p>}
+            {isLoading && (
+              <p className="px-4 py-6 text-center text-sm text-muted">Loading notifications...</p>
+            )}
             {!isLoading && error && (
               <p className="px-4 py-6 text-center text-sm text-error">{error}</p>
             )}
@@ -171,6 +178,11 @@ export const NotificationBell: React.FC = () => {
                       <p className="text-xs text-muted line-clamp-2 mt-0.5">
                         {notification.message}
                       </p>
+                      {notification.createdAt && (
+                        <p className="text-[10px] text-muted mt-1">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </button>
