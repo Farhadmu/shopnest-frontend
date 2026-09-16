@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { clientFetch, clientMutation } from "@/lib/core/client";
 import { getMyStore } from "@/lib/api/sellers";
-import { markOrderReadyForPickup } from "@/lib/api/delivery";
+import { markOrderReadyForPickup, getDeliveryTracking, DeliveryTrackingResponse } from "@/lib/api/delivery";
+import { LiveDeliveryMap } from "@/components/delivery/LiveDeliveryMap";
 import { useSession } from "@/lib/auth-client";
 import {
   FiPackage,
@@ -14,8 +15,9 @@ import {
   FiDollarSign,
   FiFilter,
   FiUser,
+  FiCompass,
 } from "react-icons/fi";
-import { FaMotorcycle, FaBoxOpen } from "react-icons/fa";
+import { FaMotorcycle, FaBoxOpen, FaTimes } from "react-icons/fa";
 
 const ORDER_STEPS = [
   { key: "confirmed", label: "Accept Order" },
@@ -34,6 +36,25 @@ export default function SellerOrdersPage() {
   const [storeInfo, setStoreInfo] = useState<any>(null);
   const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const { data: session } = useSession();
+
+  // Seller delivery tracking modal
+  const [trackingModalOrder, setTrackingModalOrder] = useState<any | null>(null);
+  const [sellerTrackingData, setSellerTrackingData] = useState<DeliveryTrackingResponse | null>(null);
+  const [loadingTracking, setLoadingTracking] = useState(false);
+
+  const handleOpenTrackingModal = async (order: any) => {
+    const orderId = String(order._id || order.id);
+    setTrackingModalOrder(order);
+    setLoadingTracking(true);
+    try {
+      const data = await getDeliveryTracking(orderId);
+      setSellerTrackingData(data);
+    } catch {
+      setSellerTrackingData(null);
+    } finally {
+      setLoadingTracking(false);
+    }
+  };
 
   const loadOrders = async () => {
     setLoading(true);
@@ -69,17 +90,41 @@ export default function SellerOrdersPage() {
     }
   };
 
-  const handleMarkReadyForPickup = async (orderId: string) => {
+  const [pickupModalOrder, setPickupModalOrder] = useState<any | null>(null);
+  const [packageWeight, setPackageWeight] = useState("2");
+  const [packageDimensions, setPackageDimensions] = useState("Standard");
+  const [isFragile, setIsFragile] = useState(false);
+  const [pickupNotes, setPickupNotes] = useState("");
+
+  const handleOpenPickupModal = (order: any) => {
+    setPickupModalOrder(order);
+    setPackageWeight("2");
+    setPackageDimensions("Standard");
+    setIsFragile(false);
+    setPickupNotes("");
+  };
+
+  const handleConfirmReadyForPickup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pickupModalOrder) return;
+    const orderId = String(pickupModalOrder._id || pickupModalOrder.id);
     setReadyingPickupId(orderId);
     setNotification(null);
     try {
-      const res = await markOrderReadyForPickup(orderId, {
-        sellerNotes: "Items packed and ready at store counter for delivery partner pickup.",
+      await markOrderReadyForPickup(orderId, {
+        packageInfo: {
+          weight: Number(packageWeight) || 2,
+          dimensions: packageDimensions || "Standard",
+          fragile: isFragile,
+          specialInstructions: isFragile ? "Fragile handling required" : undefined,
+        },
+        sellerNotes: pickupNotes || "Package is ready for delivery partner pickup at store counter.",
       });
       setNotification({
         type: "success",
-        message: `🎉 Order #${orderId.slice(-8).toUpperCase()} is now listed on the Open Delivery Marketplace for riders to claim!`,
+        message: `🎉 Order #${orderId.slice(-8).toUpperCase()} (${packageWeight}kg) is now open on the Delivery Marketplace!`,
       });
+      setPickupModalOrder(null);
       loadOrders();
     } catch (err: any) {
       setNotification({
@@ -262,18 +307,31 @@ export default function SellerOrdersPage() {
                       </span>
                     </div>
 
-                    {/* READY FOR PICKUP BUTTON */}
-                    {(o.status === "confirmed" || o.status === "processing") && (
-                      <button
-                        type="button"
-                        onClick={() => handleMarkReadyForPickup(orderId)}
-                        disabled={isReadying}
-                        className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2 text-xs font-black text-white hover:from-emerald-600 hover:to-teal-700 shadow-md shadow-emerald-500/20 transition cursor-pointer disabled:opacity-50"
-                      >
-                        <FaMotorcycle size={12} />
-                        <span>{isReadying ? "Dispatching..." : "Ready for Pickup"}</span>
-                      </button>
-                    )}
+                    {/* READY FOR PICKUP & TRACK COURIER BUTTONS */}
+                    <div className="flex items-center gap-2">
+                      {(o.status === "confirmed" || o.status === "processing") && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenPickupModal(o)}
+                          disabled={isReadying}
+                          className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2 text-xs font-black text-white hover:from-emerald-600 hover:to-teal-700 shadow-md shadow-emerald-500/20 transition cursor-pointer disabled:opacity-50"
+                        >
+                          <FaMotorcycle size={12} />
+                          <span>{isReadying ? "Dispatching..." : "Ready for Pickup"}</span>
+                        </button>
+                      )}
+
+                      {["shipped", "out_for_delivery", "delivered", "picked_up", "in_transit"].includes(o.status) && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenTrackingModal(o)}
+                          className="flex items-center gap-1.5 rounded-xl bg-card border border-primary/40 px-3.5 py-2 text-xs font-bold text-primary hover:bg-primary/10 transition cursor-pointer"
+                        >
+                          <FiCompass size={12} />
+                          <span>Track Delivery</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -331,6 +389,175 @@ export default function SellerOrdersPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* ─── READY FOR PICKUP / PACKAGE SPECS MODAL ───────────────────────── */}
+      {pickupModalOrder && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h3 className="text-base font-black text-foreground flex items-center gap-2">
+                <FaMotorcycle className="text-emerald-500" /> Dispatch to Open Marketplace
+              </h3>
+              <button
+                type="button"
+                onClick={() => setPickupModalOrder(null)}
+                className="text-muted hover:text-foreground cursor-pointer text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-muted">
+              Configure package specifications for Order <strong>#{String(pickupModalOrder._id || pickupModalOrder.id).slice(-8).toUpperCase()}</strong> to list it on the delivery marketplace.
+            </p>
+
+            <form onSubmit={handleConfirmReadyForPickup} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-xs font-semibold text-muted mb-1">
+                  Estimated Package Weight (kg)
+                </label>
+                <input
+                  type="number"
+                  min="0.1"
+                  max="100"
+                  step="0.1"
+                  value={packageWeight}
+                  onChange={(e) => setPackageWeight(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-muted-bg border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  required
+                />
+                <span className="text-[10px] text-muted mt-1 block">
+                  Used by the rider capacity engine to prevent vehicle overload.
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-muted mb-1">
+                  Parcel Dimensions / Size
+                </label>
+                <input
+                  type="text"
+                  value={packageDimensions}
+                  onChange={(e) => setPackageDimensions(e.target.value)}
+                  placeholder="e.g. Small box (20x15x10cm), Standard bag"
+                  className="w-full px-3 py-2 rounded-xl bg-muted-bg border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="fragileCheck"
+                  checked={isFragile}
+                  onChange={(e) => setIsFragile(e.target.checked)}
+                  className="rounded border-border text-primary focus:ring-primary h-4 w-4"
+                />
+                <label htmlFor="fragileCheck" className="text-xs font-semibold text-foreground cursor-pointer">
+                  ⚠️ Fragile / Handle with Extra Care
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-muted mb-1">
+                  Pickup Instructions for Courier (Optional)
+                </label>
+                <textarea
+                  rows={2}
+                  value={pickupNotes}
+                  onChange={(e) => setPickupNotes(e.target.value)}
+                  placeholder="e.g. Items packed at 2nd floor desk. Ask for Manager."
+                  className="w-full px-3 py-2 rounded-xl bg-muted-bg border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-border/50">
+                <button
+                  type="button"
+                  onClick={() => setPickupModalOrder(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-muted hover:bg-muted-bg cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={readyingPickupId !== null}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-xs shadow-md hover:from-emerald-600 hover:to-teal-700 disabled:opacity-50 cursor-pointer"
+                >
+                  {readyingPickupId !== null ? "Listing..." : "Confirm & List for Couriers"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* SELLER LIVE DELIVERY TRACKING MODAL */}
+      {trackingModalOrder && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-2xl p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <FaMotorcycle className="text-primary text-base" />
+                <h3 className="text-base font-black text-foreground">
+                  Order #{String(trackingModalOrder._id || trackingModalOrder.id).slice(-8).toUpperCase()} Live Tracking
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setTrackingModalOrder(null);
+                  setSellerTrackingData(null);
+                }}
+                className="text-muted hover:text-foreground cursor-pointer text-sm font-bold"
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            {loadingTracking ? (
+              <div className="py-12 text-center text-muted text-xs">
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                <span>Loading realtime logistics telemetry...</span>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <LiveDeliveryMap
+                  pickupAddress={sellerTrackingData?.pickupAddress || storeInfo?.name || "Seller Store"}
+                  deliveryAddress={sellerTrackingData?.deliveryAddress || trackingModalOrder.shippingAddress}
+                  pickupCoordinates={sellerTrackingData?.pickupCoordinates}
+                  deliveryCoordinates={sellerTrackingData?.deliveryCoordinates}
+                  orderId={String(trackingModalOrder._id || trackingModalOrder.id)}
+                  riderName={sellerTrackingData?.assignedRider?.name || "Assigned Courier"}
+                  status={sellerTrackingData?.status || trackingModalOrder.status}
+                  trackingState={sellerTrackingData?.isLiveTrackingActive ? "LIVE" : "LOCATION_UNAVAILABLE"}
+                  riderLocation={sellerTrackingData?.currentLocation ? {
+                    latitude: sellerTrackingData.currentLocation.latitude,
+                    longitude: sellerTrackingData.currentLocation.longitude,
+                    updatedAt: sellerTrackingData.currentLocation.updatedAt || new Date().toISOString(),
+                  } : null}
+                  height="h-72"
+                />
+
+                {sellerTrackingData?.assignedRider && (
+                  <div className="flex items-center justify-between p-3 bg-muted-bg/50 rounded-xl border border-border/50 text-xs">
+                    <div>
+                      <span className="text-muted block text-[10px] uppercase font-bold">Assigned Courier</span>
+                      <span className="font-bold text-foreground">{sellerTrackingData.assignedRider.name}</span>
+                      <span className="text-muted text-[11px] ml-2">({sellerTrackingData.assignedRider.vehicleType})</span>
+                    </div>
+                    {sellerTrackingData.assignedRider.phone && (
+                      <a
+                        href={`tel:${sellerTrackingData.assignedRider.phone}`}
+                        className="px-3 py-1.5 bg-emerald-500 text-white rounded-lg font-bold text-xs shadow-sm hover:bg-emerald-600 transition"
+                      >
+                        Call Rider
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

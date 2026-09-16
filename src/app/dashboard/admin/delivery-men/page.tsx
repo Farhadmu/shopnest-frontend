@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
 import { adminDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { clientFetch, clientMutation } from "@/lib/core/client";
+import { getDeliverySocket } from "@/lib/socket/delivery-socket";
+import { LiveDeliveryMap, FleetRiderMarkerData } from "@/components/delivery/LiveDeliveryMap";
 import {
   FaSyncAlt,
   FaUser,
@@ -21,6 +23,8 @@ import {
   FaCar,
   FaUniversity,
   FaEye,
+  FaCompass,
+  FaMapMarkedAlt,
 } from "react-icons/fa";
 
 interface DeliveryManProfile {
@@ -104,6 +108,14 @@ interface DeliveryManItem {
   totalDeliveries: number;
   completedDeliveries: number;
   failedDeliveries: number;
+  currentLocation?: {
+    latitude: number;
+    longitude: number;
+    speed?: number;
+    heading?: number;
+    accuracy?: number;
+    updatedAt?: string;
+  };
   name?: string;
   email?: string;
   image?: string;
@@ -139,6 +151,59 @@ export default function AdminDeliveryMenPage() {
 
   useEffect(() => {
     loadDeliveryMen();
+
+    if (typeof window !== "undefined") {
+      const socket = getDeliverySocket();
+      socket.emit("join:admin_operations");
+
+      const onAdminRiderLocation = (payload: {
+        riderId: string;
+        latitude: number;
+        longitude: number;
+        speed?: number;
+        heading?: number;
+        accuracy?: number;
+        deliveryRequestId?: string;
+        orderId?: string;
+      }) => {
+        if (!payload?.riderId || typeof payload.latitude !== "number") return;
+        setDeliveryMen((prev) =>
+          prev.map((dm) => {
+            if (dm.profile.userId === payload.riderId) {
+              return {
+                ...dm,
+                isActive: true,
+                currentLocation: {
+                  latitude: payload.latitude,
+                  longitude: payload.longitude,
+                  speed: payload.speed,
+                  heading: payload.heading,
+                  accuracy: payload.accuracy,
+                  updatedAt: new Date().toISOString(),
+                },
+              };
+            }
+            return dm;
+          })
+        );
+      };
+
+      const onDeliveryStatusChange = () => {
+        loadDeliveryMen();
+      };
+
+      socket.on("admin:rider_location", onAdminRiderLocation);
+      socket.on("admin:delivery_status", onDeliveryStatusChange);
+      socket.on("admin:delivery_assigned", onDeliveryStatusChange);
+      socket.on("admin:delivery_completed", onDeliveryStatusChange);
+
+      return () => {
+        socket.off("admin:rider_location", onAdminRiderLocation);
+        socket.off("admin:delivery_status", onDeliveryStatusChange);
+        socket.off("admin:delivery_assigned", onDeliveryStatusChange);
+        socket.off("admin:delivery_completed", onDeliveryStatusChange);
+      };
+    }
   }, [loadDeliveryMen]);
 
   const handleRefresh = () => {
@@ -179,6 +244,28 @@ export default function AdminDeliveryMenPage() {
   const suspendedCount = deliveryMen.filter((d) => d.profile.status === "suspended").length;
   const activeNowCount = deliveryMen.filter((d) => d.isActive || d.availabilityStatus === "available").length;
 
+  const fleetMarkers: FleetRiderMarkerData[] = deliveryMen
+    .filter(
+      (dm) =>
+        dm.currentLocation?.latitude !== undefined &&
+        dm.currentLocation?.longitude !== undefined &&
+        (dm.isActive || dm.availabilityStatus === "available" || dm.availabilityStatus === "busy")
+    )
+    .map((dm) => ({
+      id: dm.profile.userId,
+      name: dm.personal?.fullName || dm.name || "Delivery Partner",
+      latitude: dm.currentLocation!.latitude,
+      longitude: dm.currentLocation!.longitude,
+      speed: dm.currentLocation!.speed,
+      heading: dm.currentLocation!.heading,
+      accuracy: dm.currentLocation!.accuracy,
+      status: dm.availabilityStatus,
+      phone: dm.personal?.phone,
+      rating: dm.rating,
+      vehicleType: dm.vehicle?.vehicleType,
+      updatedAt: dm.currentLocation!.updatedAt,
+    }));
+
   return (
     <DashboardShell
       role="admin"
@@ -214,6 +301,28 @@ export default function AdminDeliveryMenPage() {
             note="Blocked from deliveries"
           />
         </div>
+
+        {/* ─── Real Google Map Fleet Radar Cockpit ────────────────────────────── */}
+        <Panel
+          title="Active Logistics Fleet Radar (Bangladesh Real-Time)"
+          action={
+            <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>{fleetMarkers.length} Online GPS Riders</span>
+            </span>
+          }
+        >
+          <div className="space-y-3">
+            <p className="text-xs text-muted">
+              Live geographic positioning of active delivery fleet across Bangladesh. Click any rider marker to inspect speed, active order, and contact info.
+            </p>
+            <LiveDeliveryMap
+              fleetRiders={fleetMarkers}
+              trackingState={fleetMarkers.length > 0 ? "LIVE" : "LOCATION_UNAVAILABLE"}
+              height="h-80 sm:h-96"
+            />
+          </div>
+        </Panel>
 
         {/* Controls */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
