@@ -79,6 +79,7 @@ export interface GoogleDeliveryMapProps {
   secondsSinceLastUpdate?: number;
   fleetRiders?: FleetRiderMarkerData[];
   multiDeliveries?: MultiDeliveryItem[];
+  heatmapPoints?: Array<{ latitude: number; longitude: number; weight?: number }>;
   className?: string;
   height?: string;
   showControls?: boolean;
@@ -101,6 +102,7 @@ export function GoogleDeliveryMap({
   secondsSinceLastUpdate = 0,
   fleetRiders,
   multiDeliveries,
+  heatmapPoints,
   className = "",
   height = "h-80 sm:h-96",
   showControls = true,
@@ -108,6 +110,7 @@ export function GoogleDeliveryMap({
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
+  const heatmapLayerRef = useRef<any | null>(null);
   const markersRef = useRef<{
     pickup?: google.maps.Marker;
     destination?: google.maps.Marker;
@@ -848,6 +851,42 @@ export function GoogleDeliveryMap({
     }
   }, [mapsLoaded, riderLocation, pickupCoordinates, deliveryCoordinates, isDelivered, multiDeliveries]);
 
+  // ─── 8. Heatmap Layer (Admin Demand Heatmap) ───────────────────────────────
+  useEffect(() => {
+    if (!mapsLoaded || !mapInstanceRef.current || !window.google?.maps) return;
+    const maps = window.google.maps;
+    const map = mapInstanceRef.current;
+
+    if (!heatmapPoints || heatmapPoints.length === 0) {
+      if (heatmapLayerRef.current) {
+        heatmapLayerRef.current.setMap(null);
+        heatmapLayerRef.current = null;
+      }
+      return;
+    }
+
+    const dataPoints = heatmapPoints.map((p) => ({
+      location: new maps.LatLng(p.latitude, p.longitude),
+      weight: p.weight || 1,
+    }));
+
+    if (heatmapLayerRef.current) {
+      heatmapLayerRef.current.setData(dataPoints as any);
+      heatmapLayerRef.current.setMap(map);
+    } else {
+      const Heatmap = (maps as any).visualization?.HeatmapLayer;
+      if (Heatmap) {
+        const heatmap = new Heatmap({
+          data: dataPoints,
+          map,
+          radius: 35,
+          opacity: 0.75,
+        });
+        heatmapLayerRef.current = heatmap;
+      }
+    }
+  }, [mapsLoaded, heatmapPoints]);
+
   const handleCenterOnRider = () => {
     if (!mapInstanceRef.current) return;
     if (riderLocation?.latitude && riderLocation?.longitude) {
@@ -905,7 +944,7 @@ export function GoogleDeliveryMap({
 
       {/* Top Status HUD Badge */}
       <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 pointer-events-auto z-20">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {/* Live Status Pill */}
           <div
             className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold shadow-md backdrop-blur-md ${
@@ -939,12 +978,32 @@ export function GoogleDeliveryMap({
             </div>
           )}
 
+          {/* Heatmap Active Badge */}
+          {heatmapPoints && heatmapPoints.length > 0 && (
+            <div className="inline-flex items-center gap-1.5 bg-rose-500/20 px-2.5 py-1 rounded-full border border-rose-500/40 backdrop-blur-sm text-[11px] font-semibold text-rose-300">
+              <span>🔥 Demand Heatmap ({heatmapPoints.length} hubs)</span>
+            </div>
+          )}
+
           {/* Route Status / Duration HUD */}
           {routeInfo?.duration && (
             <div className="hidden sm:inline-flex items-center gap-1.5 bg-slate-900/80 px-2.5 py-1 rounded-full border border-slate-700/50 backdrop-blur-sm text-[11px] font-semibold text-emerald-400">
               <FaRoute className="text-xs" />
               <span>{routeInfo.duration} ({routeInfo.distance})</span>
             </div>
+          )}
+
+          {/* GPS Accuracy Badge */}
+          {riderLocation?.accuracy !== undefined && (
+            <span
+              className={`hidden md:inline-flex items-center gap-1 px-2 py-1 rounded-md backdrop-blur-sm border text-[10px] ${
+                riderLocation.accuracy > 100
+                  ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                  : "bg-slate-900/80 text-slate-300 border-slate-700/50"
+              }`}
+            >
+              📡 ±{Math.round(riderLocation.accuracy)}m
+            </span>
           )}
 
           {/* Freshness Timestamp */}
