@@ -1,3 +1,8 @@
+/**
+ * ShopNest Delivery & Logistics API Client
+ * Strongly typed client bindings for courier telemetry, requests, ratings, and incident management
+ */
+
 import { clientFetch, clientMutation } from "../core/client";
 
 export interface DeliveryManPersonalInfo {
