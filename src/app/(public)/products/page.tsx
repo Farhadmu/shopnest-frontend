@@ -1,9 +1,10 @@
+import { Suspense } from "react";
 import {
   getProductsPaged,
+  getCategoryCounts,
   PagedProducts,
-  getStoreOptions,
-  StoreOption,
   getSellerOptions,
+  StoreOption,
 } from "@/lib/api/products";
 import { getCategories, Category } from "@/lib/api/categories";
 import { ProductsHero } from "@/components/products/listing/ProductsHero";
@@ -11,6 +12,10 @@ import { CategoryChipsBar } from "@/components/products/listing/CategoryChipsBar
 import { ProductsFilterSidebar } from "@/components/products/listing/ProductsFilterSidebar";
 import { ProductsResultsPanel } from "@/components/products/listing/ProductsResultsPanel";
 import { ProductsPaginationBar } from "@/components/products/listing/ProductsPaginationBar";
+import {
+  ProductsResultsSkeleton,
+  ProductsPaginationSkeleton,
+} from "@/components/products/listing/ProductsResultsSkeleton";
 import { TrustAssuranceRibbon } from "@/components/products/listing/TrustAssuranceRibbon";
 import { AiAssistantFab } from "@/components/products/listing/AiAssistantFab";
 import { ProductsQueryState } from "@/lib/utils/product-query";
@@ -26,6 +31,45 @@ export interface ProductsPageProps {
 
 const PAGE_SIZE = 12;
 
+const EMPTY_PAGE: PagedProducts = { items: [], total: 0, page: 1, limit: PAGE_SIZE, totalPages: 1 };
+
+/**
+ * Renders the product grid by resolving the query the page already started.
+ * Lives behind its own Suspense boundary so a filter change only refreshes the
+ * results area — the filter sidebar and category chips stay on screen and usable.
+ */
+async function ProductsGrid({ products, sort }: { products: Promise<PagedProducts>; sort: string }) {
+  const data = await products;
+  return (
+    <ProductsResultsPanel
+      products={data.items}
+      total={data.total}
+      page={data.page}
+      limit={data.limit}
+      sort={sort}
+    />
+  );
+}
+
+/** Sibling boundary for the pagination bar, resolving the same product query. */
+async function ProductsPagination({
+  products,
+  query,
+}: {
+  products: Promise<PagedProducts>;
+  query: ProductsQueryState;
+}) {
+  const data = await products;
+  return (
+    <ProductsPaginationBar
+      page={data.page}
+      totalPages={data.totalPages}
+      total={data.total}
+      query={query}
+    />
+  );
+}
+
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
   const params = await searchParams;
 
@@ -39,13 +83,6 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const seller = params.seller ?? "";
   const productRating = params.productRating ?? "";
 
-  let data: PagedProducts = { items: [], total: 0, page: 1, limit: PAGE_SIZE, totalPages: 1 };
-  let categories: Category[] = [];
-  let allCategoriesTotal = 0;
-  let categoryCounts: Record<string, number> = {};
-  let storeOptions: StoreOption[] = [];
-  let sellerOptions: StoreOption[] = [];
-
   const sharedFilters = {
     search: search.trim() || undefined,
     store: store || undefined,
@@ -56,46 +93,36 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     sort,
   };
 
-  try {
-    const [mainData, categoriesResult, allTotalResult, storesResult, sellersResult] =
-      await Promise.all([
-        getProductsPaged({
-          page,
-          limit: PAGE_SIZE,
-          category: category || undefined,
-          ...sharedFilters,
-        }),
-        getCategories().catch(() => []),
-        getProductsPaged({ page: 1, limit: 1, ...sharedFilters }).catch(() => null),
-        getStoreOptions().catch(() => []),
-        getSellerOptions().catch(() => []),
-      ]);
-
-    data = mainData;
-    categories = categoriesResult;
-    allCategoriesTotal = allTotalResult?.total ?? mainData.total;
-    storeOptions = storesResult;
-    sellerOptions = sellersResult;
-
-    const countEntries = await Promise.all(
-      categories.map(async (cat) => {
-        try {
-          const res = await getProductsPaged({
-            page: 1,
-            limit: 1,
-            category: cat.name,
-            ...sharedFilters,
-          });
-          return [cat.name, res.total] as const;
-        } catch {
-          return [cat.name, 0] as const;
-        }
-      })
-    );
-    categoryCounts = Object.fromEntries(countEntries);
-  } catch (err) {
+  // Start the product query before awaiting anything else so it runs in
+  // parallel with the filter metadata below, then hand the promise to the
+  // Suspense boundaries instead of blocking the whole page on it.
+  const productsPromise = getProductsPaged({
+    page,
+    limit: PAGE_SIZE,
+    category: category || undefined,
+    ...sharedFilters,
+  }).catch((err) => {
     console.error("Failed to load products catalog:", err);
-  }
+    return EMPTY_PAGE;
+  });
+
+  const [categories, counts, sellerOptions] = await Promise.all([
+    getCategories().catch((err) => {
+      console.error("Failed to load categories:", err);
+      return [] as Category[];
+    }),
+    getCategoryCounts(sharedFilters).catch((err) => {
+      console.error("Failed to load category counts:", err);
+      return null;
+    }),
+    getSellerOptions().catch((err) => {
+      console.error("Failed to load seller options:", err);
+      return [] as StoreOption[];
+    }),
+  ]);
+
+  const categoryCounts: Record<string, number> = counts?.counts ?? {};
+  const allCategoriesTotal = counts?.total ?? 0;
 
   const query: ProductsQueryState = { ...params, page: String(page) };
 
@@ -114,21 +141,14 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       <div className="flex flex-col items-start gap-6 lg:flex-row">
         <ProductsFilterSidebar query={query} sellerOptions={sellerOptions} />
 
-        <ProductsResultsPanel
-          products={data.items}
-          total={data.total}
-          page={data.page}
-          limit={data.limit}
-          sort={sort}
-        />
+        <Suspense fallback={<ProductsResultsSkeleton />}>
+          <ProductsGrid products={productsPromise} sort={sort} />
+        </Suspense>
       </div>
 
-      <ProductsPaginationBar
-        page={data.page}
-        totalPages={data.totalPages}
-        total={data.total}
-        query={query}
-      />
+      <Suspense fallback={<ProductsPaginationSkeleton />}>
+        <ProductsPagination products={productsPromise} query={query} />
+      </Suspense>
 
       <TrustAssuranceRibbon />
 
