@@ -109,7 +109,7 @@ export function SellerFullDossier({
                 </Link>
               </p>
               <p className="text-xs text-muted">
-                <strong className="text-text">Category:</strong> {seller.businessInfo?.category || "General Marketplace"}
+                <strong className="text-text">Category:</strong> {seller.businessInfo?.categoryId || "General Marketplace"}
               </p>
             </div>
           </div>
@@ -221,7 +221,7 @@ export function SellerFullDossier({
 
             <div className="rounded-xl border border-border bg-muted-bg/20 p-3">
               <span className="text-muted block text-[10px] font-bold">Store Category</span>
-              <p className="font-bold text-text mt-0.5">{seller.businessInfo?.category || "General"}</p>
+              <p className="font-bold text-text mt-0.5">{seller.businessInfo?.categoryId || "General"}</p>
             </div>
 
             <div className="rounded-xl border border-border bg-muted-bg/20 p-3">

@@ -57,6 +57,22 @@ const userDropdownItems: Record<Exclude<UserRole, "guest">, DropdownItem[]> = {
     { icon: "📦", label: "Order Operations", href: "/dashboard/admin/orders" },
     { icon: FaUser, label: "Profile Settings", href: "/dashboard/admin/profile" },
   ],
+  delivery_man: [
+    { icon: "🛵", label: "Delivery Cockpit", href: "/dashboard/delivery" },
+    { icon: "📦", label: "Available Orders", href: "/dashboard/delivery/available" },
+    { icon: "🎯", label: "My Missions", href: "/dashboard/delivery/my-deliveries" },
+    { icon: "🤖", label: "AI Delivery Copilot", href: "/dashboard/delivery/copilot" },
+    { icon: "🚨", label: "Incident Reports", href: "/dashboard/delivery/incidents" },
+    { icon: FaUser, label: "Partner Profile", href: "/dashboard/delivery/profile" },
+  ],
+  delivery: [
+    { icon: "🛵", label: "Delivery Cockpit", href: "/dashboard/delivery" },
+    { icon: "📦", label: "Available Orders", href: "/dashboard/delivery/available" },
+    { icon: "🎯", label: "My Missions", href: "/dashboard/delivery/my-deliveries" },
+    { icon: "🤖", label: "AI Delivery Copilot", href: "/dashboard/delivery/copilot" },
+    { icon: "🚨", label: "Incident Reports", href: "/dashboard/delivery/incidents" },
+    { icon: FaUser, label: "Partner Profile", href: "/dashboard/delivery/profile" },
+  ],
 };
 
 interface NavbarUserMenuProps {
@@ -64,7 +80,7 @@ interface NavbarUserMenuProps {
     id?: string;
     name?: string;
     email?: string;
-    role?: "customer" | "seller" | "admin";
+    role?: "customer" | "seller" | "admin" | "delivery_man" | "delivery";
     image?: string;
   };
   role: UserRole;
@@ -83,6 +99,12 @@ function RoleBadge({ role }: { role: UserRole }) {
     return (
       <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400">
         Seller
+      </span>
+    );
+  if (role === "delivery_man" || role === "delivery")
+    return (
+      <span className="rounded-md bg-sky-500/15 px-2 py-0.5 text-[10px] font-black uppercase text-sky-600 dark:text-sky-400">
+        Delivery Partner
       </span>
     );
   return (

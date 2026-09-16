@@ -94,9 +94,9 @@ export function StatCard({
   trend,
   color = "default",
 }: {
-  icon: string;
+  icon: ReactNode;
   label: string;
-  value: string | number;
+  value: string | number | ReactNode;
   note: string;
   trend?: string;
   color?: "default" | "success" | "warning" | "error" | "accent" | "secondary";
@@ -172,18 +172,25 @@ export function FeatureGrid({ links }: { links: DashboardLink[] }) {
 export function Panel({
   title,
   action,
+  icon,
   children,
 }: {
-  title: string;
+  title?: string;
   action?: ReactNode;
+  icon?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-6">
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-lg font-black text-text">{title}</h2>
-        {action}
-      </div>
+      {(title || action || icon) && (
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            {icon}
+            {title && <h2 className="text-lg font-black text-text">{title}</h2>}
+          </div>
+          {action}
+        </div>
+      )}
       {children}
     </section>
   );

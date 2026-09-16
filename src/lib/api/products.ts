@@ -56,6 +56,24 @@ export async function getSellerOptions() {
   return clientFetch<StoreOption[]>("/products/sellers/options");
 }
 
+export interface CategoryCounts {
+  /** Products matching the filters across every category. */
+  total: number;
+  /** Per-category product counts, keyed by category name. */
+  counts: Record<string, number>;
+}
+
+/**
+ * Per-category product counts for the current filters in ONE request.
+ * Replaces firing a `/products` request per category just to read
+ * X-Total-Count off each response.
+ */
+export async function getCategoryCounts(
+  params?: Record<string, string | number | boolean | undefined>
+) {
+  return clientFetch<CategoryCounts>("/products/categories/counts", { params });
+}
+
 export async function getProducts(params?: Record<string, string | number | boolean | undefined>) {
   return clientFetch<Product[]>("/products", { params });
 }

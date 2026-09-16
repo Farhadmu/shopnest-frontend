@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { clientFetch, clientMutation } from "@/lib/core/client";
 import { getMyStore } from "@/lib/api/sellers";
+import { markOrderReadyForPickup } from "@/lib/api/delivery";
 import { useSession } from "@/lib/auth-client";
 import {
   FiPackage,
@@ -14,6 +15,7 @@ import {
   FiFilter,
   FiUser,
 } from "react-icons/fi";
+import { FaMotorcycle, FaBoxOpen } from "react-icons/fa";
 
 const ORDER_STEPS = [
   { key: "confirmed", label: "Accept Order" },
@@ -28,7 +30,9 @@ export default function SellerOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [readyingPickupId, setReadyingPickupId] = useState<string | null>(null);
   const [storeInfo, setStoreInfo] = useState<any>(null);
+  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const { data: session } = useSession();
 
   const loadOrders = async () => {
@@ -65,6 +69,28 @@ export default function SellerOrdersPage() {
     }
   };
 
+  const handleMarkReadyForPickup = async (orderId: string) => {
+    setReadyingPickupId(orderId);
+    setNotification(null);
+    try {
+      const res = await markOrderReadyForPickup(orderId, {
+        sellerNotes: "Items packed and ready at store counter for delivery partner pickup.",
+      });
+      setNotification({
+        type: "success",
+        message: `🎉 Order #${orderId.slice(-8).toUpperCase()} is now listed on the Open Delivery Marketplace for riders to claim!`,
+      });
+      loadOrders();
+    } catch (err: any) {
+      setNotification({
+        type: "error",
+        message: err?.message || "Failed to mark order ready for pickup.",
+      });
+    } finally {
+      setReadyingPickupId(null);
+    }
+  };
+
   const userId = (session?.user as any)?.id;
   const validStoreIds = new Set([
     storeInfo?.id,
@@ -98,7 +124,7 @@ export default function SellerOrdersPage() {
         <div>
           <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Seller Order Management</h1>
           <p className="text-sm text-muted mt-1">
-            Track customer orders, advance fulfillment status, and dispatch items to courier.
+            Track customer orders, pack items, and dispatch open delivery requests to delivery partners.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -108,6 +134,21 @@ export default function SellerOrdersPage() {
           </div>
         </div>
       </div>
+
+      {notification && (
+        <div
+          className={`rounded-2xl border p-4 text-xs font-bold flex items-center justify-between gap-3 ${
+            notification.type === "success"
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-500"
+              : "border-rose-500/30 bg-rose-500/10 text-rose-500"
+          }`}
+        >
+          <span>{notification.message}</span>
+          <button type="button" onClick={() => setNotification(null)} className="text-muted hover:text-foreground text-xs">
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Filter Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -163,6 +204,7 @@ export default function SellerOrdersPage() {
           {filteredOrders.map((o) => {
             const orderId = String(o._id || o.id);
             const isUpdating = updatingId === orderId;
+            const isReadying = readyingPickupId === orderId;
 
             // Seller items on this order
             const sellerItems = (o.items || []).filter(
@@ -212,11 +254,26 @@ export default function SellerOrdersPage() {
                     </div>
                   </div>
 
-                  <div className="sm:text-right">
-                    <span className="text-xs text-muted block">Store Items Total</span>
-                    <span className="text-base font-black text-primary">
-                      ৳{orderSubtotal.toLocaleString() || (o.totalAmount || 0).toLocaleString()}
-                    </span>
+                  <div className="flex items-center gap-4 sm:text-right">
+                    <div>
+                      <span className="text-xs text-muted block">Store Items Total</span>
+                      <span className="text-base font-black text-primary">
+                        ৳{orderSubtotal.toLocaleString() || (o.totalAmount || 0).toLocaleString()}
+                      </span>
+                    </div>
+
+                    {/* READY FOR PICKUP BUTTON */}
+                    {(o.status === "confirmed" || o.status === "processing") && (
+                      <button
+                        type="button"
+                        onClick={() => handleMarkReadyForPickup(orderId)}
+                        disabled={isReadying}
+                        className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2 text-xs font-black text-white hover:from-emerald-600 hover:to-teal-700 shadow-md shadow-emerald-500/20 transition cursor-pointer disabled:opacity-50"
+                      >
+                        <FaMotorcycle size={12} />
+                        <span>{isReadying ? "Dispatching..." : "Ready for Pickup"}</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -227,7 +284,9 @@ export default function SellerOrdersPage() {
                       <FiMapPin className="text-primary" /> Delivery Destination & Customer
                     </p>
                     <p className="text-foreground font-medium">{o.shippingAddress || "Customer Address On File"}</p>
-                    <p className="text-muted mt-1">Payment Method: <strong className="text-foreground uppercase">{o.paymentMethod || "COD"}</strong></p>
+                    <p className="text-muted mt-1">
+                      Payment Method: <strong className="text-foreground uppercase">{o.paymentMethod || "COD"}</strong>
+                    </p>
                   </div>
 
                   <div className="p-3 bg-muted-bg/50 rounded-xl border border-border/40">
@@ -247,7 +306,7 @@ export default function SellerOrdersPage() {
 
                 {/* Status Action Buttons */}
                 <div className="pt-2 border-t border-border/40 flex flex-wrap items-center justify-between gap-3">
-                  <span className="text-xs font-semibold text-muted">Update Fulfillment Status:</span>
+                  <span className="text-xs font-semibold text-muted">Advance Fulfillment Status:</span>
                   <div className="flex flex-wrap gap-2">
                     {ORDER_STEPS.map((step) => {
                       const isActive = o.status === step.key;
@@ -277,4 +336,3 @@ export default function SellerOrdersPage() {
     </div>
   );
 }
-

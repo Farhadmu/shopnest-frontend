@@ -52,6 +52,7 @@ export const adminDashboardLinks: DashboardLink[] = [
   { label: "Audit Logs", href: "/dashboard/admin/audit-logs", icon: "📜", description: "Governance audit trail." },
   { label: "Users", href: "/dashboard/admin/users", icon: "👤", description: "User management." },
   { label: "Sellers", href: "/dashboard/admin/sellers", icon: "🏬", description: "Seller verification." },
+  { label: "Delivery Men", href: "/dashboard/admin/delivery-men", icon: "🚚", description: "Delivery man management & verification." },
   { label: "Products", href: "/dashboard/admin/products", icon: "📦", description: "Product moderation." },
   { label: "Categories", href: "/dashboard/admin/categories", icon: "🗂️", description: "Category management." },
   { label: "Hero Banners", href: "/dashboard/admin/hero-banners", icon: "🖼️", description: "Category hero campaigns." },
@@ -59,4 +60,14 @@ export const adminDashboardLinks: DashboardLink[] = [
   { label: "Coupons", href: "/dashboard/admin/coupons", icon: "🏷️", description: "Platform coupon campaigns." },
   { label: "Reviews", href: "/dashboard/admin/reviews", icon: "⭐", description: "Review moderation." },
   { label: "Notifications", href: "/dashboard/admin/notifications", icon: "🔔", description: "System alerts." },
+];
+
+export const deliveryManDashboardLinks: DashboardLink[] = [
+  { label: "Dashboard", href: "/dashboard/delivery", icon: "🏠", description: "Delivery overview & live cockpit." },
+  { label: "Available Deliveries", href: "/dashboard/delivery/available", icon: "📍", description: "Browse and accept open delivery requests." },
+  { label: "My Deliveries", href: "/dashboard/delivery/my-deliveries", icon: "🚚", description: "Active & completed delivery missions." },
+  { label: "AI Copilot", href: "/dashboard/delivery/copilot", icon: "🤖", description: "AI route, workload & earnings advisor." },
+  { label: "Incidents & Issues", href: "/dashboard/delivery/incidents", icon: "⚠️", description: "Report and track delivery incidents." },
+  { label: "Notifications", href: "/dashboard/delivery/notifications", icon: "🔔", description: "Delivery alerts & updates." },
+  { label: "My Profile", href: "/dashboard/delivery/profile", icon: "👤", description: "Profile, documents & vehicle info." },
 ];

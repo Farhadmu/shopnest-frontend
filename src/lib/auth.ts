@@ -5,6 +5,7 @@ import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
 import { MongoClient } from "mongodb";
 import nodemailer from "nodemailer";
+import { bdMobileSchema } from "@/lib/phone";
 
 /**
  * Server-side Better Auth Instance
@@ -97,6 +98,14 @@ export const auth = betterAuth({
         type: "string",
         required: false,
         input: true,
+        /**
+         * Server-side validation. Better Auth runs this before the user row is
+         * written and answers `400 BAD_REQUEST` when it fails, so the phone rule
+         * holds even for requests that skip the registration form.
+         *
+         * Optional (not `required`) because social sign-ups carry no phone.
+         */
+        validator: { input: bdMobileSchema },
       },
       shopName: {
         type: "string",

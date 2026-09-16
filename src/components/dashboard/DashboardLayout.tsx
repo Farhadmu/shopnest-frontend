@@ -4,12 +4,13 @@ import React, { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { FaArrowRight, FaSignOutAlt, FaStore, FaShieldAlt, FaUser, FaHome } from "react-icons/fa";
+import { FaArrowRight, FaSignOutAlt, FaStore, FaShieldAlt, FaUser, FaHome, FaMotorcycle } from "react-icons/fa";
 import { useSession, signOut } from "@/lib/auth-client";
 import {
   userDashboardLinks,
   sellerDashboardLinks,
   adminDashboardLinks,
+  deliveryManDashboardLinks,
 } from "@/lib/constants/dashboard-nav";
 import type { DashboardLink } from "@/components/dashboard/DashboardUI";
 import { SidebarBrand } from "@/components/dashboard/sidebar/SidebarBrand";
@@ -38,6 +39,9 @@ function resolveRoleAndLinks(
   if (pathname.startsWith("/dashboard/admin")) {
     return { role: "Administrator", links: adminDashboardLinks };
   }
+  if (pathname.startsWith("/dashboard/delivery")) {
+    return { role: "Delivery Man", links: deliveryManDashboardLinks };
+  }
   return { role: "Customer", links: userDashboardLinks };
 }
 
@@ -45,6 +49,7 @@ function roleIconFor(role: string) {
   const lower = role.toLowerCase();
   if (lower.includes("admin")) return <FaShieldAlt />;
   if (lower.includes("seller")) return <FaStore />;
+  if (lower.includes("delivery")) return <FaMotorcycle />;
   return <FaUser />;
 }
 
