@@ -4,6 +4,9 @@ import { useEffect, useState, useCallback } from "react";
 import { DashboardShell, Panel, StatCard } from "@/components/dashboard/DashboardUI";
 import { adminDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { clientFetch, clientMutation } from "@/lib/core/client";
+import { getDeliverySocket } from "@/lib/socket/delivery-socket";
+import { LiveDeliveryMap, FleetRiderMarkerData } from "@/components/delivery/LiveDeliveryMap";
+import { getAdminDeliveryHeatmap, DeliveryHeatmapPoint } from "@/lib/api/delivery";
 import {
   FaSyncAlt,
   FaUser,
@@ -21,6 +24,8 @@ import {
   FaCar,
   FaUniversity,
   FaEye,
+  FaCompass,
+  FaMapMarkedAlt,
 } from "react-icons/fa";
 
 interface DeliveryManProfile {
@@ -104,6 +109,14 @@ interface DeliveryManItem {
   totalDeliveries: number;
   completedDeliveries: number;
   failedDeliveries: number;
+  currentLocation?: {
+    latitude: number;
+    longitude: number;
+    speed?: number;
+    heading?: number;
+    accuracy?: number;
+    updatedAt?: string;
+  };
   name?: string;
   email?: string;
   image?: string;
@@ -116,10 +129,31 @@ export default function AdminDeliveryMenPage() {
   const [filter, setFilter] = useState("all");
   const [selectedApplicant, setSelectedApplicant] = useState<DeliveryManItem | null>(null);
 
+  // Demand Heatmap State
+  const [showHeatmap, setShowHeatmap] = useState(false);
+  const [heatmapTimeRange, setHeatmapTimeRange] = useState<"today" | "7d" | "30d" | "all">("30d");
+  const [heatmapPoints, setHeatmapPoints] = useState<DeliveryHeatmapPoint[]>([]);
+  const [loadingHeatmap, setLoadingHeatmap] = useState(false);
+
   // Rejection modal
   const [rejectingUserId, setRejectingUserId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+
+  useEffect(() => {
+    if (!showHeatmap) return;
+    setLoadingHeatmap(true);
+    getAdminDeliveryHeatmap(heatmapTimeRange)
+      .then((res) => {
+        setHeatmapPoints(res?.points || []);
+      })
+      .catch(() => {
+        setHeatmapPoints([]);
+      })
+      .finally(() => {
+        setLoadingHeatmap(false);
+      });
+  }, [showHeatmap, heatmapTimeRange]);
 
   const loadDeliveryMen = useCallback(async () => {
     setLoading(true);
@@ -139,6 +173,59 @@ export default function AdminDeliveryMenPage() {
 
   useEffect(() => {
     loadDeliveryMen();
+
+    if (typeof window !== "undefined") {
+      const socket = getDeliverySocket();
+      socket.emit("join:admin_operations");
+
+      const onAdminRiderLocation = (payload: {
+        riderId: string;
+        latitude: number;
+        longitude: number;
+        speed?: number;
+        heading?: number;
+        accuracy?: number;
+        deliveryRequestId?: string;
+        orderId?: string;
+      }) => {
+        if (!payload?.riderId || typeof payload.latitude !== "number") return;
+        setDeliveryMen((prev) =>
+          prev.map((dm) => {
+            if (dm.profile.userId === payload.riderId) {
+              return {
+                ...dm,
+                isActive: true,
+                currentLocation: {
+                  latitude: payload.latitude,
+                  longitude: payload.longitude,
+                  speed: payload.speed,
+                  heading: payload.heading,
+                  accuracy: payload.accuracy,
+                  updatedAt: new Date().toISOString(),
+                },
+              };
+            }
+            return dm;
+          })
+        );
+      };
+
+      const onDeliveryStatusChange = () => {
+        loadDeliveryMen();
+      };
+
+      socket.on("admin:rider_location", onAdminRiderLocation);
+      socket.on("admin:delivery_status", onDeliveryStatusChange);
+      socket.on("admin:delivery_assigned", onDeliveryStatusChange);
+      socket.on("admin:delivery_completed", onDeliveryStatusChange);
+
+      return () => {
+        socket.off("admin:rider_location", onAdminRiderLocation);
+        socket.off("admin:delivery_status", onDeliveryStatusChange);
+        socket.off("admin:delivery_assigned", onDeliveryStatusChange);
+        socket.off("admin:delivery_completed", onDeliveryStatusChange);
+      };
+    }
   }, [loadDeliveryMen]);
 
   const handleRefresh = () => {
@@ -179,6 +266,33 @@ export default function AdminDeliveryMenPage() {
   const suspendedCount = deliveryMen.filter((d) => d.profile.status === "suspended").length;
   const activeNowCount = deliveryMen.filter((d) => d.isActive || d.availabilityStatus === "available").length;
 
+  const fleetMarkers: FleetRiderMarkerData[] = deliveryMen
+    .filter(
+      (dm) =>
+        dm.currentLocation?.latitude !== undefined &&
+        dm.currentLocation?.latitude !== null &&
+        dm.currentLocation?.longitude !== undefined &&
+        dm.currentLocation?.longitude !== null
+    )
+    .map((dm) => {
+      const isOnline = dm.isActive || dm.availabilityStatus === "available" || dm.availabilityStatus === "busy";
+      return {
+        id: dm.profile.userId,
+        name: dm.personal?.fullName || dm.name || "Delivery Partner",
+        latitude: dm.currentLocation!.latitude,
+        longitude: dm.currentLocation!.longitude,
+        speed: dm.currentLocation!.speed,
+        heading: dm.currentLocation!.heading,
+        accuracy: dm.currentLocation!.accuracy,
+        status: isOnline ? (dm.availabilityStatus || "available") : "offline",
+        isActive: isOnline,
+        phone: dm.personal?.phone,
+        rating: dm.rating,
+        vehicleType: dm.vehicle?.vehicleType,
+        updatedAt: dm.currentLocation!.updatedAt,
+      };
+    });
+
   return (
     <DashboardShell
       role="admin"
@@ -214,6 +328,61 @@ export default function AdminDeliveryMenPage() {
             note="Blocked from deliveries"
           />
         </div>
+
+        {/* ─── Real Google Map Fleet Radar Cockpit & Heatmap ────────────────── */}
+        <Panel
+          title="Active Logistics Fleet Radar (Bangladesh Real-Time)"
+          action={
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowHeatmap((prev) => !prev)}
+                className={`px-3 py-1 rounded-lg text-xs font-bold border transition cursor-pointer flex items-center gap-1.5 ${
+                  showHeatmap
+                    ? "bg-rose-500 text-white border-rose-600 shadow-sm"
+                    : "bg-surface border-border text-foreground hover:bg-muted-bg"
+                }`}
+              >
+                <span>🔥 Demand Heatmap</span>
+                {loadingHeatmap && <FaSyncAlt className="animate-spin text-[10px]" />}
+              </button>
+
+              {showHeatmap && (
+                <div className="flex items-center gap-1 bg-surface border border-border p-0.5 rounded-lg text-[10px] font-bold">
+                  {(["today", "7d", "30d"] as const).map((tr) => (
+                    <button
+                      key={tr}
+                      type="button"
+                      onClick={() => setHeatmapTimeRange(tr)}
+                      className={`px-2 py-0.5 rounded ${
+                        heatmapTimeRange === tr ? "bg-primary text-white" : "text-muted hover:text-foreground"
+                      }`}
+                    >
+                      {tr.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>{fleetMarkers.length} GPS Riders</span>
+              </span>
+            </div>
+          }
+        >
+          <div className="space-y-3">
+            <p className="text-xs text-muted">
+              Live geographic positioning of active delivery fleet across Bangladesh with demand density heatmap clustering.
+            </p>
+            <LiveDeliveryMap
+              fleetRiders={fleetMarkers}
+              heatmapPoints={showHeatmap ? heatmapPoints : undefined}
+              trackingState={fleetMarkers.length > 0 ? "LIVE" : "LOCATION_UNAVAILABLE"}
+              height="h-80 sm:h-96"
+            />
+          </div>
+        </Panel>
 
         {/* Controls */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm">

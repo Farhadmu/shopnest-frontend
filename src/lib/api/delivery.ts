@@ -1,3 +1,8 @@
+/**
+ * ShopNest Delivery & Logistics API Client
+ * Strongly typed client bindings for courier telemetry, requests, ratings, and incident management
+ */
+
 import { clientFetch, clientMutation } from "../core/client";
 
 export interface DeliveryManPersonalInfo {
@@ -48,6 +53,9 @@ export interface DeliveryManVehicleInfo {
   vehicleBackPhoto?: string;
   vehicleFitnessExpiryDate?: string;
   vehicleCapacity?: number;
+  packageCapacity?: number;
+  weightCapacityKg?: number;
+  volumeCapacityLiters?: number;
 }
 
 export interface DeliveryManBankInfo {
@@ -90,10 +98,13 @@ export interface DeliveryManDetails {
   bank?: DeliveryManBankInfo;
   preferences?: DeliveryManPreferences;
   isActive: boolean;
-  availabilityStatus: "offline" | "available" | "busy";
+  availabilityStatus: "offline" | "available" | "busy" | "full_capacity" | "on_break" | "suspended";
   currentLocation?: {
     latitude: number;
     longitude: number;
+    speed?: number;
+    heading?: number;
+    accuracy?: number;
     updatedAt?: string;
   };
   rating: number;
@@ -105,7 +116,7 @@ export interface DeliveryManDetails {
 }
 
 export interface DeliveryStats {
-  availabilityStatus: "offline" | "available" | "busy";
+  availabilityStatus: "offline" | "available" | "busy" | "full_capacity" | "on_break" | "suspended";
   isActive: boolean;
   totalDeliveries: number;
   completedDeliveries: number;
@@ -152,19 +163,34 @@ export interface DeliveryRequest {
   priority: "normal" | "high" | "urgent";
   pickupAddress?: string;
   deliveryAddress?: string;
+  pickupCoordinates?: { latitude: number; longitude: number } | null;
+  deliveryCoordinates?: { latitude: number; longitude: number } | null;
   pickupContact?: string;
   deliveryContact?: string;
-  estimatedDistance?: number;
   deliveryFee?: number;
-  sellerNotes?: string;
+  estimatedDistance?: number;
+  distanceKm?: number;
   packageInfo?: {
     weight?: number;
     dimensions?: string;
-    specialInstructions?: string;
     fragile?: boolean;
+    specialInstructions?: string;
   };
-  createdAt: string;
-  updatedAt: string;
+  ranking?: {
+    pickupDistanceKm?: number | null;
+    estimatedTravelMinutes?: number | null;
+    fitsCapacity?: boolean;
+    fitsWeight?: boolean;
+    routeCompatibility?: string;
+    remainingSlots?: number;
+    remainingWeightKg?: number;
+  };
+  facts?: Record<string, any>;
+  calculations?: Record<string, any>;
+  inferences?: Record<string, any>;
+  sellerNotes?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface DeliveryIncident {
@@ -218,6 +244,8 @@ export interface DeliveryTrackingResponse {
   };
   pickupAddress?: string;
   deliveryAddress?: string;
+  pickupCoordinates?: { latitude: number; longitude: number } | null;
+  deliveryCoordinates?: { latitude: number; longitude: number } | null;
 }
 
 // ─── API Client Functions ──────────────────────────────────────────────────────
@@ -352,14 +380,17 @@ export async function verifyDeliveryOtp(id: string, otp: string) {
 }
 
 export async function reportDeliveryIncident(
-  deliveryId: string,
+  deliveryId: string | undefined,
   data: {
     category: string;
-    severity: "low" | "medium" | "high" | "critical";
+    severity?: "low" | "medium" | "high" | "critical";
     description: string;
     evidenceImages?: string[];
   }
 ) {
+  if (!deliveryId || deliveryId === "general") {
+    return clientMutation<{ incident: DeliveryIncident }>("/delivery/incidents", "POST", data);
+  }
   return clientMutation<{ incident: DeliveryIncident }>(
     `/delivery/requests/${deliveryId}/incident`,
     "POST",
@@ -367,8 +398,24 @@ export async function reportDeliveryIncident(
   );
 }
 
+export async function createGeneralIncident(data: {
+  category: string;
+  severity?: "low" | "medium" | "high" | "critical";
+  description: string;
+  evidenceImages?: string[];
+  deliveryRequestId?: string;
+  orderId?: string;
+}) {
+  return clientMutation<{ incident: DeliveryIncident }>("/delivery/incidents", "POST", data);
+}
+
 export async function getMyIncidents() {
   return clientFetch<DeliveryIncident[]>("/delivery/incidents");
+}
+
+export async function getSellerActiveDeliveries(status?: string) {
+  const query = status && status !== "all" ? `?status=${encodeURIComponent(status)}` : "";
+  return clientFetch<DeliveryRequest[]>(`/delivery/seller/active-deliveries${query}`);
 }
 
 export async function getDeliveryTracking(orderId: string) {
@@ -376,7 +423,7 @@ export async function getDeliveryTracking(orderId: string) {
 }
 
 export async function rateDelivery(
-  deliveryId: string,
+  orderOrDeliveryId: string,
   data: {
     rating: number;
     professionalism?: number;
@@ -385,7 +432,7 @@ export async function rateDelivery(
     comment?: string;
   }
 ) {
-  return clientMutation(`/delivery/requests/${deliveryId}/rate`, "POST", data);
+  return clientMutation(`/delivery/orders/${orderOrDeliveryId}/rate`, "POST", data);
 }
 
 // ─── AI Delivery Copilot API ──────────────────────────────────────────────────
@@ -418,4 +465,26 @@ export async function markOrderReadyForPickup(orderId: string, data?: { packageI
     "POST",
     data || {}
   );
+}
+
+// ─── Admin Delivery Demand Heatmap ──────────────────────────────────────────
+
+export interface DeliveryHeatmapPoint {
+  latitude: number;
+  longitude: number;
+  weight: number;
+  count: number;
+  address?: string;
+}
+
+export interface DeliveryHeatmapResponse {
+  timeRange: string;
+  totalDeliveriesAnalyzed: number;
+  pointCount: number;
+  points: DeliveryHeatmapPoint[];
+}
+
+export async function getAdminDeliveryHeatmap(timeRange: "today" | "7d" | "30d" | "all" = "30d"): Promise<DeliveryHeatmapResponse> {
+  const res = await clientFetch<{ data: DeliveryHeatmapResponse }>(`/delivery/admin/heatmap?timeRange=${timeRange}`);
+  return (res as any)?.data ?? res;
 }

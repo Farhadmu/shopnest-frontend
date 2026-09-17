@@ -267,7 +267,7 @@ export default function MyDeliveriesPage() {
                           )}
                         </div>
                         <p className="text-[11px] text-muted mt-0.5">
-                          Assigned: {new Date(delivery.createdAt).toLocaleString()}
+                          Assigned: {delivery.createdAt ? new Date(delivery.createdAt).toLocaleString() : "Recently"}
                         </p>
                       </div>
                     </div>

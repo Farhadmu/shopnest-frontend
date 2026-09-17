@@ -4,6 +4,8 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { getOrderById, cancelOrder, requestReturn, type Order } from "@/lib/api/orders";
 import { getDeliveryTracking, rateDelivery, type DeliveryTrackingResponse } from "@/lib/api/delivery";
+import { LiveDeliveryMap } from "@/components/delivery/LiveDeliveryMap";
+import { useDeliveryLiveTracking } from "@/hooks/delivery/useDeliveryLiveTracking";
 import { ReviewModal } from "@/components/reviews/ReviewModal";
 import Link from "next/link";
 import {
@@ -59,6 +61,16 @@ export default function OrderDetailsPage() {
   const [riderComment, setRiderComment] = useState("");
   const [submittingRiderRate, setSubmittingRiderRate] = useState(false);
   const [riderRateSuccess, setRiderRateSuccess] = useState(false);
+
+  const {
+    currentLocation: socketLocation,
+    trackingState,
+    secondsSinceLastUpdate,
+  } = useDeliveryLiveTracking({
+    orderId: id,
+    initialStatus: order?.status,
+    initialLocation: tracking?.currentLocation,
+  });
 
   const loadOrder = useCallback(async () => {
     if (!id) return;
@@ -382,6 +394,35 @@ export default function OrderDetailsPage() {
                 <span>Live GPS tracking activates automatically when your rider starts transit to your destination.</span>
               </div>
             )
+          )}
+
+          {/* Interactive Live Google Delivery Map */}
+          {order.status !== "delivered" && order.status !== "cancelled" && (
+            <div className="pt-2">
+              <LiveDeliveryMap
+                pickupAddress={tracking.pickupAddress || "Store Pickup"}
+                deliveryAddress={tracking.deliveryAddress || order.shippingAddress}
+                pickupCoordinates={tracking.pickupCoordinates}
+                deliveryCoordinates={tracking.deliveryCoordinates}
+                orderId={String(order.id || (order as any)._id || "")}
+                riderName={tracking.assignedRider?.name || "Assigned Courier"}
+                riderPhone={tracking.assignedRider?.phone}
+                status={order.status}
+                trackingState={trackingState}
+                secondsSinceLastUpdate={secondsSinceLastUpdate}
+                riderLocation={
+                  socketLocation ||
+                  (tracking.currentLocation
+                    ? {
+                        latitude: tracking.currentLocation.latitude,
+                        longitude: tracking.currentLocation.longitude,
+                        updatedAt: tracking.currentLocation.updatedAt || new Date().toISOString(),
+                      }
+                    : null)
+                }
+                height="h-72 sm:h-80"
+              />
+            </div>
           )}
         </div>
       )}

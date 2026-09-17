@@ -80,13 +80,14 @@ export default function DeliveryIncidentsPage() {
     setSubmitSuccess(false);
 
     try {
-      await reportDeliveryIncident(deliveryId || "general", {
+      await reportDeliveryIncident(deliveryId || undefined, {
         category,
         severity,
         description: description.trim(),
       });
       setSubmitSuccess(true);
       setDescription("");
+      setDeliveryId("");
       setShowForm(false);
       await loadData();
     } catch (err: any) {
