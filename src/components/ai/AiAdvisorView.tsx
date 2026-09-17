@@ -129,8 +129,6 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
         setActiveProducts([]);
       } else if (data?.cartItems && data.cartItems.length > 0) {
         setActiveProducts([]);
-      } else {
-        setActiveProducts([]);
       }
 
       const aiMsg: ChatMessage = {
