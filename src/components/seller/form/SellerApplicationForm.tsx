@@ -64,9 +64,20 @@ export function SellerApplicationForm({ initialData, isResubmission = false, onS
       ? parseBusinessAddress(initialData.businessInfo.businessAddress)
       : null;
 
+  const rawInitialCat = initialData?.businessInfo?.categoryId;
+  const initialCatId =
+    typeof rawInitialCat === "object" && rawInitialCat !== null
+      ? (rawInitialCat as { _id?: string; id?: string; name?: string })._id ||
+        (rawInitialCat as { _id?: string; id?: string; name?: string }).id ||
+        (rawInitialCat as { _id?: string; id?: string; name?: string }).name ||
+        ""
+      : typeof rawInitialCat === "string"
+      ? rawInitialCat
+      : "";
+
   const [formData, setFormData] = useState<FormDataState>({
     storeName: initialData?.storeName || "",
-    categoryId: initialData?.businessInfo?.categoryId || "",
+    categoryId: initialCatId,
     description: initialData?.description || "",
     logo: initialData?.logo || "",
     banner: initialData?.banner || "",
