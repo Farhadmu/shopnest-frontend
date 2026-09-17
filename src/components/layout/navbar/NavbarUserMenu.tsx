@@ -142,19 +142,17 @@ export function NavbarUserMenu({ user, role, onOpenCart, onSignOut }: NavbarUser
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative flex shrink-0 items-center justify-center rounded-full transition hover:opacity-90 active:scale-95 cursor-pointer focus:outline-hidden"
+        className="relative flex shrink-0 items-center justify-center rounded-full transition hover:opacity-90 active:scale-95 cursor-pointer focus:outline-none"
         aria-expanded={open}
         aria-label="Open account menu"
       >
-        <Avatar className="ring-2 ring-white/20 overflow-hidden" size="md">
-          {user?.image ? (
-            <Avatar.Image
-              alt={user?.name || "User Avatar"}
-              src={user.image}
-            />
-          ) : null}
-          <Avatar.Fallback className="flex h-full w-full items-center justify-center bg-linear-to-br from-primary to-violet-600 text-sm font-black text-white">
-            {firstLetter}
+        <Avatar className="ring-2 ring-white/20" size="sm">
+          <Avatar.Image
+            alt={user?.name || "User"}
+            src={user?.image || "https://img.heroui.chat/image/avatar?w=400&h=400&u=3"}
+          />
+          <Avatar.Fallback className="flex h-full w-full items-center justify-center bg-linear-to-br from-primary to-violet-600 text-xs font-black text-white">
+            {firstLetter || "JD"}
           </Avatar.Fallback>
         </Avatar>
       </button>
