@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import Link from "next/link";
-import { Button } from "@heroui/react";
+import { Avatar, Button } from "@heroui/react";
 import {
   FaUser,
   FaSignOutAlt,
@@ -119,22 +119,44 @@ export function NavbarUserMenu({ user, role, onOpenCart, onSignOut }: NavbarUser
   const ref = useRef<HTMLDivElement>(null);
   const dropdownLinks = role !== "guest" ? userDropdownItems[role as Exclude<UserRole, "guest">] || [] : [];
 
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  const userInitials = user?.name
+    ? user.name
+        .split(" ")
+        .filter(Boolean)
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "JD";
+
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative shrink-0" ref={ref}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-white/25 bg-white/15 p-1.5 transition hover:bg-white/25"
+        className="relative flex shrink-0 items-center justify-center rounded-full transition hover:opacity-90 active:scale-95 cursor-pointer focus:outline-hidden"
         aria-expanded={open}
         aria-label="Open account menu"
       >
-        <div className="grid h-7 w-7 place-items-center rounded-lg bg-linear-to-br from-primary to-violet-600 text-xs font-black text-white">
-          {user?.name ? user.name.charAt(0).toUpperCase() : <FaUser size={12} />}
-        </div>
-        <span className="hidden max-w-25 truncate text-xs font-bold text-white md:inline">
-          {user?.name || "Account"}
-        </span>
-        <FaChevronDown size={10} className={`hidden text-white/70 transition-transform sm:inline ${open ? "rotate-180" : ""}`} />
+        <Avatar className="ring-2 ring-white/20" size="md">
+          <Avatar.Image
+            alt={user?.name || "John Doe"}
+            src={user?.image || "https://img.heroui.chat/image/avatar?w=400&h=400&u=3"}
+          />
+          <Avatar.Fallback>{userInitials}</Avatar.Fallback>
+        </Avatar>
       </button>
 
       {open && (
