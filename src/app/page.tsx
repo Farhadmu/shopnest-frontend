@@ -8,6 +8,7 @@ import HowItWorksSection from "@/components/home/HowItWorksSection";
 import ProofSection from "@/components/home/ProofSection";
 import { defaultBannerData } from "@/lib/banner/BannerData";
 import AiIntelligenceSection from "@/components/home/AiIntelligenceSection";
+import FeaturedProductsSection from "@/components/home/FeaturedProductsSection";
 import TrendingSection from "@/components/home/Trending/TrendingSection";
 import CouponSection from "@/components/home/CouponSection";
 import JustForYouSection from "@/components/home/JustForYouSection";
@@ -45,10 +46,13 @@ function HomePageContent() {
         {/* 03 — Categories */}
         <ShopByCategory initialCategories={categories} />
 
-        {/* 04 — Trending */}
+        {/* 04 — Featured Products */}
+        <FeaturedProductsSection />
+
+        {/* 05 — Trending */}
         <TrendingSection initialProducts={trendingProducts} />
 
-        {/* 05 — Just For You */}
+        {/* 06 — Just For You */}
         <JustForYouSection initialProducts={justForYouProducts} />
 
         {/* 06 — Coupon (non-critical: self-fetches with own skeleton) */}

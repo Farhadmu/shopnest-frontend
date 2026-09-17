@@ -229,8 +229,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             </div>
           </Link>
 
-          {/* Category Chip */}
-          <div className="absolute left-2.5 top-2.5 z-20">
+          {/* Category Chip & Featured Badge */}
+          <div className="absolute left-2.5 top-2.5 z-20 flex flex-wrap items-center gap-1.5 max-w-[calc(100%-48px)]">
             <Chip
               size="sm"
               variant="secondary"
@@ -238,6 +238,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             >
               {category}
             </Chip>
+
+            {product.isFeatured && (
+              <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/95 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white shadow-xs backdrop-blur-md">
+                <FaStar className="fill-white" size={8} />
+                <span>Featured</span>
+              </span>
+            )}
           </div>
 
           {/* Savings Badge */}
