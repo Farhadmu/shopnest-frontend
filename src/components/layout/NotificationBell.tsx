@@ -119,14 +119,14 @@ export const NotificationBell: React.FC = () => {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/25 bg-white/15 text-white transition hover:bg-white/25 cursor-pointer active:scale-95"
+        className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20 cursor-pointer active:scale-95"
         aria-label="Notifications"
         aria-haspopup="menu"
         aria-expanded={isOpen}
       >
-        <IoIosNotifications size={18} />
+        <IoIosNotifications size={17} />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-[10px] font-semibold text-white">
+          <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-xs">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
