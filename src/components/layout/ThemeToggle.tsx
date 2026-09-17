@@ -1,42 +1,21 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 import { FaMoon, FaSun } from "react-icons/fa";
 
-function subscribe(callback: () => void) {
-  if (typeof window === "undefined") return () => {};
-
-  const observer = new MutationObserver(() => {
-    callback();
-  });
-
-  observer.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ["class"],
-  });
-
-  window.addEventListener("storage", callback);
-  return () => {
-    observer.disconnect();
-    window.removeEventListener("storage", callback);
-  };
-}
-
-function getSnapshot() {
-  return typeof document !== "undefined" && document.documentElement.classList.contains("dark");
-}
-
-function getServerSnapshot() {
-  return false;
-}
-
 export function ThemeToggle({ compact = false }: { compact?: boolean }) {
-  const dark = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const [mounted, setMounted] = useState(false);
+  const { resolvedTheme, setTheme } = useTheme();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const dark = mounted ? resolvedTheme === "dark" : false;
 
   const toggle = () => {
-    const next = !document.documentElement.classList.contains("dark");
-    document.documentElement.classList.toggle("dark", next);
-    localStorage.setItem("shopnest-theme", next ? "dark" : "light");
+    setTheme(dark ? "light" : "dark");
   };
 
   return (
