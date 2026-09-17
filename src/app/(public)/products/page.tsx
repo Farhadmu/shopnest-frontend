@@ -82,12 +82,22 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const store = params.store ?? "";
   const seller = params.seller ?? "";
   const productRating = params.productRating ?? "";
+  const inStock = params.inStock ?? "";
+  const verified = params.verified ?? "";
+  const freeDelivery = params.freeDelivery ?? "";
+  const aiPick = params.aiPick ?? "";
+  const isFeatured = params.isFeatured ?? "";
 
   const sharedFilters = {
     search: search.trim() || undefined,
     store: store || undefined,
     seller: seller || undefined,
     productRating: productRating || undefined,
+    inStock: inStock || undefined,
+    verified: verified || undefined,
+    freeDelivery: freeDelivery || undefined,
+    aiPick: aiPick || undefined,
+    isFeatured: isFeatured || undefined,
     minPrice: minPrice ? Number(minPrice) : undefined,
     maxPrice: maxPrice ? Number(maxPrice) : undefined,
     sort,
