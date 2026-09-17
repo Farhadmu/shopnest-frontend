@@ -2,7 +2,7 @@
 
 import { FiGrid, FiList, FiSearch, FiX } from "react-icons/fi";
 
-export type StatusFilter = "all" | "active" | "inactive" | "low_stock";
+export type StatusFilter = "all" | "active" | "inactive" | "low_stock" | "featured";
 export type SortOption = "newest" | "price_asc" | "price_desc" | "stock_asc" | "stock_desc" | "name_asc";
 
 interface ProductFiltersProps {
@@ -10,7 +10,7 @@ interface ProductFiltersProps {
   onSearchChange: (value: string) => void;
   statusFilter: StatusFilter;
   onStatusChange: (value: StatusFilter) => void;
-  statusCounts: { all: number; active: number; inactive: number; low_stock: number };
+  statusCounts: { all: number; active: number; inactive: number; low_stock: number; featured?: number };
   categoryFilter: string;
   onCategoryChange: (value: string) => void;
   categories: string[];
@@ -43,6 +43,7 @@ export function ProductFilters({
     { key: "active", label: "Active" },
     { key: "inactive", label: "Inactive" },
     { key: "low_stock", label: "Low Stock" },
+    { key: "featured", label: "⭐ Featured" },
   ];
 
   return (
@@ -70,23 +71,38 @@ export function ProductFilters({
         </div>
 
         <div className="flex max-w-full flex-nowrap items-center gap-1 overflow-x-auto rounded-xl border border-border/60 bg-muted-bg/50 p-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => onStatusChange(tab.key)}
-              className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                statusFilter === tab.key
-                  ? "border border-border bg-surface font-bold text-primary shadow-xs"
-                  : "text-muted hover:bg-surface/50 hover:text-text"
-              }`}
-            >
-              <span>{tab.label}</span>
-              <span className={`rounded-full px-1.5 py-0.2 text-[10px] ${statusFilter === tab.key ? "bg-primary/10 font-bold text-primary" : "bg-muted/15 text-muted"}`}>
-                {statusCounts[tab.key]}
-              </span>
-            </button>
-          ))}
+          {tabs.map((tab) => {
+            const count = statusCounts[tab.key] ?? 0;
+            const isSelected = statusFilter === tab.key;
+            const isFeaturedTab = tab.key === "featured";
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => onStatusChange(tab.key)}
+                className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                  isSelected
+                    ? isFeaturedTab
+                      ? "border border-amber-500/40 bg-surface font-bold text-amber-600 dark:text-amber-400 shadow-xs"
+                      : "border border-border bg-surface font-bold text-primary shadow-xs"
+                    : "text-muted hover:bg-surface/50 hover:text-text"
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span
+                  className={`rounded-full px-1.5 py-0.2 text-[10px] ${
+                    isSelected
+                      ? isFeaturedTab
+                        ? "bg-amber-500/10 font-bold text-amber-600 dark:text-amber-400"
+                        : "bg-primary/10 font-bold text-primary"
+                      : "bg-muted/15 text-muted"
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
