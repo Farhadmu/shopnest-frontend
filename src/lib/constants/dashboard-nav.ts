@@ -6,19 +6,26 @@ import type { DashboardLink } from "@/components/dashboard/DashboardUI";
  * that renders <DashboardShell links={...} /> stays in sync.
  */
 export const userDashboardLinks: DashboardLink[] = [
-  { label: "Overview", href: "/dashboard/user", icon: "📊", description: "Shopping metrics & active status." },
-  { label: "Spending Analytics", href: "/dashboard/user/analytics", icon: "📈", description: "Charts, spend insights & offers." },
-  { label: "Shopping Journey", href: "/dashboard/user/journey", icon: "🚀", description: "Personalized exploration timeline." },
-  { label: "Budget Planner", href: "/dashboard/user/budget", icon: "💰", description: "Allocate optimal cart combinations." },
-  { label: "Shopping Goals", href: "/dashboard/user/goals", icon: "🎯", description: "Track target milestones." },
-  { label: "Product Lifecycle", href: "/dashboard/user/lifecycle", icon: "🛡️", description: "Warranty & maintenance tracker." },
-  { label: "Security Center", href: "/dashboard/user/security", icon: "🔐", description: "Active sessions & security score." },
-  { label: "Notifications", href: "/dashboard/user/notifications", icon: "🔔", description: "Order updates & alerts." },
-  { label: "My Orders", href: "/dashboard/user/orders", icon: "📦", description: "Order timeline & delivery status." },
-  { label: "Smart Cart", href: "/cart", icon: "🛍️", description: "Live cart and checkout." },
-  { label: "Wishlist", href: "/wishlist", icon: "❤️", description: "Saved favorite items." },
-  { label: "AI Advisor", href: "/dashboard/user/ai-advisor", icon: "🤖", description: "AI commerce shopping assistant." },
-  { label: "Profile & Settings", href: "/dashboard/user/profile", icon: "👤", description: "Account identity and settings." },
+  // SHOP
+  { label: "Overview", href: "/dashboard/user", icon: "📊", description: "Shopping metrics & active status.", group: "SHOP" },
+  { label: "My Orders", href: "/dashboard/user/orders", icon: "📦", description: "Order timeline & delivery status.", group: "SHOP" },
+  { label: "Wishlist", href: "/wishlist", icon: "❤️", description: "Saved favorite items.", group: "SHOP" },
+  { label: "Smart Cart", href: "/cart", icon: "🛍️", description: "Live cart and checkout.", group: "SHOP" },
+
+  // ACTIVITY & PLANNING
+  { label: "Spending Analytics", href: "/dashboard/user/analytics", icon: "📈", description: "Charts, spend insights & offers.", group: "ACTIVITY" },
+  { label: "Shopping Journey", href: "/dashboard/user/journey", icon: "🚀", description: "Personalized exploration timeline.", group: "ACTIVITY" },
+  { label: "Budget Planner", href: "/dashboard/user/budget", icon: "💰", description: "Allocate optimal cart combinations.", group: "ACTIVITY" },
+  { label: "Shopping Goals", href: "/dashboard/user/goals", icon: "🎯", description: "Track target milestones.", group: "ACTIVITY" },
+  { label: "Product Lifecycle", href: "/dashboard/user/lifecycle", icon: "🛡️", description: "Warranty & maintenance tracker.", group: "ACTIVITY" },
+
+  // INSIGHTS & AI
+  { label: "AI Copilot / Advisor", href: "/dashboard/user/ai-advisor", icon: "🤖", description: "AI commerce shopping assistant.", group: "INSIGHTS", highlight: true },
+  { label: "Notifications", href: "/dashboard/user/notifications", icon: "🔔", description: "Order updates & alerts.", group: "INSIGHTS" },
+
+  // ACCOUNT
+  { label: "Profile & Settings", href: "/dashboard/user/profile", icon: "👤", description: "Account identity and settings.", group: "ACCOUNT" },
+  { label: "Security Center", href: "/dashboard/user/security", icon: "🔐", description: "Active sessions & security score.", group: "ACCOUNT" },
 ];
 
 export const sellerDashboardLinks: DashboardLink[] = [

@@ -10,15 +10,20 @@ import {
   getAvailableDeliveries,
   getMyDeliveries,
   setDeliveryAvailability,
-  updateDeliveryLocation,
   acceptDelivery,
   updateDeliveryStatus,
   verifyDeliveryOtp,
+  uploadDeliveryProof,
+  reportDeliveryIncident,
+  askDeliveryCopilot,
   type DeliveryStats,
   type DeliveryRequest,
   type DeliveryManProfile,
   type DeliveryManDetails,
+  type DeliveryCopilotResponse,
 } from "@/lib/api/delivery";
+import { getDeliverySocket } from "@/lib/socket/delivery-socket";
+import { LiveDeliveryMap } from "@/components/delivery/LiveDeliveryMap";
 import {
   FaSyncAlt,
   FaMotorcycle,
@@ -33,8 +38,14 @@ import {
   FaShieldAlt,
   FaExclamationTriangle,
   FaRobot,
-  FaPhone,
   FaKey,
+  FaCamera,
+  FaTruckLoading,
+  FaWeightHanging,
+  FaStore,
+  FaHome,
+  FaTimes,
+  FaInfoCircle,
 } from "react-icons/fa";
 
 export default function DeliveryDashboard() {
@@ -49,25 +60,46 @@ export default function DeliveryDashboard() {
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [advancingId, setAdvancingId] = useState<string | null>(null);
 
-  // Live Location Broadcaster State
+  // Active view tab
+  const [activeTab, setActiveTab] = useState<"missions" | "available" | "map" | "copilot">("missions");
+
+  // Selected mission for Live Map focus
+  const [selectedMissionId, setSelectedMissionId] = useState<string | null>(null);
+
+  // Live Location Broadcaster State (Socket.IO Realtime)
   const [isBroadcastingLocation, setIsBroadcastingLocation] = useState(false);
-  const [lastCoords, setLastCoords] = useState<{ lat: number; lng: number; time: string } | null>(null);
+  const [lastCoords, setLastCoords] = useState<{ lat: number; lng: number; time: string; speed?: number } | null>(null);
   const [broadcasterError, setBroadcasterError] = useState<string | null>(null);
   const watchIdRef = useRef<number | null>(null);
 
-  // OTP Verification Modal
+  // Modals state
   const [otpModalDelivery, setOtpModalDelivery] = useState<DeliveryRequest | null>(null);
   const [otpInput, setOtpInput] = useState("");
   const [otpError, setOtpError] = useState<string | null>(null);
   const [otpVerifying, setOtpVerifying] = useState(false);
+
+  const [proofModalDelivery, setProofModalDelivery] = useState<DeliveryRequest | null>(null);
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofUploading, setProofUploading] = useState(false);
+
+  const [incidentModalDelivery, setIncidentModalDelivery] = useState<DeliveryRequest | null>(null);
+  const [incidentCategory, setIncidentCategory] = useState("customer_unavailable");
+  const [incidentSeverity, setIncidentSeverity] = useState<"low" | "medium" | "high" | "critical">("medium");
+  const [incidentDesc, setIncidentDesc] = useState("");
+  const [incidentReporting, setIncidentReporting] = useState(false);
+
+  // Quick AI Copilot Assistant State
+  const [copilotQuery, setCopilotQuery] = useState("");
+  const [copilotLoading, setCopilotLoading] = useState(false);
+  const [copilotResponse, setCopilotResponse] = useState<DeliveryCopilotResponse | null>(null);
 
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
     try {
       const [statsRes, availableRes, myRes] = await Promise.allSettled([
         getDeliveryStats(),
-        getAvailableDeliveries(1, 10),
-        getMyDeliveries({ limit: 10 }),
+        getAvailableDeliveries(1, 15),
+        getMyDeliveries({ limit: 15 }),
       ]);
 
       if (statsRes.status === "fulfilled" && statsRes.value) {
@@ -79,7 +111,14 @@ export default function DeliveryDashboard() {
         setAvailableDeliveries(availableRes.value.items ?? availableRes.value.data ?? []);
       }
       if (myRes.status === "fulfilled" && myRes.value) {
-        setMyDeliveries(myRes.value.items ?? myRes.value.data ?? []);
+        const items = myRes.value.items ?? myRes.value.data ?? [];
+        setMyDeliveries(items);
+        if (items.length > 0 && !selectedMissionId) {
+          const active = items.find((d) =>
+            ["assigned", "pickup_started", "picked_up", "in_transit", "out_for_delivery"].includes(d.status)
+          );
+          if (active) setSelectedMissionId(active.id);
+        }
       }
     } catch (error) {
       console.error("Failed to load delivery data:", error);
@@ -87,13 +126,38 @@ export default function DeliveryDashboard() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [selectedMissionId]);
 
   useEffect(() => {
     loadDashboardData();
   }, [loadDashboardData]);
 
-  // Live GPS Broadcaster
+  // Active deliveries list
+  const activeMissions = myDeliveries.filter((d) =>
+    ["assigned", "pickup_started", "picked_up", "in_transit", "out_for_delivery"].includes(d.status)
+  );
+
+  const selectedMission = activeMissions.find((d) => d.id === selectedMissionId) || activeMissions[0] || null;
+
+  // Capacity calculations
+  const maxParcels = details?.preferences?.maxActiveDeliveries ?? details?.vehicle?.vehicleCapacity ?? 3;
+  const currentParcelCount = activeMissions.length;
+  const vType = details?.vehicle?.vehicleType || "motorcycle";
+  const maxWeightKg = details?.vehicle?.vehicleCapacity
+    ? details.vehicle.vehicleCapacity * 5
+    : vType === "van"
+    ? 50
+    : vType === "car"
+    ? 30
+    : vType === "motorcycle"
+    ? 20
+    : vType === "bicycle"
+    ? 10
+    : 15;
+  const currentLoadedWeight = activeMissions.reduce((sum, d) => sum + (d.packageInfo?.weight || 0), 0);
+  const remainingWeight = Math.max(0, maxWeightKg - currentLoadedWeight);
+
+  // Live GPS Broadcaster (Adaptive Socket.IO)
   const toggleLocationBroadcasting = () => {
     if (isBroadcastingLocation) {
       if (watchIdRef.current !== null) {
@@ -111,36 +175,36 @@ export default function DeliveryDashboard() {
       setIsBroadcastingLocation(true);
       setBroadcasterError(null);
 
-      const activeMission = myDeliveries.find((d) =>
-        ["assigned", "pickup_started", "picked_up", "in_transit", "out_for_delivery"].includes(d.status)
-      );
+      const socket = getDeliverySocket();
 
       const id = navigator.geolocation.watchPosition(
-        async (position) => {
-          const { latitude, longitude, accuracy, speed, heading } = position.coords;
+        (position) => {
+          const { latitude, longitude, accuracy, speed, heading, altitude } = position.coords;
           setLastCoords({
             lat: latitude,
             lng: longitude,
             time: new Date().toLocaleTimeString(),
+            speed: speed ? Math.round(speed * 3.6) : undefined, // km/h
           });
-          try {
-            await updateDeliveryLocation({
+
+          // Broadcast through Socket.IO real-time channel
+          if (socket.connected) {
+            socket.emit("location:update", {
               latitude,
               longitude,
               accuracy: accuracy || undefined,
+              altitude: altitude || undefined,
               speed: speed || undefined,
               heading: heading || undefined,
-              deliveryRequestId: activeMission?.id,
+              deliveryRequestId: selectedMission?.id,
             });
-          } catch (err) {
-            console.error("GPS upload error:", err);
           }
         },
         (err) => {
-          console.warn("Geolocation watch error:", err.message);
-          setBroadcasterError(`GPS Signal Error: ${err.message}`);
+          console.warn("Geolocation watch warning:", err.message);
+          setBroadcasterError(`GPS Signal: ${err.message}`);
         },
-        { enableHighAccuracy: true, timeout: 20000, maximumAge: 10000 }
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 }
       );
 
       watchIdRef.current = id;
@@ -155,54 +219,82 @@ export default function DeliveryDashboard() {
     };
   }, []);
 
-  const handleAvailabilityToggle = async (newStatus: "offline" | "available" | "busy") => {
+  // Availability Toggle
+  const handleToggleOnline = async () => {
+    const newStatus = details?.availabilityStatus === "offline" ? "available" : "offline";
     try {
-      await setDeliveryAvailability({
-        availabilityStatus: newStatus,
-        isActive: newStatus !== "offline",
-      });
-      loadDashboardData();
+      const res = await setDeliveryAvailability({ availabilityStatus: newStatus });
+      setDetails((prev) =>
+        prev
+          ? {
+              ...prev,
+              availabilityStatus: (res.availabilityStatus as any) || newStatus,
+              isActive: res.isActive,
+            }
+          : null
+      );
     } catch (err: any) {
       alert(err?.message || "Failed to update availability");
     }
   };
 
-  const handleAcceptOrder = async (orderRequestId: string) => {
-    setAcceptingId(orderRequestId);
+  // Accept Open Marketplace Request
+  const handleAcceptDelivery = async (reqId: string) => {
+    setAcceptingId(reqId);
     try {
-      const res = await acceptDelivery(orderRequestId);
-      alert(`🎉 Order accepted successfully! Delivery OTP: ${res.deliveryOtp || "Generated"}`);
-      loadDashboardData();
+      await acceptDelivery(reqId);
+      await loadDashboardData();
+      setActiveTab("missions");
     } catch (err: any) {
-      alert(err?.message || "This delivery order could not be accepted.");
+      alert(err?.message || "Failed to accept delivery request.");
       loadDashboardData();
     } finally {
       setAcceptingId(null);
     }
   };
 
-  const handleAdvanceMission = async (deliveryId: string, nextStatus: DeliveryRequest["status"]) => {
-    setAdvancingId(deliveryId);
+  // Lifecycle Advance Milestone
+  const handleAdvanceMilestone = async (delivery: DeliveryRequest) => {
+    const nextStatusMap: Record<string, DeliveryRequest["status"]> = {
+      assigned: "pickup_started",
+      pickup_started: "picked_up",
+      picked_up: "in_transit",
+      in_transit: "out_for_delivery",
+    };
+
+    const nextStatus = nextStatusMap[delivery.status];
+
+    if (delivery.status === "out_for_delivery") {
+      setOtpModalDelivery(delivery);
+      setOtpInput("");
+      setOtpError(null);
+      return;
+    }
+
+    if (!nextStatus) return;
+
+    setAdvancingId(delivery.id);
     try {
-      await updateDeliveryStatus(deliveryId, nextStatus);
-      loadDashboardData();
+      await updateDeliveryStatus(delivery.id, nextStatus);
+      await loadDashboardData();
     } catch (err: any) {
-      alert(err?.message || "Failed to update delivery mission status.");
+      alert(err?.message || "Failed to advance milestone.");
     } finally {
       setAdvancingId(null);
     }
   };
 
-  const handleVerifyOtpSubmit = async () => {
+  // OTP Verification
+  const handleVerifyOtpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!otpModalDelivery || !otpInput.trim()) return;
+
     setOtpVerifying(true);
     setOtpError(null);
     try {
       await verifyDeliveryOtp(otpModalDelivery.id, otpInput.trim());
-      alert("✅ OTP verified successfully! Order marked as DELIVERED.");
       setOtpModalDelivery(null);
-      setOtpInput("");
-      loadDashboardData();
+      await loadDashboardData();
     } catch (err: any) {
       setOtpError(err?.message || "Invalid OTP code. Please check with customer.");
     } finally {
@@ -210,517 +302,950 @@ export default function DeliveryDashboard() {
     }
   };
 
-  // Find most urgent active delivery mission
-  const activeMission = myDeliveries.find((d) =>
-    ["assigned", "pickup_started", "picked_up", "in_transit", "out_for_delivery"].includes(d.status)
-  );
+  // Upload Proof of Delivery
+  const handleProofSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!proofModalDelivery || !proofFile) return;
 
-  const getNextStatusAction = (currentStatus: string): { nextStatus: DeliveryRequest["status"]; label: string } | null => {
-    switch (currentStatus) {
-      case "assigned":
-        return { nextStatus: "pickup_started", label: "Start Heading to Store" };
-      case "pickup_started":
-        return { nextStatus: "picked_up", label: "Confirm Items Picked Up" };
-      case "picked_up":
-        return { nextStatus: "in_transit", label: "Start Transit to Customer" };
-      case "in_transit":
-        return { nextStatus: "out_for_delivery", label: "Arrived at Customer Location" };
-      default:
-        return null;
+    setProofUploading(true);
+    try {
+      await uploadDeliveryProof(proofModalDelivery.id, proofFile);
+      setProofModalDelivery(null);
+      setProofFile(null);
+      alert("Proof of delivery photo recorded successfully!");
+      await loadDashboardData();
+    } catch (err: any) {
+      alert(err?.message || "Failed to upload proof photo");
+    } finally {
+      setProofUploading(false);
+    }
+  };
+
+  // Report Delivery Incident
+  const handleIncidentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!incidentModalDelivery || !incidentDesc.trim()) return;
+
+    setIncidentReporting(true);
+    try {
+      await reportDeliveryIncident(incidentModalDelivery.id, {
+        category: incidentCategory,
+        severity: incidentSeverity,
+        description: incidentDesc.trim(),
+      });
+      setIncidentModalDelivery(null);
+      setIncidentDesc("");
+      alert("Incident report submitted to administration and merchant.");
+      await loadDashboardData();
+    } catch (err: any) {
+      alert(err?.message || "Failed to submit incident report");
+    } finally {
+      setIncidentReporting(false);
+    }
+  };
+
+  // Copilot query
+  const handleAskCopilot = async (q?: string) => {
+    const query = q || copilotQuery;
+    if (!query.trim()) return;
+    setCopilotLoading(true);
+    try {
+      const res = await askDeliveryCopilot(query);
+      setCopilotResponse(res);
+    } catch (err: any) {
+      alert(err?.message || "AI Delivery Copilot is unavailable at this moment.");
+    } finally {
+      setCopilotLoading(false);
     }
   };
 
   const isApproved = profile?.status === "approved";
-  const currentAvailability = details?.availabilityStatus ?? stats?.availabilityStatus ?? "offline";
+  const isOnline = details?.availabilityStatus === "available" || details?.availabilityStatus === "busy";
 
   return (
     <DashboardShell
-      role="Delivery Man"
-      title="Delivery Operations Cockpit"
-      subtitle="Manage real-time delivery dispatches, broadcast live telemetry, and track daily earnings."
+      role="delivery"
+      title="Delivery Command Center"
+      subtitle="Real-time Logistics Telemetry, Active Missions & Marketplace"
       links={deliveryManDashboardLinks}
+      action={
+        <button
+          onClick={() => {
+            setRefreshing(true);
+            loadDashboardData();
+          }}
+          disabled={refreshing || loading}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border text-foreground hover:bg-muted-bg rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer disabled:opacity-50"
+        >
+          <FaSyncAlt className={refreshing ? "animate-spin" : ""} />
+          <span>Refresh</span>
+        </button>
+      }
     >
-      <div className="space-y-6">
-        {/* Verification Alert Banner if Not Approved */}
-        {profile && !isApproved && (
-          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs">
-            <div className="flex items-center gap-3">
-              <FaShieldAlt className="text-xl text-amber-500 shrink-0" />
-              <div>
-                <p className="font-bold text-amber-600 dark:text-amber-400">
-                  Account Status: {profile.status.replace(/_/g, " ").toUpperCase()}
-                </p>
-                <p className="text-muted mt-0.5">
-                  {profile.status === "pending_verification"
-                    ? "Your identity and vehicle documents are currently under review by the ShopNest Admin Team."
-                    : profile.status === "rejected"
-                    ? `Application rejected: ${profile.rejectionReason || "Please update your profile information."}`
-                    : "Your delivery account is currently suspended. Please contact platform support."}
-                </p>
+      {/* ─── Top Rider Status Bar ────────────────────────────────────────────── */}
+      <div className="rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary-hover text-white flex items-center justify-center font-black text-xl shadow-md">
+                {details?.personal?.fullName ? details.personal.fullName.charAt(0) : "R"}
               </div>
-              <Link
-                href="/delivery/pending"
-                className="ml-auto shrink-0 rounded-xl bg-amber-500 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-amber-600 transition"
-              >
-                View Status →
-              </Link>
+              <span
+                className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card ${
+                  isOnline ? "bg-emerald-500" : "bg-slate-400"
+                }`}
+              />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg font-black text-foreground">
+                  {details?.personal?.fullName || session?.user?.name || "Delivery Partner"}
+                </h1>
+                <span
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                    isApproved
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                      : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                  }`}
+                >
+                  {profile?.status ? profile.status.replace(/_/g, " ") : "Pending Verification"}
+                </span>
+              </div>
+              <p className="text-xs text-muted flex items-center gap-2 mt-0.5">
+                <span className="flex items-center gap-1 font-semibold text-foreground">
+                  <FaMotorcycle className="text-primary text-xs" />
+                  {details?.vehicle?.vehicleType ? details.vehicle.vehicleType.toUpperCase() : "STANDARD"}
+                </span>
+                <span>•</span>
+                <span className="flex items-center gap-1 text-amber-500 font-bold">
+                  <FaStar className="text-xs" />
+                  {details?.rating ? details.rating.toFixed(1) : "5.0"} ({details?.ratingCount || 0})
+                </span>
+              </p>
             </div>
           </div>
-        )}
 
-        {/* Top Control Bar: Availability & Live GPS Broadcaster */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
-          {/* Availability Pills */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-muted mr-1">Rider Status:</span>
+          {/* Right Controls: Online Toggle & GPS Broadcaster */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Live GPS Broadcaster Toggle */}
             <button
-              type="button"
-              onClick={() => handleAvailabilityToggle("available")}
-              className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-black transition cursor-pointer ${
-                currentAvailability === "available"
-                  ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
-                  : "bg-surface border border-border text-muted hover:text-text hover:border-emerald-500/40"
+              onClick={toggleLocationBroadcasting}
+              className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer ${
+                isBroadcastingLocation
+                  ? "bg-emerald-600 text-white animate-pulse"
+                  : "bg-card border border-border text-foreground hover:bg-muted-bg"
               }`}
             >
-              <span className="h-2 w-2 rounded-full bg-emerald-300 animate-pulse" />
-              <span>Available</span>
+              <FaLocationArrow className={isBroadcastingLocation ? "animate-bounce" : ""} />
+              <span>{isBroadcastingLocation ? "Broadcasting GPS" : "Start Live GPS"}</span>
             </button>
+
+            {/* Online / Offline Switch */}
             <button
-              type="button"
-              onClick={() => handleAvailabilityToggle("busy")}
-              className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-black transition cursor-pointer ${
-                currentAvailability === "busy"
-                  ? "bg-amber-500 text-white shadow-md shadow-amber-500/20"
-                  : "bg-surface border border-border text-muted hover:text-text hover:border-amber-500/40"
+              onClick={handleToggleOnline}
+              disabled={!isApproved}
+              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all shadow-sm cursor-pointer disabled:opacity-50 ${
+                isOnline
+                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20"
+                  : "bg-slate-500/10 text-slate-500 border border-slate-500/30 hover:bg-slate-500/20"
               }`}
             >
-              <span className="h-2 w-2 rounded-full bg-amber-300" />
-              <span>On Delivery (Busy)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleAvailabilityToggle("offline")}
-              className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-black transition cursor-pointer ${
-                currentAvailability === "offline"
-                  ? "bg-slate-600 text-white shadow-md"
-                  : "bg-surface border border-border text-muted hover:text-text"
-              }`}
-            >
-              <span className="h-2 w-2 rounded-full bg-slate-400" />
-              <span>Offline</span>
+              <span className={`w-2 h-2 rounded-full ${isOnline ? "bg-emerald-500" : "bg-slate-400"}`} />
+              <span>{isOnline ? "ONLINE (READY)" : "OFFLINE"}</span>
             </button>
           </div>
+        </div>
 
-          {/* GPS Broadcaster Switch & Refresh */}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={toggleLocationBroadcasting}
-              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-black transition cursor-pointer border ${
-                isBroadcastingLocation
-                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-500 animate-pulse"
-                  : "border-border bg-surface text-muted hover:text-text hover:border-primary"
+        {/* Dynamic Capacity Meter */}
+        <div className="mt-5 pt-4 border-t border-border grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+          <div className="bg-muted-bg/60 p-3 rounded-xl border border-border/50">
+            <div className="flex items-center justify-between text-muted mb-1">
+              <span className="font-semibold flex items-center gap-1.5">
+                <FaBox className="text-primary text-xs" /> Active Parcels
+              </span>
+              <span className="font-bold text-foreground">
+                {currentParcelCount} / {maxParcels}
+              </span>
+            </div>
+            <div className="w-full bg-border h-2 rounded-full overflow-hidden">
+              <div
+                className={`h-full transition-all ${
+                  currentParcelCount >= maxParcels ? "bg-red-500" : "bg-primary"
+                }`}
+                style={{ width: `${Math.min(100, (currentParcelCount / maxParcels) * 100)}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="bg-muted-bg/60 p-3 rounded-xl border border-border/50">
+            <div className="flex items-center justify-between text-muted mb-1">
+              <span className="font-semibold flex items-center gap-1.5">
+                <FaWeightHanging className="text-amber-500 text-xs" /> Weight Load
+              </span>
+              <span className="font-bold text-foreground">
+                {currentLoadedWeight}kg / {maxWeightKg}kg
+              </span>
+            </div>
+            <div className="w-full bg-border h-2 rounded-full overflow-hidden">
+              <div
+                className={`h-full transition-all ${
+                  currentLoadedWeight >= maxWeightKg ? "bg-red-500" : "bg-amber-500"
+                }`}
+                style={{ width: `${Math.min(100, (currentLoadedWeight / maxWeightKg) * 100)}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="bg-muted-bg/60 p-3 rounded-xl border border-border/50 flex items-center justify-between">
+            <div>
+              <span className="text-muted block font-semibold text-[11px]">Free Capacity</span>
+              <span className="text-sm font-black text-foreground">{remainingWeight} kg</span>
+            </div>
+            <span
+              className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                remainingWeight > 0 ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"
               }`}
-              title="Broadcast your live GPS position for customer delivery tracking"
             >
-              <FaLocationArrow className={isBroadcastingLocation ? "text-emerald-500 rotate-45" : "text-muted"} />
-              <span>{isBroadcastingLocation ? "Live GPS Active" : "Enable Live GPS"}</span>
-              {lastCoords && isBroadcastingLocation && (
-                <span className="text-[10px] text-muted ml-1">({lastCoords.time})</span>
-              )}
-            </button>
+              {remainingWeight > 0 ? "AVAILABLE" : "FULL"}
+            </span>
+          </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                setRefreshing(true);
-                loadDashboardData();
-              }}
-              className="flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-2 text-xs font-bold text-text hover:border-primary transition cursor-pointer"
-            >
-              <FaSyncAlt className={`text-primary ${refreshing ? "animate-spin" : ""}`} />
-              <span className="hidden sm:inline">Refresh</span>
-            </button>
+          <div className="bg-muted-bg/60 p-3 rounded-xl border border-border/50 flex items-center justify-between">
+            <div>
+              <span className="text-muted block font-semibold text-[11px]">Telemetry State</span>
+              <span className="text-sm font-black text-foreground">
+                {lastCoords ? `${lastCoords.speed || 0} km/h` : "Stationary"}
+              </span>
+            </div>
+            <span className="text-[10px] text-muted">{lastCoords ? lastCoords.time : "GPS Standby"}</span>
           </div>
         </div>
 
         {broadcasterError && (
-          <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-500">
-            <FaExclamationTriangle className="inline mr-1.5" />
-            {broadcasterError}
+          <div className="mt-3 p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 text-xs flex items-center gap-2">
+            <FaExclamationTriangle />
+            <span>{broadcasterError}</span>
           </div>
         )}
-
-        {/* Real KPI Stat Tiles */}
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard
-            icon={<FaMoneyBillWave className="text-emerald-500" />}
-            label="Today's Earnings"
-            value={`৳${stats?.todayEarnings?.toLocaleString() ?? "0"}`}
-            note={`Total lifetime: ৳${stats?.totalEarnings?.toLocaleString() ?? "0"}`}
-          />
-          <StatCard
-            icon={<FaMotorcycle className="text-primary" />}
-            label="Active Deliveries"
-            value={String(stats?.activeDeliveries ?? 0)}
-            note={`${stats?.todayDeliveries ?? 0} deliveries completed today`}
-          />
-          <StatCard
-            icon={<FaCheckCircle className="text-emerald-500" />}
-            label="Completed Deliveries"
-            value={String(stats?.completedDeliveries ?? 0)}
-            note={`${stats?.failedDeliveries ?? 0} failed / canceled`}
-          />
-          <StatCard
-            icon={<FaStar className="text-amber-500" />}
-            label="Rider Rating"
-            value={stats?.rating ? `${stats.rating.toFixed(1)} ★` : "5.0 ★"}
-            note={`${stats?.ratingCount ?? 0} verified customer reviews`}
-          />
-        </div>
-
-        {/* Active Delivery Cockpit (If there is an active mission) */}
-        {activeMission && (
-          <div className="rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/5 via-card to-card p-6 shadow-lg shadow-primary/5">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/80 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-white text-xl shadow-md shadow-primary/20 animate-bounce">
-                  <FaMotorcycle />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-black uppercase text-primary tracking-wider">Active Mission</span>
-                    <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-black text-primary uppercase">
-                      {activeMission.status.replace(/_/g, " ")}
-                    </span>
-                    {activeMission.priority === "urgent" && (
-                      <span className="rounded-md bg-rose-500/10 text-rose-500 px-2 py-0.5 text-[10px] font-black uppercase border border-rose-500/30">
-                        URGENT
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="text-lg font-black text-foreground">
-                    Order #{String(activeMission.orderId).slice(-8).toUpperCase()}
-                  </h3>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 text-right">
-                <div>
-                  <span className="text-[11px] font-bold text-muted block">Delivery Fee</span>
-                  <span className="text-lg font-black text-emerald-500">৳{activeMission.deliveryFee ?? 60}</span>
-                </div>
-                <Link
-                  href={`/dashboard/delivery/requests/${activeMission.id}`}
-                  className="rounded-xl border border-primary/30 bg-primary/10 px-3.5 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition"
-                >
-                  Mission Details →
-                </Link>
-              </div>
-            </div>
-
-            {/* Addresses and Action Buttons */}
-            <div className="grid gap-4 sm:grid-cols-2 mt-4 text-xs">
-              <div className="rounded-xl border border-border/60 bg-surface/60 p-3.5">
-                <span className="text-muted block font-bold mb-1 flex items-center gap-1.5">
-                  <FaMapMarkerAlt className="text-amber-500" /> Store / Pickup Address
-                </span>
-                <p className="font-bold text-foreground line-clamp-2">
-                  {activeMission.pickupAddress || "Merchant Store Location"}
-                </p>
-                {activeMission.pickupContact && (
-                  <p className="text-muted mt-1 flex items-center gap-1">
-                    <FaPhone size={9} /> {activeMission.pickupContact}
-                  </p>
-                )}
-              </div>
-
-              <div className="rounded-xl border border-border/60 bg-surface/60 p-3.5">
-                <span className="text-muted block font-bold mb-1 flex items-center gap-1.5">
-                  <FaCompass className="text-emerald-500" /> Customer / Drop Address
-                </span>
-                <p className="font-bold text-foreground line-clamp-2">
-                  {activeMission.deliveryAddress || "Customer Delivery Destination"}
-                </p>
-                {activeMission.deliveryContact && (
-                  <p className="text-muted mt-1 flex items-center gap-1">
-                    <FaPhone size={9} /> {activeMission.deliveryContact}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Step Action & OTP Trigger */}
-            <div className="mt-5 flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-border/60">
-              <div className="flex items-center gap-2 text-xs text-muted">
-                <span className="font-bold text-foreground">Mission State:</span>
-                <span className="capitalize">{activeMission.status.replace(/_/g, " ")}</span>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                {/* Next Step Progression */}
-                {(() => {
-                  const nextAction = getNextStatusAction(activeMission.status);
-                  if (nextAction) {
-                    return (
-                      <button
-                        type="button"
-                        onClick={() => handleAdvanceMission(activeMission.id, nextAction.nextStatus)}
-                        disabled={advancingId === activeMission.id}
-                        className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-xs font-black text-white hover:bg-primary-hover shadow-md shadow-primary/20 transition cursor-pointer disabled:opacity-50"
-                      >
-                        <FaArrowRight size={10} />
-                        <span>{advancingId === activeMission.id ? "Advancing..." : nextAction.label}</span>
-                      </button>
-                    );
-                  }
-                  return null;
-                })()}
-
-                {/* OTP Verification Prompt when Out for Delivery */}
-                {activeMission.status === "out_for_delivery" && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOtpModalDelivery(activeMission);
-                      setOtpInput("");
-                      setOtpError(null);
-                    }}
-                    className="flex items-center gap-1.5 rounded-xl bg-emerald-500 px-4 py-2.5 text-xs font-black text-white hover:bg-emerald-600 shadow-md shadow-emerald-500/20 transition cursor-pointer"
-                  >
-                    <FaKey size={11} />
-                    <span>Enter Customer Delivery OTP</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Main Grid: Available Marketplace Feed & AI Copilot Preview */}
-        <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
-          {/* Open Available Deliveries Marketplace */}
-          <Panel
-            title="📍 Available Marketplace Deliveries"
-            action={
-              <Link href="/dashboard/delivery/available" className="text-xs font-bold text-primary hover:underline">
-                Explore All ({availableDeliveries.length}) →
-              </Link>
-            }
-          >
-            {availableDeliveries.length === 0 ? (
-              <div className="py-12 text-center">
-                <FaBox className="mx-auto text-4xl text-muted/40 mb-3" />
-                <h4 className="text-sm font-bold text-foreground">No Open Deliveries in Queue</h4>
-                <p className="text-xs text-muted max-w-sm mx-auto mt-1">
-                  When sellers mark orders &quot;Ready for Pickup&quot;, open delivery jobs will appear here in real-time.
-                </p>
-                <button
-                  type="button"
-                  onClick={loadDashboardData}
-                  className="mt-4 rounded-xl border border-border bg-surface px-4 py-2 text-xs font-bold text-text hover:border-primary transition cursor-pointer"
-                >
-                  Check Again
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {availableDeliveries.slice(0, 5).map((delivery) => (
-                  <div
-                    key={delivery.id}
-                    className="rounded-2xl border border-border bg-surface/50 p-4 text-xs transition hover:border-primary/40 hover:bg-surface/80"
-                  >
-                    <div className="flex items-center justify-between gap-3 mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-black text-foreground">Order #{delivery.orderId.slice(-8).toUpperCase()}</span>
-                        <span
-                          className={`rounded-md px-2 py-0.5 text-[10px] font-black uppercase ${
-                            delivery.priority === "urgent"
-                              ? "bg-rose-500/10 text-rose-500 border border-rose-500/30"
-                              : "bg-emerald-500/10 text-emerald-500 border border-emerald-500/30"
-                          }`}
-                        >
-                          {delivery.priority}
-                        </span>
-                      </div>
-                      <span className="text-base font-black text-emerald-500">৳{delivery.deliveryFee ?? 60}</span>
-                    </div>
-
-                    <div className="grid gap-2 sm:grid-cols-2 text-muted my-2">
-                      <div>
-                        <span className="block text-[10px] font-bold uppercase text-muted">Pickup</span>
-                        <p className="text-foreground font-medium truncate">{delivery.pickupAddress || "Store location"}</p>
-                      </div>
-                      <div>
-                        <span className="block text-[10px] font-bold uppercase text-muted">Destination</span>
-                        <p className="text-foreground font-medium truncate">{delivery.deliveryAddress || "Customer address"}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2 border-t border-border/40 mt-2">
-                      <span className="text-[10px] text-muted">
-                        Distance: ~{delivery.estimatedDistance ?? "3.5"} km
-                      </span>
-
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={`/dashboard/delivery/requests/${delivery.id}`}
-                          className="rounded-lg border border-border px-3 py-1.5 text-[11px] font-bold text-text hover:border-primary transition"
-                        >
-                          Details
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => handleAcceptOrder(delivery.id)}
-                          disabled={acceptingId === delivery.id || !isApproved}
-                          className="rounded-lg bg-primary px-3.5 py-1.5 text-[11px] font-black text-white hover:bg-primary-hover transition cursor-pointer disabled:opacity-50"
-                        >
-                          {acceptingId === delivery.id ? "Accepting..." : "Accept Job"}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Panel>
-
-          {/* AI Delivery Copilot Widget */}
-          <div className="space-y-6">
-            <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card p-5 shadow-sm">
-              <div className="flex items-center gap-2.5 mb-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-white text-sm shadow-sm">
-                  <FaRobot />
-                </div>
-                <div>
-                  <h4 className="font-black text-foreground text-sm">AI Delivery Copilot</h4>
-                  <p className="text-[11px] text-muted">Intelligent route & workload assistance</p>
-                </div>
-              </div>
-
-              <p className="text-xs text-muted mb-4 leading-relaxed">
-                Get real-time insights on high-demand zones, vehicle capacity limits, and safety recommendations.
-              </p>
-
-              <div className="space-y-2">
-                <Link
-                  href="/dashboard/delivery/copilot"
-                  className="block w-full rounded-xl bg-primary px-3.5 py-2.5 text-center text-xs font-black text-white hover:bg-primary-hover shadow-md shadow-primary/20 transition"
-                >
-                  Open AI Delivery Copilot →
-                </Link>
-
-                <div className="grid grid-cols-2 gap-2 text-center text-[10px]">
-                  <Link
-                    href="/dashboard/delivery/incidents"
-                    className="rounded-xl border border-border bg-surface p-2 font-bold text-text hover:border-primary transition"
-                  >
-                    ⚠️ Report Incident
-                  </Link>
-                  <Link
-                    href="/dashboard/delivery/profile"
-                    className="rounded-xl border border-border bg-surface p-2 font-bold text-text hover:border-primary transition"
-                  >
-                    ⚙️ Fleet Settings
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Actions Panel */}
-            <Panel title="⚡ Operations Shortcut">
-              <div className="grid grid-cols-2 gap-2.5 text-xs">
-                <Link
-                  href="/dashboard/delivery/my-deliveries"
-                  className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface/50 p-3 text-center font-bold text-text hover:border-primary transition"
-                >
-                  <FaMotorcycle className="text-primary text-base" />
-                  <span>My Deliveries</span>
-                </Link>
-                <Link
-                  href="/dashboard/delivery/available"
-                  className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface/50 p-3 text-center font-bold text-text hover:border-primary transition"
-                >
-                  <FaMapMarkerAlt className="text-emerald-500 text-base" />
-                  <span>Marketplace</span>
-                </Link>
-                <Link
-                  href="/dashboard/delivery/copilot"
-                  className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface/50 p-3 text-center font-bold text-text hover:border-primary transition"
-                >
-                  <FaRobot className="text-indigo-500 text-base" />
-                  <span>AI Advisor</span>
-                </Link>
-                <Link
-                  href="/dashboard/delivery/profile"
-                  className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface/50 p-3 text-center font-bold text-text hover:border-primary transition"
-                >
-                  <FaShieldAlt className="text-amber-500 text-base" />
-                  <span>KYC Documents</span>
-                </Link>
-              </div>
-            </Panel>
-          </div>
-        </div>
       </div>
 
-      {/* OTP Modal */}
-      {otpModalDelivery && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-foreground font-black text-base">
-                <FaKey className="text-primary" />
-                <span>Verify Delivery OTP</span>
+      {/* ─── Today's Operational Stats ────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Today's Completed"
+          value={stats?.todayDeliveries ?? 0}
+          icon={<FaCheckCircle className="text-emerald-500" />}
+          note={`${stats?.completedDeliveries ?? 0} all-time`}
+        />
+        <StatCard
+          label="Active Missions"
+          value={activeMissions.length}
+          icon={<FaBox className="text-primary" />}
+          note={`${availableDeliveries.length} available requests`}
+        />
+        <StatCard
+          label="Today's Delivery Fees"
+          value={stats?.todayEarnings ? `৳${stats.todayEarnings.toLocaleString()}` : "৳0"}
+          icon={<FaMoneyBillWave className="text-emerald-500" />}
+          note={stats?.totalEarnings ? `৳${stats.totalEarnings.toLocaleString()} total` : "Live fees"}
+        />
+        <StatCard
+          label="Avg. Delivery Time"
+          value={stats?.avgDeliveryTimeMinutes ? `${stats.avgDeliveryTimeMinutes}m` : "Under 30m"}
+          icon={<FaCompass className="text-amber-500" />}
+          note="On-time dispatch"
+        />
+      </div>
+
+      {/* ─── Main Tabs Switcher ──────────────────────────────────────────────── */}
+      <div className="flex items-center gap-2 border-b border-border pb-1 overflow-x-auto">
+        <button
+          onClick={() => setActiveTab("missions")}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
+            activeTab === "missions"
+              ? "bg-primary text-white shadow-sm"
+              : "text-muted hover:text-foreground hover:bg-muted-bg"
+          }`}
+        >
+          <FaTruckLoading />
+          <span>Active Missions ({activeMissions.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("available")}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
+            activeTab === "available"
+              ? "bg-primary text-white shadow-sm"
+              : "text-muted hover:text-foreground hover:bg-muted-bg"
+          }`}
+        >
+          <FaStore />
+          <span>Open Marketplace ({availableDeliveries.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("map")}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
+            activeTab === "map"
+              ? "bg-primary text-white shadow-sm"
+              : "text-muted hover:text-foreground hover:bg-muted-bg"
+          }`}
+        >
+          <FaMapMarkerAlt />
+          <span>Live Cockpit Map</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("copilot")}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
+            activeTab === "copilot"
+              ? "bg-primary text-white shadow-sm"
+              : "text-muted hover:text-foreground hover:bg-muted-bg"
+          }`}
+        >
+          <FaRobot />
+          <span>AI Copilot</span>
+        </button>
+      </div>
+
+      {/* ─── TAB 1: ACTIVE MISSIONS BOARD ────────────────────────────────────── */}
+      {activeTab === "missions" && (
+        <div className="space-y-6">
+          {activeMissions.length === 0 ? (
+            <Panel title="Active Delivery Missions">
+              <div className="py-12 text-center">
+                <FaBox className="w-12 h-12 text-muted/40 mx-auto mb-3" />
+                <h3 className="text-sm font-bold text-foreground">No Active Deliveries in Progress</h3>
+                <p className="text-xs text-muted max-w-sm mx-auto mt-1 mb-4">
+                  You currently have no assigned delivery assignments. Check the open marketplace to claim new deliveries.
+                </p>
+                <button
+                  onClick={() => setActiveTab("available")}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl text-xs font-bold shadow hover:bg-primary-hover transition-colors cursor-pointer"
+                >
+                  <FaStore /> Browse Open Requests
+                </button>
               </div>
+            </Panel>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Mission Cards List */}
+              <div className="lg:col-span-2 space-y-4">
+                {activeMissions.map((mission, idx) => {
+                  const isSelected = selectedMission?.id === mission.id;
+                  return (
+                    <div
+                      key={mission.id}
+                      onClick={() => setSelectedMissionId(mission.id)}
+                      className={`rounded-2xl border transition-all p-5 cursor-pointer ${
+                        isSelected
+                          ? "border-primary bg-card shadow-md ring-2 ring-primary/20"
+                          : "border-border bg-card hover:border-primary/50 shadow-sm"
+                      }`}
+                    >
+                      {/* Top Header */}
+                      <div className="flex items-center justify-between gap-2 border-b border-border/50 pb-3 mb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-black">
+                            #{idx + 1}
+                          </span>
+                          <span className="font-bold text-sm text-foreground">Order #{mission.orderId}</span>
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                              mission.priority === "urgent"
+                                ? "bg-red-500/10 text-red-600"
+                                : mission.priority === "high"
+                                ? "bg-amber-500/10 text-amber-600"
+                                : "bg-blue-500/10 text-blue-600"
+                            }`}
+                          >
+                            {mission.priority}
+                          </span>
+                        </div>
+                        <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
+                          ৳{mission.deliveryFee || 60} Fee
+                        </span>
+                      </div>
+
+                      {/* Route Locations */}
+                      <div className="space-y-2 text-xs mb-4">
+                        <div className="flex items-start gap-2 text-muted">
+                          <FaStore className="text-blue-500 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <span className="font-semibold text-foreground">Pickup:</span> {mission.pickupAddress || "Seller Store"}
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2 text-muted">
+                          <FaHome className="text-emerald-500 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <span className="font-semibold text-foreground">Destination:</span> {mission.deliveryAddress || "Customer Address"}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Package Weight & Dimensions */}
+                      {mission.packageInfo && (
+                        <div className="flex items-center gap-3 text-[11px] text-muted bg-muted-bg/60 p-2.5 rounded-xl border border-border/40 mb-4">
+                          <span>📦 Weight: <strong className="text-foreground">{mission.packageInfo.weight ? `${mission.packageInfo.weight}kg` : "Standard"}</strong></span>
+                          {mission.packageInfo.fragile && <span className="text-red-500 font-bold">⚠️ Fragile</span>}
+                        </div>
+                      )}
+
+                      {/* Interactive Milestone Stepper Actions */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/40">
+                        <div className="text-xs font-bold text-primary">
+                          Status: <span className="uppercase text-foreground">{mission.status.replace(/_/g, " ")}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIncidentModalDelivery(mission);
+                            }}
+                            className="px-3 py-1.5 text-xs rounded-xl border border-red-500/30 text-red-600 hover:bg-red-500/10 transition-colors font-semibold"
+                          >
+                            Report Issue
+                          </button>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setProofModalDelivery(mission);
+                            }}
+                            className="px-3 py-1.5 text-xs rounded-xl border border-border text-foreground hover:bg-muted-bg transition-colors font-semibold flex items-center gap-1.5"
+                          >
+                            <FaCamera className="text-xs" /> Proof
+                          </button>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAdvanceMilestone(mission);
+                            }}
+                            disabled={advancingId === mission.id}
+                            className="px-4 py-1.5 text-xs rounded-xl bg-primary text-white hover:bg-primary-hover transition-colors font-bold shadow-sm flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                          >
+                            {advancingId === mission.id ? (
+                              <FaSyncAlt className="animate-spin text-xs" />
+                            ) : mission.status === "out_for_delivery" ? (
+                              <>
+                                <FaKey className="text-xs" /> Enter OTP & Complete
+                              </>
+                            ) : (
+                              <>
+                                <span>Next Milestone</span> <FaArrowRight className="text-xs" />
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Side Active Mission Live Map */}
+              <div className="lg:col-span-1 space-y-4">
+                {selectedMission ? (
+                  <div className="rounded-2xl border border-border bg-card p-4 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between text-xs">
+                      <h4 className="font-bold text-foreground flex items-center gap-1.5">
+                        <FaCompass className="text-primary" /> Live Tracking Telemetry
+                      </h4>
+                      <span className="text-muted text-[10px]">Order #{selectedMission.orderId}</span>
+                    </div>
+
+                    <LiveDeliveryMap
+                      pickupAddress={selectedMission.pickupAddress}
+                      deliveryAddress={selectedMission.deliveryAddress}
+                      pickupCoordinates={selectedMission.pickupCoordinates}
+                      deliveryCoordinates={selectedMission.deliveryCoordinates}
+                      orderId={selectedMission.orderId}
+                      deliveryId={selectedMission.id}
+                      riderName={details?.personal?.fullName || session?.user?.name || "Delivery Partner"}
+                      status={selectedMission.status}
+                      trackingState={isBroadcastingLocation ? "LIVE" : "LOCATION_UNAVAILABLE"}
+                      riderLocation={
+                        lastCoords
+                          ? {
+                              latitude: lastCoords.lat,
+                              longitude: lastCoords.lng,
+                              speed: lastCoords.speed,
+                              updatedAt: new Date().toISOString(),
+                            }
+                          : null
+                      }
+                      height="h-64"
+                    />
+
+                    <div className="p-3 bg-muted-bg/50 rounded-xl border border-border/50 text-xs space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-muted">Broadcast State:</span>
+                        <span className="font-bold text-foreground">
+                          {isBroadcastingLocation ? "Active (Broadcasting)" : "Offline Standby"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted">OTP Requirement:</span>
+                        <span className="font-bold text-emerald-600">6-Digit Customer Code</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── TAB 2: OPEN MARKETPLACE (PATHAO-STYLE) ─────────────────────────── */}
+      {activeTab === "available" && (
+        <Panel title="Open Delivery Marketplace">
+          <p className="text-xs text-muted mb-4">Atomic First-Come Claim. Only requests fitting your vehicle capacity are shown.</p>
+          {availableDeliveries.length === 0 ? (
+            <div className="py-12 text-center text-muted">
+              <FaStore className="w-12 h-12 mx-auto mb-3 opacity-40" />
+              <p className="text-sm font-bold text-foreground">No Open Delivery Requests</p>
+              <p className="text-xs mt-1">There are currently no new packages waiting for pickup in your zones.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {availableDeliveries.map((req) => {
+                const pkgWeight = req.packageInfo?.weight || req.facts?.packageWeightKg || 0;
+                const canFitWeight = pkgWeight === 0 || pkgWeight <= remainingWeight;
+                const canFitParcels = currentParcelCount < maxParcels;
+                const isEligible = req.ranking?.fitsCapacity !== undefined ? req.ranking.fitsCapacity : (canFitWeight && canFitParcels);
+
+                return (
+                  <div
+                    key={req.id}
+                    className="rounded-2xl border border-border bg-card p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between border-b border-border/50 pb-3 mb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-black text-sm text-foreground">Order #{req.orderId}</span>
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                              req.priority === "urgent"
+                                ? "bg-red-500/10 text-red-600"
+                                : req.priority === "high"
+                                ? "bg-amber-500/10 text-amber-600"
+                                : "bg-blue-500/10 text-blue-600"
+                            }`}
+                          >
+                            {req.priority}
+                          </span>
+                        </div>
+                        <span className="font-black text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
+                          ৳{req.deliveryFee || req.facts?.deliveryFee || 60}
+                        </span>
+                      </div>
+
+                      <div className="space-y-2 text-xs text-muted mb-4">
+                        <div className="flex items-start gap-2">
+                          <FaStore className="text-blue-500 flex-shrink-0 mt-0.5" />
+                          <span className="truncate">{req.pickupAddress || "Seller Location"}</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <FaHome className="text-emerald-500 flex-shrink-0 mt-0.5" />
+                          <span className="truncate">{req.deliveryAddress || "Customer Address"}</span>
+                        </div>
+                      </div>
+
+                      {/* Smart Ranking Intelligence Metrics */}
+                      <div className="grid grid-cols-2 gap-2 mb-3 bg-muted-bg/50 p-2.5 rounded-xl border border-border/40 text-[11px]">
+                        <div>
+                          <span className="text-muted block text-[10px]">Pickup Distance</span>
+                          <strong className="text-foreground font-semibold">
+                            {req.ranking?.pickupDistanceKm !== undefined && req.ranking?.pickupDistanceKm !== null
+                              ? `${req.ranking.pickupDistanceKm} km`
+                              : "Distance calc..."}
+                          </strong>
+                        </div>
+                        <div>
+                          <span className="text-muted block text-[10px]">Est. Travel Time</span>
+                          <strong className="text-foreground font-semibold">
+                            {req.ranking?.estimatedTravelMinutes !== undefined && req.ranking?.estimatedTravelMinutes !== null
+                              ? `${req.ranking.estimatedTravelMinutes} min`
+                              : "Pending GPS"}
+                          </strong>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] mb-4">
+                        <span className="px-2 py-0.5 rounded bg-muted-bg text-foreground font-semibold">
+                          📦 {pkgWeight > 0 ? `${pkgWeight}kg` : "Standard parcel"}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            isEligible ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-red-500/10 text-red-600"
+                          }`}
+                        >
+                          {isEligible ? "Fits Capacity" : "Capacity Full"}
+                        </span>
+                        {req.ranking?.routeCompatibility === "High" && (
+                          <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 text-[10px] font-bold">
+                            High Route Overlap
+                          </span>
+                        )}
+                      </div>
+
+                      {req.inferences?.recommendationReason && (
+                        <p className="text-[10px] text-muted italic mb-3">
+                          💡 {req.inferences.recommendationReason}
+                        </p>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={() => handleAcceptDelivery(req.id)}
+                      disabled={!isApproved || !isEligible || acceptingId === req.id}
+                      className="w-full py-2.5 rounded-xl bg-primary text-white hover:bg-primary-hover font-bold text-xs shadow transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                    >
+                      {acceptingId === req.id ? (
+                        <FaSyncAlt className="animate-spin text-xs" />
+                      ) : (
+                        <>
+                          <FaCheckCircle className="text-xs" /> Accept & Claim Mission
+                        </>
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Panel>
+      )}
+
+      {/* ─── TAB 3: FULL COCKPIT LIVE MAP ────────────────────────────────────── */}
+      {activeTab === "map" && (
+        <Panel title="Live Delivery Radar & Cockpit Telemetry">
+          <div className="space-y-4">
+            <LiveDeliveryMap
+              pickupAddress={selectedMission?.pickupAddress || "Selected Pickup"}
+              deliveryAddress={selectedMission?.deliveryAddress || "Selected Dropoff"}
+              pickupCoordinates={selectedMission?.pickupCoordinates}
+              deliveryCoordinates={selectedMission?.deliveryCoordinates}
+              orderId={selectedMission?.orderId}
+              deliveryId={selectedMission?.id}
+              riderName={details?.personal?.fullName || session?.user?.name || "Delivery Partner"}
+              status={selectedMission?.status || "in_transit"}
+              trackingState={isBroadcastingLocation ? "LIVE" : "LOCATION_UNAVAILABLE"}
+              multiDeliveries={activeMissions.map((m) => ({
+                id: m.id,
+                orderId: m.orderId,
+                pickupAddress: m.pickupAddress,
+                deliveryAddress: m.deliveryAddress,
+                pickupCoordinates: m.pickupCoordinates,
+                deliveryCoordinates: m.deliveryCoordinates,
+                status: m.status,
+                deliveryFee: m.deliveryFee,
+              }))}
+              riderLocation={
+                lastCoords
+                  ? {
+                      latitude: lastCoords.lat,
+                      longitude: lastCoords.lng,
+                      speed: lastCoords.speed,
+                      updatedAt: new Date().toISOString(),
+                    }
+                  : null
+              }
+              height="h-96 sm:h-[480px]"
+            />
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+              <div className="p-4 bg-muted-bg/60 rounded-xl border border-border/50">
+                <span className="text-muted block text-[11px] font-semibold">Active Coordinates</span>
+                <span className="text-sm font-mono font-bold text-foreground">
+                  {lastCoords ? `${lastCoords.lat.toFixed(4)}, ${lastCoords.lng.toFixed(4)}` : "Pending GPS Broadcast"}
+                </span>
+              </div>
+              <div className="p-4 bg-muted-bg/60 rounded-xl border border-border/50">
+                <span className="text-muted block text-[11px] font-semibold">Broadcasting Protocol</span>
+                <span className="text-sm font-bold text-emerald-600 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Socket.IO WebSockets (Redis-Ready)
+                </span>
+              </div>
+              <div className="p-4 bg-muted-bg/60 rounded-xl border border-border/50">
+                <span className="text-muted block text-[11px] font-semibold">Geofencing Radius</span>
+                <span className="text-sm font-bold text-foreground">250m Proximity Trigger</span>
+              </div>
+            </div>
+          </div>
+        </Panel>
+      )}
+
+      {/* ─── TAB 4: AI DELIVERY COPILOT ──────────────────────────────────────── */}
+      {activeTab === "copilot" && (
+        <Panel title="AI Delivery Operations Copilot">
+          <p className="text-xs text-muted mb-4">Intelligent Telemetry & Route Guidance (Advisory Only)</p>
+          <div className="space-y-6">
+            {/* Quick Suggestions Buttons */}
+            <div className="flex flex-wrap gap-2">
+              {[
+                "Which delivery should I handle first?",
+                "Which available request fits my capacity?",
+                "Show my active deliveries.",
+                "Summarize today's performance.",
+                "What is causing delays?",
+              ].map((q) => (
+                <button
+                  key={q}
+                  onClick={() => {
+                    setCopilotQuery(q);
+                    handleAskCopilot(q);
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-card border border-border text-foreground hover:border-primary/50 text-xs font-semibold shadow-sm transition-all cursor-pointer"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+
+            {/* Custom Input */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleAskCopilot();
+              }}
+              className="flex gap-2"
+            >
+              <input
+                type="text"
+                value={copilotQuery}
+                onChange={(e) => setCopilotQuery(e.target.value)}
+                placeholder="Ask AI Copilot about sequence, capacity, or delays..."
+                className="flex-1 px-4 py-2.5 rounded-xl bg-muted-bg border border-border text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
               <button
-                type="button"
-                onClick={() => setOtpModalDelivery(null)}
-                className="text-muted hover:text-foreground text-sm font-bold"
+                type="submit"
+                disabled={copilotLoading || !copilotQuery.trim()}
+                className="px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-xs shadow hover:bg-primary-hover disabled:opacity-50 cursor-pointer"
               >
-                ✕
+                {copilotLoading ? "Analyzing..." : "Ask Copilot"}
+              </button>
+            </form>
+
+            {/* Copilot Response Output */}
+            {copilotResponse && (
+              <div className="p-5 rounded-2xl bg-card border border-border shadow-sm space-y-4">
+                <div className="flex items-center gap-2 text-xs font-bold text-primary">
+                  <FaRobot className="text-base" />
+                  <span>AI Operational Recommendation:</span>
+                </div>
+
+                <div className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">
+                  {copilotResponse.answer}
+                </div>
+
+                {/* Insights List */}
+                {copilotResponse.insights && copilotResponse.insights.length > 0 && (
+                  <div className="pt-3 border-t border-border/50 space-y-2">
+                    <h5 className="text-[11px] font-bold text-muted uppercase tracking-wider">
+                      Telemetry Insights Retrieved:
+                    </h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {copilotResponse.insights.map((ins, i) => (
+                        <div key={i} className="p-3 bg-muted-bg/60 rounded-xl border border-border/40 text-xs">
+                          <strong className="block text-foreground font-semibold mb-0.5">{ins.title}</strong>
+                          <span className="text-muted text-[11px]">{ins.description}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </Panel>
+      )}
+
+      {/* ─── OTP VERIFICATION MODAL ─────────────────────────────────────────── */}
+      {otpModalDelivery && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h3 className="text-base font-black text-foreground flex items-center gap-2">
+                <FaKey className="text-primary" /> Delivery OTP Verification
+              </h3>
+              <button
+                onClick={() => setOtpModalDelivery(null)}
+                className="text-muted hover:text-foreground cursor-pointer"
+              >
+                <FaTimes />
               </button>
             </div>
 
             <p className="text-xs text-muted">
-              Ask the customer for the 6-digit OTP displayed on their ShopNest order tracking screen to securely confirm handover.
+              Please enter the 6-digit customer verification code provided by the recipient for order{" "}
+              <strong>#{otpModalDelivery.orderId}</strong> to verify proof of handover.
             </p>
 
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-foreground">Customer 6-Digit OTP</label>
-              <input
-                type="text"
-                maxLength={6}
-                value={otpInput}
-                onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ""))}
-                placeholder="123456"
-                className="w-full text-center tracking-widest text-2xl font-black py-3 rounded-xl border border-border bg-background text-foreground focus:border-primary outline-none"
-              />
-            </div>
-
-            {otpError && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-bold">
-                {otpError}
+            <form onSubmit={handleVerifyOtpSubmit} className="space-y-4">
+              <div>
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={otpInput}
+                  onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ""))}
+                  placeholder="Enter 6-Digit PIN"
+                  className="w-full text-center text-2xl font-mono tracking-widest px-4 py-3 rounded-xl bg-muted-bg border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  autoFocus
+                />
+                {otpError && <p className="text-red-500 text-xs mt-1.5 font-semibold">{otpError}</p>}
               </div>
-            )}
 
-            <div className="flex items-center justify-end gap-2 pt-2">
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setOtpModalDelivery(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-muted hover:bg-muted-bg cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={otpVerifying || otpInput.length !== 6}
+                  className="px-5 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs shadow hover:bg-emerald-500 disabled:opacity-50 cursor-pointer"
+                >
+                  {otpVerifying ? "Verifying..." : "Verify & Complete Order"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── PROOF PHOTO MODAL ──────────────────────────────────────────────── */}
+      {proofModalDelivery && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h3 className="text-base font-black text-foreground flex items-center gap-2">
+                <FaCamera className="text-primary" /> Upload Proof of Delivery
+              </h3>
               <button
-                type="button"
-                onClick={() => setOtpModalDelivery(null)}
-                className="px-4 py-2 text-xs font-bold text-muted hover:text-foreground rounded-xl"
+                onClick={() => setProofModalDelivery(null)}
+                className="text-muted hover:text-foreground cursor-pointer"
               >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleVerifyOtpSubmit}
-                disabled={otpVerifying || otpInput.length < 6}
-                className="px-5 py-2.5 rounded-xl bg-emerald-500 text-white text-xs font-black hover:bg-emerald-600 transition disabled:opacity-50"
-              >
-                {otpVerifying ? "Verifying..." : "Confirm Delivery Handover"}
+                <FaTimes />
               </button>
             </div>
+
+            <form onSubmit={handleProofSubmit} className="space-y-4">
+              <div className="border-2 border-dashed border-border rounded-xl p-6 text-center">
+                <FaCamera className="w-8 h-8 text-muted mx-auto mb-2" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setProofFile(e.target.files?.[0] || null)}
+                  className="text-xs text-foreground cursor-pointer"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setProofModalDelivery(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-muted hover:bg-muted-bg cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={proofUploading || !proofFile}
+                  className="px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-xs shadow hover:bg-primary-hover disabled:opacity-50 cursor-pointer"
+                >
+                  {proofUploading ? "Uploading..." : "Save Proof Photo"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── INCIDENT REPORT MODAL ──────────────────────────────────────────── */}
+      {incidentModalDelivery && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h3 className="text-base font-black text-red-600 flex items-center gap-2">
+                <FaExclamationTriangle /> Report Delivery Incident
+              </h3>
+              <button
+                onClick={() => setIncidentModalDelivery(null)}
+                className="text-muted hover:text-foreground cursor-pointer"
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <form onSubmit={handleIncidentSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-muted mb-1">Issue Category</label>
+                <select
+                  value={incidentCategory}
+                  onChange={(e) => setIncidentCategory(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-muted-bg border border-border text-xs text-foreground"
+                >
+                  <option value="customer_unavailable">Customer Unavailable</option>
+                  <option value="wrong_address">Wrong Address / Landmark</option>
+                  <option value="customer_refused">Customer Refused Delivery</option>
+                  <option value="package_issue">Package Damaged / Mismatch</option>
+                  <option value="vehicle_problem">Vehicle Breakdown / Accident</option>
+                  <option value="safety_issue">Safety / Road Obstacle</option>
+                  <option value="other">Other Incident</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-muted mb-1">Severity</label>
+                <select
+                  value={incidentSeverity}
+                  onChange={(e) => setIncidentSeverity(e.target.value as any)}
+                  className="w-full px-3 py-2 rounded-xl bg-muted-bg border border-border text-xs text-foreground"
+                >
+                  <option value="low">Low - Minor Delay</option>
+                  <option value="medium">Medium - Needs Attention</option>
+                  <option value="high">High - Handover Blocked</option>
+                  <option value="critical">Critical - Emergency / Severe Issue</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-muted mb-1">Description / Notes</label>
+                <textarea
+                  value={incidentDesc}
+                  onChange={(e) => setIncidentDesc(e.target.value)}
+                  rows={3}
+                  placeholder="Explain the incident details..."
+                  className="w-full px-3 py-2 rounded-xl bg-muted-bg border border-border text-xs text-foreground"
+                  required
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIncidentModalDelivery(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-muted hover:bg-muted-bg cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={incidentReporting || !incidentDesc.trim()}
+                  className="px-5 py-2.5 rounded-xl bg-red-600 text-white font-bold text-xs shadow hover:bg-red-500 disabled:opacity-50 cursor-pointer"
+                >
+                  {incidentReporting ? "Submitting..." : "Submit Incident Report"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

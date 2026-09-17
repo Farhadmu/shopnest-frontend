@@ -4,6 +4,8 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { getOrderById } from "@/lib/api/orders";
 import { getDeliveryTracking, rateDelivery, type DeliveryTrackingResponse } from "@/lib/api/delivery";
+import { useDeliveryLiveTracking } from "@/hooks/delivery/useDeliveryLiveTracking";
+import { LiveDeliveryMap } from "@/components/delivery/LiveDeliveryMap";
 import Link from "next/link";
 import {
   FiCheckCircle,
@@ -19,6 +21,7 @@ import {
   FiPhone,
   FiStar,
   FiCompass,
+  FiBell,
 } from "react-icons/fi";
 import { FaMotorcycle, FaStar as FaSolidStar } from "react-icons/fa";
 
@@ -40,6 +43,23 @@ export default function UserOrderDetailPage() {
   const [tracking, setTracking] = useState<DeliveryTrackingResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Live Socket.IO Tracking Hook
+  const {
+    currentLocation: socketLocation,
+    deliveryStatus: socketStatus,
+    trackingState,
+    secondsSinceLastUpdate,
+    geofenceAlert,
+    clearGeofenceAlert,
+  } = useDeliveryLiveTracking({
+    orderId: id,
+    initialStatus: order?.status,
+    initialLocation: tracking?.currentLocation,
+    onStatusChange: (newStatus) => {
+      setOrder((prev: any) => (prev ? { ...prev, status: newStatus } : prev));
+    },
+  });
 
   // Delivery Partner Rating Modal State
   const [showRiderRateModal, setShowRiderRateModal] = useState(false);
@@ -194,6 +214,62 @@ export default function UserOrderDetailPage() {
           </Link>
         </div>
       </div>
+
+      {/* GEOFENCE PROXIMITY ALERT BANNER */}
+      {geofenceAlert && (
+        <div className="rounded-2xl border-2 border-emerald-500 bg-emerald-500/10 p-5 shadow-lg flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top duration-300">
+          <div className="flex items-center gap-3">
+            <span className="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center text-lg flex-shrink-0 animate-bounce">
+              <FiBell />
+            </span>
+            <div>
+              <h4 className="text-sm font-black text-emerald-600 dark:text-emerald-400">Courier is Approaching!</h4>
+              <p className="text-xs text-foreground font-medium">{geofenceAlert}</p>
+            </div>
+          </div>
+          <button
+            onClick={clearGeofenceAlert}
+            className="text-xs font-bold text-muted hover:text-foreground px-3 py-1.5 rounded-lg border border-border bg-card cursor-pointer"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {/* LIVE INTERACTIVE DELIVERY MAP */}
+      {order.status !== "delivered" && order.status !== "cancelled" && tracking?.assignedRider && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs px-1">
+            <span className="font-bold text-foreground flex items-center gap-1.5">
+              <FiCompass className="text-primary" /> Live GPS Delivery Radar
+            </span>
+            <span className="text-muted text-[11px]">Real-time Telemetry Scoped to Your Order</span>
+          </div>
+          <LiveDeliveryMap
+            pickupAddress={tracking.pickupAddress || "Merchant Warehouse"}
+            deliveryAddress={tracking.deliveryAddress || order.shippingAddress}
+            pickupCoordinates={tracking.pickupCoordinates}
+            deliveryCoordinates={tracking.deliveryCoordinates}
+            orderId={String(order.id || order._id || "")}
+            riderName={tracking.assignedRider?.name || "Assigned Courier"}
+            riderPhone={tracking.assignedRider?.phone}
+            status={order.status}
+            trackingState={trackingState}
+            secondsSinceLastUpdate={secondsSinceLastUpdate}
+            riderLocation={
+              socketLocation ||
+              (tracking.currentLocation
+                ? {
+                    latitude: tracking.currentLocation.latitude,
+                    longitude: tracking.currentLocation.longitude,
+                    updatedAt: tracking.currentLocation.updatedAt || new Date().toISOString(),
+                  }
+                : null)
+            }
+            height="h-72 sm:h-80"
+          />
+        </div>
+      )}
 
       {/* CUSTOMER OTP BANNER WHEN OUT FOR DELIVERY */}
       {order.status === "out_for_delivery" && deliveryOtp && (

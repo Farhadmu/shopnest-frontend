@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { DashboardShell, Panel } from "@/components/dashboard/DashboardUI";
@@ -8,6 +8,7 @@ import { GaugeMeter } from "@/components/analytics/GaugeMeter";
 import { userDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { useOverviewStats } from "@/hooks/dashboard/user/useOverviewStats";
 import { useShoppingIntent } from "@/hooks/dashboard/user/useShoppingIntent";
+import { useSession } from "@/lib/auth-client";
 import { addToCart } from "@/lib/api/cart";
 import { formatCurrency } from "@/lib/utils";
 import {
@@ -19,20 +20,38 @@ import {
   FiArrowRight,
   FiCheck,
   FiStar,
-  FiTag,
+  FiTruck,
+  FiDollarSign,
   FiAlertCircle,
   FiTrendingUp,
   FiClock,
   FiZap,
+  FiCompass,
+  FiTarget,
+  FiActivity,
+  FiChevronRight,
 } from "react-icons/fi";
-import { FaWandSparkles } from "react-icons/fa6";
+import { FaWandSparkles, FaRobot } from "react-icons/fa6";
+import { HiSparkles } from "react-icons/hi2";
 
 export default function CustomerOverviewPage() {
-  const { stats, recentOrders, securityData } = useOverviewStats(true);
-  const { query, setQuery, result, loading, error, detect, search, reset, suggestions } = useShoppingIntent();
+  const { data: session } = useSession();
+  const userName = session?.user?.name || "Shopper";
+
+  const { stats, recentOrders, activeOrder, wishlistItems, cartData, securityData, loading: statsLoading } = useOverviewStats(true);
+  const { query, setQuery, result, loading: searchLoading, error, detect, search, reset, suggestions } = useShoppingIntent();
+
   const [addingCartId, setAddingCartId] = useState<string | null>(null);
   const [addedMap, setAddedMap] = useState<Record<string, boolean>>({});
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  // Dynamic time-based greeting
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
+  }, []);
 
   const handleAddToCart = async (productId: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -57,8 +76,8 @@ export default function CustomerOverviewPage() {
   return (
     <DashboardShell
       role="Customer"
-      title="Commerce Command Center"
-      subtitle="Discover personalized shopping journeys, plan smart budgets, track product lifecycles and protect your account with AI intelligence."
+      title={`${greeting}, ${userName} 👋`}
+      subtitle="Welcome to your personal ShopNest Command Center. Live overview of your orders, active deliveries, spending analytics, and AI shopping intelligence."
       links={userDashboardLinks}
     >
       <div className="space-y-8">
@@ -69,105 +88,224 @@ export default function CustomerOverviewPage() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="fixed top-20 right-6 z-50 rounded-2xl bg-primary text-white px-5 py-3 text-xs font-bold shadow-2xl flex items-center gap-2"
+              className="fixed top-20 right-6 z-50 rounded-2xl bg-primary text-white px-5 py-3 text-xs font-bold shadow-2xl flex items-center gap-2 border border-white/20 backdrop-blur-md"
             >
               <FiCheck /> {toastMsg}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* 4 Colorful Animated Stat Cards */}
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {/* Card 1: Orders */}
+        {/* 6 High-Impact Stat Cards Grid */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {/* 1: Total Orders */}
           <Link
             href="/dashboard/user/orders"
-            className="group relative overflow-hidden rounded-3xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-surface p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-indigo-500/40 hover:shadow-lg hover:shadow-indigo-500/10"
+            className="group relative overflow-hidden rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-surface p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-indigo-500/40 hover:shadow-lg hover:shadow-indigo-500/10"
           >
-            <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-indigo-500/10 blur-xl group-hover:bg-indigo-500/20 transition-colors" />
             <div className="flex items-center justify-between">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-500/15 text-indigo-500 shadow-inner group-hover:scale-110 transition-transform">
-                <FiBox size={22} />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-500 shadow-inner group-hover:scale-110 transition-transform">
+                <FiBox size={18} />
               </div>
-              <span className="flex items-center gap-1 rounded-full bg-indigo-500/10 px-2.5 py-0.5 text-[10px] font-black uppercase text-indigo-500">
-                <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-ping" /> Live
+              <span className="rounded-full bg-indigo-500/10 px-2 py-0.5 text-[9px] font-black uppercase text-indigo-500">
+                Orders
               </span>
             </div>
-            <div className="mt-4">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-muted">Orders Placed</span>
-              <h3 className="text-2xl font-black text-foreground">{stats.orders}</h3>
-              <p className="mt-0.5 text-[11px] text-muted">Lifetime fulfilled purchases</p>
+            <div className="mt-3">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Total Orders</span>
+              <h3 className="text-xl font-black text-foreground">{stats.orders}</h3>
+              <p className="mt-0.5 text-[10px] text-muted">{stats.deliveredOrders} delivered</p>
             </div>
           </Link>
 
-          {/* Card 2: Cart Items */}
+          {/* 2: Active / In-Transit */}
           <Link
-            href="/cart"
-            className="group relative overflow-hidden rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-surface p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-amber-500/40 hover:shadow-lg hover:shadow-amber-500/10"
+            href="/dashboard/user/orders"
+            className="group relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-surface p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/10"
           >
-            <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-amber-500/10 blur-xl group-hover:bg-amber-500/20 transition-colors" />
             <div className="flex items-center justify-between">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-500 shadow-inner group-hover:scale-110 transition-transform">
-                <FiShoppingBag size={22} />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-500 shadow-inner group-hover:scale-110 transition-transform">
+                <FiTruck size={18} />
               </div>
-              <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-black uppercase text-amber-500">
-                Ready
+              <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-black uppercase text-emerald-500">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live
               </span>
             </div>
-            <div className="mt-4">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-muted">Cart Items</span>
-              <h3 className="text-2xl font-black text-foreground">{stats.cart}</h3>
-              <p className="mt-0.5 text-[11px] text-muted">Ready for 1-click checkout</p>
+            <div className="mt-3">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Active Deliveries</span>
+              <h3 className="text-xl font-black text-foreground">{stats.activeOrders}</h3>
+              <p className="mt-0.5 text-[10px] text-muted">In-transit or processing</p>
             </div>
           </Link>
 
-          {/* Card 3: Wishlist */}
+          {/* 3: Wishlist */}
           <Link
             href="/wishlist"
-            className="group relative overflow-hidden rounded-3xl border border-rose-500/20 bg-gradient-to-br from-rose-500/10 via-pink-500/5 to-surface p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-rose-500/40 hover:shadow-lg hover:shadow-rose-500/10"
+            className="group relative overflow-hidden rounded-2xl border border-rose-500/20 bg-gradient-to-br from-rose-500/10 via-pink-500/5 to-surface p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-rose-500/40 hover:shadow-lg hover:shadow-rose-500/10"
           >
-            <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-rose-500/10 blur-xl group-hover:bg-rose-500/20 transition-colors" />
             <div className="flex items-center justify-between">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-500/15 text-rose-500 shadow-inner group-hover:scale-110 transition-transform">
-                <FiHeart size={22} />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/15 text-rose-500 shadow-inner group-hover:scale-110 transition-transform">
+                <FiHeart size={18} />
               </div>
-              <span className="flex items-center gap-1 rounded-full bg-rose-500/10 px-2.5 py-0.5 text-[10px] font-black uppercase text-rose-500">
+              <span className="rounded-full bg-rose-500/10 px-2 py-0.5 text-[9px] font-black uppercase text-rose-500">
                 Saved
               </span>
             </div>
-            <div className="mt-4">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-muted">Wishlist Collections</span>
-              <h3 className="text-2xl font-black text-foreground">{stats.wishlist}</h3>
-              <p className="mt-0.5 text-[11px] text-muted">Saved products & folders</p>
+            <div className="mt-3">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Wishlist Items</span>
+              <h3 className="text-xl font-black text-foreground">{stats.wishlist}</h3>
+              <p className="mt-0.5 text-[10px] text-muted">Saved favorites</p>
             </div>
           </Link>
 
-          {/* Card 4: Security Shield */}
+          {/* 4: Cart Snapshot */}
           <Link
-            href="/dashboard/user/security"
-            className="group relative overflow-hidden rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-surface p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/10"
+            href="/cart"
+            className="group relative overflow-hidden rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-surface p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-amber-500/40 hover:shadow-lg hover:shadow-amber-500/10"
           >
-            <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-emerald-500/10 blur-xl group-hover:bg-emerald-500/20 transition-colors" />
             <div className="flex items-center justify-between">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-500 shadow-inner group-hover:scale-110 transition-transform">
-                <FiShield size={22} />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/15 text-amber-500 shadow-inner group-hover:scale-110 transition-transform">
+                <FiShoppingBag size={18} />
               </div>
-              <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-black uppercase text-emerald-500">
-                Active
+              <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[9px] font-black uppercase text-amber-500">
+                Cart
               </span>
             </div>
-            <div className="mt-4">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-muted">Account Shield</span>
-              <h3 className="text-2xl font-black text-foreground">
-                {securityData?.securityScore || 98}% Safe
-              </h3>
-              <p className="mt-0.5 text-[11px] text-muted">ATO & Session Guard Active</p>
+            <div className="mt-3">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Cart Total</span>
+              <h3 className="text-xl font-black text-foreground">{stats.cart} items</h3>
+              <p className="mt-0.5 text-[10px] text-muted">{formatCurrency(stats.cartSubtotal)} subtotal</p>
+            </div>
+          </Link>
+
+          {/* 5: Total Lifetime Spent */}
+          <Link
+            href="/dashboard/user/analytics"
+            className="group relative overflow-hidden rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-surface p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/10"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/15 text-blue-500 shadow-inner group-hover:scale-110 transition-transform">
+                <FiDollarSign size={18} />
+              </div>
+              <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[9px] font-black uppercase text-blue-500">
+                Spend
+              </span>
+            </div>
+            <div className="mt-3">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Lifetime Spent</span>
+              <h3 className="text-lg font-black text-foreground truncate">{formatCurrency(stats.totalSpent)}</h3>
+              <p className="mt-0.5 text-[10px] text-muted">Verified orders</p>
+            </div>
+          </Link>
+
+          {/* 6: Account Security Shield */}
+          <Link
+            href="/dashboard/user/security"
+            className="group relative overflow-hidden rounded-2xl border border-teal-500/20 bg-gradient-to-br from-teal-500/10 via-cyan-500/5 to-surface p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-teal-500/40 hover:shadow-lg hover:shadow-teal-500/10"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-500/15 text-teal-500 shadow-inner group-hover:scale-110 transition-transform">
+                <FiShield size={18} />
+              </div>
+              <span className="rounded-full bg-teal-500/10 px-2 py-0.5 text-[9px] font-black uppercase text-teal-500">
+                Secure
+              </span>
+            </div>
+            <div className="mt-3">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Security Guard</span>
+              <h3 className="text-xl font-black text-foreground">{securityData?.securityScore || 98}%</h3>
+              <p className="mt-0.5 text-[10px] text-muted">Session protected</p>
             </div>
           </Link>
         </div>
 
+        {/* Active Order Live Tracker (If active order exists) */}
+        {activeOrder && (
+          <div className="overflow-hidden rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/10 via-card to-surface p-5 shadow-md">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-white shadow-md shadow-primary/20">
+                  <FiTruck size={20} className="animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-extrabold text-foreground">
+                      Active Order #{activeOrder.id.slice(-6)}
+                    </h3>
+                    <span className="rounded-full bg-primary/20 px-2.5 py-0.5 text-[10px] font-extrabold text-primary uppercase">
+                      {activeOrder.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted">
+                    Placed on {new Date(activeOrder.createdAt).toLocaleDateString()} • {activeOrder.items?.length || 1} item(s) • Total: {formatCurrency(activeOrder.totalAmount)}
+                  </p>
+                </div>
+              </div>
+
+              <Link
+                href={`/dashboard/user/orders/${activeOrder.id}`}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-primary-hover transition-colors shrink-0"
+              >
+                Track Live Delivery <FiChevronRight />
+              </Link>
+            </div>
+
+            {/* Tracker Step Progress */}
+            <div className="pt-4">
+              <div className="grid grid-cols-4 gap-2 text-center text-[11px] font-bold">
+                <div className="space-y-1 text-primary">
+                  <div className="h-1.5 rounded-full bg-primary" />
+                  <span>Placed</span>
+                </div>
+                <div className={`space-y-1 ${["processing", "shipped", "out_for_delivery", "delivered"].includes(activeOrder.status) ? "text-primary" : "text-muted"}`}>
+                  <div className={`h-1.5 rounded-full ${["processing", "shipped", "out_for_delivery", "delivered"].includes(activeOrder.status) ? "bg-primary" : "bg-muted-bg"}`} />
+                  <span>Processing</span>
+                </div>
+                <div className={`space-y-1 ${["shipped", "out_for_delivery", "delivered"].includes(activeOrder.status) ? "text-primary" : "text-muted"}`}>
+                  <div className={`h-1.5 rounded-full ${["shipped", "out_for_delivery", "delivered"].includes(activeOrder.status) ? "bg-primary" : "bg-muted-bg"}`} />
+                  <span>Shipped</span>
+                </div>
+                <div className={`space-y-1 ${["out_for_delivery", "delivered"].includes(activeOrder.status) ? "text-emerald-500" : "text-muted"}`}>
+                  <div className={`h-1.5 rounded-full ${["out_for_delivery", "delivered"].includes(activeOrder.status) ? "bg-emerald-500" : "bg-muted-bg"}`} />
+                  <span>Out for Delivery</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* AI Customer Copilot Insight & Quick Launcher Banner */}
+        <div className="rounded-3xl border border-primary/25 bg-gradient-to-r from-primary/15 via-accent/10 to-surface p-5 shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent text-white shadow-md shadow-primary/25">
+              <FaRobot size={22} className="animate-bounce" style={{ animationDuration: "3s" }} />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-black text-foreground flex items-center gap-1.5">
+                  <HiSparkles className="text-amber-400" /> AI Customer Copilot
+                </h3>
+                <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[9px] font-bold text-primary">
+                  Live Account Intelligence
+                </span>
+              </div>
+              <p className="text-xs text-muted max-w-xl">
+                I can answer questions about your orders, spending, wishlist affordability, return windows, delivery updates, and platform features.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            <Link
+              href="/dashboard/user/ai-advisor"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-accent px-5 py-2.5 text-xs font-black text-white shadow-md hover:shadow-lg hover:scale-[1.02] transition-all"
+            >
+              <FaWandSparkles /> Open AI Advisor
+            </Link>
+          </div>
+        </div>
+
         {/* AI Natural Language Shopping Assistant Panel */}
         <div className="relative overflow-hidden rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/10 via-purple-500/5 to-card p-6 shadow-xl space-y-6">
-          {/* Subtle Ambient Glows */}
           <div className="pointer-events-none absolute -left-20 -top-20 h-60 w-60 rounded-full bg-primary/20 blur-3xl" />
           <div className="pointer-events-none absolute -right-20 -bottom-20 h-60 w-60 rounded-full bg-purple-500/20 blur-3xl" />
 
@@ -175,11 +313,11 @@ export default function CustomerOverviewPage() {
           <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-primary to-indigo-600 text-white shadow-lg shadow-primary/30">
-                <FaWandSparkles className="animate-spin text-lg text-amber-300" style={{ animationDuration: "8s" }} />
+                <FaWandSparkles className="text-lg text-amber-300" />
               </div>
               <div>
                 <h2 className="text-base font-black text-foreground tracking-tight sm:text-lg">
-                  AI Natural Language Shopping Assistant
+                  Catalog Natural Language Search
                 </h2>
                 <p className="text-xs text-muted">
                   Search MongoDB catalog using natural language, Bengali, and strict budget constraints.
@@ -219,10 +357,10 @@ export default function CustomerOverviewPage() {
             </div>
             <button
               type="submit"
-              disabled={loading || !query.trim()}
+              disabled={searchLoading || !query.trim()}
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-indigo-600 px-7 py-3.5 text-xs font-black text-white shadow-lg shadow-primary/25 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap"
             >
-              {loading ? (
+              {searchLoading ? (
                 <>
                   <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
                   <span>Searching Catalog...</span>
@@ -263,7 +401,7 @@ export default function CustomerOverviewPage() {
           )}
 
           {/* Loading Animation */}
-          {loading && (
+          {searchLoading && (
             <div className="relative z-10 py-10 text-center space-y-3">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary animate-pulse">
                 <FaWandSparkles className="text-2xl animate-spin text-primary" style={{ animationDuration: "3s" }} />
@@ -279,7 +417,7 @@ export default function CustomerOverviewPage() {
 
           {/* Search Results Display */}
           <AnimatePresence>
-            {!loading && result && (
+            {!searchLoading && result && (
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -345,7 +483,6 @@ export default function CustomerOverviewPage() {
                           key={pid}
                           className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border bg-card p-3.5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md"
                         >
-                          {/* Top Tag & Discount Badge */}
                           <div className="flex items-center justify-between mb-2">
                             <span className="rounded-lg bg-surface px-2 py-0.5 text-[10px] font-bold text-muted border border-border">
                               {p.category}
@@ -357,7 +494,6 @@ export default function CustomerOverviewPage() {
                             )}
                           </div>
 
-                          {/* Image & Title */}
                           <Link href={`/products/${pid}`} className="block space-y-2">
                             <div className="aspect-video sm:aspect-square w-full overflow-hidden rounded-xl bg-muted-bg flex items-center justify-center relative">
                               {p.images?.[0] ? (
@@ -369,8 +505,6 @@ export default function CustomerOverviewPage() {
                               ) : (
                                 <span className="text-3xl">🛍️</span>
                               )}
-
-                              {/* Stock Pill */}
                               <div className="absolute bottom-2 left-2 rounded-md bg-black/70 backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold text-white flex items-center gap-1">
                                 <span
                                   className={`h-1.5 w-1.5 rounded-full ${
@@ -386,7 +520,6 @@ export default function CustomerOverviewPage() {
                             </h4>
                           </Link>
 
-                          {/* Price & Rating */}
                           <div className="mt-3 pt-2 border-t border-border/40 space-y-2.5">
                             <div className="flex items-center justify-between">
                               <div>
@@ -409,7 +542,6 @@ export default function CustomerOverviewPage() {
                               </div>
                             </div>
 
-                            {/* Actions */}
                             <div className="flex items-center gap-2">
                               <Link
                                 href={`/products/${pid}`}
@@ -451,10 +583,10 @@ export default function CustomerOverviewPage() {
           </AnimatePresence>
         </div>
 
-        {/* Quick Snapshot 2-Column Grid */}
+        {/* 2-Column Grid: Recent Orders & Quick Activity */}
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Recent Purchases */}
-          <Panel title="Recent Purchases">
+          <Panel title="Recent Purchases & Order History">
             {recentOrders.length === 0 ? (
               <div className="py-12 text-center space-y-3 text-muted text-xs">
                 <FiBox className="mx-auto text-3xl text-muted/50" />
@@ -470,18 +602,21 @@ export default function CustomerOverviewPage() {
             ) : (
               <div className="space-y-3">
                 {recentOrders.map((o) => (
-                  <div
+                  <Link
                     key={o.id}
-                    className="flex items-center justify-between rounded-2xl border border-border bg-card p-3.5 transition hover:border-primary/40"
+                    href={`/dashboard/user/orders/${o.id}`}
+                    className="flex items-center justify-between rounded-2xl border border-border bg-card p-3.5 transition hover:border-primary/40 group block"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold text-xs">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold text-xs group-hover:scale-105 transition-transform">
                         📦
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-foreground">Order #{o.id.slice(-6)}</p>
+                        <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                          Order #{o.id.slice(-6)}
+                        </p>
                         <p className="text-[11px] text-muted">
-                          {o.items.length} items • {formatCurrency(o.totalAmount)}
+                          {o.items?.length || 1} items • {formatCurrency(o.totalAmount)}
                         </p>
                       </div>
                     </div>
@@ -496,7 +631,7 @@ export default function CustomerOverviewPage() {
                     >
                       {o.status}
                     </span>
-                  </div>
+                  </Link>
                 ))}
 
                 <Link
@@ -509,38 +644,163 @@ export default function CustomerOverviewPage() {
             )}
           </Panel>
 
-          {/* Security & Protection Status */}
-          <Panel title="Account Shield & Security Center">
+          {/* Wishlist & Cart Quick Peek */}
+          <Panel title="Saved Wishlist & Cart Peek">
+            {wishlistItems.length === 0 && (!cartData?.items || cartData.items.length === 0) ? (
+              <div className="py-12 text-center space-y-3 text-muted text-xs">
+                <FiHeart className="mx-auto text-3xl text-muted/50" />
+                <p className="font-semibold text-foreground">Wishlist & Cart are clean.</p>
+                <p className="text-[11px]">Items you save will appear here for fast 1-click access.</p>
+                <Link
+                  href="/products"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-primary-hover transition-colors"
+                >
+                  Browse Catalog <FiArrowRight />
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {wishlistItems.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-muted">
+                        Saved in Wishlist ({wishlistItems.length})
+                      </span>
+                      <Link href="/wishlist" className="text-[11px] font-bold text-primary hover:underline">
+                        Open Wishlist →
+                      </Link>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {wishlistItems.map((item) => (
+                        <Link
+                          key={item.productId}
+                          href={`/products/${item.productId}`}
+                          className="flex items-center gap-2 rounded-xl border border-border bg-surface p-2 hover:border-primary transition"
+                        >
+                          {item.images?.[0] ? (
+                            <img src={item.images[0]} alt={item.title} className="h-9 w-9 rounded-lg object-cover" />
+                          ) : (
+                            <span className="text-base">❤️</span>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[11px] font-bold text-foreground truncate">{item.title}</p>
+                            <p className="text-[10px] font-black text-primary">{formatCurrency(item.price || 0)}</p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {cartData?.items && cartData.items.length > 0 && (
+                  <div className="pt-2 border-t border-border/60 flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-foreground">Cart Ready for Checkout</span>
+                      <p className="text-[11px] text-muted">
+                        {cartData.items.length} item(s) • Subtotal: {formatCurrency(cartData.subtotal || 0)}
+                      </p>
+                    </div>
+                    <Link
+                      href="/cart"
+                      className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-primary-hover transition"
+                    >
+                      Checkout →
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+          </Panel>
+        </div>
+
+        {/* 2-Column Grid: Quick Navigation & Security Shield */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Dashboard Quick Navigation Center */}
+          <Panel title="Command Center Quick Jump">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <Link
+                href="/dashboard/user/analytics"
+                className="flex flex-col items-center justify-center p-3.5 rounded-2xl border border-border bg-card hover:border-primary hover:shadow-md transition text-center group"
+              >
+                <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">📈</span>
+                <span className="text-xs font-bold text-foreground group-hover:text-primary">Spending Analytics</span>
+                <span className="text-[10px] text-muted">Category breakdown</span>
+              </Link>
+              <Link
+                href="/dashboard/user/journey"
+                className="flex flex-col items-center justify-center p-3.5 rounded-2xl border border-border bg-card hover:border-primary hover:shadow-md transition text-center group"
+              >
+                <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">🚀</span>
+                <span className="text-xs font-bold text-foreground group-hover:text-primary">Shopping Journey</span>
+                <span className="text-[10px] text-muted">Exploration timeline</span>
+              </Link>
+              <Link
+                href="/dashboard/user/goals"
+                className="flex flex-col items-center justify-center p-3.5 rounded-2xl border border-border bg-card hover:border-primary hover:shadow-md transition text-center group"
+              >
+                <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">🎯</span>
+                <span className="text-xs font-bold text-foreground group-hover:text-primary">Shopping Goals</span>
+                <span className="text-[10px] text-muted">Target milestones</span>
+              </Link>
+              <Link
+                href="/dashboard/user/lifecycle"
+                className="flex flex-col items-center justify-center p-3.5 rounded-2xl border border-border bg-card hover:border-primary hover:shadow-md transition text-center group"
+              >
+                <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">🛡️</span>
+                <span className="text-xs font-bold text-foreground group-hover:text-primary">Product Lifecycle</span>
+                <span className="text-[10px] text-muted">Warranty & renewals</span>
+              </Link>
+              <Link
+                href="/dashboard/user/budget"
+                className="flex flex-col items-center justify-center p-3.5 rounded-2xl border border-border bg-card hover:border-primary hover:shadow-md transition text-center group"
+              >
+                <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">💰</span>
+                <span className="text-xs font-bold text-foreground group-hover:text-primary">Budget Planner</span>
+                <span className="text-[10px] text-muted">Optimal allocations</span>
+              </Link>
+              <Link
+                href="/dashboard/user/notifications"
+                className="flex flex-col items-center justify-center p-3.5 rounded-2xl border border-border bg-card hover:border-primary hover:shadow-md transition text-center group"
+              >
+                <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">🔔</span>
+                <span className="text-xs font-bold text-foreground group-hover:text-primary">Notifications</span>
+                <span className="text-[10px] text-muted">{stats.notifications} unread</span>
+              </Link>
+            </div>
+          </Panel>
+
+          {/* Account Shield & Security Center */}
+          <Panel title="Account Shield & Session Guard">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-2">
               <GaugeMeter
                 score={securityData?.securityScore || 98}
                 title="Account Shield"
                 subtitle="Active Fraud & ATO Protection"
-                size={150}
+                size={140}
                 type="security"
               />
-              <div className="space-y-2.5 text-xs flex-1">
-                <div className="flex items-center gap-2 rounded-xl bg-card border border-border p-2.5">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 text-xs font-bold">
+              <div className="space-y-2 text-xs flex-1">
+                <div className="flex items-center gap-2 rounded-xl bg-card border border-border p-2">
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 text-[10px] font-bold">
                     ✓
                   </span>
-                  <span className="font-semibold text-foreground">HMAC-SHA256 Signed Session Guard</span>
+                  <span className="font-semibold text-foreground">HMAC-SHA256 Session Guard</span>
                 </div>
-                <div className="flex items-center gap-2 rounded-xl bg-card border border-border p-2.5">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 text-xs font-bold">
+                <div className="flex items-center gap-2 rounded-xl bg-card border border-border p-2">
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 text-[10px] font-bold">
                     ✓
                   </span>
                   <span className="font-semibold text-foreground">Account Takeover (ATO) Shield</span>
                 </div>
-                <div className="flex items-center gap-2 rounded-xl bg-card border border-border p-2.5">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 text-xs font-bold">
+                <div className="flex items-center gap-2 rounded-xl bg-card border border-border p-2">
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 text-[10px] font-bold">
                     ✓
                   </span>
-                  <span className="font-semibold text-foreground">Zero Compromised Breach Vectors</span>
+                  <span className="font-semibold text-foreground">Real-Time Anomaly Detection</span>
                 </div>
                 <Link
                   href="/dashboard/user/security"
-                  className="mt-2 block text-xs font-bold text-primary hover:underline text-right"
+                  className="mt-1 block text-xs font-bold text-primary hover:underline text-right"
                 >
                   Open Security Center →
                 </Link>

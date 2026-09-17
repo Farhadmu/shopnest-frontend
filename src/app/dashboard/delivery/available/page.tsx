@@ -216,6 +216,32 @@ export default function AvailableDeliveriesPage() {
                     </div>
                   </div>
 
+                  {/* Smart Ranking Telemetry Pills */}
+                  {(delivery.ranking?.pickupDistanceKm != null || delivery.ranking?.estimatedTravelMinutes != null || delivery.ranking?.routeCompatibility) && (
+                    <div className="flex flex-wrap gap-1.5 my-2">
+                      {delivery.ranking?.pickupDistanceKm != null && (
+                        <span className="rounded-lg bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-bold text-primary">
+                          📍 {delivery.ranking.pickupDistanceKm} km to pickup
+                        </span>
+                      )}
+                      {delivery.ranking?.estimatedTravelMinutes != null && (
+                        <span className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-500">
+                          ⏱️ ~{delivery.ranking.estimatedTravelMinutes} min trip
+                        </span>
+                      )}
+                      {delivery.ranking?.routeCompatibility === "high_overlap" && (
+                        <span className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-500">
+                          ✨ On Your Current Way
+                        </span>
+                      )}
+                      {delivery.ranking?.fitsCapacity === false && (
+                        <span className="rounded-lg bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 text-[10px] font-bold text-rose-500">
+                          ⚠️ Exceeds Capacity
+                        </span>
+                      )}
+                    </div>
+                  )}
+
                   {/* Route details */}
                   <div className="space-y-2.5 my-3 text-xs">
                     <div className="flex items-start gap-2">

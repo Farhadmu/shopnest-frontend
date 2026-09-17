@@ -658,11 +658,14 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
   // Quick prompts for different roles
   const quickPrompts: Record<string, Array<{ label: string; query: string; icon?: typeof Sparkles }>> = {
     customer: [
-      { label: "Build gaming setup", query: "Build a complete gaming setup under ৳50,000" },
-      { label: "Check compatibility", query: "Check compatibility between Laptop and DDR5 RAM" },
-      { label: "Find coupons", query: "Find best available coupons for my cart" },
-      { label: "Track my order", query: "Where is my latest order?" },
-      { label: "Show wishlist", query: "Show my wishlist items" },
+      { label: "📦 Track Delivery", query: "Where is my latest order and delivery status?" },
+      { label: "📈 Spending Analytics", query: "How much did I spend this month and what's my category breakdown?" },
+      { label: "❤️ Wishlist Check", query: "Show my saved wishlist items and any price drops" },
+      { label: "🛒 Cart Optimization", query: "What's in my cart and are there any coupons available?" },
+      { label: "🔄 Return Eligibility", query: "Can I return any of my recent orders?" },
+      { label: "🎯 Shopping Goals", query: "What is my shopping goals progress?" },
+      { label: "🛡️ Warranty & Lifecycle", query: "Show my product warranties and maintenance status" },
+      { label: "🛍️ Budget Shopping", query: "Find me high-rated products under ৳5,000" },
     ],
     seller: [
       { label: "Sales forecast", query: "What is my 30-day projected sales forecast?" },

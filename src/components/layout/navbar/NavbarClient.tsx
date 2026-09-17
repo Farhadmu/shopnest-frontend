@@ -17,7 +17,7 @@ import { NavbarActions } from "./NavbarActions";
 import { NavbarUserMenu, NavbarAuthButtons } from "./NavbarUserMenu";
 import { NavbarMobileMenu } from "./NavbarMobileMenu";
 import type { UserRole } from "./NavbarLinks";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface NavbarClientProps {
   /** Server-rendered CategoryMegaMenu for desktop nav */
@@ -77,12 +77,12 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
   const role: UserRole = isHydrated ? (user?.role as UserRole) || (user ? "customer" : "guest") : "guest";
   const isAuthenticated = isHydrated && !!user;
 
-  // Scroll detection with 24px threshold and passive RAF throttling
+  // Scroll detection with 20px threshold and passive RAF throttling
   useEffect(() => {
     let ticking = false;
 
     const updateScroll = () => {
-      const scrolled = window.scrollY > 24;
+      const scrolled = window.scrollY > 20;
       setIsScrolled((prev) => (prev !== scrolled ? scrolled : prev));
       ticking = false;
     };
@@ -187,42 +187,24 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
   const isPill = isScrolled && !mobileMenuOpen;
 
   return (
-    <motion.header
-      className="fixed top-0 z-50 w-full pointer-events-none flex justify-center"
-      initial={false}
-      animate={{
-        paddingTop: isPill ? (isMobile ? 8 : 12) : 0,
-        paddingLeft: isPill ? (isMobile ? 10 : 20) : 0,
-        paddingRight: isPill ? (isMobile ? 10 : 20) : 0,
-      }}
-      transition={{
-        duration: 0.35,
-        ease: [0.25, 0.1, 0.25, 1],
-      }}
+    <header
+      className={`sticky top-0 z-50 w-full transition-all duration-300 ${
+        isPill ? "px-3 sm:px-4" : "px-0"
+      }`}
     >
       <motion.div
-        className="pointer-events-auto relative w-full border border-indigo-500/20 bg-linear-to-r from-indigo-600/90 via-violet-600/90 to-purple-600/90 dark:from-indigo-950/90 dark:via-purple-950/90 dark:to-violet-950/90 backdrop-blur-xl transition-colors duration-300"
-        initial={false}
-        animate={{
-          maxWidth: isPill ? 1400 : 99999,
-          borderRadius: isPill ? 9999 : (isScrolled && mobileMenuOpen ? 24 : 0),
-          borderColor: isScrolled
-            ? "rgba(255, 255, 255, 0.28)"
-            : "rgba(99, 102, 241, 0.2)",
-          boxShadow: isScrolled
-            ? "0 14px 36px -8px rgba(0, 0, 0, 0.28), 0 4px 14px -2px rgba(79, 70, 229, 0.18)"
-            : "0 0 0 0 rgba(0, 0, 0, 0)",
-          borderBottomWidth: 1,
-          borderTopWidth: isPill ? 1 : (isScrolled && mobileMenuOpen ? 1 : 0),
-          borderLeftWidth: isPill ? 1 : (isScrolled && mobileMenuOpen ? 1 : 0),
-          borderRightWidth: isPill ? 1 : (isScrolled && mobileMenuOpen ? 1 : 0),
-        }}
+        layout
         transition={{
           duration: 0.35,
           ease: [0.25, 0.1, 0.25, 1],
         }}
+        className={`w-full transition-all duration-300 ${
+          isPill
+            ? "container mx-auto mt-3 rounded-full bg-base-100/80 backdrop-blur-md shadow-lg border border-white/20"
+            : "max-w-full rounded-none bg-linear-to-r from-indigo-600 via-violet-600 to-purple-600 dark:from-indigo-950 dark:via-purple-950 dark:to-violet-950 shadow-sm border-b border-white/15"
+        }`}
       >
-        <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex min-h-16 items-center justify-between gap-2 lg:gap-4 xl:gap-5">
 
             {/* Brand + desktop search */}
@@ -243,7 +225,6 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
             {/* Right-side actions */}
             <NavbarActions
               isAuthenticated={isAuthenticated}
-              dashboardHref={getDashboardHref()}
               cartCount={totalCartCount}
               onOpenCart={openCart}
               userSlot={
@@ -263,7 +244,7 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
                   type="button"
                   onClick={() => setMobileMenuOpen((v) => !v)}
                   aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-                  className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/25 bg-white/15 text-white transition hover:bg-white/25 lg:hidden"
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/25 bg-white/15 text-white transition hover:bg-white/25 lg:hidden cursor-pointer active:scale-95"
                 >
                   {mobileMenuOpen ? <FaTimes /> : <FaBars />}
                 </button>
@@ -319,6 +300,6 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
           />
         </div>
       </motion.div>
-    </motion.header>
+    </header>
   );
 }

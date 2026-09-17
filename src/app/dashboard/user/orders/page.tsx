@@ -53,6 +53,25 @@ export default function OrdersPage() {
         </Link>
       </div>
 
+      {/* AI Assistant Quick Bar */}
+      <div className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-card to-surface p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-primary/20 flex items-center justify-center text-primary font-bold text-base shrink-0">
+            🤖
+          </div>
+          <div>
+            <p className="text-xs font-bold text-foreground">Need quick answers about your orders, returns, or delivery?</p>
+            <p className="text-[11px] text-muted">Ask ShopNest AI to check return windows, track courier riders, or summarize purchases.</p>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/user/ai-advisor"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-primary-hover transition shrink-0"
+        >
+          Ask AI Copilot →
+        </Link>
+      </div>
+
       {/* Order Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <button
