@@ -32,7 +32,7 @@ export function NavbarBrand({ onClose, search, setSearch, isScrolled = false }: 
         className="group flex shrink-0 items-center gap-1.5 sm:gap-2"
         onClick={onClose}
       >
-        <div className="relative aspect-square h-8 w-8 shrink-0 transition-transform duration-200 group-hover:scale-105 sm:h-9 sm:w-9 xl:h-10 xl:w-10">
+        <div className="relative aspect-square h-9 w-9 shrink-0 transition-transform duration-200 group-hover:scale-105 sm:h-10 sm:w-10 xl:h-12 xl:w-12">
           <Image
             src="/logo-white.png"
             fill

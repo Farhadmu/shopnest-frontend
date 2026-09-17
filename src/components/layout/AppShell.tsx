@@ -41,8 +41,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <CartDrawerProvider>
         <div className="h-[100dvh] flex flex-col bg-background text-text overflow-hidden">
           <Navbar />
-          {/* Spacer reserves the fixed navbar height so content isn't hidden behind it */}
-          <div className="h-16 shrink-0" aria-hidden="true" />
           <main className="flex-1 min-h-0 w-full flex flex-col overflow-hidden">{children}</main>
         </div>
         <CartDrawer />
@@ -63,17 +61,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <CartDrawerProvider>
       <div className="min-h-screen bg-background text-text pb-16 md:pb-0">
         <Navbar />
-        {/*
-          Stable spacer for the fixed navbar.
-          • h-16 (64px) = navbar's min-h-16 inner row on desktop and tablet.
-          • On mobile the collapsed navbar row is still 64px; the mobile search
-            bar sits inside the navbar pill, so no extra offset is needed here.
-          • This div does NOT change size during the pill animation, so the
-            hero/banner never jumps vertically.
-        */}
-        <div className="h-16 shrink-0" aria-hidden="true" />
-        {/* 🟢 Clean Max-Width setup without default 'container' class */}
-        <main className="mx-auto w-full max-w-360 flex-1 px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
+        {/* Container max-width setup */}
+        <main className="container mx-auto flex-1 px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
           {children}
         </main>
         <Footer />

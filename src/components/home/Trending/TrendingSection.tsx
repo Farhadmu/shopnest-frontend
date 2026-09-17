@@ -215,7 +215,7 @@ export default function TrendingSection({ initialProducts }: {
 
 
   return (
-    <section className="relative mx-auto max-w-7xl overflow-hidden px-4 py-16 sm:px-6 lg:px-8">
+    <section className="relative w-full overflow-hidden py-12 sm:py-16">
       {/* Background Glow */}
 
       <div className="pointer-events-none absolute left-0 top-20 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
