@@ -22,6 +22,7 @@ import {
 import { Product } from "@/lib/api/products";
 import { ProductCardData } from "@/features/products/types";
 import { formatCurrency } from "@/lib/utils";
+import { shopnestImageLoader } from "@/lib/utils/image-optimization";
 import { addToCart } from "@/lib/api/cart";
 import { addToWishlist } from "@/lib/api/wishlist";
 import { useSession } from "@/lib/auth-client";
@@ -202,11 +203,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               {imageSrc && !imageSrc.startsWith("linear-gradient") ? (
                 <Image
                   src={imageSrc}
+                  loader={shopnestImageLoader}
                   alt={product.title}
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="object-cover transition-transform duration-700 ease-out group-hover:scale-108"
                   priority={index < 4}
+                  unoptimized={false}
                 />
               ) : (
                 <div

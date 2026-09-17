@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { FiShield, FiRotateCcw, FiCheckCircle, FiCamera } from "react-icons/fi";
+import { shopnestImageLoader } from "@/lib/utils/image-optimization";
 
 export interface ProductGalleryProps {
   images: string[];
@@ -21,6 +22,7 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
       <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-muted-bg">
         <Image
           src={gallery[activeIndex]}
+          loader={shopnestImageLoader}
           alt={title}
           fill
           sizes="(max-width: 1024px) 100vw, 40vw"
@@ -49,7 +51,7 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
               idx === activeIndex ? "ring-2 ring-primary" : "opacity-70 hover:opacity-100"
             }`}
           >
-            <Image src={src} alt={`${title} thumbnail ${idx + 1}`} fill sizes="120px" className="object-cover" />
+            <Image src={src} loader={shopnestImageLoader} alt={`${title} thumbnail ${idx + 1}`} fill sizes="120px" className="object-cover" />
           </button>
         ))}
 

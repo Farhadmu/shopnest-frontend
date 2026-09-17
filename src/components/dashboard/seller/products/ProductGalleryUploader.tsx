@@ -11,6 +11,7 @@ import {
   FaUpload,
 } from "react-icons/fa";
 import { uploadImageToImgBB } from "@/lib/utils/imgbb";
+import { getOptimizedImageUrl } from "@/lib/utils/image-optimization";
 
 export interface ProductGalleryUploaderProps {
   images: string[];
@@ -274,7 +275,7 @@ export function ProductGalleryUploader({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={src}
+                src={getOptimizedImageUrl(src, 200)}
                 alt={`Product visual ${idx + 1}`}
                 className="h-full w-full object-cover"
                 onError={(e) => {

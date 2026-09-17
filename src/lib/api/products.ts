@@ -89,6 +89,7 @@ export interface PagedProducts {
   page: number;
   limit: number;
   totalPages: number;
+  hasMore: boolean;
 }
 
 /**
@@ -105,7 +106,8 @@ export async function getProductsPaged(
   const page = Number(headers.get("X-Page") ?? params?.page ?? 1);
   const limit = Number(headers.get("X-Limit") ?? params?.limit ?? data.length ?? 1);
   const totalPages = limit > 0 ? Math.max(1, Math.ceil(total / limit)) : 1;
-  return { items: data, total, page, limit, totalPages };
+  const hasMore = headers.get("X-Has-More") === "true";
+  return { items: data, total, page, limit, totalPages, hasMore };
 }
 
 export async function getProductById(id: string) {
