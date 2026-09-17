@@ -84,3 +84,14 @@ export async function askCommerceCompanion(
     currentPage,
   });
 }
+
+// New conversational AI endpoint with enhanced features
+export async function askConversationalAdvisor(
+  message: string,
+  conversationId?: string
+): Promise<CommerceCompanionResponse> {
+  return clientMutation<CommerceCompanionResponse>("/ai/advisor/conversational", "POST", {
+    message,
+    conversationId,
+  });
+}
