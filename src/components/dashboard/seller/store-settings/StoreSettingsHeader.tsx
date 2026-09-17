@@ -87,7 +87,7 @@ export function StoreSettingsHeader({ store }: StoreSettingsHeaderProps) {
               )}
             </p>
             <p className="text-xs text-muted">
-              <strong className="text-text">Category:</strong> {store.businessInfo?.category || "General Marketplace"}
+              <strong className="text-text">Category:</strong> {typeof store.businessInfo?.category === "object" && store.businessInfo.category !== null ? (store.businessInfo.category as { name?: string }).name || "General Marketplace" : store.businessInfo?.category || "General Marketplace"}
             </p>
           </div>
         </div>

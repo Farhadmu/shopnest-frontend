@@ -23,10 +23,21 @@ export function StoreSettingsClient({ initialStore }: StoreSettingsClientProps) 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const rawInitialCat = initialStore?.businessInfo?.categoryId;
+  const initialCatId =
+    typeof rawInitialCat === "object" && rawInitialCat !== null
+      ? (rawInitialCat as { _id?: string; id?: string; name?: string })._id ||
+        (rawInitialCat as { _id?: string; id?: string; name?: string }).id ||
+        (rawInitialCat as { _id?: string; id?: string; name?: string }).name ||
+        ""
+      : typeof rawInitialCat === "string"
+      ? rawInitialCat
+      : "";
+
   // Form State
   const [form, setForm] = useState({
     storeName: initialStore?.storeName || "",
-    categoryId: initialStore?.businessInfo?.categoryId || "",
+    categoryId: initialCatId,
     description: initialStore?.description || "",
     logo: initialStore?.logo || "",
     banner: initialStore?.banner || "",
