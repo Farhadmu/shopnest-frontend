@@ -131,15 +131,11 @@ export function NavbarUserMenu({ user, role, onOpenCart, onSignOut }: NavbarUser
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
 
-  const userInitials = user?.name
-    ? user.name
-        .split(" ")
-        .filter(Boolean)
-        .map((n) => n[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase()
-    : "JD";
+  const firstLetter = user?.name?.trim()
+    ? user.name.trim().charAt(0).toUpperCase()
+    : user?.email
+    ? user.email.charAt(0).toUpperCase()
+    : "U";
 
   return (
     <div className="relative shrink-0" ref={ref}>
@@ -150,12 +146,16 @@ export function NavbarUserMenu({ user, role, onOpenCart, onSignOut }: NavbarUser
         aria-expanded={open}
         aria-label="Open account menu"
       >
-        <Avatar className="ring-2 ring-white/20" size="md">
-          <Avatar.Image
-            alt={user?.name || "John Doe"}
-            src={user?.image || "https://img.heroui.chat/image/avatar?w=400&h=400&u=3"}
-          />
-          <Avatar.Fallback>{userInitials}</Avatar.Fallback>
+        <Avatar className="ring-2 ring-white/20 overflow-hidden" size="md">
+          {user?.image ? (
+            <Avatar.Image
+              alt={user?.name || "User Avatar"}
+              src={user.image}
+            />
+          ) : null}
+          <Avatar.Fallback className="flex h-full w-full items-center justify-center bg-linear-to-br from-primary to-violet-600 text-sm font-black text-white">
+            {firstLetter}
+          </Avatar.Fallback>
         </Avatar>
       </button>
 
