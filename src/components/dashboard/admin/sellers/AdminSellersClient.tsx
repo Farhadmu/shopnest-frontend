@@ -22,6 +22,7 @@ export interface AdminSellersClientProps {
 }
 
 export function AdminSellersClient({ initialStores }: AdminSellersClientProps) {
+  const [allStores, setAllStores] = useState<AdminStoreRecord[]>(initialStores);
   const [stores, setStores] = useState<AdminStoreRecord[]>(initialStores);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -33,14 +34,42 @@ export function AdminSellersClient({ initialStores }: AdminSellersClientProps) {
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [rejectingStore, setRejectingStore] = useState<AdminStoreRecord | null>(null);
 
+  const filterStoresLocally = (list: AdminStoreRecord[], status = statusFilter, search = searchQuery) => {
+    let result = list;
+    if (status && status !== "all") {
+      result = result.filter((s) => s.status === status);
+    }
+    if (search && search.trim()) {
+      const q = search.trim().toLowerCase();
+      result = result.filter((s) => {
+        const catName =
+          typeof s.businessInfo?.categoryId === "object" && s.businessInfo?.categoryId !== null
+            ? (s.businessInfo.categoryId as { name?: string }).name?.toLowerCase() || ""
+            : typeof s.businessInfo?.categoryId === "string"
+            ? s.businessInfo.categoryId.toLowerCase()
+            : "";
+        return (
+          s.storeName?.toLowerCase().includes(q) ||
+          s.slug?.toLowerCase().includes(q) ||
+          s.ownerFullName?.toLowerCase().includes(q) ||
+          s.ownerEmail?.toLowerCase().includes(q) ||
+          s.businessInfo?.ownerName?.toLowerCase().includes(q) ||
+          s.businessInfo?.contactPhone?.toLowerCase().includes(q) ||
+          s.businessInfo?.nidOrTradeLicense?.toLowerCase().includes(q) ||
+          catName.includes(q)
+        );
+      });
+    }
+    return result;
+  };
+
   const loadStores = async (status = statusFilter, search = searchQuery) => {
     setLoading(true);
     try {
-      const data = await listAdminSellers({
-        status: status !== "all" ? status : undefined,
-        search: search.trim() || undefined,
-      });
-      setStores((data as any)?.data ?? data ?? []);
+      const data = await listAdminSellers();
+      const freshAll = (data as any)?.data ?? data ?? [];
+      setAllStores(freshAll);
+      setStores(filterStoresLocally(freshAll, status, search));
     } catch {
       setStores([]);
     } finally {
@@ -50,12 +79,17 @@ export function AdminSellersClient({ initialStores }: AdminSellersClientProps) {
 
   const handleStatusChange = (newStatus: string) => {
     setStatusFilter(newStatus);
-    loadStores(newStatus, searchQuery);
+    setStores(filterStoresLocally(allStores, newStatus, searchQuery));
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    loadStores(statusFilter, searchQuery);
+    setStores(filterStoresLocally(allStores, statusFilter, searchQuery));
+  };
+
+  const handleSearchChange = (val: string) => {
+    setSearchQuery(val);
+    setStores(filterStoresLocally(allStores, statusFilter, val));
   };
 
   const handleViewDetails = async (store: AdminStoreRecord) => {
@@ -88,16 +122,16 @@ export function AdminSellersClient({ initialStores }: AdminSellersClientProps) {
     }
   };
 
-  // Counts
+  // Counts calculated from ALL stores, so top summary cards & badges never collapse when filtering
   const counts: SellerCounts = useMemo(() => {
     return {
-      all: stores.length,
-      pending: stores.filter((s) => s.status === "pending").length,
-      approved: stores.filter((s) => s.status === "approved").length,
-      rejected: stores.filter((s) => s.status === "rejected").length,
-      suspended: stores.filter((s) => s.status === "suspended").length,
+      all: allStores.length,
+      pending: allStores.filter((s) => s.status === "pending").length,
+      approved: allStores.filter((s) => s.status === "approved").length,
+      rejected: allStores.filter((s) => s.status === "rejected").length,
+      suspended: allStores.filter((s) => s.status === "suspended").length,
     };
-  }, [stores]);
+  }, [allStores]);
 
   return (
     <>
@@ -110,7 +144,7 @@ export function AdminSellersClient({ initialStores }: AdminSellersClientProps) {
           statusFilter={statusFilter}
           onStatusChange={handleStatusChange}
           searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          onSearchChange={handleSearchChange}
           onSearchSubmit={handleSearchSubmit}
           onRefresh={() => loadStores()}
           counts={counts}
