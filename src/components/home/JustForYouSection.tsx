@@ -154,7 +154,7 @@ export default function JustForYouSection({ initialProducts }: {
   };
 
   return (
-    <section className="relative mx-auto max-w-7xl overflow-hidden px-4 py-16 sm:px-6 lg:px-8">
+    <section className="relative w-full overflow-hidden py-12 sm:py-16">
       <div className="pointer-events-none absolute right-0 top-10 h-72 w-72 rounded-full bg-violet-500/10 blur-3xl" />
       <div className="pointer-events-none absolute bottom-0 left-10 h-64 w-64 rounded-full bg-fuchsia-500/5 blur-3xl" />
 

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@heroui/react";
+import { IoIosNotifications } from "react-icons/io";
 import {
   getNotifications,
   getUnreadCount,
@@ -118,12 +119,12 @@ export const NotificationBell: React.FC = () => {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/25 bg-white/15 text-white transition hover:bg-white/25"
+        className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/25 bg-white/15 text-white transition hover:bg-white/25 cursor-pointer active:scale-95"
         aria-label="Notifications"
         aria-haspopup="menu"
         aria-expanded={isOpen}
       >
-        <span className="text-lg">🔔</span>
+        <IoIosNotifications size={18} />
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-[10px] font-semibold text-white">
             {unreadCount > 99 ? "99+" : unreadCount}

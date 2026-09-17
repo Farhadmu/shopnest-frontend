@@ -107,7 +107,7 @@ export default function SellersSection() {
   };
 
   return (
-    <section className="relative overflow-hidden p-6 sm:p-10 transition-all duration-300">
+    <section className="relative w-full overflow-hidden py-8 sm:py-12 transition-all duration-300">
       {/* Background Ambient Glows */}
       <div
         className="pointer-events-none absolute -top-24 -left-24 h-96 w-96 rounded-full blur-3xl opacity-40 dark:opacity-20"

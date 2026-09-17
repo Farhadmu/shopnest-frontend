@@ -57,7 +57,7 @@ const features = [
 
 const WhyShopNest = () => {
   return (
-    <section className="max-w-7xl mx-auto px-4 py-14 bg-background">
+    <section className="w-full py-14 bg-background">
       {/* Header */}
       <div className="text-center mb-10">
         <h2 className="text-2xl md:text-3xl font-bold text-secondary">

@@ -93,7 +93,7 @@ export default function ShopByCategory({ initialCategories }: {
 
   return (
     <section className="py-12">
-      <div className="mb-8 flex items-end justify-between px-4 sm:px-0">
+      <div className="mb-8 flex items-end justify-between">
         <div>
           <div className="mb-3 flex items-center gap-2">
             <span className="h-0.5 w-8 rounded-full bg-primary" />
@@ -116,7 +116,7 @@ export default function ShopByCategory({ initialCategories }: {
       ) : categories.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-sm font-semibold text-slate-500 dark:border-slate-800 dark:text-slate-400">No categories found.</div>
       ) : (
-        <div className="flex min-w-0 items-center gap-2 px-1 sm:gap-3 sm:px-2">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <button
             type="button"
             aria-label="Previous categories"
