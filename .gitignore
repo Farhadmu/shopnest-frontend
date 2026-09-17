@@ -43,4 +43,5 @@ next-env.d.ts
 # presentations & documents
 *.docx
 *.pptx
+*.zip
 
