@@ -627,183 +627,185 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
           )}
         </div>
       ) : viewMode === "table" ? (
-        /* TABLE VIEW - 100% responsive, NO horizontal scrollbar */
+        /* TABLE VIEW - responsive with overflow scroll on small screens */
         <div className="rounded-2xl border border-border bg-surface shadow-xs overflow-hidden w-full">
-          <table className="block w-full text-left border-collapse table-fixed 2xl:table">
-            <thead className="hidden 2xl:table-header-group">
-              <tr className="grid grid-cols-2 gap-x-3 gap-y-2 border-b border-border bg-muted-bg/40 p-3 text-[11px] font-extrabold uppercase tracking-wider text-muted 2xl:table-row 2xl:p-0">
-                <th className="hidden py-3.5 pl-3 pr-1 w-8 2xl:table-cell">
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={handleSelectAll}
-                    className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary/40 cursor-pointer accent-primary"
-                  />
-                </th>
-                <th className="hidden py-3.5 px-2 w-[40%] sm:w-[36%] md:w-[32%] 2xl:table-cell">Product</th>
-                <th className="hidden py-3.5 px-2 2xl:table-cell w-[14%]">Store</th>
-                <th className="hidden py-3.5 px-2 w-[18%] sm:w-[15%] md:w-[13%] 2xl:table-cell">Price</th>
-                <th className="hidden py-3.5 px-2 w-[18%] sm:w-[15%] md:w-[13%] 2xl:table-cell">Stock</th>
-                <th className="hidden py-3.5 px-2 2xl:table-cell w-[10%]">Trend</th>
-                <th className="hidden py-3.5 px-2 w-[14%] sm:w-[12%] md:w-[11%] 2xl:table-cell">Status</th>
-                <th className="hidden py-3.5 pl-1 pr-3 text-right w-[132px] 2xl:table-cell">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="block divide-y divide-border/60 text-xs 2xl:table-row-group">
-              {paginatedProducts.map((p, idx) => {
-                const pid = getProductId(p);
-                const isSelected = selectedIds.includes(pid);
-                const active = isProductActive(p);
-                const sku = getSKU(p);
-                const brand = getBrandName(p);
-                const category = getCategoryName(p);
-                const quantity = Number(p.stock || 0);
-                const price = Number(p.price || 0);
-                const isBusy = actionLoadingId === pid;
-                const imageUrl =
-                  p.images?.[0] ||
-                  "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&auto=format&fit=crop&q=60";
+          <div className="overflow-x-auto w-full">
+            <table className="w-full min-w-[700px] text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-border bg-muted-bg/40 text-[11px] font-extrabold uppercase tracking-wider text-muted">
+                  <th className="py-3.5 pl-4 pr-2 w-8">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={handleSelectAll}
+                      className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary/40 cursor-pointer accent-primary"
+                    />
+                  </th>
+                  <th className="py-3.5 px-3 min-w-[200px]">Product</th>
+                  <th className="py-3.5 px-3 min-w-[100px] hidden md:table-cell">Store</th>
+                  <th className="py-3.5 px-3 min-w-[90px]">Price</th>
+                  <th className="py-3.5 px-3 min-w-[90px]">Stock</th>
+                  <th className="py-3.5 px-3 min-w-[70px] hidden lg:table-cell">Trend</th>
+                  <th className="py-3.5 px-3 min-w-[90px]">Status</th>
+                  <th className="py-3.5 pl-2 pr-4 text-right min-w-[120px]">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/60">
+                {paginatedProducts.map((p, idx) => {
+                  const pid = getProductId(p);
+                  const isSelected = selectedIds.includes(pid);
+                  const active = isProductActive(p);
+                  const sku = getSKU(p);
+                  const brand = getBrandName(p);
+                  const category = getCategoryName(p);
+                  const quantity = Number(p.stock || 0);
+                  const price = Number(p.price || 0);
+                  const isBusy = actionLoadingId === pid;
+                  const imageUrl =
+                    p.images?.[0] ||
+                    "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&auto=format&fit=crop&q=60";
 
-                return (
-                  <tr
-                    key={pid}
-                    className={`relative grid grid-cols-2 gap-x-3 gap-y-2 p-3 transition-colors duration-150 2xl:table-row 2xl:p-0 ${
-                      isSelected
-                        ? "bg-primary/5 dark:bg-primary/10"
-                        : "hover:bg-muted-bg/30"
-                    }`}
-                  >
-                    {/* 1. Checkbox */}
-                    <td className="absolute left-3 top-3 z-10 block 2xl:static 2xl:table-cell 2xl:py-3 2xl:pl-3 2xl:pr-1">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => handleToggleSelect(pid)}
-                        className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary/40 cursor-pointer accent-primary"
-                      />
-                    </td>
+                  return (
+                    <tr
+                      key={pid}
+                      className={`transition-colors duration-150 ${
+                        isSelected
+                          ? "bg-primary/5 dark:bg-primary/10"
+                          : "hover:bg-muted-bg/30"
+                      }`}
+                    >
+                      {/* Checkbox */}
+                      <td className="py-3 pl-4 pr-2">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelect(pid)}
+                          className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary/40 cursor-pointer accent-primary"
+                        />
+                      </td>
 
-                    {/* 2. Product Info (Thumbnail, Title, Category Badge, SKU) */}
-                    <td className="col-span-2 block py-0 pl-8 pr-0 2xl:table-cell 2xl:p-3 2xl:pl-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="relative h-8 w-8 sm:h-9 sm:w-9 shrink-0 overflow-hidden rounded-lg border border-border bg-muted-bg flex items-center justify-center">
-                          {p.images?.[0] ? (
-                            <Image
-                              src={imageUrl}
-                              alt={p.title || "Product"}
-                              width={36}
-                              height={36}
-                              unoptimized
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <FiPackage className="text-muted text-sm" />
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <button
-                            onClick={() => setInspectingProduct(p)}
-                            className="text-left font-bold text-text hover:text-primary transition-colors truncate block w-full cursor-pointer leading-snug"
-                            title={p.title}
-                          >
-                            {p.title || "Untitled Product"}
-                          </button>
-                          <div className="flex items-center gap-1 mt-0.5">
-                            <span className="inline-block px-1.5 py-0.2 rounded bg-muted-bg text-muted text-[9px] font-semibold uppercase truncate max-w-[65px]">
-                              {category}
-                            </span>
-                            <span className="font-mono text-[9px] text-muted tracking-tight truncate max-w-[70px]">
-                              {sku}
-                            </span>
+                      {/* Product Info */}
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-border bg-muted-bg flex items-center justify-center">
+                            {p.images?.[0] ? (
+                              <Image
+                                src={imageUrl}
+                                alt={p.title || "Product"}
+                                width={36}
+                                height={36}
+                                unoptimized
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <FiPackage className="text-muted text-sm" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <button
+                              onClick={() => setInspectingProduct(p)}
+                              className="text-left font-bold text-text hover:text-primary transition-colors truncate block w-full cursor-pointer leading-snug max-w-[180px]"
+                              title={p.title}
+                            >
+                              {p.title || "Untitled Product"}
+                            </button>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <span className="inline-block px-1.5 rounded bg-muted-bg text-muted text-[9px] font-semibold uppercase truncate max-w-[70px]">
+                                {category}
+                              </span>
+                              <span className="font-mono text-[9px] text-muted tracking-tight truncate max-w-[80px]">
+                                {sku}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* 3. Brand */}
-                    <td className="py-3 px-2 hidden 2xl:table-cell">
-                      <span className="text-muted font-medium truncate block max-w-full text-[11px]" title={brand}>
-                        {brand}
-                      </span>
-                    </td>
-
-                    {/* 4. Price */}
-                    <td className="block py-0 px-0 font-bold text-text truncate 2xl:table-cell 2xl:py-3 2xl:px-2">
-                      ৳{price.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-                    </td>
-
-                    {/* 5. Stock Status */}
-                    <td className="block py-0 px-0 2xl:table-cell 2xl:py-3 2xl:px-2">
-                      <div className="flex items-center gap-1.5 truncate">
-                        <span
-                          className={`h-2 w-2 rounded-full shrink-0 ${
-                            quantity > 10
-                              ? "bg-emerald-500"
-                              : quantity > 0
-                              ? "bg-amber-500"
-                              : "bg-rose-500 animate-pulse"
-                          }`}
-                        />
-                        <span
-                          className={`font-bold text-[11px] truncate ${
-                            quantity > 10
-                              ? "text-text"
-                              : quantity > 0
-                              ? "text-amber-600 dark:text-amber-400 font-extrabold"
-                              : "text-rose-600 dark:text-rose-400 font-extrabold"
-                          }`}
-                        >
-                          {quantity === 0 ? "Out" : `${quantity} left`}
+                      {/* Brand */}
+                      <td className="py-3 px-3 hidden md:table-cell">
+                        <span className="text-muted font-medium truncate block max-w-[100px] text-[11px]" title={brand}>
+                          {brand}
                         </span>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* 6. Velocity Trend (Ultra wide only) */}
-                    <td className="py-3 px-2 hidden 2xl:table-cell">
-                      <InventoryTrendChart seed={idx + 1} />
-                    </td>
+                      {/* Price */}
+                      <td className="py-3 px-3 font-bold text-text whitespace-nowrap">
+                        ৳{price.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                      </td>
 
-                    {/* 7. Status Toggle Pill */}
-                    <td className="block py-0 px-0 2xl:table-cell 2xl:py-3 2xl:px-2">
-                      <button
-                        disabled={isBusy}
-                        onClick={() => handleToggleStatus(p)}
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border transition-all cursor-pointer ${
-                          active
-                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
-                            : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/20"
-                        } disabled:opacity-50`}
-                        title={`Click to ${active ? "deactivate" : "activate"}`}
-                      >
-                        {active ? (
-                          <>
-                            <FiCheckCircle size={10} className="shrink-0 text-emerald-500" />
-                            <span>Active</span>
-                          </>
-                        ) : (
-                          <>
-                            <FiXCircle size={10} className="shrink-0 text-rose-500" />
-                            <span>Inactive</span>
-                          </>
-                        )}
-                      </button>
-                    </td>
+                      {/* Stock */}
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`h-2 w-2 rounded-full shrink-0 ${
+                              quantity > 10
+                                ? "bg-emerald-500"
+                                : quantity > 0
+                                ? "bg-amber-500"
+                                : "bg-rose-500 animate-pulse"
+                            }`}
+                          />
+                          <span
+                            className={`font-bold text-[11px] whitespace-nowrap ${
+                              quantity > 10
+                                ? "text-text"
+                                : quantity > 0
+                                ? "text-amber-600 dark:text-amber-400 font-extrabold"
+                                : "text-rose-600 dark:text-rose-400 font-extrabold"
+                            }`}
+                          >
+                            {quantity === 0 ? "Out" : `${quantity} left`}
+                          </span>
+                        </div>
+                      </td>
 
-                    {/* 8. Actions */}
-                    <td className="col-span-2 block border-t border-border/60 pt-2 pl-0 pr-0 text-left 2xl:table-cell 2xl:border-0 2xl:py-3 2xl:pl-1 2xl:pr-3 2xl:text-right 2xl:w-[132px]">
-                      <ProductActionButtons
-                        productId={pid}
-                        isBusy={isBusy}
-                        onInspect={() => setInspectingProduct(p)}
-                        onEdit={() => handleOpenEdit(p)}
-                        onDelete={() => handleDeleteProduct(pid, p.title)}
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      {/* Velocity Trend */}
+                      <td className="py-3 px-3 hidden lg:table-cell">
+                        <InventoryTrendChart seed={idx + 1} />
+                      </td>
+
+                      {/* Status Toggle */}
+                      <td className="py-3 px-3">
+                        <button
+                          disabled={isBusy}
+                          onClick={() => handleToggleStatus(p)}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all cursor-pointer whitespace-nowrap ${
+                            active
+                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
+                              : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/20"
+                          } disabled:opacity-50`}
+                          title={`Click to ${active ? "deactivate" : "activate"}`}
+                        >
+                          {active ? (
+                            <>
+                              <FiCheckCircle size={10} className="shrink-0 text-emerald-500" />
+                              <span>Active</span>
+                            </>
+                          ) : (
+                            <>
+                              <FiXCircle size={10} className="shrink-0 text-rose-500" />
+                              <span>Inactive</span>
+                            </>
+                          )}
+                        </button>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-3 pl-2 pr-4 text-right">
+                        <ProductActionButtons
+                          productId={pid}
+                          isBusy={isBusy}
+                          onInspect={() => setInspectingProduct(p)}
+                          onEdit={() => handleOpenEdit(p)}
+                          onDelete={() => handleDeleteProduct(pid, p.title)}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
         /* GRID / CARDS VIEW */
