@@ -549,7 +549,7 @@ export default function BannerSection({
 }) {
   const { heroSlides, sideCards, bottomCards } = data;
 
-  // Map all parent categories (without slicing to 10), so full list cycles in sidebar
+  // Map all parent categories
   const mapApiCategories = (cats: import("@/lib/api/categories").Category[]): BannerCategory[] =>
     cats
       .filter((c) => !c.parent) // only top-level (parent) categories
@@ -609,16 +609,43 @@ export default function BannerSection({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialCategories]);
 
+  // Pre-fetch banners for ALL categories upfront so transitions never flash default cards
+  useEffect(() => {
+    if (categories.length === 0) return;
+    categories.forEach((cat) => {
+      if (cat.id && /^[a-f\d]{24}$/i.test(cat.id) && !bannerCache.current.has(cat.id)) {
+        getHeroBanners(cat.id)
+          .then((categoryBanners) => {
+            bannerCache.current.set(cat.id, categoryBanners);
+            // If this category is the currently active one, sync state immediately
+            if (cat.id === categories[activeIdx]?.id) {
+              setBannerCategoryId(cat.id);
+              setCustomBanners(categoryBanners);
+            }
+          })
+          .catch(() => {});
+      }
+    });
+  }, [categories, activeIdx]);
+
   useEffect(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (categories.length === 0) return;
     timerRef.current = setInterval(() => {
       if (!isPaused.current && isVisible.current) {
-        setActiveIdx((prev) => (prev + 1) % categories.length);
+        setActiveIdx((prev) => {
+          const nextIdx = (prev + 1) % categories.length;
+          const nextCat = categories[nextIdx];
+          if (nextCat?.id && bannerCache.current.has(nextCat.id)) {
+            setBannerCategoryId(nextCat.id);
+            setCustomBanners(bannerCache.current.get(nextCat.id) ?? []);
+          }
+          return nextIdx;
+        });
       }
     }, CATEGORY_CYCLE_MS);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [categories.length]);
+  }, [categories]);
 
   useEffect(() => {
     const el = sectionRef.current;
@@ -632,6 +659,11 @@ export default function BannerSection({
   }, []);
 
   const handleSelectCategory = (idx: number) => {
+    const cat = categories[idx];
+    if (cat?.id && bannerCache.current.has(cat.id)) {
+      setBannerCategoryId(cat.id);
+      setCustomBanners(bannerCache.current.get(cat.id) ?? []);
+    }
     setActiveIdx(idx);
   };
 
@@ -669,7 +701,7 @@ export default function BannerSection({
   }, [activeCat?.id]);
 
   const categoryLabel = activeCat?.label ?? "ShopNest";
-  const categoryBanners = bannerCategoryId === activeCat?.id ? customBanners : [];
+  const categoryBanners = bannerCategoryId === activeCat?.id ? customBanners : (bannerCache.current.get(activeCat?.id ?? "") ?? []);
   const heroBanners = categoryBanners.filter((banner) => banner.placement === "hero");
   const sideBanners = categoryBanners.filter((banner) => banner.placement === "side");
   const bottomBanners = categoryBanners.filter((banner) => banner.placement === "bottom");
