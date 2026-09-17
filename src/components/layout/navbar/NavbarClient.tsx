@@ -200,12 +200,12 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
         }}
         className={`w-full transition-all duration-300 ${
           isPill
-            ? "container mx-auto mt-3 rounded-full bg-base-100/80 backdrop-blur-md shadow-lg border border-white/20"
+            ? "container mx-auto mt-2 rounded-full bg-base-100/80 backdrop-blur-md shadow-lg border border-white/20"
             : "max-w-full rounded-none bg-linear-to-r from-indigo-600 via-violet-600 to-purple-600 dark:from-indigo-950 dark:via-purple-950 dark:to-violet-950 shadow-sm border-b border-white/15"
         }`}
       >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex min-h-16 items-center justify-between gap-2 lg:gap-4 xl:gap-5">
+        <div className="container mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex min-h-13 sm:min-h-14 items-center justify-between gap-2 lg:gap-4 xl:gap-5">
 
             {/* Brand + desktop search */}
             <NavbarBrand
