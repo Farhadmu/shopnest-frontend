@@ -30,3 +30,7 @@ export function isProductActive(product: AdminProduct): boolean {
   const status = (product.status || "active").toLowerCase();
   return status === "active" || status === "approved" || status === "published";
 }
+
+export function isProductFeatured(product: AdminProduct): boolean {
+  return Boolean(product.isFeatured);
+}

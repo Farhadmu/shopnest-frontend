@@ -20,6 +20,7 @@ export interface Product {
   status?: "pending" | "approved" | "rejected" | string;
   specifications?: Record<string, string>;
   sentiment?: { positive: number; neutral: number; negative: number };
+  isFeatured?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -31,6 +32,7 @@ export interface CreateProductInput {
   discountPrice?: number;
   category: string;
   stock: number;
+  isFeatured?: boolean;
   images?: string[];
   tags?: string[];
   specifications?: Record<string, string>;
@@ -125,6 +127,10 @@ export async function updateProduct(id: string, data: Partial<CreateProductInput
   return clientMutation<Product>(`/products/${id}`, "PUT", data);
 }
 
+export async function updateProductFeatured(id: string, isFeatured: boolean) {
+  return clientMutation<Product>(`/products/${id}/featured`, "PATCH", { isFeatured });
+}
+
 export async function deleteProduct(id: string) {
   return clientMutation<{ success: boolean }>(`/products/${id}`, "DELETE");
 }
@@ -139,4 +145,15 @@ export async function getTrendingProducts(limit = 8): Promise<TrendingProductsRe
     params: { limit },
   });
   return res;
+}
+
+export async function getFeaturedProducts(limit = 8): Promise<Product[]> {
+  const res = await clientFetch<Product[] | { products: Product[] }>("/products/featured", {
+    params: { limit },
+  });
+  if (Array.isArray(res)) return res;
+  if (res && Array.isArray((res as { products?: Product[] }).products)) {
+    return (res as { products: Product[] }).products;
+  }
+  return [];
 }
