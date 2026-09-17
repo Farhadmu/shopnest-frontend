@@ -20,10 +20,10 @@ import { getHeroBanners, HeroBanner } from "@/lib/api/hero-banners";
 // ---------------------------------------------------------------------------
 
 const CATEGORY_CYCLE_MS = 7000;
-const HERO_ADVANCE_MS   = 7000;
+const HERO_ADVANCE_MS = 7000;
 const MAX_VISIBLE_CATEGORIES = 10;
-const MAX_PROMO_CARDS        = 2;
-const SWIPE_EASE             = [0.22, 1, 0.36, 1] as const;
+const MAX_PROMO_CARDS = 2;
+const SWIPE_EASE = [0.22, 1, 0.36, 1] as const;
 
 // ---------------------------------------------------------------------------
 // PromoCard
@@ -45,9 +45,8 @@ function PromoCard({
   return (
     <div
       style={customTextColor ? { color: customTextColor } : undefined}
-      className={`relative flex h-full flex-col justify-between overflow-hidden rounded-xl p-4 sm:p-5 ${
-        card.bgClassName ?? "bg-secondary"
-      } ${className}`}
+      className={`relative flex h-full flex-col justify-between overflow-hidden rounded-xl p-4 sm:p-5 ${card.bgClassName ?? "bg-secondary"
+        } ${className}`}
     >
       <div className="absolute inset-0">
         <Image
@@ -60,19 +59,18 @@ function PromoCard({
           priority={false}
         />
         <div
-          className={`absolute inset-0 ${
-            card.overlayColor === undefined
+          className={`absolute inset-0 ${card.overlayColor === undefined
               ? isLight
                 ? "bg-secondary/50"
                 : "bg-surface/70"
               : ""
-          }`}
+            }`}
           style={
             card.overlayColor
               ? {
-                  backgroundColor: card.overlayColor,
-                  opacity: (card.overlayOpacity ?? 50) / 100,
-                }
+                backgroundColor: card.overlayColor,
+                opacity: (card.overlayOpacity ?? 50) / 100,
+              }
               : undefined
           }
         />
@@ -82,18 +80,16 @@ function PromoCard({
         {card.eyebrow && (
           <p
             style={customTextColor ? { color: customTextColor } : undefined}
-            className={`text-[9px] font-semibold tracking-widest sm:text-[10px] ${
-              isLight ? "text-surface/70" : "text-muted"
-            }`}
+            className={`text-[9px] font-semibold tracking-widest sm:text-[10px] ${isLight ? "text-surface/70" : "text-muted"
+              }`}
           >
             {card.eyebrow}
           </p>
         )}
         <h3
           style={customTextColor ? { color: customTextColor } : undefined}
-          className={`mt-1 text-sm font-bold leading-snug sm:text-base ${
-            isLight ? "text-surface" : "text-text"
-          }`}
+          className={`mt-1 text-sm font-bold leading-snug sm:text-base ${isLight ? "text-surface" : "text-text"
+            }`}
         >
           {card.title}
           {card.highlight && (
@@ -112,9 +108,8 @@ function PromoCard({
         {card.description && (
           <p
             style={customTextColor ? { color: customTextColor } : undefined}
-            className={`mt-1 text-[11px] sm:text-xs ${
-              isLight ? "text-surface/80" : "text-muted"
-            }`}
+            className={`mt-1 text-[11px] sm:text-xs ${isLight ? "text-surface/80" : "text-muted"
+              }`}
           >
             {card.description}
           </p>
@@ -123,16 +118,14 @@ function PromoCard({
         {card.price && (
           <p
             style={customTextColor ? { color: customTextColor } : undefined}
-            className={`mt-1 text-[11px] sm:text-xs ${
-              isLight ? "text-surface/80" : "text-text"
-            }`}
+            className={`mt-1 text-[11px] sm:text-xs ${isLight ? "text-surface/80" : "text-text"
+              }`}
           >
             {card.title.toLowerCase().includes("from") ? "" : "FROM "}
             <span
               style={customTextColor ? { color: customTextColor } : undefined}
-              className={`text-sm font-bold sm:text-base ${
-                isLight ? "text-success" : "text-primary"
-              }`}
+              className={`text-sm font-bold sm:text-base ${isLight ? "text-success" : "text-primary"
+                }`}
             >
               {card.price}
             </span>
@@ -143,13 +136,12 @@ function PromoCard({
           <Link
             style={customButtonColor ? { backgroundColor: customButtonColor } : undefined}
             href={card.buttonLink}
-            className={`mt-2 inline-block rounded-md px-3 py-1.5 text-[10px] font-bold tracking-wide transition-colors sm:mt-3 sm:px-4 sm:py-2 sm:text-[11px] ${
-              customButtonColor
+            className={`mt-2 inline-block rounded-md px-3 py-1.5 text-[10px] font-bold tracking-wide transition-colors sm:mt-3 sm:px-4 sm:py-2 sm:text-[11px] ${customButtonColor
                 ? "text-white"
                 : isLight
                   ? "bg-surface text-text hover:bg-muted-bg"
                   : "bg-primary text-surface hover:bg-primary-hover"
-            }`}
+              }`}
           >
             {card.buttonText}
           </Link>
@@ -159,9 +151,8 @@ function PromoCard({
           <Link
             style={customTextColor ? { color: customTextColor } : undefined}
             href={card.buttonLink}
-            className={`mt-2 inline-block text-[11px] font-semibold underline sm:text-xs ${
-              isLight ? "text-surface" : "text-text"
-            }`}
+            className={`mt-2 inline-block text-[11px] font-semibold underline sm:text-xs ${isLight ? "text-surface" : "text-text"
+              }`}
           >
             View
           </Link>
@@ -243,9 +234,8 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
 
   return (
     <div
-      className={`group relative h-full min-h-56 overflow-hidden rounded-xl sm:min-h-72 lg:min-h-80 [perspective:1400px] ${
-        slide.bgClassName ?? "bg-muted-bg"
-      }`}
+      className={`group relative h-full min-h-56 overflow-hidden rounded-xl sm:min-h-72 lg:min-h-80 [perspective:1400px] ${slide.bgClassName ?? "bg-muted-bg"
+        }`}
     >
       {/* 3D Smooth Page Flip Background & Image */}
       <div className="absolute inset-0 overflow-hidden">
@@ -269,19 +259,18 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
               priority
             />
             <div
-              className={`absolute inset-0 ${
-                slide.overlayColor === undefined
+              className={`absolute inset-0 ${slide.overlayColor === undefined
                   ? isLight
                     ? "bg-secondary/50"
                     : "bg-surface/70"
                   : ""
-              }`}
+                }`}
               style={
                 slide.overlayColor
                   ? {
-                      backgroundColor: slide.overlayColor,
-                      opacity: (slide.overlayOpacity ?? 50) / 100,
-                    }
+                    backgroundColor: slide.overlayColor,
+                    opacity: (slide.overlayOpacity ?? 50) / 100,
+                  }
                   : undefined
               }
             />
@@ -311,18 +300,16 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
         >
           <h2
             style={customTextColor ? { color: customTextColor } : undefined}
-            className={`text-xl font-extrabold leading-tight sm:text-2xl lg:text-3xl ${
-              isLight ? "text-surface" : "text-text"
-            }`}
+            className={`text-xl font-extrabold leading-tight sm:text-2xl lg:text-3xl ${isLight ? "text-surface" : "text-text"
+              }`}
           >
             {slide.title}
           </h2>
           {slide.subtitle && (
             <p
               style={customTextColor ? { color: customTextColor } : undefined}
-              className={`text-lg font-extrabold leading-tight sm:text-xl lg:text-2xl ${
-                isLight ? "text-surface" : "text-text"
-              }`}
+              className={`text-lg font-extrabold leading-tight sm:text-xl lg:text-2xl ${isLight ? "text-surface" : "text-text"
+                }`}
             >
               {slide.subtitle}
             </p>
@@ -330,9 +317,8 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           {slide.description && (
             <p
               style={customTextColor ? { color: customTextColor } : undefined}
-              className={`mt-1 text-xs leading-relaxed sm:text-sm ${
-                isLight ? "text-surface/80" : "text-muted"
-              }`}
+              className={`mt-1 text-xs leading-relaxed sm:text-sm ${isLight ? "text-surface/80" : "text-muted"
+                }`}
             >
               {slide.description}
             </p>
@@ -341,13 +327,12 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           <Link
             style={customButtonColor ? { backgroundColor: customButtonColor } : undefined}
             href={slide.buttonLink}
-            className={`mt-3 inline-block w-fit rounded-md px-4 py-2 text-xs font-bold tracking-wide transition-colors sm:mt-4 sm:px-6 sm:py-3 sm:text-sm ${
-              customButtonColor
+            className={`mt-3 inline-block w-fit rounded-md px-4 py-2 text-xs font-bold tracking-wide transition-colors sm:mt-4 sm:px-6 sm:py-3 sm:text-sm ${customButtonColor
                 ? "text-white"
                 : isLight
                   ? "bg-surface text-text hover:bg-muted-bg"
                   : "bg-primary text-surface hover:bg-primary-hover"
-            }`}
+              }`}
           >
             {slide.buttonText}
           </Link>
@@ -431,6 +416,22 @@ function customPromoCards(banners: HeroBanner[], categoryLabel: string): PromoCa
 // CategorySidebar
 // ---------------------------------------------------------------------------
 
+function getCategoryDisplayLabel(label: string): string {
+  if (!label) return "";
+  const trimmed = label.trim();
+  if (trimmed.length > 13) {
+    if (trimmed.includes("&")) {
+      return trimmed.split("&")[0].trim();
+    }
+    if (trimmed.includes("/")) {
+      return trimmed.split("/")[0].trim();
+    }
+    const firstWord = trimmed.split(/\s+/)[0];
+    return firstWord || trimmed;
+  }
+  return trimmed;
+}
+
 function CategorySidebar({
   categories,
   activeIdx,
@@ -467,9 +468,9 @@ function CategorySidebar({
   }, [activeIdx, total]);
 
   return (
-    <aside className="col-span-2 rounded-xl border border-border bg-surface p-4 sm:col-span-4 sm:p-5 lg:col-span-2">
+    <aside className="h-full rounded-xl border border-border bg-surface p-1.5 sm:p-2">
       {loading ? (
-        <ul className="space-y-3">
+        <ul className="space-y-2">
           {[...Array(MAX_VISIBLE_CATEGORIES)].map((_, n) => (
             <li key={n} className="h-4 w-24 animate-pulse rounded bg-muted-bg" />
           ))}
@@ -479,11 +480,12 @@ function CategorySidebar({
       ) : (
         <ul
           ref={listRef}
-          className="flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:overflow-visible lg:pb-0"
+          className="flex gap-2 overflow-x-auto pb-1 lg:flex lg:h-full lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0"
         >
           <AnimatePresence mode="popLayout" initial={false}>
             {visibleCategories.map(({ cat, originalIdx }) => {
               const isActive = originalIdx === activeIdx;
+              const displayLabel = getCategoryDisplayLabel(cat.label);
               return (
                 <motion.li
                   key={cat.id}
@@ -492,19 +494,26 @@ function CategorySidebar({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.35, ease: "easeInOut" }}
-                  className="shrink-0 lg:shrink"
+                  className="shrink-0 lg:flex-1 lg:flex lg:flex-col"
                 >
                   <button
                     type="button"
                     title={cat.label}
                     onClick={() => onSelect(originalIdx)}
-                    className={`relative w-full rounded-lg px-2.5 py-2 text-left text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
+                    className={`group relative flex h-full w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs transition-all sm:text-[12.5px] ${
                       isActive
-                        ? "bg-primary text-surface"
-                        : "text-text hover:bg-muted-bg hover:text-primary"
+                        ? "bg-primary font-semibold text-surface shadow-sm"
+                        : "font-medium text-text hover:bg-muted-bg hover:text-primary"
                     }`}
                   >
-                    <span className="block truncate pr-1">{cat.label}</span>
+                    <span className="truncate pr-1">{displayLabel}</span>
+                    <ChevronRight
+                      className={`h-3 w-3 shrink-0 transition-all ${
+                        isActive
+                          ? "text-surface opacity-90 translate-x-0.5"
+                          : "text-muted/60 opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:text-primary"
+                      }`}
+                    />
 
                     {isActive && (
                       <motion.span
@@ -679,32 +688,43 @@ export default function BannerSection({
     : activeCat?.bottomCards ?? bottomCards
   ).slice(0, MAX_PROMO_CARDS);
 
+  const hasSideCards = activeSideCards.length > 0;
+
   return (
     <section
       ref={sectionRef}
-      className="grid grid-cols-2 gap-4 pb-8 sm:grid-cols-4 lg:grid-cols-12"
+      className={`grid gap-4 pb-8 ${hasSideCards
+          ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-[165px_1fr_260px] xl:grid-cols-[175px_1fr_280px]"
+          : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-[165px_1fr] xl:grid-cols-[175px_1fr]"
+        }`}
     >
       {/* ── Left: Category sidebar ── */}
-      <CategorySidebar
-        categories={categories}
-        activeIdx={activeIdx}
-        loading={categoriesLoading}
-        onSelect={handleSelectCategory}
-      />
+      <div className="col-span-1 sm:col-span-2 lg:col-span-1">
+        <CategorySidebar
+          categories={categories}
+          activeIdx={activeIdx}
+          loading={categoriesLoading}
+          onSelect={handleSelectCategory}
+        />
+      </div>
 
       {/* ── Centre: Hero + bottom cards ── */}
-      <div className="col-span-2 flex flex-col gap-4 sm:col-span-4 lg:col-span-7">
+      <div className="col-span-1 flex flex-col gap-4 sm:col-span-2 lg:col-span-1">
         <div className="flex-1">
           <HeroCarousel slides={activeHeroSlides} />
         </div>
 
         {activeBottomCards.length > 0 && (
-          <div className="grid grid-cols-2 gap-4">
+          <div className={`grid gap-4 ${activeBottomCards.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
             {activeBottomCards.map((card, idx) => (
               <AnimatedPromoCard
                 key={`bottom-slot-${idx}`}
                 card={card}
-                imageSizes="(max-width: 1024px) 50vw, 25vw"
+                imageSizes={
+                  activeBottomCards.length === 1
+                    ? "(max-width: 1024px) 100vw, 50vw"
+                    : "(max-width: 1024px) 50vw, 25vw"
+                }
                 className="min-h-28 sm:min-h-36"
               />
             ))}
@@ -713,8 +733,8 @@ export default function BannerSection({
       </div>
 
       {/* ── Right: Side cards ── */}
-      {activeSideCards.length > 0 && (
-        <div className="col-span-2 grid grid-cols-2 gap-4 sm:col-span-4 lg:col-span-3 lg:flex lg:flex-col">
+      {hasSideCards && (
+        <div className="col-span-1 grid grid-cols-2 gap-4 sm:col-span-2 lg:col-span-1 lg:flex lg:flex-col">
           {activeSideCards.map((card, idx) => (
             <AnimatedPromoCard
               key={`side-slot-${idx}`}
