@@ -21,6 +21,8 @@ import {
   FiX,
   FiUpload,
   FiImage,
+  FiAlertCircle,
+  FiPaperclip,
 } from "react-icons/fi";
 
 const COMPLAINT_CATEGORIES = [
@@ -47,6 +49,15 @@ const STATUS_COLORS: Record<string, string> = {
 
 type ViewMode = "list" | "create" | "detail";
 
+function describeApiError(error: unknown): string {
+  if (typeof error === "object" && error && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim()) return message;
+  }
+  if (typeof error === "string" && error.trim()) return error;
+  return "Unable to submit complaint. Please try again.";
+}
+
 export default function SellerComplaintsPage() {
   const { data: session } = useSession();
   const [view, setView] = useState<ViewMode>("list");
@@ -59,6 +70,7 @@ export default function SellerComplaintsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [toast, setToast] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const [form, setForm] = useState<CreateComplaintInput>({
     title: "",
@@ -92,6 +104,7 @@ export default function SellerComplaintsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    setApiError(null);
     try {
       await createSellerComplaint(form);
       setToast("Complaint submitted successfully");
@@ -99,7 +112,7 @@ export default function SellerComplaintsPage() {
       setView("list");
       loadComplaints();
     } catch (error) {
-      console.error("Failed to submit complaint", error);
+      setApiError(describeApiError(error));
     } finally {
       setSubmitting(false);
     }
@@ -146,100 +159,87 @@ export default function SellerComplaintsPage() {
       {view === "list" && (
         <Panel>
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="relative">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="relative flex-1 sm:flex-none">
                 <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search complaints..."
-                  className="h-10 rounded-xl border border-gray-200 bg-white pl-9 pr-4 text-xs dark:border-gray-800 dark:bg-gray-900"
+                  className="h-10 w-full rounded-xl border border-gray-200 bg-white pl-9 pr-4 text-xs dark:border-gray-800 dark:bg-gray-900"
                 />
               </div>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="h-10 rounded-xl border border-gray-200 bg-white px-3 text-xs dark:border-gray-800 dark:bg-gray-900"
+              <button
+                onClick={() => { setView("create"); setApiError(null); }}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white"
               >
-                <option value="">All Statuses</option>
-                <option value="new">New</option>
-                <option value="open">Open</option>
-                <option value="acknowledged">Acknowledged</option>
-                <option value="investigating">Investigating</option>
-                <option value="resolved">Resolved</option>
-                <option value="closed">Closed</option>
-              </select>
+                <FiPlus /> New Complaint
+              </button>
             </div>
-            <button
-              onClick={() => setView("create")}
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white"
-            >
-              <FiPlus /> New Complaint
-            </button>
-          </div>
 
-          {loading ? (
-            <LoadingCard />
-          ) : items.length === 0 ? (
-            <EmptyState title="No complaints yet" description="Submit a complaint to get started." />
-          ) : (
-            <div className="space-y-3">
-              {items.map((item) => {
-                const colors = STATUS_COLORS[item.status] || STATUS_COLORS.new;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => openDetail(item.id)}
-                    className="w-full rounded-2xl border border-gray-200 bg-white p-4 text-left transition hover:border-primary/30 dark:border-gray-800 dark:bg-gray-900"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black uppercase tracking-wider text-muted">{item.incidentCode}</span>
-                          <span className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase ${colors}`}>{item.status}</span>
+            {loading ? (
+              <LoadingCard />
+            ) : items.length === 0 ? (
+              <EmptyState title="No complaints yet" description="Submit a complaint to get started." />
+            ) : (
+              <div className="space-y-3">
+                {items.map((item) => {
+                  const colors = STATUS_COLORS[item.status] || STATUS_COLORS.new;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => openDetail(item.id)}
+                      className="w-full rounded-2xl border border-gray-200 bg-white p-4 text-left transition hover:border-primary/30 dark:border-gray-800 dark:bg-gray-900"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-muted">{item.incidentCode}</span>
+                            <span className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase ${colors}`}>{item.status}</span>
+                          </div>
+                          <h3 className="text-sm font-black text-foreground">{item.title}</h3>
+                          <p className="text-xs text-muted line-clamp-2">{item.description}</p>
                         </div>
-                        <h3 className="text-sm font-black text-foreground">{item.title}</h3>
-                        <p className="text-xs text-muted line-clamp-2">{item.description}</p>
+                        <FiChevronRight className="mt-1 shrink-0 text-muted" />
                       </div>
-                      <FiChevronRight className="mt-1 shrink-0 text-muted" />
-                    </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] text-muted">
-                      <span className="rounded-full bg-gray-500/10 px-2 py-0.5 font-bold uppercase">{item.category}</span>
-                      <span className="flex items-center gap-1"><FiClock /> {new Date(item.createdAt).toLocaleDateString()}</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+                      <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] text-muted">
+                        <span className="rounded-full bg-gray-500/10 px-2 py-0.5 font-bold uppercase">{item.category}</span>
+                        <span className="flex items-center gap-1"><FiClock /> {new Date(item.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between pt-2">
-              <button
-                disabled={page === 1}
-                onClick={() => setPage((p) => p - 1)}
-                className="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-bold disabled:opacity-40 dark:border-gray-800"
-              >
-                Previous
-              </button>
-              <span className="text-[11px] text-muted">Page {page} of {totalPages}</span>
-              <button
-                disabled={page === totalPages}
-                onClick={() => setPage((p) => p + 1)}
-                className="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-bold disabled:opacity-40 dark:border-gray-800"
-              >
-                Next
-              </button>
-            </div>
-          )}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-2">
+                <button
+                  disabled={page === 1}
+                  onClick={() => setPage((p) => p - 1)}
+                  className="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-bold disabled:opacity-40 dark:border-gray-800"
+                >
+                  Previous
+                </button>
+                <span className="text-[11px] text-muted">Page {page} of {totalPages}</span>
+                <button
+                  disabled={page === totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                  className="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-bold disabled:opacity-40 dark:border-gray-800"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
         </Panel>
       )}
 
       {view === "create" && (
         <Panel>
           <div className="mb-6 flex items-center gap-3">
-            <button onClick={() => setView("list")} className="rounded-xl border border-gray-200 p-2 dark:border-gray-800">
+            <button onClick={() => { setView("list"); setApiError(null); }} className="rounded-xl border border-gray-200 p-2 dark:border-gray-800">
               <FiX />
             </button>
             <div>
@@ -248,88 +248,103 @@ export default function SellerComplaintsPage() {
             </div>
           </div>
 
+          {apiError && (
+            <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs font-bold text-red-600 dark:text-red-400">
+              <div className="flex items-start gap-2">
+                <FiAlertCircle className="mt-0.5" />
+                <span>{apiError}</span>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted">Category</label>
-              <select
-                value={form.category}
-                onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value as CreateComplaintInput["category"] }))}
-                className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs dark:border-gray-800 dark:bg-gray-900"
-              >
-                {COMPLAINT_CATEGORIES.map((cat) => (
-                  <option key={cat.value} value={cat.value}>{cat.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted">Subject</label>
-              <input
-                type="text"
-                value={form.title}
-                onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value.slice(0, 200) }))}
-                placeholder="Brief summary of your complaint"
-                required
-                maxLength={200}
-                className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs dark:border-gray-800 dark:bg-gray-900"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted">Description (max 500 characters)</label>
-              <textarea
-                value={form.description}
-                onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value.slice(0, 500) }))}
-                placeholder="Describe your issue in detail..."
-                required
-                maxLength={500}
-                rows={5}
-                className="w-full rounded-xl border border-gray-200 bg-white p-3 text-xs dark:border-gray-800 dark:bg-gray-900"
-              />
-              <p className="mt-1 text-right text-[10px] text-muted">{form.description.length}/500</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted">Order ID (optional)</label>
-                <input
-                  type="text"
-                  value={form.orderId}
-                  onChange={(e) => setForm((prev) => ({ ...prev, orderId: e.target.value }))}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted">Category</label>
+                <select
+                  value={form.category}
+                  onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value as CreateComplaintInput["category"] }))}
                   className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs dark:border-gray-800 dark:bg-gray-900"
-                />
+                >
+                  {COMPLAINT_CATEGORIES.map((cat) => (
+                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                  ))}
+                </select>
               </div>
-              <div>
-                <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted">Product ID (optional)</label>
+
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted">Subject</label>
                 <input
                   type="text"
-                  value={form.productId}
-                  onChange={(e) => setForm((prev) => ({ ...prev, productId: e.target.value }))}
+                  value={form.title}
+                  onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value.slice(0, 200) }))}
+                  placeholder="Brief summary of your complaint"
+                  required
+                  maxLength={200}
                   className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs dark:border-gray-800 dark:bg-gray-900"
                 />
+                <p className="mt-1 text-right text-[10px] text-muted">{form.title.length}/200</p>
               </div>
-              <div>
-                <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted">Delivery ID (optional)</label>
-                <input
-                  type="text"
-                  value={form.deliveryId}
-                  onChange={(e) => setForm((prev) => ({ ...prev, deliveryId: e.target.value }))}
-                  className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs dark:border-gray-800 dark:bg-gray-900"
+
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted">Description</label>
+                <textarea
+                  value={form.description}
+                  onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value.slice(0, 500) }))}
+                  placeholder="Describe your issue in detail..."
+                  required
+                  maxLength={500}
+                  rows={4}
+                  className="w-full rounded-xl border border-gray-200 bg-white p-3 text-xs dark:border-gray-800 dark:bg-gray-900"
                 />
-              </div>
-              <div>
-                <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted">Seller ID (optional)</label>
-                <input
-                  type="text"
-                  value={form.sellerId}
-                  onChange={(e) => setForm((prev) => ({ ...prev, sellerId: e.target.value }))}
-                  className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs dark:border-gray-800 dark:bg-gray-900"
-                />
+                <p className={`mt-1 text-right text-[10px] font-bold ${form.description.length >= 500 ? "text-red-500" : "text-muted"}`}>{form.description.length}/500</p>
               </div>
             </div>
 
-            <div>
-              <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted">Attachments (up to 5 images)</label>
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+              <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-muted">Related Information</p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-[10px] font-bold uppercase text-muted">Order ID (optional)</label>
+                  <input
+                    type="text"
+                    value={form.orderId}
+                    onChange={(e) => setForm((prev) => ({ ...prev, orderId: e.target.value }))}
+                    className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs dark:border-gray-800 dark:bg-gray-900"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[10px] font-bold uppercase text-muted">Product ID (optional)</label>
+                  <input
+                    type="text"
+                    value={form.productId}
+                    onChange={(e) => setForm((prev) => ({ ...prev, productId: e.target.value }))}
+                    className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs dark:border-gray-800 dark:bg-gray-900"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[10px] font-bold uppercase text-muted">Delivery ID (optional)</label>
+                  <input
+                    type="text"
+                    value={form.deliveryId}
+                    onChange={(e) => setForm((prev) => ({ ...prev, deliveryId: e.target.value }))}
+                    className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs dark:border-gray-800 dark:bg-gray-900"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[10px] font-bold uppercase text-muted">Seller ID (optional)</label>
+                  <input
+                    type="text"
+                    value={form.sellerId}
+                    onChange={(e) => setForm((prev) => ({ ...prev, sellerId: e.target.value }))}
+                    className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs dark:border-gray-800 dark:bg-gray-900"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+              <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-muted">Attachments</p>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -345,11 +360,12 @@ export default function SellerComplaintsPage() {
               >
                 <FiUpload /> Upload Images
               </button>
+              <p className="mt-2 text-[10px] text-muted">Up to 5 images. JPG, PNG, or WebP.</p>
               {form.attachments && form.attachments.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap gap-2">
                   {form.attachments.map((file, index) => (
-                    <div key={index} className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-2 py-1 text-[10px] dark:border-gray-800 dark:bg-gray-900">
-                      <FiImage /> {file.name}
+                    <div key={index} className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-2 py-1.5 text-[10px] dark:border-gray-800 dark:bg-gray-900">
+                      <FiImage className="text-muted" /> {file.name}
                       <button type="button" onClick={() => removeAttachment(index)} className="text-red-500">
                         <FiX />
                       </button>
@@ -360,11 +376,29 @@ export default function SellerComplaintsPage() {
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2">
-              <button type="button" onClick={() => setView("list")} className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-bold dark:border-gray-800">
+              <button
+                type="button"
+                onClick={() => { setView("list"); setApiError(null); }}
+                className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-bold dark:border-gray-800"
+                disabled={submitting}
+              >
                 Cancel
               </button>
-              <button type="submit" disabled={submitting} className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white disabled:opacity-60">
-                {submitting ? "Submitting..." : "Submit Complaint"}
+              <button
+                type="submit"
+                disabled={submitting}
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
+              >
+                {submitting ? (
+                  <>
+                    <span className="h-3 w-3 animate-spin rounded-full border border-white/30 border-t-white" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <FiPaperclip /> Submit Complaint
+                  </>
+                )}
               </button>
             </div>
           </form>
@@ -389,8 +423,8 @@ export default function SellerComplaintsPage() {
               {selected.attachments && selected.attachments.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-2">
                   {selected.attachments.map((url, index) => (
-                    <a key={index} href={url} target="_blank" rel="noreferrer" className="text-xs text-primary underline">
-                      Attachment {index + 1}
+                    <a key={index} href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2 py-1 text-[10px] font-bold text-primary dark:border-gray-800">
+                      <FiImage /> Attachment {index + 1}
                     </a>
                   ))}
                 </div>
