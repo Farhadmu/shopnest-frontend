@@ -9,7 +9,15 @@ import {  FaArrowRight } from "react-icons/fa";
 export { DashboardSidebarLayout } from "./DashboardLayout";
 export { EmptyState, ErrorState, LoadingCard, LoadingGrid, LoadingChart, LoadingTable, FallbackIndicator, AiBadge } from "./DashboardStates";
 
-export type DashboardLink = { label: string; href: string; icon: string; description: string };
+export type DashboardLink = {
+  label: string;
+  href: string;
+  icon: string;
+  description: string;
+  group?: string;
+  badge?: string;
+  highlight?: boolean;
+};
 
 export function DashboardHeader({
   title,
