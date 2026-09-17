@@ -91,6 +91,7 @@ export interface ProductsClientProps {
 
 const SORT_OPTIONS = [
   { key: "newest", label: "Newest Arrivals" },
+  { key: "featured", label: "Featured & Recommended" },
   { key: "price_asc", label: "Price: Low to High" },
   { key: "price_desc", label: "Price: High to Low" },
   { key: "rating", label: "Top Rated" },
