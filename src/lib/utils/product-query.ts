@@ -20,6 +20,7 @@ export interface ProductsQueryState {
   freeDelivery?: string;
   verified?: string;
   aiPick?: string;
+  isFeatured?: string;
   view?: string;
   page?: string;
 }
@@ -38,6 +39,7 @@ const KEYS: (keyof ProductsQueryState)[] = [
   "freeDelivery",
   "verified",
   "aiPick",
+  "isFeatured",
   "view",
   "page",
 ];

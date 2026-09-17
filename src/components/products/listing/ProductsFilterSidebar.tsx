@@ -73,6 +73,8 @@ export function ProductsFilterSidebar({ query, sellerOptions = [] }: ProductsFil
   }, []);
 
   const activePills: { label: string; href: string }[] = [];
+  if (query.isFeatured === "1" || query.isFeatured === "true")
+    activePills.push({ label: "Featured Only", href: buildProductsHref(query, { isFeatured: undefined }) });
   if (query.inStock === "1")
     activePills.push({ label: "In Stock Only", href: buildProductsHref(query, { inStock: undefined }) });
   if (query.verified === "1")
@@ -236,12 +238,13 @@ export function ProductsFilterSidebar({ query, sellerOptions = [] }: ProductsFil
       <div className="flex flex-col gap-1.5 border-t border-border/60 pt-2">
         <span className="text-[9px] font-black uppercase tracking-wider text-muted">Trust &amp; Status</span>
         {[
+          { key: "isFeatured", icon: FiStar, label: "Featured Products" },
           { key: "verified", icon: FiShield, label: "Verified Merchant Only" },
           { key: "inStock", icon: FiPackage, label: "In Stock Only" },
           { key: "freeDelivery", icon: FiTruck, label: "Free Delivery" },
           { key: "aiPick", icon: FiZap, label: "AI Recommended Pick" },
         ].map(({ key, icon: Icon, label }) => {
-          const checked = query[key as keyof ProductsQueryState] === "1";
+          const checked = query[key as keyof ProductsQueryState] === "1" || query[key as keyof ProductsQueryState] === "true";
           return (
             <Link
               key={key}
