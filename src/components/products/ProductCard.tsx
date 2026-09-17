@@ -22,7 +22,6 @@ import {
 import { Product } from "@/lib/api/products";
 import { ProductCardData } from "@/features/products/types";
 import { formatCurrency } from "@/lib/utils";
-import { shopnestImageLoader } from "@/lib/utils/image-optimization";
 import { addToCart } from "@/lib/api/cart";
 import { addToWishlist } from "@/lib/api/wishlist";
 import { useSession } from "@/lib/auth-client";
@@ -67,6 +66,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const [internalAdded, setInternalAdded] = useState(false);
   const [internalWishlist, setInternalWishlist] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   const isAdded = externalIsAdded ?? internalAdded;
   const isWishlist = externalIsWishlisted ?? internalWishlist;
@@ -200,15 +200,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 compact ? "h-40" : "h-52 sm:h-56"
               }`}
             >
-              {imageSrc && !imageSrc.startsWith("linear-gradient") ? (
+              {imageSrc && !imageSrc.startsWith("linear-gradient") && !imgError ? (
                 <Image
                   src={imageSrc}
-                  loader={shopnestImageLoader}
                   alt={product.title}
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="object-cover transition-transform duration-700 ease-out group-hover:scale-108"
                   priority={index < 4}
+                  onError={() => setImgError(true)}
                   unoptimized={false}
                 />
               ) : (
