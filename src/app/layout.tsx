@@ -6,6 +6,7 @@ import "./globals.css";
 import { APP_NAME } from "@/lib/constants";
 import { AppHeroUIProvider } from "@/providers/HeroUIProvider";
 import { ConfirmDialogProvider } from "@/context/ConfirmDialogContext";
+import { AppQueryClientProvider } from "@/providers/QueryClientProvider";
 import { AppShell } from "@/components/layout/AppShell";
 import { ThemeBootstrap } from "@/components/layout/ThemeBootstrap";
 
@@ -26,12 +27,16 @@ export default function RootLayout({
         suppressHydrationWarning
         className="flex min-h-screen flex-col bg-background text-text"
       >
-        <ThemeBootstrap />
-        <AppHeroUIProvider>
-          <ConfirmDialogProvider>
-            <AppShell>{children}</AppShell>
-          </ConfirmDialogProvider>
-        </AppHeroUIProvider>
+        <div className="flex min-h-screen w-full flex-col overflow-x-clip">
+          <ThemeBootstrap />
+          <AppQueryClientProvider>
+            <AppHeroUIProvider>
+              <ConfirmDialogProvider>
+                <AppShell>{children}</AppShell>
+              </ConfirmDialogProvider>
+            </AppHeroUIProvider>
+          </AppQueryClientProvider>
+        </div>
       </body>
     </html>
   );

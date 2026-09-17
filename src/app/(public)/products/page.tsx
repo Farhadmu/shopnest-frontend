@@ -31,7 +31,7 @@ export interface ProductsPageProps {
 
 const PAGE_SIZE = 12;
 
-const EMPTY_PAGE: PagedProducts = { items: [], total: 0, page: 1, limit: PAGE_SIZE, totalPages: 1 };
+const EMPTY_PAGE: PagedProducts = { items: [], total: 0, page: 1, limit: PAGE_SIZE, totalPages: 1, hasMore: false };
 
 /**
  * Renders the product grid by resolving the query the page already started.
@@ -138,7 +138,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         query={query}
       />
 
-      <div className="flex flex-col items-start gap-6 lg:flex-row">
+      <div className="flex flex-col items-start gap-6 lg:flex-row lg:items-start">
         <ProductsFilterSidebar query={query} sellerOptions={sellerOptions} />
 
         <Suspense fallback={<ProductsResultsSkeleton />}>

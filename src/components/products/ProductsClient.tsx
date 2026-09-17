@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button, Chip } from "@heroui/react";
@@ -17,10 +17,65 @@ import {
   FaRedo,
   FaLayerGroup,
 } from "react-icons/fa";
+import { useQuery } from "@tanstack/react-query";
 import { getProductsPaged, Product } from "@/lib/api/products";
 import { CategoryFilterPopup } from "@/components/products/CategoryFilterPopup";
 import { ProductCard } from "@/components/products/ProductCard";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
+
+/** Skeleton card matching ProductCard shape */
+function ProductCardSkeleton({ index = 0 }: { index?: number }) {
+  return (
+    <div
+      className="group relative flex h-full flex-col overflow-hidden rounded-lg border border-border/70 bg-surface shadow-sm"
+      style={{ animationDelay: `${Math.min(index * 0.04, 0.4)}s` }}
+    >
+      {/* Image Box */}
+      <div className="relative w-full h-52 sm:h-56 overflow-hidden bg-muted-bg">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-black/5 animate-pulse" />
+      </div>
+
+      {/* Card Content */}
+      <div className="flex flex-1 flex-col p-3 gap-3">
+        {/* Rating & Verified */}
+        <div className="mb-1 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-border animate-pulse" />
+            <div className="w-10 h-3 rounded bg-border animate-pulse" />
+            <div className="w-20 h-2 rounded bg-border animate-pulse" />
+          </div>
+          <div className="w-16 h-4 rounded bg-border animate-pulse" />
+        </div>
+
+        {/* Title */}
+        <div className="space-y-1.5">
+          <div className="w-full h-3.5 rounded bg-border animate-pulse" />
+          <div className="w-2/3 h-3.5 rounded bg-border animate-pulse" />
+        </div>
+
+        {/* Pricing */}
+        <div className="mt-0.5 flex items-baseline gap-2">
+          <div className="w-16 h-4 rounded bg-border animate-pulse" />
+          <div className="w-10 h-3 rounded bg-border animate-pulse" />
+        </div>
+
+        {/* Stock Status */}
+        <div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-border animate-pulse" />
+            <div className="w-20 h-2 rounded bg-border animate-pulse" />
+          </div>
+        </div>
+      </div>
+
+      {/* Card Footer */}
+      <div className="flex gap-2 pb-3 px-3">
+        <div className="flex-1 h-8 rounded-xl bg-border animate-pulse" />
+        <div className="w-8 h-8 rounded-xl bg-border animate-pulse" />
+      </div>
+    </div>
+  );
+}
 
 export interface ProductsClientProps {
   initialItems: Product[];
@@ -117,24 +172,14 @@ export function ProductsClient({
   const urlSort = searchParams.get("sort") ?? initialSort;
   const urlPage = Number(searchParams.get("page") ?? initialPage);
 
-  const [items, setItems] = useState<Product[]>(initialItems);
-  const [total, setTotal] = useState<number>(initialTotal);
-  const [totalPages, setTotalPages] = useState<number>(initialTotalPages);
-
   // Controlled input states
   const [searchInput, setSearchInput] = useState<string>(urlSearch);
   const [minPriceInput, setMinPriceInput] = useState<string>(urlMinPrice);
   const [maxPriceInput, setMaxPriceInput] = useState<string>(urlMaxPrice);
 
-  const [loading, setLoading] = useState<boolean>(false);
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
 
   const PAGE_SIZE = 12;
-
-  const showToast = (msg: string, type: "success" | "error" = "success") => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  };
 
   // Update browser URL query params
   const updateUrlFilters = useCallback(
@@ -186,52 +231,42 @@ export function ProductsClient({
     setMaxPriceInput(urlMaxPrice);
   }, [urlSearch, urlMinPrice, urlMaxPrice]);
 
-  const isInitialMount = useRef(true);
-
-  // Fetch items whenever URL parameters change
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      if (initialItems.length > 0) {
-        return;
-      }
-    }
-
-    let cancelled = false;
-    setLoading(true);
-
-    getProductsPaged({
+  const { data, isFetching, isError } = useQuery({
+    queryKey: ["products", urlSearch, urlCategory, urlMinPrice, urlMaxPrice, urlSort, urlPage],
+    queryFn: () =>
+      getProductsPaged({
+        page: urlPage,
+        limit: PAGE_SIZE,
+        search: urlSearch.trim() || undefined,
+        category: urlCategory && urlCategory !== "All Categories" ? urlCategory : undefined,
+        minPrice: urlMinPrice ? Number(urlMinPrice) : undefined,
+        maxPrice: urlMaxPrice ? Number(urlMaxPrice) : undefined,
+        sort: urlSort || "newest",
+      }),
+    initialData: {
+      items: initialItems,
+      total: initialTotal,
+      totalPages: initialTotalPages,
+      hasMore: initialTotalPages > 1,
       page: urlPage,
       limit: PAGE_SIZE,
-      search: urlSearch.trim() || undefined,
-      category: urlCategory && urlCategory !== "All Categories" ? urlCategory : undefined,
-      minPrice: urlMinPrice ? Number(urlMinPrice) : undefined,
-      maxPrice: urlMaxPrice ? Number(urlMaxPrice) : undefined,
-      sort: urlSort || "newest",
-    })
-      .then(({ items: data, total: t, totalPages: tp }) => {
-        if (!cancelled) {
-          setItems(data);
-          setTotal(t);
-          setTotalPages(tp);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setItems([]);
-          setTotal(0);
-          setTotalPages(1);
-          showToast("Failed to load products", "error");
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+    },
+  });
 
-    return () => {
-      cancelled = true;
-    };
-  }, [urlSearch, urlCategory, urlMinPrice, urlMaxPrice, urlSort, urlPage]);
+  const errorShownRef = useRef(false);
+  useEffect(() => {
+    if (isError && !errorShownRef.current) {
+      errorShownRef.current = true;
+      setToast({ msg: "Failed to load products", type: "error" });
+    }
+    if (!isError) {
+      errorShownRef.current = false;
+    }
+  }, [isError]);
+
+  const items = data?.items ?? initialItems;
+  const total = data?.total ?? initialTotal;
+  const totalPages = data?.totalPages ?? initialTotalPages;
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -540,13 +575,10 @@ export function ProductsClient({
           </div>
 
           {/* Grid Loading / Empty / Data Display */}
-          {loading ? (
+          {isFetching ? (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3, 4, 5, 6].map((n) => (
-                <div
-                  key={n}
-                  className="h-80 animate-pulse rounded-[1.8rem] border border-border/60 bg-surface/60"
-                />
+                <ProductCardSkeleton key={n} index={n} />
               ))}
             </div>
           ) : items.length === 0 ? (
@@ -585,7 +617,7 @@ export function ProductsClient({
           )}
 
           {/* Server-Synced Pagination Controls */}
-          {!loading && items.length > 0 && totalPages > 1 && (
+          {!isFetching && items.length > 0 && totalPages > 1 && (
             <div className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/80 bg-surface p-4 shadow-sm">
               <p className="text-xs font-semibold text-muted">
                 Page <span className="font-black text-text">{urlPage}</span> of{" "}
