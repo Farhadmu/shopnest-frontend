@@ -441,6 +441,20 @@ export async function getIncidentStats(): Promise<IncidentStats> {
   return clientFetch<IncidentStats>(`/admin/incidents/stats`);
 }
 
+export interface ComplaintStats {
+  total: number;
+  customer: number;
+  deliveryMan: number;
+  seller: number;
+  open: number;
+  investigating: number;
+  resolved: number;
+}
+
+export async function getAdminComplaintStats(): Promise<ComplaintStats> {
+  return clientFetch<ComplaintStats>(`/admin/incidents/complaint-stats`);
+}
+
 export async function updateIncidentStatus(id: string, status: string, notes?: string): Promise<SecurityIncidentItem> {
   return clientMutation<SecurityIncidentItem>(`/admin/incidents/${id}/status`, "PATCH", { status, notes });
 }

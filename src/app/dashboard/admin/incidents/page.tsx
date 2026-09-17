@@ -7,6 +7,8 @@ import {
   getSecurityIncidents,
   getSecurityIncidentById,
   getIncidentTimeline,
+  getIncidentStats,
+  getAdminComplaintStats,
   updateIncidentStatus,
   updateIncidentSeverity,
   assignIncident,
@@ -20,6 +22,7 @@ import {
   IncidentStats,
   IncidentTimelineItem,
   IncidentQueryParams,
+  ComplaintStats,
 } from "@/lib/api/admin-intelligence";
 import {
   FaShieldAlt,
@@ -93,21 +96,24 @@ export default function AdminIncidentsPage() {
   const [loading, setLoading] = useState(true);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [detailTab, setDetailTab] = useState<DetailTab>("overview");
+  const [stats, setStats] = useState<IncidentStats | null>(null);
+  const [complaintStats, setComplaintStats] = useState<ComplaintStats | null>(null);
   
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterSeverity, setFilterSeverity] = useState("");
   const [filterType, setFilterType] = useState("");
+  const [filterSource, setFilterSource] = useState("");
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortDir, setSortDir] = useState("-1");
   const [page, setPage] = useState(1);
-  
+
   const [newNote, setNewNote] = useState("");
   const [resolutionSummary, setResolutionSummary] = useState("");
   const [closeReason, setCloseReason] = useState("");
   const [reopenReason, setReopenReason] = useState("");
   const [severityReason, setSeverityReason] = useState("");
-  
+
   const [showResolveModal, setShowResolveModal] = useState(false);
   const [showCloseModal, setShowCloseModal] = useState(false);
   const [showReopenModal, setShowReopenModal] = useState(false);
@@ -117,24 +123,33 @@ export default function AdminIncidentsPage() {
   const loadIncidents = useCallback(async () => {
     setLoading(true);
     try {
-      const params: IncidentQueryParams = {
+      const queryParams: IncidentQueryParams = {
         status: filterStatus || undefined,
         severity: filterSeverity || undefined,
         type: filterType || undefined,
+        source: filterSource || undefined,
         search: search || undefined,
         sortBy,
         sortDir,
         page,
         limit: 20,
       };
-      const data = await getSecurityIncidents(params);
-      setResponse(data);
+      const [incidentsData, statsData, complaintsData] = await Promise.all([
+        getSecurityIncidents(queryParams),
+        getIncidentStats(),
+        getAdminComplaintStats(),
+      ]);
+      setResponse(incidentsData);
+      setStats(statsData);
+      setComplaintStats(complaintsData);
     } catch {
       setResponse(null);
+      setStats(null);
+      setComplaintStats(null);
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, filterSeverity, filterType, search, sortBy, sortDir, page]);
+  }, [filterStatus, filterSeverity, filterType, filterSource, search, sortBy, sortDir, page]);
 
   useEffect(() => {
     loadIncidents();
@@ -244,7 +259,6 @@ export default function AdminIncidentsPage() {
     });
   };
 
-  const stats: IncidentStats | null = response?.stats || null;
   const incidents = response?.incidents || [];
   const pagination = response?.pagination;
 
@@ -271,6 +285,18 @@ export default function AdminIncidentsPage() {
         <StatCard icon="🚨" label="Critical" value={stats?.critical || 0} note="Critical priority" color="error" />
         <StatCard icon="✅" label="Resolved" value={stats?.resolved || 0} note="Resolved this month" color="success" />
       </div>
+
+      {complaintStats && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
+          <StatCard icon="📝" label="Complaints" value={complaintStats.total} note="All complaints" />
+          <StatCard icon="👤" label="Customer" value={complaintStats.customer} note="Customer complaints" />
+          <StatCard icon="🚚" label="Delivery" value={complaintStats.deliveryMan} note="Delivery complaints" />
+          <StatCard icon="🏬" label="Seller" value={complaintStats.seller} note="Seller complaints" />
+          <StatCard icon="🆕" label="Open" value={complaintStats.open} note="Open complaints" color="warning" />
+          <StatCard icon="🔍" label="Investigating" value={complaintStats.investigating} note="Investigating complaints" color="accent" />
+          <StatCard icon="✅" label="Resolved" value={complaintStats.resolved} note="Resolved complaints" color="success" />
+        </div>
+      )}
 
       {/* Filters */}
       <div className="rounded-2xl border border-border bg-surface p-4">
@@ -322,6 +348,20 @@ export default function AdminIncidentsPage() {
             {Object.entries(INCIDENT_TYPES).map(([key, label]) => (
               <option key={key} value={key}>{label}</option>
             ))}
+          </select>
+
+          <select
+            value={filterSource}
+            onChange={(e) => { setFilterSource(e.target.value); setPage(1); }}
+            className="rounded-xl border border-border bg-muted-bg px-3 py-2 text-sm text-text outline-none focus:border-primary"
+          >
+            <option value="">All Sources</option>
+            <option value="customer">Customer</option>
+            <option value="delivery_man">Delivery Man</option>
+            <option value="seller">Seller</option>
+            <option value="manual">Manual</option>
+            <option value="security_log">Security Log</option>
+            <option value="anomaly">Anomaly</option>
           </select>
 
           <select
