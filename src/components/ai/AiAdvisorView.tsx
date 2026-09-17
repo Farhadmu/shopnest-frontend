@@ -386,18 +386,20 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
           </div>
 
           {/* Quick Prompt Chips */}
-          <div className="border-t border-border/50 px-3 sm:px-4 py-2 bg-muted/30 overflow-x-auto no-scrollbar">
-            <div className="flex gap-2 pb-1">
-              {SAMPLE_PROMPTS.map((prompt, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleSend(prompt)}
-                  disabled={loading}
-                  className="shrink-0 rounded-xl border border-border bg-card px-3 py-1.5 text-[11px] sm:text-xs text-muted-foreground transition-all duration-300 hover:border-primary hover:text-primary hover:shadow-md hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                >
-                  {prompt}
-                </button>
-              ))}
+          <div className="border-t border-border/50 bg-muted/30">
+            <div className="px-3 sm:px-4 py-2">
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                {SAMPLE_PROMPTS.map((prompt, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleSend(prompt)}
+                    disabled={loading}
+                    className="shrink-0 rounded-xl border border-border bg-card px-3 py-2 text-xs sm:text-sm text-text transition-all duration-300 hover:border-primary hover:text-primary hover:shadow-md hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
