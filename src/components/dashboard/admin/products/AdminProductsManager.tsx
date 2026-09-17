@@ -86,7 +86,7 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await getProducts({ page: 1, limit: 100 });
+      const data = await getProducts({ page: 1, limit: 100, nocache: "true" });
       setItems(
         Array.isArray(data)
           ? data.map((p) => ({
