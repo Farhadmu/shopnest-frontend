@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import { useTheme } from "next-themes";
 import { motion, AnimatePresence, useSpring, useTransform } from "framer-motion";
 
 interface HomePageLoaderProps {
@@ -18,8 +19,17 @@ export default function HomePageLoader({
   visible = true,
   onComplete,
 }: HomePageLoaderProps) {
+  const [mounted, setMounted] = useState(false);
+  const { resolvedTheme } = useTheme();
+
   const [shouldRender, setShouldRender] = useState(true);
   const [targetProgress, setTargetProgress] = useState(0);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isDark = mounted ? resolvedTheme === "dark" : false;
 
   // Smooth spring physics for both progress bar width and counter text
   const springProgress = useSpring(0, {
@@ -115,11 +125,15 @@ export default function HomePageLoader({
           }}
           role="status"
           aria-label="Loading ShopNest"
-          className="fixed inset-0 z-[9999] flex min-h-screen flex-col items-center justify-center bg-[#0B071B]"
+          className="fixed inset-0 z-[9999] flex min-h-screen flex-col items-center justify-center bg-white dark:bg-[#0B071B] transition-colors duration-300"
         >
-          {/* Subtle cosmic ambient background glow */}
+          {/* Subtle cosmic ambient background glow (adapts to light/dark) */}
           <div
-            className="pointer-events-none absolute -top-32 left-1/2 h-[450px] w-[600px] -translate-x-1/2 rounded-full bg-gradient-to-b from-purple-600/15 via-indigo-600/10 to-transparent blur-3xl"
+            className={`pointer-events-none absolute -top-32 left-1/2 h-[450px] w-[600px] -translate-x-1/2 rounded-full blur-3xl transition-opacity duration-500 ${
+              isDark
+                ? "bg-gradient-to-b from-purple-600/15 via-indigo-600/10 to-transparent opacity-100"
+                : "bg-gradient-to-b from-purple-300/30 via-indigo-200/20 to-transparent opacity-70"
+            }`}
             aria-hidden="true"
           />
 
@@ -136,16 +150,24 @@ export default function HomePageLoader({
             >
               {/* Breathing soft glow behind logo */}
               <div
-                className="absolute -inset-6 rounded-full bg-gradient-to-tr from-violet-600/25 via-purple-500/20 to-indigo-500/25 blur-2xl animate-pulse"
+                className={`absolute -inset-6 rounded-full blur-2xl animate-pulse transition-colors duration-500 ${
+                  isDark
+                    ? "bg-gradient-to-tr from-violet-600/25 via-purple-500/20 to-indigo-500/25"
+                    : "bg-gradient-to-tr from-violet-400/25 via-purple-300/20 to-indigo-300/25"
+                }`}
                 aria-hidden="true"
               />
 
               <div className="relative h-14 w-40 sm:h-16 sm:w-48">
                 <Image
-                  src="/logo-white.png"
+                  src={isDark ? "/logo-white.png" : "/shopnest-logo.png"}
                   alt="ShopNest"
                   fill
-                  className="object-contain drop-shadow-[0_4px_16px_rgba(147,51,234,0.35)]"
+                  className={`object-contain transition-all duration-300 ${
+                    isDark
+                      ? "drop-shadow-[0_4px_16px_rgba(147,51,234,0.35)]"
+                      : "drop-shadow-[0_4px_12px_rgba(91,92,240,0.2)]"
+                  }`}
                   priority
                 />
               </div>
@@ -155,13 +177,21 @@ export default function HomePageLoader({
             <div className="flex w-60 flex-col items-center gap-3 sm:w-72">
               {/* Progress Track */}
               <div
-                className="relative h-2 w-full overflow-hidden rounded-full border border-white/10 bg-white/5 backdrop-blur-md shadow-inner"
+                className={`relative h-2 w-full overflow-hidden rounded-full border backdrop-blur-md transition-colors duration-300 ${
+                  isDark
+                    ? "border-white/10 bg-white/5 shadow-inner"
+                    : "border-slate-200 bg-slate-100/90 shadow-inner"
+                }`}
                 aria-hidden="true"
               >
                 {/* Fluid animated gradient fill */}
                 <motion.div
                   style={{ width: widthPercent }}
-                  className="relative h-full rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-cyan-400 shadow-[0_0_14px_rgba(147,51,234,0.6)]"
+                  className={`relative h-full rounded-full transition-all duration-300 ${
+                    isDark
+                      ? "bg-gradient-to-r from-violet-600 via-fuchsia-500 to-cyan-400 shadow-[0_0_14px_rgba(147,51,234,0.6)]"
+                      : "bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 shadow-[0_0_12px_rgba(99,102,241,0.4)]"
+                  }`}
                 >
                   {/* Continuous liquid light shimmer wave */}
                   <motion.div
@@ -178,10 +208,20 @@ export default function HomePageLoader({
 
               {/* Status Text & Smooth Percentage Counter */}
               <div className="flex w-full items-center justify-between px-0.5">
-                <span className="text-[11px] font-semibold tracking-wider text-white/60 uppercase">
+                <span
+                  className={`text-[11px] font-semibold tracking-wider uppercase transition-colors duration-300 ${
+                    isDark ? "text-white/60" : "text-slate-500"
+                  }`}
+                >
                   Loading ShopNest…
                 </span>
-                <motion.span className="tabular-nums text-xs font-bold text-violet-300 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]">
+                <motion.span
+                  className={`tabular-nums text-xs font-bold transition-colors duration-300 ${
+                    isDark
+                      ? "text-violet-300 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]"
+                      : "text-primary drop-shadow-[0_0_6px_rgba(91,92,240,0.3)]"
+                  }`}
+                >
                   {displayPercent}
                 </motion.span>
               </div>
