@@ -488,3 +488,72 @@ export async function getAdminDeliveryHeatmap(timeRange: "today" | "7d" | "30d" 
   const res = await clientFetch<{ data: DeliveryHeatmapResponse }>(`/delivery/admin/heatmap?timeRange=${timeRange}`);
   return (res as any)?.data ?? res;
 }
+
+// ─── Reverse Delivery (Returns) ───────────────────────────────────────────────
+
+export interface ReverseDeliveryRequest {
+  id: string;
+  returnRequestId: string;
+  orderId: string;
+  orderItemId: string;
+  productTitle: string;
+  productImage?: string;
+  customerId: string;
+  customerName?: string;
+  customerAddress: string;
+  customerContact?: string;
+  sellerId: string;
+  sellerName?: string;
+  sellerAddress: string;
+  sellerContact?: string;
+  assignedDeliveryManId?: string;
+  assignedAt?: string;
+  acceptedAt?: string;
+  pickupStartedAt?: string;
+  pickedUpAt?: string;
+  inTransitAt?: string;
+  sellerReceivedAt?: string;
+  deliveryOtp?: string;
+  deliveryOtpVerifiedAt?: string;
+  deliveryProofImage?: string;
+  deliveryFailedReason?: string;
+  priority: "normal" | "high" | "urgent";
+  packageInfo?: {
+    weight?: number;
+    dimensions?: string;
+    specialInstructions?: string;
+    fragile?: boolean;
+  };
+  status: "available" | "assigned" | "accepted" | "pickup_started" | "picked_up" | "in_transit" | "seller_received" | "failed" | "cancelled";
+  statusHistory: Array<{ status: string; at: string; note?: string }>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getAvailableReverseDeliveries() {
+  return clientFetch<ReverseDeliveryRequest[]>("/delivery/reverse/available");
+}
+
+export async function getMyReverseDeliveries() {
+  return clientFetch<ReverseDeliveryRequest[]>("/delivery/reverse/my");
+}
+
+export async function acceptReverseDelivery(id: string) {
+  return clientMutation<{ reverseDelivery: ReverseDeliveryRequest }>(
+    `/delivery/reverse/${id}/accept`,
+    "PATCH",
+    {}
+  );
+}
+
+export async function updateReverseDeliveryStatus(
+  id: string,
+  status: ReverseDeliveryRequest["status"],
+  failureReason?: string
+) {
+  return clientMutation<{ reverseDelivery: ReverseDeliveryRequest }>(
+    `/delivery/reverse/${id}/status`,
+    "PATCH",
+    { status, failureReason }
+  );
+}

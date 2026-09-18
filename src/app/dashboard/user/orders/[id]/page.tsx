@@ -22,6 +22,7 @@ import {
   FiStar,
   FiCompass,
   FiBell,
+  FiCornerDownLeft,
 } from "react-icons/fi";
 import { FaMotorcycle, FaStar as FaSolidStar } from "react-icons/fa";
 
@@ -436,6 +437,14 @@ export default function UserOrderDetailPage() {
                     <p className="font-black text-sm text-foreground">
                       ৳{(item.price * item.quantity).toLocaleString()}
                     </p>
+                    {order.status === "delivered" && (
+                      <Link
+                        href={`/dashboard/user/returns/new?orderId=${String(order.id || order._id || "")}&productId=${item.productId}`}
+                        className="inline-flex items-center gap-1 mt-2 px-3 py-1.5 bg-primary/10 text-primary rounded-xl text-[11px] font-bold hover:bg-primary hover:text-white transition cursor-pointer"
+                      >
+                        <FiCornerDownLeft /> Return
+                      </Link>
+                    )}
                   </div>
                 </div>
               ))}
