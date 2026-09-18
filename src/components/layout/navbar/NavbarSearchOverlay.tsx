@@ -21,12 +21,15 @@ export function NavbarSearchOverlay({
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-focus when opened
+  // Auto-focus and dispatch open/close events
   useEffect(() => {
     if (open) {
+      window.dispatchEvent(new CustomEvent("search_overlay_opened"));
       // Slight delay so the animation starts before focus
       const t = setTimeout(() => inputRef.current?.focus(), 80);
       return () => clearTimeout(t);
+    } else {
+      window.dispatchEvent(new CustomEvent("search_overlay_closed"));
     }
   }, [open]);
 
@@ -48,6 +51,12 @@ export function NavbarSearchOverlay({
     onClose();
   };
 
+  const handleTagClick = (tag: string) => {
+    onChange(tag);
+    router.push(`/products?search=${encodeURIComponent(tag)}`);
+    onClose();
+  };
+
   return (
     <AnimatePresence>
       {open && (
@@ -59,7 +68,7 @@ export function NavbarSearchOverlay({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-md"
             onClick={onClose}
             aria-hidden="true"
           />
@@ -71,14 +80,14 @@ export function NavbarSearchOverlay({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -16, opacity: 0 }}
             transition={{ type: "spring", stiffness: 280, damping: 26 }}
-            className="fixed inset-x-0 top-0 z-[61] px-4 pt-4 pb-6 sm:px-6"
+            className="fixed inset-x-0 top-0 z-[61] px-3 pt-3 pb-6 sm:px-6"
             // Stop clicks inside the panel from hitting the backdrop
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mx-auto max-w-2xl rounded-2xl border border-white/10 bg-base-100/95 shadow-2xl backdrop-blur-2xl">
-              <form onSubmit={handleSubmit} className="flex items-center gap-3 px-4 py-3">
+            <div className="mx-auto max-w-2xl rounded-2xl border border-white/10 bg-base-100/95 shadow-2xl backdrop-blur-2xl overflow-hidden">
+              <form onSubmit={handleSubmit} className="flex items-center gap-3 px-4 py-3.5">
                 {/* Search icon */}
-                <FaSearch className="shrink-0 text-base-content/40" size={16} />
+                <FaSearch className="shrink-0 text-primary" size={16} />
 
                 {/* Input */}
                 <input
@@ -86,8 +95,8 @@ export function NavbarSearchOverlay({
                   type="search"
                   value={value}
                   onChange={(e) => onChange(e.target.value)}
-                  placeholder="Search products, stores, categories…"
-                  className="min-w-0 flex-1 bg-transparent text-base text-base-content outline-none placeholder:text-base-content/35"
+                  placeholder="Search products, categories, brands..."
+                  className="min-w-0 flex-1 bg-transparent text-base font-medium text-base-content outline-none placeholder:text-base-content/40"
                   aria-label="Search ShopNest"
                 />
 
@@ -96,15 +105,33 @@ export function NavbarSearchOverlay({
                   type="button"
                   onClick={() => (value ? onChange("") : onClose())}
                   aria-label={value ? "Clear search" : "Close search"}
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-base-content/40 transition hover:bg-base-200 hover:text-base-content cursor-pointer"
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-base-content/50 transition hover:bg-base-200 hover:text-base-content cursor-pointer"
                 >
-                  <FaTimes size={13} />
+                  <FaTimes size={14} />
                 </button>
               </form>
 
-              {/* Optional: hint row */}
-              <div className="border-t border-base-200 px-4 py-2 text-xs text-base-content/35">
-                Press <kbd className="rounded bg-base-200 px-1 py-0.5 font-mono text-[10px]">Enter</kbd> to search &nbsp;·&nbsp; <kbd className="rounded bg-base-200 px-1 py-0.5 font-mono text-[10px]">Esc</kbd> to dismiss
+              {/* Google Play Style Quick Trending Pills */}
+              <div className="border-t border-base-200/80 bg-base-200/40 px-4 py-2.5 flex flex-wrap items-center gap-1.5 text-xs">
+                <span className="font-bold text-base-content/50 mr-1 flex items-center gap-1">
+                  Trending:
+                </span>
+                {["Wireless Earbuds", "Smart Watch", "Sneakers", "Mechanical Keyboard", "Coffee Maker"].map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => handleTagClick(tag)}
+                    className="rounded-full bg-base-100 hover:bg-primary/15 hover:text-primary border border-base-200 px-3 py-1 text-xs font-semibold text-base-content/80 transition cursor-pointer active:scale-95 shadow-2xs"
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+
+              {/* Hint row */}
+              <div className="border-t border-base-200/60 px-4 py-2 text-[11px] text-base-content/40 flex items-center justify-between">
+                <span>Press <kbd className="rounded bg-base-200 px-1 py-0.5 font-mono text-[10px]">Enter</kbd> to search</span>
+                <span>Tap <kbd className="rounded bg-base-200 px-1 py-0.5 font-mono text-[10px]">Esc</kbd> to dismiss</span>
               </div>
             </div>
           </motion.div>
