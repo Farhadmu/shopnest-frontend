@@ -84,7 +84,7 @@ export function NavbarSearchOverlay({
             // Stop clicks inside the panel from hitting the backdrop
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mx-auto max-w-2xl rounded-2xl border border-white/10 bg-base-100/95 shadow-2xl backdrop-blur-2xl overflow-hidden">
+            <div className="mx-auto max-w-2xl rounded-2xl border border-border bg-surface/95 text-text shadow-2xl backdrop-blur-2xl overflow-hidden">
               <form onSubmit={handleSubmit} className="flex items-center gap-3 px-4 py-3.5">
                 {/* Search icon */}
                 <FaSearch className="shrink-0 text-primary" size={16} />
@@ -96,7 +96,7 @@ export function NavbarSearchOverlay({
                   value={value}
                   onChange={(e) => onChange(e.target.value)}
                   placeholder="Search products, categories, brands..."
-                  className="min-w-0 flex-1 bg-transparent text-base font-medium text-base-content outline-none placeholder:text-base-content/40"
+                  className="min-w-0 flex-1 bg-transparent text-base font-medium text-text outline-none placeholder:text-muted"
                   aria-label="Search ShopNest"
                 />
 
@@ -105,15 +105,15 @@ export function NavbarSearchOverlay({
                   type="button"
                   onClick={() => (value ? onChange("") : onClose())}
                   aria-label={value ? "Clear search" : "Close search"}
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-base-content/50 transition hover:bg-base-200 hover:text-base-content cursor-pointer"
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted transition hover:bg-muted-bg hover:text-text cursor-pointer"
                 >
                   <FaTimes size={14} />
                 </button>
               </form>
 
               {/* Google Play Style Quick Trending Pills */}
-              <div className="border-t border-base-200/80 bg-base-200/40 px-4 py-2.5 flex flex-wrap items-center gap-1.5 text-xs">
-                <span className="font-bold text-base-content/50 mr-1 flex items-center gap-1">
+              <div className="border-t border-border/80 bg-muted-bg/40 px-4 py-2.5 flex flex-wrap items-center gap-1.5 text-xs">
+                <span className="font-bold text-muted mr-1 flex items-center gap-1">
                   Trending:
                 </span>
                 {["Wireless Earbuds", "Smart Watch", "Sneakers", "Mechanical Keyboard", "Coffee Maker"].map((tag) => (
@@ -121,7 +121,7 @@ export function NavbarSearchOverlay({
                     key={tag}
                     type="button"
                     onClick={() => handleTagClick(tag)}
-                    className="rounded-full bg-base-100 hover:bg-primary/15 hover:text-primary border border-base-200 px-3 py-1 text-xs font-semibold text-base-content/80 transition cursor-pointer active:scale-95 shadow-2xs"
+                    className="rounded-full bg-surface hover:bg-primary/15 hover:text-primary border border-border px-3 py-1 text-xs font-semibold text-text transition cursor-pointer active:scale-95 shadow-2xs"
                   >
                     {tag}
                   </button>
@@ -129,9 +129,9 @@ export function NavbarSearchOverlay({
               </div>
 
               {/* Hint row */}
-              <div className="border-t border-base-200/60 px-4 py-2 text-[11px] text-base-content/40 flex items-center justify-between">
-                <span>Press <kbd className="rounded bg-base-200 px-1 py-0.5 font-mono text-[10px]">Enter</kbd> to search</span>
-                <span>Tap <kbd className="rounded bg-base-200 px-1 py-0.5 font-mono text-[10px]">Esc</kbd> to dismiss</span>
+              <div className="border-t border-border/60 px-4 py-2 text-[11px] text-muted flex items-center justify-between">
+                <span>Press <kbd className="rounded border border-border bg-muted-bg px-1.5 py-0.5 font-mono text-[10px] text-text">Enter</kbd> to search</span>
+                <span>Tap <kbd className="rounded border border-border bg-muted-bg px-1.5 py-0.5 font-mono text-[10px] text-text">Esc</kbd> to dismiss</span>
               </div>
             </div>
           </motion.div>

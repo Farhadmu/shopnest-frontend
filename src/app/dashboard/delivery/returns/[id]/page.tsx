@@ -7,6 +7,9 @@ import { DashboardShell, Panel } from "@/components/dashboard/DashboardUI";
 import { deliveryManDashboardLinks } from "@/lib/constants/dashboard-nav";
 import {
   getReverseDeliveryById,
+  generateReverseOtp,
+  verifyReverseOtp,
+  completeReversePickup,
   updateReverseDeliveryStatus,
   updateReverseDeliveryLocation,
   type ReverseDeliveryRequest,
@@ -47,6 +50,10 @@ export default function ReverseDeliveryDetailPage() {
   const [actioning, setActioning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [pickupOtp, setPickupOtp] = useState("");
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpMessage, setOtpMessage] = useState<string | null>(null);
+  const [otpError, setOtpError] = useState<string | null>(null);
   const watchIdRef = useRef<number | null>(null);
 
   const loadData = useCallback(async () => {
@@ -83,6 +90,60 @@ export default function ReverseDeliveryDetailPage() {
       await loadData();
     } catch (err: any) {
       setError(err?.message || "Failed to update status");
+    } finally {
+      setActioning(false);
+    }
+  };
+
+  const handleGenerateOtp = async () => {
+    setActioning(true);
+    setOtpError(null);
+    setOtpMessage(null);
+    try {
+      const result = await generateReverseOtp(id);
+      setPickupOtp(result.deliveryOtp);
+      setOtpVerified(false);
+      setOtpMessage("Share this OTP with the customer to verify pickup.");
+    } catch (err: any) {
+      setOtpError(err?.message || "Failed to generate pickup OTP");
+    } finally {
+      setActioning(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!pickupOtp.trim()) {
+      setOtpError("Enter the customer OTP first");
+      return;
+    }
+    setActioning(true);
+    setOtpError(null);
+    try {
+      const result = await verifyReverseOtp(id, pickupOtp.trim());
+      if (result.verified) {
+        setOtpVerified(true);
+        setOtpMessage("OTP verified. You can now mark the item picked up.");
+      }
+    } catch (err: any) {
+      setOtpError(err?.message || "Invalid pickup OTP");
+    } finally {
+      setActioning(false);
+    }
+  };
+
+  const handleCompletePickup = async () => {
+    if (!otpVerified) {
+      setOtpError("Verify the customer OTP before marking the item picked up");
+      return;
+    }
+    setActioning(true);
+    setError(null);
+    try {
+      await completeReversePickup(id, { note: "Product picked up successfully" });
+      setOtpMessage(null);
+      await loadData();
+    } catch (err: any) {
+      setError(err?.message || "Failed to complete pickup");
     } finally {
       setActioning(false);
     }
@@ -181,7 +242,7 @@ export default function ReverseDeliveryDetailPage() {
   const ret = data.returnRequest;
   const style = STATUS_STYLES[reverse.status] || STATUS_STYLES.available;
 
-  const canAccept = reverse.status === "assigned" || reverse.status === "available";
+  const canAccept = reverse.status === "available";
   const canStartPickup = reverse.status === "assigned" || reverse.status === "accepted";
   const canCompletePickup = reverse.status === "pickup_started";
   const canMarkInTransit = reverse.status === "picked_up";
@@ -312,10 +373,43 @@ export default function ReverseDeliveryDetailPage() {
                 <FaMotorcycle /> Start Pickup
               </button>
             )}
-            {canCompletePickup && (
+            {canCompletePickup && !otpVerified && (
+              <div className="w-full rounded-xl border border-border bg-surface p-3 space-y-2">
+                <p className="text-[11px] font-bold text-foreground">Pickup OTP verification</p>
+                {otpMessage && <p className="text-[10px] text-emerald-600">{otpMessage}</p>}
+                {otpError && <p className="text-[10px] text-red-600">{otpError}</p>}
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={handleGenerateOtp}
+                    disabled={actioning}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-500 text-white rounded-xl text-[11px] font-black hover:bg-blue-600 transition disabled:opacity-50 cursor-pointer"
+                  >
+                    <FiCheckCircle /> Generate OTP
+                  </button>
+                  <input
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={pickupOtp}
+                    onChange={(event) => setPickupOtp(event.target.value.replace(/\D/g, ""))}
+                    placeholder="Customer OTP"
+                    className="min-w-[130px] rounded-xl border border-border bg-card px-3 py-2 text-xs font-bold text-foreground outline-none focus:border-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleVerifyOtp}
+                    disabled={actioning}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-500 text-white rounded-xl text-[11px] font-black hover:bg-indigo-600 transition disabled:opacity-50 cursor-pointer"
+                  >
+                    Verify OTP
+                  </button>
+                </div>
+              </div>
+            )}
+            {canCompletePickup && otpVerified && (
               <button
                 type="button"
-                onClick={() => handleStatusUpdate("picked_up", "Product picked up successfully")}
+                onClick={handleCompletePickup}
                 disabled={actioning}
                 className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-teal-500 text-white rounded-xl text-xs font-black hover:bg-teal-600 transition disabled:opacity-50 cursor-pointer"
               >

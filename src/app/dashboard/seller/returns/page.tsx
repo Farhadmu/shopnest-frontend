@@ -103,10 +103,22 @@ export default function SellerReturnsPage() {
     }
   };
 
+  const handleReceive = async (id: string) => {
+    setActioningId(id);
+    try {
+      await sellerReceiveReturn(id, { note: "Product received by seller" });
+      await loadReturns();
+    } catch (err: any) {
+      alert(err?.message || "Failed to receive return");
+    } finally {
+      setActioningId(null);
+    }
+  };
+
   const filtered = returns.filter((r) => {
     if (filter === "all") return true;
     if (filter === "pending") return ["requested", "under_review"].includes(r.status);
-    if (filter === "action_required") return ["approved", "seller_received", "inspection_pending"].includes(r.status);
+    if (filter === "action_required") return ["approved", "in_transit", "seller_received", "inspection_pending"].includes(r.status);
     return r.status === filter;
   });
 
@@ -171,7 +183,7 @@ export default function SellerReturnsPage() {
               const canApprove = ret.status === "requested" || ret.status === "under_review";
               const canReject = ret.status === "requested" || ret.status === "under_review";
               const canInspect = ret.status === "seller_received" || ret.status === "inspection_pending";
-              const canReceive = ret.status === "in_transit";
+              const canReceive = ret.status === "picked_up" || ret.status === "in_transit";
               return (
                 <div key={ret.id} className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-3">
                   <div className="flex items-center justify-between gap-3">
@@ -236,11 +248,11 @@ export default function SellerReturnsPage() {
                     {canReceive && (
                       <button
                         type="button"
-                        onClick={() => handleInspect(ret.id, "approved")}
+                        onClick={() => handleReceive(ret.id)}
                         disabled={actioningId === ret.id}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white rounded-xl text-[11px] font-bold hover:bg-emerald-600 transition disabled:opacity-50 cursor-pointer"
                       >
-                        <FiCheck /> Mark Received & Inspect
+                        <FiCheck /> Mark Received
                       </button>
                     )}
                     <Link

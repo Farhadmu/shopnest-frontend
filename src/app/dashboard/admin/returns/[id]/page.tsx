@@ -5,13 +5,14 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { DashboardShell, Panel } from "@/components/dashboard/DashboardUI";
 import { adminDashboardLinks } from "@/lib/constants/dashboard-nav";
-import { adminGetReturnDetails, type ReturnRequest } from "@/lib/api/returns";
+import { adminGetReturnDetails, processRefund, type ReturnRequest } from "@/lib/api/returns";
 import {
   FiArrowLeft,
   FiPackage,
   FiTruck,
   FiMapPin,
   FiCheckCircle,
+  FiCheck,
   FiXCircle,
   FiClock,
   FiDollarSign,
@@ -81,6 +82,21 @@ export default function AdminReturnDetailPage() {
       setLoading(false);
     }
   }, [id]);
+
+  const [processingRefundId, setProcessingRefundId] = useState<string | null>(null);
+
+  const handleProcessRefund = async (refundId: string) => {
+    if (!confirm("Are you sure you want to complete and disburse this refund?")) return;
+    setProcessingRefundId(refundId);
+    try {
+      await processRefund(refundId);
+      await loadData();
+    } catch (err: any) {
+      alert(err?.message || "Failed to process refund");
+    } finally {
+      setProcessingRefundId(null);
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -230,13 +246,25 @@ export default function AdminReturnDetailPage() {
                     <p className="text-[10px] text-muted">Amount: ৳{refund.amount?.toLocaleString()}</p>
                     <p className="text-[10px] text-muted">Provider: {refund.provider}</p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border ${
-                    refund.status === "succeeded" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" :
-                    refund.status === "failed" ? "bg-red-500/10 text-red-600 border-red-500/20" :
-                    "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                  }`}>
-                    {refund.status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border ${
+                      refund.status === "succeeded" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" :
+                      refund.status === "failed" ? "bg-red-500/10 text-red-600 border-red-500/20" :
+                      "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                    }`}>
+                      {refund.status}
+                    </span>
+                    {refund.status === "pending" && (
+                      <button
+                        type="button"
+                        onClick={() => handleProcessRefund(refund.refundId || refund.id)}
+                        disabled={processingRefundId === (refund.refundId || refund.id)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white rounded-xl text-xs font-bold hover:bg-emerald-600 transition disabled:opacity-50 cursor-pointer shadow-sm"
+                      >
+                        <FiCheck /> Complete Refund
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
