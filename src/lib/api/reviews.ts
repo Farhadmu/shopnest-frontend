@@ -78,7 +78,8 @@ export async function getProductReviews(productId: string) {
 
 export async function addProductReview(
   productId: string,
-  data: { rating: number; comment: string }
+  data: { rating: number; comment: string; images?: string[] }
 ) {
   return clientMutation<Review>(`/products/${productId}/reviews`, "POST", data);
 }
+
