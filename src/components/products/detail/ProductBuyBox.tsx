@@ -12,34 +12,31 @@ import { useSession } from "@/lib/auth-client";
 import { recordShoppingEvent } from "@/lib/api/customer-intelligence";
 import { addGuestCartItem, addGuestWishlistItem, clearGuestCart, clearGuestWishlist } from "@/lib/guest-store";
 
+import { extractVariants, SpecVariant } from "./ProductSpecsTable";
+
 export interface ProductBuyBoxProps {
   product: Product;
-}
-
-/**
- * TODO(backend): color/size variants aren't part of the `Product` schema
- * yet. Falling back to a single "Standard" variant (derived from the first
- * product tag when available) until the API exposes real variants.
- */
-function getVariantOptions(product: Product): string[] {
-  if (product.tags && product.tags.length > 0) return product.tags.slice(0, 3);
-  return ["Standard"];
 }
 
 export function ProductBuyBox({ product }: ProductBuyBoxProps) {
   const router = useRouter();
   const { data: session } = useSession();
 
-  const variants = getVariantOptions(product);
-  const [variant, setVariant] = useState(variants[0]);
+  const allVariants = React.useMemo(() => extractVariants(product), [product]);
+  const hasRealVariants = allVariants.length > 0;
+  const [selectedVariant, setSelectedVariant] = useState<SpecVariant | null>(
+    hasRealVariants ? allVariants[0] : null
+  );
+
   const [quantity, setQuantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const viewRecordedRef = useRef(false);
 
   const hasDiscount = !!product.discountPrice && product.discountPrice < product.price;
-  const displayPrice = hasDiscount ? (product.discountPrice as number) : product.price;
-  const discountPct = hasDiscount
+  const activeBasePrice = selectedVariant?.price ?? (hasDiscount ? (product.discountPrice as number) : product.price);
+  const displayPrice = activeBasePrice;
+  const discountPct = hasDiscount && (!selectedVariant || !selectedVariant.price)
     ? Math.round(((product.price - (product.discountPrice as number)) / product.price) * 100)
     : 0;
 
@@ -65,17 +62,21 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
   }, [session?.user, product.id, product.title, product.category, product.price]);
 
   const handleAddToCart = async () => {
+    const itemTitle = selectedVariant?.name
+      ? `${product.title} (${selectedVariant.name})`
+      : product.title;
+
     if (!session?.user) {
       addGuestCartItem({
         productId: product.id,
         quantity,
         price: displayPrice,
-        title: product.title,
+        title: itemTitle,
         images: imageSrc ? [imageSrc] : undefined,
         category: product.category,
       });
       setIsAdded(true);
-      showToast(`Added ${quantity} × "${product.title}" to cart!`);
+      showToast(`Added ${quantity} × "${itemTitle}" to cart!`);
       setTimeout(() => setIsAdded(false), 2000);
       return;
     }
@@ -83,12 +84,12 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
       await addToCart(product.id, quantity);
       clearGuestCart();
       setIsAdded(true);
-      showToast(`Added ${quantity} × "${product.title}" to cart!`);
+      showToast(`Added ${quantity} × "${itemTitle}" to cart!`);
       setTimeout(() => setIsAdded(false), 2000);
       recordShoppingEvent({
         eventType: "cart_add",
         productId: product.id,
-        productTitle: product.title,
+        productTitle: itemTitle,
         category: product.category,
         price: displayPrice,
       }).catch(() => {});
@@ -98,12 +99,16 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
   };
 
   const handleBuyNow = async () => {
+    const itemTitle = selectedVariant?.name
+      ? `${product.title} (${selectedVariant.name})`
+      : product.title;
+
     if (!session?.user) {
       addGuestCartItem({
         productId: product.id,
         quantity,
         price: displayPrice,
-        title: product.title,
+        title: itemTitle,
         images: imageSrc ? [imageSrc] : undefined,
         category: product.category,
       });
@@ -209,26 +214,60 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
           </div>
         </div>
 
-        {/* Variant selector */}
-        <div className="flex flex-col gap-1">
-          <span className="text-xs font-bold uppercase tracking-wide text-muted">
-            Variant: <span className="text-primary">{variant}</span>
-          </span>
-          <div className="flex flex-wrap gap-2">
-            {variants.map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setVariant(v)}
-                className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${
-                  variant === v ? "border-primary bg-primary/10 text-primary" : "border-border text-text hover:bg-muted-bg"
-                }`}
-              >
-                {v}
-              </button>
-            ))}
+        {/* Variant selector: only render if product has authentic variants */}
+        {hasRealVariants && (
+          <div className="flex flex-col gap-2 rounded-xl border border-border/80 bg-surface-muted/30 p-3.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+                Edition / Variant:{" "}
+                <span className="font-extrabold capitalize text-text">
+                  {selectedVariant?.name || "Standard"}
+                </span>
+              </span>
+              {selectedVariant?.stock !== undefined && (
+                <span
+                  className={`text-[11px] font-bold ${
+                    selectedVariant.stock > 0
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-error"
+                  }`}
+                >
+                  {selectedVariant.stock > 0 ? `${selectedVariant.stock} in stock` : "Out of stock"}
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {allVariants.map((v) => {
+                const isSelected = selectedVariant?.name === v.name;
+                const swatchColor = v.swatch || v.color || "#4f46e5";
+                return (
+                  <button
+                    key={v.name}
+                    type="button"
+                    onClick={() => setSelectedVariant(v)}
+                    className={`group relative flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all ${
+                      isSelected
+                        ? "border-primary bg-primary/10 text-primary ring-2 ring-primary/20 shadow-xs"
+                        : "border-border bg-surface text-text hover:border-primary/40 hover:bg-muted-bg"
+                    }`}
+                  >
+                    <span
+                      className="h-3.5 w-3.5 shrink-0 rounded-full border border-black/20 shadow-xs"
+                      style={{ backgroundColor: swatchColor }}
+                    />
+                    <span className="capitalize">{v.name}</span>
+                    {v.price && v.price !== product.price && (
+                      <span className="text-[10px] font-medium text-muted">
+                        ({formatCurrency(v.price)})
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Quantity + CTAs */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
