@@ -18,13 +18,13 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-3 shadow-sm lg:sticky lg:top-24">
-      <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-muted-bg">
+      <div className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-xl bg-muted-bg">
         <Image
           src={gallery[activeIndex]}
           alt={title}
           fill
           sizes="(max-width: 1024px) 100vw, 40vw"
-          className="object-cover"
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
           priority
         />
         <span className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-surface/90 px-2.5 py-1 text-[10px] font-black text-primary shadow-sm backdrop-blur">
@@ -45,7 +45,7 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
             type="button"
             onClick={() => setActiveIndex(idx)}
             aria-label={`View image ${idx + 1}`}
-            className={`relative aspect-square overflow-hidden rounded-lg bg-muted-bg transition-all ${
+            className={`relative aspect-square cursor-pointer overflow-hidden rounded-lg bg-muted-bg transition-all ${
               idx === activeIndex ? "ring-2 ring-primary" : "opacity-70 hover:opacity-100"
             }`}
           >
