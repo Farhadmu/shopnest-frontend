@@ -1,190 +1,289 @@
 "use client";
-
 import { motion } from "motion/react";
-import { FaShieldAlt, FaBrain, FaShippingFast, FaUserShield } from "react-icons/fa";
+
+import {
+
+  FaShieldAlt,
+
+  FaBrain,
+
+  FaShippingFast,
+
+  FaUserShield,
+
+  FaShoppingCart,
+
+} from "react-icons/fa";
+
+
 
 const features = [
+
   {
-    title: "Trusted sellers",
-    desc: "Transparent trust signals",
-    icon: <FaShieldAlt size={22} />,
-    glowColor: "#f59e0b",
-    barColor: "from-amber-500 to-orange-500",
-    iconBg: "bg-amber-500/15 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400",
-    textHover: "group-hover:text-amber-600 dark:group-hover:text-amber-400",
-    badgeGlow: "group-hover:bg-amber-600 group-hover:text-white",
+
+    title: "Trusted Sellers",
+
+    desc: "Shop confidently with verified sellers who follow our quality and service standards.",
+
+    icon: <FaShieldAlt />,
+
+    color: "text-amber-500",
+
+    bg: "bg-amber-500/10",
+
+    border: "group-hover:border-amber-500/30",
+
   },
+
   {
-    title: "AI discovery",
-    desc: "Smarter recommendations",
-    icon: <FaBrain size={22} />,
-    glowColor: "#ec4899",
-    barColor: "from-pink-500 to-rose-500",
-    iconBg: "bg-pink-500/15 text-pink-600 dark:bg-pink-500/20 dark:text-pink-400",
-    textHover: "group-hover:text-pink-600 dark:group-hover:text-pink-400",
-    badgeGlow: "group-hover:bg-pink-600 group-hover:text-white",
+
+    title: "AI Discovery",
+
+    desc: "Discover smarter product recommendations tailored to your interests and shopping habits.",
+
+    icon: <FaBrain />,
+
+    color: "text-pink-500",
+
+    bg: "bg-pink-500/10",
+
+    border: "group-hover:border-pink-500/30",
+
   },
+
   {
-    title: "Order tracking",
-    desc: "Clear delivery milestones",
-    icon: <FaShippingFast size={22} />,
-    glowColor: "#06b6d4",
-    barColor: "from-cyan-500 to-blue-500",
-    iconBg: "bg-cyan-500/15 text-cyan-600 dark:bg-cyan-500/20 dark:text-cyan-400",
-    textHover: "group-hover:text-cyan-600 dark:group-hover:text-cyan-400",
-    badgeGlow: "group-hover:bg-cyan-600 group-hover:text-white",
+
+    title: "Order Tracking",
+
+    desc: "Stay updated with real-time order progress from the warehouse all the way to your doorstep.",
+
+    icon: <FaShippingFast />,
+
+    color: "text-cyan-500",
+
+    bg: "bg-cyan-500/10",
+
+    border: "group-hover:border-cyan-500/30",
+
   },
+
   {
-    title: "Buyer protection",
-    desc: "Security-first shopping",
-    icon: <FaUserShield size={22} />,
-    glowColor: "#10b981",
-    barColor: "from-emerald-500 to-teal-500",
-    iconBg: "bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",
-    textHover: "group-hover:text-emerald-600 dark:group-hover:text-emerald-400",
-    badgeGlow: "group-hover:bg-emerald-600 group-hover:text-white",
+
+    title: "Buyer Protection",
+
+    desc: "Enjoy secure payments, simple returns, and reliable support throughout your shopping journey.",
+
+    icon: <FaUserShield />,
+
+    color: "text-emerald-500",
+
+    bg: "bg-emerald-500/10",
+
+    border: "group-hover:border-emerald-500/30",
+
   },
+
+  {
+
+    title: "Easy Shopping",
+
+    desc: "Experience a fast, simple, and user-friendly marketplace designed to make shopping effortless.",
+
+    icon: <FaShoppingCart />,
+
+    color: "text-purple-500",
+
+    bg: "bg-purple-500/10",
+
+    border: "group-hover:border-purple-500/30",
+
+  },
+
 ];
 
+
+
 export default function TrustFeatures() {
+
   return (
-    <section className="py-8">
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {features.map((item, i) => (
+
+    <section className="py-10">
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+
+        {features.map((item, index) => (
+
           <motion.div
+
             key={item.title}
-            initial={{ opacity: 0, y: 20 }}
+
+            initial={{ opacity: 0, y: 18 }}
+
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+
+            viewport={{ once: true, margin: "-50px" }}
+
             transition={{
-              duration: 0.4,
-              delay: i * 0.1,
+
+              duration: 0.45,
+
+              delay: index * 0.08,
+
+              ease: "easeOut",
+
             }}
+
+            className="h-full"
+
           >
+
             <div
-              className="
-                group relative flex flex-col justify-between
+
+              className={`
+
+                group relative h-full min-h-[205px]
+
                 overflow-hidden rounded-2xl
-                p-6
-                bg-surface/90 dark:bg-surface
+
                 border border-border/50
-                shadow-lg dark:shadow-xl
-                transition-all duration-500
-                hover:-translate-y-2
-                hover:shadow-2xl
-                h-full
-              "
+
+                bg-surface
+
+                p-5
+
+                shadow-sm
+
+                transition-all duration-300
+
+                hover:-translate-y-1
+
+                hover:shadow-xl
+
+                dark:bg-surface/80
+
+                ${item.border}
+
+              `}
+
             >
-              {/* Top Main Glow (Only on Hover) */}
+
+              {/* Subtle background glow */}
+
               <div
-                style={{
-                  background: `radial-gradient(
-                    circle at 50% 0%,
-                    ${item.glowColor}65,
-                    ${item.glowColor}25 35%,
-                    transparent 72%
-                  )`,
-                }}
-                className="
-                  absolute inset-0
-                  rounded-2xl
-                  pointer-events-none
-                  z-[1]
-                  opacity-0
-                  group-hover:opacity-100
-                  transition-all duration-500
-                  group-hover:scale-105
-                "
+
+                className={`
+
+                  pointer-events-none absolute
+
+                  -right-10 -top-10
+
+                  h-24 w-24
+
+                  rounded-full
+
+                  opacity-0 blur-2xl
+
+                  transition-opacity duration-500
+
+                  group-hover:opacity-20
+
+                  ${item.bg}
+
+                `}
+
               />
 
-              {/* Bottom Soft Glow (Only on Hover) */}
-              <div
-                style={{
-                  background: `radial-gradient(
-                    circle at 50% 100%,
-                    ${item.glowColor}45,
-                    transparent 65%
-                  )`,
-                }}
-                className="
-                  absolute inset-0
-                  rounded-2xl
-                  pointer-events-none
-                  z-[1]
-                  opacity-0
-                  group-hover:opacity-70
-                  transition-all duration-500
-                "
-              />
 
-              {/* Content */}
-              <div className="relative z-10">
+
+              <div className="relative z-10 flex h-full flex-col">
+
                 {/* Icon */}
-                <div
+
+                <motion.div
+
+                  whileHover={{ scale: 1.08, rotate: 3 }}
+
                   className={`
-                    mb-4
-                    inline-flex
-                    h-11 w-11
+
+                    mb-4 flex h-10 w-10
+
                     items-center justify-center
+
                     rounded-xl
-                    ${item.iconBg}
-                    ${item.badgeGlow}
+
+                    text-lg
+
+                    ${item.bg}
+
+                    ${item.color}
+
                     transition-all duration-300
-                    group-hover:scale-110
-                    shadow-sm
+
                   `}
+
                 >
+
                   {item.icon}
+
+                </motion.div>
+
+
+
+                {/* Content */}
+
+                <h3
+
+                  className={`
+
+                    text-sm font-bold
+
+                    tracking-wide
+
+                    text-text
+
+                    transition-colors duration-300
+
+                    ${item.color}
+
+                  `}
+
+                >
+
+                  {item.title}
+
+                </h3>
+
+
+
+                <p className="mt-2 text-[11px] font-medium leading-[1.7] text-muted">
+
+                  {item.desc}
+
+                </p>
+
+
+
+                {/* Small bottom indicator */}
+
+                <div className="mt-auto pt-4">
+
+                  <div className="h-px w-8 bg-border transition-all duration-300 group-hover:w-14" />
+
                 </div>
 
-                {/* Title */}
-                <div>
-                  <h3
-                    className={`
-                      font-bold
-                      text-text
-                      tracking-wide
-                      text-base
-                      transition-colors duration-300
-                      ${item.textHover}
-                    `}
-                  >
-                    {item.title}
-                  </h3>
-
-                  {/* Description */}
-                  <p
-                    className="
-                      mt-1
-                      text-xs
-                      text-muted
-                      font-medium
-                    "
-                  >
-                    {item.desc}
-                  </p>
-                </div>
               </div>
 
-              {/* Bottom Dynamic Color Bar */}
-              <div
-                className={`
-                  relative z-10
-                  mt-6
-                  h-1.5
-                  w-full
-                  rounded-full
-                  bg-gradient-to-r
-                  ${item.barColor}
-                  transition-all duration-300
-                  group-hover:h-2
-                  group-hover:brightness-125
-                `}
-              />
             </div>
+
           </motion.div>
+
         ))}
+
       </div>
+
     </section>
+
   );
-}
+
+} 
+
