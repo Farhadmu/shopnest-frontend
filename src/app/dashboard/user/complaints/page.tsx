@@ -13,6 +13,7 @@ import {
   type CreateComplaintInput,
 } from "@/lib/api/complaints";
 import { useSession } from "@/lib/auth-client";
+import { toast } from "@/context/ToastContext";
 import {
   FiPlus,
   FiSearch,
@@ -70,7 +71,6 @@ export default function CustomerComplaintsPage() {
   const [filterStatus, setFilterStatus] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [toast, setToast] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
 
   const [form, setForm] = useState<CreateComplaintInput>({
@@ -108,12 +108,17 @@ export default function CustomerComplaintsPage() {
     setApiError(null);
     try {
       await createCustomerComplaint(form);
-      setToast("Complaint submitted successfully");
+      toast.success("Complaint submitted successfully", {
+        description: "Our support team will review and respond shortly.",
+      });
       setForm({ title: "", description: "", category: "other", orderId: "", productId: "", deliveryId: "", sellerId: "", attachments: [] });
       setView("list");
       loadComplaints();
     } catch (error) {
       setApiError(describeApiError(error));
+      toast.error("Failed to submit complaint", {
+        description: describeApiError(error),
+      });
     } finally {
       setSubmitting(false);
     }
@@ -151,12 +156,6 @@ export default function CustomerComplaintsPage() {
       subtitle="Submit and track your complaints. Real data, unlimited submissions."
       links={userDashboardLinks}
     >
-      {toast && (
-        <div className="mb-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 px-5 py-3 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-          {toast}
-        </div>
-      )}
-
       {view === "list" && (
         <Panel>
           <div className="space-y-4">

@@ -21,6 +21,7 @@ import {
   clearGuestWishlist,
 } from "@/lib/guest-store";
 import { useSession } from "@/lib/auth-client";
+import { toast } from "@/context/ToastContext";
 
 import TrendingCard from "./TrendingCard";
 import TrendingSkeleton from "./TrendingSkeleton";
@@ -35,11 +36,6 @@ export default function TrendingSection({ initialProducts }: {
   const [loading, setLoading] = useState(() => !initialProducts || initialProducts.length === 0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
-
-  const [toast, setToast] = useState<{
-    msg: string;
-    type: "success" | "error";
-  } | null>(null);
 
   const [addedMap, setAddedMap] = useState<
     Record<string, boolean>
@@ -59,53 +55,40 @@ export default function TrendingSection({ initialProducts }: {
       return;
     }
 
-    async function fetchTrendingProducts() {
+    let cancelled = false;
+
+    async function loadTrending() {
       try {
         setLoading(true);
         setErrorMessage(null);
 
-        const response = await getTrendingProducts(8);
+        const data = await getTrendingProducts(8);
 
-        let fetchedData: Product[] = [];
-
-        if (response && typeof response === "object" && Array.isArray(response.products)) {
-          fetchedData = response.products;
+        if (!cancelled) {
+          setProducts(data?.products || []);
         }
-
-        setProducts(fetchedData);
-      } catch (error) {
-        setProducts([]);
-        setErrorMessage(
-          error instanceof Error
-            ? error.message
-            : "We couldn't load trending products."
-        );
+      } catch (err: unknown) {
+        if (!cancelled) {
+          setErrorMessage(
+            err instanceof Error
+              ? err.message
+              : "Unable to load trending products right now."
+          );
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
-    fetchTrendingProducts();
+    loadTrending();
+
+    return () => {
+      cancelled = true;
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [retryKey]);
-
- 
-  // Toast
-
-
-  const showToast = (
-    msg: string,
-    type: "success" | "error" = "success"
-  ) => {
-    setToast({
-      msg,
-      type,
-    });
-
-    setTimeout(() => {
-      setToast(null);
-    }, 3000);
-  };
 
  
   // Add To Cart
@@ -133,7 +116,9 @@ export default function TrendingSection({ initialProducts }: {
         [product.id]: true,
       }));
 
-      showToast(`Added "${product.title}" to cart! 🛒`);
+      toast.cart(`Added "${product.title}" to cart!`, {
+        description: "Item added to your shopping bag",
+      });
 
       setTimeout(() => {
         setAddedMap((prev) => ({ ...prev, [product.id]: false }));
@@ -150,19 +135,18 @@ export default function TrendingSection({ initialProducts }: {
         [product.id]: true,
       }));
 
-      showToast(
-        `Added "${product.title}" to cart! 🛒`
-      );
+      toast.cart(`Added "${product.title}" to cart!`, {
+        description: "Item added to your shopping bag",
+      });
 
       setTimeout(() => {
         setAddedMap((prev) => ({ ...prev, [product.id]: false }));
       }, 2000);
     } catch (err) {
-      showToast(
+      toast.error(
         err instanceof Error
           ? err.message
-          : "Failed to add to cart",
-        "error"
+          : "Failed to add to cart"
       );
     }
   };
@@ -188,7 +172,9 @@ export default function TrendingSection({ initialProducts }: {
         category: product.category,
       });
 
-      showToast(`Saved "${product.title}" to wishlist! ❤️`);
+      toast.wishlist(`Saved "${product.title}" to wishlist!`, {
+        description: "Item saved to your favorites",
+      });
       return;
     }
 
@@ -196,15 +182,14 @@ export default function TrendingSection({ initialProducts }: {
       await addToWishlist(product.id);
       clearGuestWishlist();
 
-      showToast(
-        `Saved "${product.title}" to wishlist! ❤️`
-      );
+      toast.wishlist(`Saved "${product.title}" to wishlist!`, {
+        description: "Item saved to your favorites",
+      });
     } catch (err) {
-      showToast(
+      toast.error(
         err instanceof Error
           ? err.message
-          : "Failed to add to wishlist",
-        "error"
+          : "Failed to add to wishlist"
       );
     }
   };
@@ -222,45 +207,6 @@ export default function TrendingSection({ initialProducts }: {
       <div className="pointer-events-none absolute right-0 top-1/3 h-80 w-80 rounded-full bg-violet-500/10 blur-3xl" />
 
       <div className="pointer-events-none absolute bottom-0 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-fuchsia-500/5 blur-3xl" />
-
-      {/* Toast */}
-
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{
-              opacity: 0,
-              y: 30,
-              scale: 0.9,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-              scale: 1,
-            }}
-            exit={{
-              opacity: 0,
-              y: 20,
-              scale: 0.9,
-            }}
-            className={`fixed bottom-6 right-6 z-50 flex max-w-sm items-center gap-3 rounded-2xl px-5 py-4 text-sm font-bold text-white shadow-2xl backdrop-blur-xl ${
-              toast.type === "error"
-                ? "bg-red-500/95"
-                : "bg-primary/95"
-            }`}
-          >
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/20">
-              {toast.type === "success" ? (
-                <FaCheck size={11} />
-              ) : (
-                "!"
-              )}
-            </span>
-
-            <span>{toast.msg}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/*  Header  */}
 

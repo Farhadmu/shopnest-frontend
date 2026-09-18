@@ -9,6 +9,7 @@ import React, {
   useMemo,
 } from "react";
 import { useSession } from "@/lib/auth-client";
+import { toast } from "@/context/ToastContext";
 import {
   getCart,
   addToCart as apiAddToCart,
@@ -347,6 +348,9 @@ export function CartDrawerProvider({ children }: { children: React.ReactNode }) 
           setAppliedCoupon(null);
           setCouponError(null);
         }
+        toast.info("Item removed from cart", {
+          description: "Your bag subtotal has been updated",
+        });
       } catch (err) {
         setError(getErrorMessage(err));
         await loadCart();
@@ -378,6 +382,9 @@ export function CartDrawerProvider({ children }: { children: React.ReactNode }) 
           setCart(updatedCart);
           notifyCommerceUpdated();
         }
+        toast.wishlist("Moved to wishlist!", {
+          description: item.title,
+        });
       } catch (err) {
         setError(getErrorMessage(err));
       } finally {
@@ -403,20 +410,32 @@ export function CartDrawerProvider({ children }: { children: React.ReactNode }) 
             discount: result.discount,
             freeShipping: isFreeShipping,
           });
+          toast.success(`Coupon "${result.code || cleanCode}" applied!`, {
+            description: "Discount applied to your order subtotal",
+          });
           return true;
         } else {
           // Mock/Graceful fallback for common promo codes if backend validation needs fallback
           if (cleanCode === "WELCOME10" || cleanCode === "SAVE10") {
             const fallbackDiscount = Math.round(subtotal * 0.1);
             setAppliedCoupon({ code: cleanCode, discount: fallbackDiscount });
+            toast.success(`Coupon "${cleanCode}" applied!`, {
+              description: "10% discount applied to your order",
+            });
             return true;
           }
           if (cleanCode === "SHOPNEST20" || cleanCode === "SPECIAL20") {
             const fallbackDiscount = Math.round(subtotal * 0.2);
             setAppliedCoupon({ code: cleanCode, discount: fallbackDiscount });
+            toast.success(`Coupon "${cleanCode}" applied!`, {
+              description: "20% discount applied to your order",
+            });
             return true;
           }
           setCouponError("Invalid promo code or minimum requirement not met.");
+          toast.error("Invalid promo code", {
+            description: "Promo code requirement not met or expired",
+          });
           return false;
         }
       } catch {
@@ -424,14 +443,23 @@ export function CartDrawerProvider({ children }: { children: React.ReactNode }) 
         if (cleanCode === "WELCOME10" || cleanCode === "SAVE10") {
           const fallbackDiscount = Math.round(subtotal * 0.1);
           setAppliedCoupon({ code: cleanCode, discount: fallbackDiscount });
+          toast.success(`Coupon "${cleanCode}" applied!`, {
+            description: "10% discount applied to your order",
+          });
           return true;
         }
         if (cleanCode === "SHOPNEST20" || cleanCode === "SPECIAL20") {
           const fallbackDiscount = Math.round(subtotal * 0.2);
           setAppliedCoupon({ code: cleanCode, discount: fallbackDiscount });
+          toast.success(`Coupon "${cleanCode}" applied!`, {
+            description: "20% discount applied to your order",
+          });
           return true;
         }
         setCouponError("Invalid promo code. Try SAVE10 or WELCOME10.");
+        toast.error("Invalid promo code", {
+          description: "Try code SAVE10 or WELCOME10",
+        });
         return false;
       }
     },
@@ -442,6 +470,9 @@ export function CartDrawerProvider({ children }: { children: React.ReactNode }) 
   const removeCoupon = useCallback(() => {
     setAppliedCoupon(null);
     setCouponError(null);
+    toast.info("Coupon removed", {
+      description: "Standard pricing restored",
+    });
   }, []);
 
   const openCart = useCallback(() => setIsOpen(true), []);

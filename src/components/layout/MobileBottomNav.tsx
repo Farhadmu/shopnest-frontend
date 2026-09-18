@@ -2,27 +2,51 @@
 
 import React, { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
-import { FiHome, FiGrid, FiShoppingCart, FiHeart, FiUser } from "react-icons/fi";
+import { FiHome, FiGrid, FiSearch, FiShoppingCart, FiUser } from "react-icons/fi";
 import { getCart } from "@/lib/api/cart";
 import { getGuestCart } from "@/lib/guest-store";
 import { useSession } from "@/lib/auth-client";
 import { subscribeToCommerceUpdates } from "@/lib/commerce-events";
 import { useCartDrawer } from "@/context/CartDrawerContext";
-import { useWishlist } from "@/context/WishlistContext";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const { openCart, itemCount: drawerItemCount } = useCartDrawer();
-  const { itemCount: wishlistCount } = useWishlist();
   const [cartCount, setCartCount] = useState<number>(0);
+  const [isBumping, setIsBumping] = useState(false);
+  const [isSearchActive, setIsSearchActive] = useState(false);
   const isHydrated = useSyncExternalStore(
     () => () => {},
     () => true,
     () => false,
   );
   const isAuthenticated = isHydrated && Boolean(session?.user);
+
+  useEffect(() => {
+    const handleOpen = () => setIsSearchActive(true);
+    const handleClose = () => setIsSearchActive(false);
+
+    window.addEventListener("search_overlay_opened", handleOpen);
+    window.addEventListener("search_overlay_closed", handleClose);
+
+    return () => {
+      window.removeEventListener("search_overlay_opened", handleOpen);
+      window.removeEventListener("search_overlay_closed", handleClose);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleBump = () => {
+      setIsBumping(true);
+      setTimeout(() => setIsBumping(false), 450);
+    };
+
+    window.addEventListener("cart_icon_bump", handleBump);
+    return () => window.removeEventListener("cart_icon_bump", handleBump);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -62,6 +86,8 @@ export function MobileBottomNav() {
 
   const currentCartCount = drawerItemCount || cartCount;
 
+  const user = session?.user as { image?: string; name?: string } | undefined;
+
   const navItems = [
     {
       label: "Home",
@@ -73,7 +99,14 @@ export function MobileBottomNav() {
       label: "Shop",
       href: "/products",
       icon: FiGrid,
-      isActive: pathname.startsWith("/products"),
+      isActive: pathname.startsWith("/products") && !isSearchActive,
+    },
+    {
+      label: "Search",
+      href: "#search",
+      isSearchButton: true,
+      icon: FiSearch,
+      isActive: isSearchActive,
     },
     {
       label: "Cart",
@@ -84,16 +117,10 @@ export function MobileBottomNav() {
       isActive: pathname === "/cart",
     },
     {
-      label: "Saved",
-      href: "/wishlist",
-      icon: FiHeart,
-      badge: wishlistCount > 0 ? wishlistCount : undefined,
-      isActive: pathname === "/wishlist",
-    },
-    {
-      label: session?.user ? "Account" : "Login",
-      href: session?.user ? "/dashboard" : "/login",
+      label: isAuthenticated ? "Profile" : "Login",
+      href: isAuthenticated ? "/dashboard" : "/login",
       icon: FiUser,
+      avatar: user?.image,
       isActive: pathname.startsWith("/dashboard") || pathname === "/login" || pathname === "/profile",
     },
   ];
@@ -110,11 +137,53 @@ export function MobileBottomNav() {
 
           if (item.isCartButton) {
             return (
-              <button
+              <motion.button
                 key={item.label}
+                id="mobile-bottom-cart-btn"
                 type="button"
                 onClick={openCart}
+                animate={isBumping ? { scale: [1, 1.32, 0.88, 1.15, 0.98, 1] } : { scale: 1 }}
+                transition={{ duration: 0.5, ease: "easeInOut" }}
                 aria-label={`Shopping Cart (${currentCartCount} items)`}
+                className={`relative flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all duration-200 cursor-pointer ${
+                  item.isActive
+                    ? "text-primary font-bold scale-105"
+                    : "text-muted hover:text-foreground font-medium"
+                }`}
+              >
+                {isBumping && (
+                  <span className="pointer-events-none absolute inset-1 rounded-xl border-2 border-primary/60 bg-primary/20 animate-ping opacity-80" />
+                )}
+                <div className="relative">
+                  <Icon className="text-xl" />
+                  {item.badge !== undefined && item.badge > 0 && (
+                    <motion.span
+                      animate={isBumping ? { scale: [1, 1.45, 0.9, 1.12, 1] } : { scale: 1 }}
+                      transition={{ duration: 0.45, ease: "easeInOut" }}
+                      className="absolute -top-1.5 -right-2.5 min-w-[18px] h-[18px] bg-rose-500 text-white text-[10px] font-black rounded-full flex items-center justify-center px-1 shadow-sm ring-1 ring-white dark:ring-slate-900"
+                    >
+                      {item.badge > 99 ? "99+" : item.badge}
+                    </motion.span>
+                  )}
+                </div>
+                <span className="text-[10px] mt-1 tracking-tight">{item.label}</span>
+                {item.isActive && (
+                  <span className="absolute -bottom-0.5 w-5 h-1 bg-primary rounded-full" />
+                )}
+              </motion.button>
+            );
+          }
+
+          if (item.isSearchButton) {
+            return (
+              <button
+                key={item.label}
+                id="mobile-bottom-search-btn"
+                type="button"
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent("open_search_overlay"));
+                }}
+                aria-label="Search ShopNest"
                 className={`relative flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all duration-200 cursor-pointer ${
                   item.isActive
                     ? "text-primary font-bold scale-105"
@@ -123,11 +192,6 @@ export function MobileBottomNav() {
               >
                 <div className="relative">
                   <Icon className="text-xl" />
-                  {item.badge !== undefined && item.badge > 0 && (
-                    <span className="absolute -top-1.5 -right-2.5 min-w-[18px] h-[18px] bg-[#7C3AED] text-white text-[10px] font-black rounded-full flex items-center justify-center px-1 shadow-sm">
-                      {item.badge > 99 ? "99+" : item.badge}
-                    </span>
-                  )}
                 </div>
                 <span className="text-[10px] mt-1 tracking-tight">{item.label}</span>
                 {item.isActive && (
@@ -148,7 +212,17 @@ export function MobileBottomNav() {
               }`}
             >
               <div className="relative">
-                <Icon className="text-xl" />
+                {item.avatar ? (
+                  <img
+                    src={item.avatar}
+                    alt={item.label}
+                    className={`h-5 w-5 rounded-full object-cover ring-1.5 transition-all ${
+                      item.isActive ? "ring-primary" : "ring-muted/50"
+                    }`}
+                  />
+                ) : (
+                  <Icon className="text-xl" />
+                )}
                 {item.badge !== undefined && item.badge > 0 && (
                   <span className="absolute -top-1.5 -right-2.5 min-w-[18px] h-[18px] bg-primary text-white text-[10px] font-black rounded-full flex items-center justify-center px-1 shadow-sm animate-pulse">
                     {item.badge > 99 ? "99+" : item.badge}

@@ -252,14 +252,14 @@ export function NavbarAuthButtons({ onClose }: NavbarAuthButtonsProps) {
       <Link
         href="/login"
         onClick={onClose}
-        className="hidden shrink-0 rounded-xl px-3 py-2 text-sm font-semibold text-white/90 transition hover:text-white hover:bg-white/15 lg:inline"
+        className="hidden shrink-0 items-center rounded-xl px-3 py-2 text-sm font-semibold text-white/90 whitespace-nowrap transition hover:text-white hover:bg-white/15 lg:inline-flex"
       >
         Log in
       </Link>
-      <Link href="/register">
+      <Link href="/register" className="shrink-0">
         <Button
           size="sm"
-          className="hidden shrink-0 rounded-xl border border-white/30 bg-white/20 px-3 sm:px-4 text-sm font-bold text-white backdrop-blur-sm hover:bg-white/30 transition shadow-none md:flex"
+          className="shrink-0 rounded-xl border border-white/30 bg-white/20 px-3 sm:px-4 text-sm font-bold text-white backdrop-blur-sm hover:bg-white/30 transition shadow-none whitespace-nowrap flex items-center"
           onClick={onClose}
         >
           Get started

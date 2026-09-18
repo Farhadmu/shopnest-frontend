@@ -19,6 +19,7 @@ import {
 import { addProductReview, type Review } from "@/lib/api/reviews";
 import { uploadImageToImgBB } from "@/lib/utils/imgbb";
 import { useSession } from "@/lib/auth-client";
+import { toast } from "@/context/ToastContext";
 
 export interface ProductReviewsSectionProps {
   productId: string;
@@ -164,18 +165,19 @@ export function ProductReviewsSection({ productId, initialReviews }: ProductRevi
       setHoverRating(null);
       setUploadedImages([]);
       setUploadError(null);
-      setFormSuccess("Thank you! Your review has been submitted successfully.");
       setIsModalOpen(false);
-
-      setTimeout(() => {
-        setFormSuccess(null);
-      }, 5000);
+      toast.success("Review submitted successfully!", {
+        description: "Thank you for sharing your feedback with the community!",
+      });
     } catch (err: unknown) {
       const msg =
         err instanceof Error
           ? err.message
           : "Failed to submit your review. Please make sure you are logged in and try again.";
       setFormError(msg);
+      toast.error("Failed to submit review", {
+        description: msg,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -183,14 +185,6 @@ export function ProductReviewsSection({ productId, initialReviews }: ProductRevi
 
   return (
     <section className="flex flex-col gap-6">
-      {/* Toast / Global Success alert */}
-      {formSuccess && (
-        <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-xs font-bold text-emerald-600 dark:text-emerald-400 shadow-sm animate-fade-in">
-          <FiCheckCircle size={16} className="shrink-0" />
-          <span>{formSuccess}</span>
-        </div>
-      )}
-
       {/* Summary Header & Ratings Card */}
       <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
         <div className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">

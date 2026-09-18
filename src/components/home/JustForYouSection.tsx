@@ -18,6 +18,7 @@ import {
   clearGuestWishlist,
 } from "@/lib/guest-store";
 import { useSession } from "@/lib/auth-client";
+import { toast } from "@/context/ToastContext";
 
 import { ProductCard } from "@/components/products/ProductCard";
 import ProductSkeleton from "@/components/home/ProductSkeleton";
@@ -30,11 +31,6 @@ export default function JustForYouSection({ initialProducts }: {
   const [loading, setLoading] = useState(() => !initialProducts || initialProducts.length === 0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
-
-  const [toast, setToast] = useState<{
-    msg: string;
-    type: "success" | "error";
-  } | null>(null);
 
   const [addedMap, setAddedMap] = useState<Record<string, boolean>>({});
 
@@ -90,11 +86,6 @@ export default function JustForYouSection({ initialProducts }: {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [retryKey]);
 
-  const showToast = (msg: string, type: "success" | "error" = "success") => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  };
-
   const handleAddToCart = async (product: UnifiedProduct, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -110,7 +101,9 @@ export default function JustForYouSection({ initialProducts }: {
         category: prod.category,
       });
       setAddedMap((prev) => ({ ...prev, [prod.id]: true }));
-      showToast(`Added "${prod.title}" to cart!`);
+      toast.cart(`Added "${prod.title}" to cart!`, {
+        description: "Item added to your shopping bag",
+      });
       setTimeout(() => setAddedMap((prev) => ({ ...prev, [prod.id]: false })), 2000);
       return;
     }
@@ -119,10 +112,14 @@ export default function JustForYouSection({ initialProducts }: {
       await addToCart(prod.id, 1);
       clearGuestCart();
       setAddedMap((prev) => ({ ...prev, [prod.id]: true }));
-      showToast(`Added "${prod.title}" to cart!`);
+      toast.cart(`Added "${prod.title}" to cart!`, {
+        description: "Item added to your shopping bag",
+      });
       setTimeout(() => setAddedMap((prev) => ({ ...prev, [prod.id]: false })), 2000);
     } catch {
-      showToast("Failed to add to cart", "error");
+      toast.error("Failed to add to cart", {
+        description: "Please check your network and try again",
+      });
     }
   };
 
@@ -140,16 +137,22 @@ export default function JustForYouSection({ initialProducts }: {
         images: prod.images,
         category: prod.category,
       });
-      showToast(`Saved "${prod.title}" to wishlist!`);
+      toast.wishlist(`Saved "${prod.title}" to wishlist!`, {
+        description: "Item saved to your favorites",
+      });
       return;
     }
 
     try {
       await addToWishlist(prod.id);
       clearGuestWishlist();
-      showToast(`Saved "${prod.title}" to wishlist!`);
+      toast.wishlist(`Saved "${prod.title}" to wishlist!`, {
+        description: "Item saved to your favorites",
+      });
     } catch {
-      showToast("Failed to add to wishlist", "error");
+      toast.error("Failed to add to wishlist", {
+        description: "Could not update your wishlist right now",
+      });
     }
   };
 
@@ -157,24 +160,6 @@ export default function JustForYouSection({ initialProducts }: {
     <section className="relative w-full overflow-hidden py-12 sm:py-16">
       <div className="pointer-events-none absolute right-0 top-10 h-72 w-72 rounded-full bg-violet-500/10 blur-3xl" />
       <div className="pointer-events-none absolute bottom-0 left-10 h-64 w-64 rounded-full bg-fuchsia-500/5 blur-3xl" />
-
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: 30, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className={`fixed bottom-6 right-6 z-50 flex max-w-sm items-center gap-3 rounded-2xl px-5 py-4 text-sm font-bold text-white shadow-2xl backdrop-blur-xl ${
-              toast.type === "error" ? "bg-red-500/95" : "bg-primary/95"
-            }`}
-          >
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/20">
-              {toast.type === "success" ? <FaCheck size={11} /> : "!"}
-            </span>
-            <span>{toast.msg}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <div className="relative z-10 mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         <div>

@@ -19,6 +19,8 @@ import {
 } from "@/lib/guest-store";
 import { useSession } from "@/lib/auth-client";
 
+import { toast } from "@/context/ToastContext";
+
 const MAX_FEATURED_PRODUCTS = 8;
 
 interface FeaturedProductsSectionProps {
@@ -38,11 +40,6 @@ export default function FeaturedProductsSection({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
 
-  const [toast, setToast] = useState<{
-    msg: string;
-    type: "success" | "error";
-  } | null>(null);
-
   const [addedMap, setAddedMap] = useState<Record<string, boolean>>({});
 
   const { data: session } = useSession();
@@ -52,18 +49,27 @@ export default function FeaturedProductsSection({
     let cancelled = false;
 
     async function loadFeatured() {
+      if (initialProducts && initialProducts.length > 0 && retryKey === 0) {
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         setErrorMessage(null);
+
         const data = await getFeaturedProducts(MAX_FEATURED_PRODUCTS);
+
         if (!cancelled) {
-          setProducts(data.slice(0, MAX_FEATURED_PRODUCTS));
+          const featuredOnly = data.filter((p) => p.isFeatured).slice(0, MAX_FEATURED_PRODUCTS);
+          setProducts(featuredOnly);
         }
-      } catch (error) {
+      } catch (err: unknown) {
         if (!cancelled) {
-          setProducts([]);
           setErrorMessage(
-            error instanceof Error ? error.message : "Failed to load featured products."
+            err instanceof Error
+              ? err.message
+              : "Unable to load featured products right now. Please check your connection."
           );
         }
       } finally {
@@ -80,11 +86,6 @@ export default function FeaturedProductsSection({
     };
   }, [retryKey]);
 
-  const showToast = (msg: string, type: "success" | "error" = "success") => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  };
-
   const handleAddToCart = async (product: UnifiedProduct, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -100,7 +101,9 @@ export default function FeaturedProductsSection({
         category: prod.category,
       });
       setAddedMap((prev) => ({ ...prev, [prod.id]: true }));
-      showToast(`Added "${prod.title}" to cart! 🛒`);
+      toast.cart(`Added "${prod.title}" to cart!`, {
+        description: "Item added to your shopping bag",
+      });
       setTimeout(() => setAddedMap((prev) => ({ ...prev, [prod.id]: false })), 2000);
       return;
     }
@@ -109,10 +112,14 @@ export default function FeaturedProductsSection({
       await addToCart(prod.id, 1);
       clearGuestCart();
       setAddedMap((prev) => ({ ...prev, [prod.id]: true }));
-      showToast(`Added "${prod.title}" to cart! 🛒`);
+      toast.cart(`Added "${prod.title}" to cart!`, {
+        description: "Item added to your shopping bag",
+      });
       setTimeout(() => setAddedMap((prev) => ({ ...prev, [prod.id]: false })), 2000);
     } catch {
-      showToast("Failed to add to cart", "error");
+      toast.error("Failed to add to cart", {
+        description: "Please check your network and try again",
+      });
     }
   };
 
@@ -130,16 +137,22 @@ export default function FeaturedProductsSection({
         images: prod.images,
         category: prod.category,
       });
-      showToast(`Saved "${prod.title}" to wishlist! ❤️`);
+      toast.wishlist(`Saved "${prod.title}" to wishlist!`, {
+        description: "Item saved to your favorites",
+      });
       return;
     }
 
     try {
       await addToWishlist(prod.id);
       clearGuestWishlist();
-      showToast(`Saved "${prod.title}" to wishlist! ❤️`);
+      toast.wishlist(`Saved "${prod.title}" to wishlist!`, {
+        description: "Item saved to your favorites",
+      });
     } catch {
-      showToast("Failed to add to wishlist", "error");
+      toast.error("Failed to add to wishlist", {
+        description: "Could not update your wishlist right now",
+      });
     }
   };
 
@@ -157,25 +170,6 @@ export default function FeaturedProductsSection({
       {/* Background Ambient Glows */}
       <div className="pointer-events-none absolute left-0 top-10 h-72 w-72 rounded-full bg-amber-500/10 blur-3xl" />
       <div className="pointer-events-none absolute right-0 top-1/2 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
-
-      {/* Toast Notification */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: 30, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className={`fixed bottom-6 right-6 z-50 flex max-w-sm items-center gap-3 rounded-2xl px-5 py-4 text-sm font-bold text-white shadow-2xl backdrop-blur-xl ${
-              toast.type === "error" ? "bg-red-500/95" : "bg-primary/95"
-            }`}
-          >
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/20">
-              {toast.type === "success" ? <FaCheck size={11} /> : "!"}
-            </span>
-            <span>{toast.msg}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Section Header */}
       <div className="relative z-10 mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">

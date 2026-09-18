@@ -8,6 +8,7 @@ import { followStore, getStoreFollowStatus, sendSellerMessage, unfollowStore } f
 import { getStoreCoupons } from "@/lib/api/coupons";
 import type { Coupon } from "@/types/coupon";
 import type { StoreData } from "@/types/store";
+import { toast } from "@/context/ToastContext";
 import StoreBanner from "./StoreBanner";
 import StoreProfileHeader from "./StoreProfileHeader";
 import StoreTabs from "./StoreTabs";
@@ -65,10 +66,18 @@ export default function StoreDetailsClient({ store }: { store: StoreData }) {
     }
     const next = !followed;
     setFollowed(next);
+    if (next) {
+      toast.wishlist(`Now following ${store.name}!`, {
+        description: "You will receive updates on new products and offers",
+      });
+    } else {
+      toast.info(`Unfollowed ${store.name}`);
+    }
     try {
       await (next ? followStore(store.id) : unfollowStore(store.id));
     } catch {
       setFollowed(!next);
+      toast.error("Could not update follow status");
     }
   };
 
@@ -87,8 +96,10 @@ export default function StoreDetailsClient({ store }: { store: StoreData }) {
       await sendSellerMessage({ receiverId: store.ownerId, subject: `Message about ${store.name}`, message: message.trim() || `Hello ${store.name}, I would like to know more about your store.` });
       setMessageStatus("Message sent successfully");
       setMessage("");
+      toast.success("Message sent to seller!");
     } catch (error) {
       setMessageStatus(error instanceof Error ? error.message : "Unable to send message");
+      toast.error("Unable to send message");
     } finally {
       setIsSendingMessage(false);
     }
@@ -105,6 +116,9 @@ export default function StoreDetailsClient({ store }: { store: StoreData }) {
     if (!voucher.code) return;
     await navigator.clipboard.writeText(voucher.code);
     setCopied(true);
+    toast.success(`Voucher "${voucher.code}" copied!`, {
+      description: "Paste it at checkout to claim your discount",
+    });
     setTimeout(() => setCopied(false), 1800);
   };
 

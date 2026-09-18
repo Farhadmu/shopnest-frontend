@@ -16,6 +16,7 @@ import {
 } from "react-icons/fi";
 import { getHomepageCoupons } from "@/lib/api/coupons";
 import type { Coupon, CouponDiscountType } from "@/types/coupon";
+import { toast } from "@/context/ToastContext";
 
 interface CouponTheme {
   cardBorder: string;
@@ -199,6 +200,9 @@ export default function CouponSection() {
     if (coupon.homepageStatus !== "running") return;
     navigator.clipboard.writeText(coupon.code);
     setCopiedCode(coupon.code);
+    toast.success(`Coupon "${coupon.code}" copied!`, {
+      description: "Paste it at checkout to claim your discount",
+    });
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
