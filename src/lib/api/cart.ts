@@ -11,6 +11,9 @@ export interface CartItem {
   category?: string;
   sellerId?: string;
   storeId?: string;
+  variantName?: string;
+  variantSku?: string;
+  variantColor?: string;
 }
 
 export interface Cart {
@@ -24,7 +27,8 @@ export async function getCart() {
 
 export async function addToCart(
   productId: string,
-  quantity: number = 1
+  quantity: number = 1,
+  variantName?: string
 ) {
   const res = await clientMutation<Cart>(
     "/cart/items",
@@ -32,6 +36,7 @@ export async function addToCart(
     {
       productId,
       quantity,
+      ...(variantName ? { variantName } : {}),
     }
   );
   notifyCommerceUpdated();
@@ -40,10 +45,12 @@ export async function addToCart(
 
 export async function updateCartItem(
   productId: string,
-  quantity: number
+  quantity: number,
+  variantName?: string
 ) {
+  const query = variantName ? `?variantName=${encodeURIComponent(variantName)}` : "";
   const res = await clientMutation<Cart>(
-    `/cart/items/${productId}`,
+    `/cart/items/${productId}${query}`,
     "PATCH",
     {
       quantity,
@@ -53,11 +60,13 @@ export async function updateCartItem(
   return res;
 }
 
-export async function removeCartItem(productId: string) {
+export async function removeCartItem(productId: string, variantName?: string) {
+  const query = variantName ? `?variantName=${encodeURIComponent(variantName)}` : "";
   const res = await clientMutation<Cart>(
-    `/cart/items/${productId}`,
+    `/cart/items/${productId}${query}`,
     "DELETE"
   );
   notifyCommerceUpdated();
   return res;
-}
+}
+

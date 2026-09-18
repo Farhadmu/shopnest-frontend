@@ -46,8 +46,9 @@ export function VariantMatrixSection({
             <thead className="border-b border-border bg-muted-bg/50 text-[11px] font-black uppercase tracking-wider text-muted">
               <tr>
                 <th className="px-4 py-3">Variant</th>
+                <th className="px-4 py-3">SKU</th>
                 <th className="px-4 py-3">Stock</th>
-                <th className="px-4 py-3">Price Delta (৳)</th>
+                <th className="px-4 py-3">Price (৳)</th>
                 <th className="px-4 py-3 text-right">Action</th>
               </tr>
             </thead>
@@ -73,18 +74,28 @@ export function VariantMatrixSection({
                   </td>
                   <td className="px-4 py-2.5">
                     <Input
-                      type="number"
-                      min="0"
-                      value={v.stock}
-                      onChange={(e) => onUpdate(v.id, { stock: e.target.value })}
-                      className="w-24"
+                      value={v.sku || ""}
+                      onChange={(e) => onUpdate(v.id, { sku: e.target.value })}
+                      placeholder="Auto / BLK-64G"
+                      className="w-32"
                     />
                   </td>
                   <td className="px-4 py-2.5">
                     <Input
                       type="number"
-                      value={v.priceDelta}
-                      onChange={(e) => onUpdate(v.id, { priceDelta: e.target.value })}
+                      min="0"
+                      value={v.stock}
+                      onChange={(e) => onUpdate(v.id, { stock: e.target.value })}
+                      className="w-20"
+                    />
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={v.price}
+                      onChange={(e) => onUpdate(v.id, { price: e.target.value })}
+                      placeholder="Variant price"
                       className="w-28"
                     />
                   </td>

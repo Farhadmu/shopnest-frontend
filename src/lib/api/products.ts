@@ -163,3 +163,22 @@ export async function getFeaturedProducts(limit = 8): Promise<Product[]> {
   }
   return [];
 }
+
+export interface RecommendedProductsResponse {
+  products: Product[];
+  source: "same_category" | "parent_category" | "fallback" | "none";
+  category?: string;
+  parentCategory?: string;
+}
+
+export async function getRecommendedProducts(
+  id: string,
+  limit = 8
+): Promise<RecommendedProductsResponse> {
+  if (!id || id === "undefined" || id === "null" || id.trim() === "") {
+    return { products: [], source: "none" };
+  }
+  return clientFetch<RecommendedProductsResponse>(`/products/${id}/recommendations`, {
+    params: { limit },
+  });
+}

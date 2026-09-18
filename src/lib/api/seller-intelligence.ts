@@ -520,7 +520,7 @@ export interface ProductGeneratedContent {
   shortDescription: string;
   features: string[];
   specifications: Record<string, string>;
-  variants: Array<{ name: string; color?: string; priceDelta?: number }>;
+  variants: Array<{ name: string; color?: string; price?: number }>;
   highlights: string[];
   whyBuy: string;
   currentPriceRange: { min: number | null; max: number | null; currency: string; source: string };
@@ -618,7 +618,7 @@ export interface ProductFinderContent {
   shortDescription: string;
   features: string[];
   specifications: Record<string, string>;
-  variants: Array<{ name: string; color?: string; priceDelta?: number }>;
+  variants: Array<{ name: string; color?: string; price?: number }>;
   highlights: string[];
   whyBuy: string;
   seoTitle: string;
