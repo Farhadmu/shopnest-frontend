@@ -34,7 +34,7 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; border: string; 
   pickup_started: { bg: "bg-indigo-500/10", text: "text-indigo-600", border: "border-indigo-500/20", label: "Pickup Started" },
   picked_up: { bg: "bg-teal-500/10", text: "text-teal-600", border: "border-teal-500/20", label: "Picked Up" },
   in_transit: { bg: "bg-orange-500/10", text: "text-orange-600", border: "border-orange-500/20", label: "In Transit" },
-  seller_received: { bg: "bg-pink-500/10", text: "text-pink-600", border: "border-pink-500/20", label: "Delivered" },
+  seller_received: { bg: "bg-pink-500/10", text: "text-pink-600", border: "border-pink-500/20", label: "Delivered to Seller" },
   failed: { bg: "bg-red-500/10", text: "text-red-600", border: "border-red-500/20", label: "Failed" },
   cancelled: { bg: "bg-gray-500/10", text: "text-gray-600", border: "border-gray-500/20", label: "Cancelled" },
 };
@@ -71,9 +71,9 @@ export default function DeliveryReturnsPage() {
     setActioningId(id);
     setNotification(null);
     try {
-      const res = await acceptReverseDelivery(id);
+      await acceptReverseDelivery(id);
       setNotification({ type: "success", message: "Reverse delivery accepted! Check My Deliveries." });
-      setItems((prev) => prev.filter((i) => i.id !== id));
+      await loadItems();
     } catch (err: any) {
       const isConflict = err?.status === 409 || err?.message?.includes("already been accepted");
       setNotification({
@@ -192,7 +192,7 @@ export default function DeliveryReturnsPage() {
                         <FiCheckCircle /> Accept
                       </button>
                     )}
-                    {tab === "my" && item.status === "assigned" && (
+                    {tab === "my" && ["assigned", "accepted", "pickup_started", "picked_up", "in_transit", "seller_received"].includes(item.status) && (
                       <Link
                         href={`/dashboard/delivery/returns/${item.id}`}
                         className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-xl text-xs font-black hover:bg-primary-hover transition"

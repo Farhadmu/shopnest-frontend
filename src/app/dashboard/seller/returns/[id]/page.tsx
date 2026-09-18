@@ -113,7 +113,7 @@ export default function SellerReturnDetailsPage() {
   const canApprove = ret.status === "requested" || ret.status === "under_review";
   const canReject = ret.status === "requested" || ret.status === "under_review";
   const canInspect = ret.status === "seller_received" || ret.status === "inspection_pending";
-  const canReceive = ret.status === "in_transit";
+  const canReceive = ret.status === "picked_up" || ret.status === "in_transit";
 
   return (
     <DashboardShell

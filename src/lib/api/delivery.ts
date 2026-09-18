@@ -531,17 +531,17 @@ export interface ReverseDeliveryRequest {
 }
 
 export async function getAvailableReverseDeliveries() {
-  return clientFetch<ReverseDeliveryRequest[]>("/delivery/reverse/available");
+  return clientFetch<ReverseDeliveryRequest[]>("/customer/features/reverse-delivery/available");
 }
 
 export async function getMyReverseDeliveries() {
-  return clientFetch<ReverseDeliveryRequest[]>("/delivery/reverse/my");
+  return clientFetch<ReverseDeliveryRequest[]>("/customer/features/reverse-delivery/my");
 }
 
 export async function acceptReverseDelivery(id: string) {
   return clientMutation<{ reverseDelivery: ReverseDeliveryRequest }>(
-    `/delivery/reverse/${id}/accept`,
-    "PATCH",
+    `/customer/features/reverse-delivery/${id}/accept`,
+    "POST",
     {}
   );
 }
@@ -552,7 +552,7 @@ export async function updateReverseDeliveryStatus(
   failureReason?: string
 ) {
   return clientMutation<{ reverseDelivery: ReverseDeliveryRequest }>(
-    `/delivery/reverse/${id}/status`,
+    `/customer/features/reverse-delivery/${id}/status`,
     "PATCH",
     { status, failureReason }
   );
