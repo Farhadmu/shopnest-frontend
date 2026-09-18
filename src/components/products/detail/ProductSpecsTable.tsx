@@ -22,14 +22,14 @@ export function ProductSpecsTable({ product }: ProductSpecsTableProps) {
       : DUMMY_SPECS;
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-6 shadow-sm">
-      <div className="flex items-center gap-2 border-b border-border pb-3">
+    <div className="flex h-auto w-full flex-col gap-3 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+      <div className="flex items-center gap-2 border-b border-border pb-2.5">
         <FiSliders className="text-primary" size={20} />
         <h3 className="text-lg font-black text-text">Technical Specs</h3>
       </div>
       <div className="flex flex-col divide-y divide-border text-sm">
         {Object.entries(specs).map(([key, value]) => (
-          <div key={key} className="flex items-center justify-between py-2.5">
+          <div key={key} className="flex items-center justify-between py-2">
             <span className="text-muted">{key}</span>
             <span className="font-bold text-text">{value}</span>
           </div>
