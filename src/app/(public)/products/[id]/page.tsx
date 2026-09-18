@@ -66,16 +66,24 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
       <ProductFeaturesBent product={product} />
 
-      {/* Balanced 2-Column Grid for Details & Specs */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:items-start">
-        <div className="space-y-8 lg:col-span-2">
+      {/* Details & Specs (balanced 2-column grid when specs or variants exist, full-width otherwise) */}
+      {(product.specifications && Object.keys(product.specifications).length > 0) ||
+      (product.variants && product.variants.length > 0) ? (
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:items-start">
+          <div className="space-y-8 lg:col-span-2">
+            <ProductOverviewSection product={product} />
+            <ProductPackageContents product={product} />
+          </div>
+          <div className="lg:col-span-1">
+            <ProductSpecsTable product={product} />
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-8">
           <ProductOverviewSection product={product} />
           <ProductPackageContents product={product} />
         </div>
-        <div className="lg:col-span-1">
-          <ProductSpecsTable product={product} />
-        </div>
-      </div>
+      )}
 
       {/* Customer Reviews Section */}
       <ProductReviewsSection
