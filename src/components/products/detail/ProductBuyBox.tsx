@@ -3,16 +3,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@heroui/react";
-import { FiStar, FiCheckCircle, FiTruck, FiShoppingBag, FiZap, FiHeart, FiMinus, FiPlus } from "react-icons/fi";
 import type { Product } from "@/lib/api/products";
 import { formatCurrency } from "@/lib/utils";
 import { addToCart } from "@/lib/api/cart";
 import { useWishlist } from "@/context/WishlistContext";
 import { useFlyToCart } from "@/context/FlyToCartContext";
+import { toast } from "@/context/ToastContext";
 import { useSession } from "@/lib/auth-client";
 import { recordShoppingEvent, getPurchaseDecisionScore, type PurchaseDecisionScoreData } from "@/lib/api/customer-intelligence";
 import { addGuestCartItem, clearGuestCart } from "@/lib/guest-store";
-
+import { FiStar, FiCheckCircle, FiTruck, FiShoppingBag, FiZap, FiHeart, FiMinus, FiPlus, FiExternalLink } from "react-icons/fi";
 import { extractVariants, SpecVariant } from "./ProductSpecsTable";
 
 export interface ProductBuyBoxProps {
@@ -35,7 +35,6 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
 
   const [quantity, setQuantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [aiScore, setAiScore] = useState<PurchaseDecisionScoreData | null>(null);
   const viewRecordedRef = useRef(false);
@@ -79,11 +78,6 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
     : 0;
 
   const imageSrc = product.images?.[0];
-
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2800);
-  };
 
   useEffect(() => {
     if (!session?.user || viewRecordedRef.current) return;
@@ -132,7 +126,9 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
         category: product.category,
       });
       setIsAdded(true);
-      showToast(`Added ${quantity} × "${itemTitle}" to cart!`);
+      toast.cart(`Added ${quantity} × "${itemTitle}" to cart!`, {
+        description: "Items added to your shopping bag",
+      });
       setTimeout(() => setIsAdded(false), 2000);
       return;
     }
@@ -140,7 +136,9 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
       await addToCart(product.id, quantity, selectedVariant?.name ?? undefined);
       clearGuestCart();
       setIsAdded(true);
-      showToast(`Added ${quantity} × "${itemTitle}" to cart!`);
+      toast.cart(`Added ${quantity} × "${itemTitle}" to cart!`, {
+        description: "Items added to your shopping bag",
+      });
       setTimeout(() => setIsAdded(false), 2000);
       recordShoppingEvent({
         eventType: "cart_add",
@@ -150,7 +148,7 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
         price: displayPrice,
       }).catch(() => {});
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Failed to add to cart");
+      toast.error(err instanceof Error ? err.message : "Failed to add to cart");
     }
   };
 
@@ -189,7 +187,11 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
         images: product.images,
         category: product.category,
       });
-      showToast(added ? "Saved to wishlist!" : "Removed from wishlist!");
+      if (added) {
+        toast.wishlist("Saved to wishlist!", { description: product.title });
+      } else {
+        toast.info("Removed from wishlist", { description: product.title });
+      }
       if (added && session?.user) {
         recordShoppingEvent({
           eventType: "wishlist_add",
@@ -200,17 +202,12 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
         }).catch(() => {});
       }
     } catch {
-      showToast("Could not update wishlist");
+      toast.error("Could not update wishlist");
     }
   };
 
   return (
     <div className="flex flex-col gap-4">
-      {toast && (
-        <div className="fixed bottom-6 right-6 z-50 rounded-xl bg-text px-4 py-3 text-xs font-bold text-background shadow-2xl">
-          {toast}
-        </div>
-      )}
 
       {/* Title + rating */}
       <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
