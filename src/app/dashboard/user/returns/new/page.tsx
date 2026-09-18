@@ -32,7 +32,7 @@ export default function CustomerReturnFormPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const orderId = typeof params?.id === "string" ? params.id : Array.isArray(params?.id) ? params.id[0] : "";
+  const orderId = searchParams.get("orderId") || "";
   const productId = searchParams.get("productId") || "";
 
   const [eligibility, setEligibility] = useState<ReturnEligibility | null>(null);
