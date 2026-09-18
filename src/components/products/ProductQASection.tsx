@@ -3,13 +3,13 @@
 import React, { useState, useEffect } from "react";
 import { FiHelpCircle, FiMessageSquare, FiSend, FiCheckCircle, FiCpu, FiUser } from "react-icons/fi";
 import { getProductQuestions, askProductQuestion, ProductQuestionItem } from "@/lib/api/customer-intelligence-features";
+import { toast } from "@/context/ToastContext";
 
 export function ProductQASection({ productId }: { productId: string }) {
   const [questions, setQuestions] = useState<ProductQuestionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [newQuestion, setNewQuestion] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const loadQuestions = () => {
     setLoading(true);
@@ -30,11 +30,14 @@ export function ProductQASection({ productId }: { productId: string }) {
     try {
       await askProductQuestion(productId, newQuestion.trim());
       setNewQuestion("");
-      setToastMsg("Your question was submitted! Verified sellers and buyers will answer shortly.");
+      toast.success("Question submitted!", {
+        description: "Verified sellers and buyers will answer shortly.",
+      });
       loadQuestions();
-      setTimeout(() => setToastMsg(null), 3500);
-    } catch (err: any) {
-      alert(err?.message || "Failed to post question");
+    } catch (err: unknown) {
+      toast.error("Failed to post question", {
+        description: err instanceof Error ? err.message : "Please try again later",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -72,12 +75,6 @@ export function ProductQASection({ productId }: { productId: string }) {
           <FiSend /> {isSubmitting ? "Posting..." : "Ask"}
         </button>
       </form>
-
-      {toastMsg && (
-        <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-xs font-medium">
-          {toastMsg}
-        </div>
-      )}
 
       {/* Question List */}
       {loading ? (
