@@ -7,13 +7,7 @@ export interface ProductOverviewSectionProps {
 }
 
 export function ProductOverviewSection({ product }: ProductOverviewSectionProps) {
-  // TODO(backend): fall back to generic bullet copy when a product has no
-  // tags — a dedicated `product.bulletPoints` field would remove the need
-  // for this placeholder entirely.
-  const bullets =
-    product.tags && product.tags.length > 0
-      ? product.tags.slice(0, 4)
-      : ["Quality checked before dispatch", "Genuine manufacturer packaging", "Fast, trackable delivery", "Backed by buyer protection"];
+  const hasTags = Boolean(product.tags && product.tags.length > 0);
 
   return (
     <div className="flex flex-col gap-3.5 rounded-2xl border border-border bg-surface p-5 shadow-sm">
@@ -26,14 +20,16 @@ export function ProductOverviewSection({ product }: ProductOverviewSectionProps)
         {product.description || "No description has been provided for this product yet."}
       </p>
 
-      <div className="grid grid-cols-1 gap-2.5 pt-1 sm:grid-cols-2">
-        {bullets.map((bullet) => (
-          <div key={bullet} className="flex items-start gap-2.5 rounded-xl bg-muted-bg p-3">
-            <FiTag size={16} className="mt-0.5 shrink-0 text-primary" />
-            <span className="text-sm font-semibold text-text">{bullet}</span>
-          </div>
-        ))}
-      </div>
+      {hasTags && product.tags && product.tags.length > 0 && (
+        <div className="grid grid-cols-1 gap-2.5 pt-1 sm:grid-cols-2">
+          {product.tags.slice(0, 4).map((tag) => (
+            <div key={tag} className="flex items-start gap-2.5 rounded-xl bg-muted-bg p-3">
+              <FiTag size={16} className="mt-0.5 shrink-0 text-primary" />
+              <span className="text-sm font-semibold text-text">{tag}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
