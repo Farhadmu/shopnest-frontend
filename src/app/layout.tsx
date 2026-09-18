@@ -6,7 +6,6 @@ import "./globals.css";
 import { APP_NAME } from "@/lib/constants";
 import { AppHeroUIProvider } from "@/providers/HeroUIProvider";
 import { ConfirmDialogProvider } from "@/context/ConfirmDialogContext";
-import { AppQueryClientProvider } from "@/providers/QueryClientProvider";
 import { AppShell } from "@/components/layout/AppShell";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 
@@ -34,13 +33,11 @@ export default function RootLayout({
           storageKey="shopnest-theme"
         >
           <div className="flex min-h-screen w-full flex-col overflow-x-clip">
-            <AppQueryClientProvider>
-              <AppHeroUIProvider>
-                <ConfirmDialogProvider>
-                  <AppShell>{children}</AppShell>
-                </ConfirmDialogProvider>
-              </AppHeroUIProvider>
-            </AppQueryClientProvider>
+            <AppHeroUIProvider>
+              <ConfirmDialogProvider>
+                <AppShell>{children}</AppShell>
+              </ConfirmDialogProvider>
+            </AppHeroUIProvider>
           </div>
         </ThemeProvider>
       </body>
