@@ -20,7 +20,15 @@ import { useSession } from "@/lib/auth-client";
 const POLL_INTERVAL_MS = 30000;
 const LOAD_ERROR_MESSAGE = "Unable to load notifications.";
 
-export const NotificationBell: React.FC = () => {
+export interface NotificationBellProps {
+  variant?: "navbar" | "dashboard";
+  className?: string;
+}
+
+export const NotificationBell: React.FC<NotificationBellProps> = ({
+  variant = "navbar",
+  className = "",
+}) => {
   const router = useRouter();
   const { data: session, isPending } = useSession();
   const [isOpen, setIsOpen] = useState(false);
@@ -114,19 +122,25 @@ export const NotificationBell: React.FC = () => {
 
   if (isPending || !session?.user) return null;
 
+  const isDashboard = variant === "dashboard";
+
   return (
     <div className="relative shrink-0" ref={containerRef}>
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20 cursor-pointer active:scale-95"
+        className={
+          isDashboard
+            ? `relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-text hover:bg-muted-bg hover:text-primary transition cursor-pointer active:scale-95 shadow-xs ${className}`
+            : `relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20 cursor-pointer active:scale-95 ${className}`
+        }
         aria-label="Notifications"
         aria-haspopup="menu"
         aria-expanded={isOpen}
       >
-        <IoIosNotifications size={17} />
+        <IoIosNotifications size={18} />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-xs">
+          <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-xs animate-in zoom-in">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
@@ -140,7 +154,7 @@ export const NotificationBell: React.FC = () => {
               <button
                 type="button"
                 onClick={handleMarkAllRead}
-                className="shrink-0 text-xs font-medium text-primary hover:underline"
+                className="shrink-0 text-xs font-medium text-primary hover:underline cursor-pointer"
               >
                 Mark all read
               </button>
@@ -164,7 +178,7 @@ export const NotificationBell: React.FC = () => {
                   key={notification.id}
                   type="button"
                   onClick={() => handleNotificationClick(notification)}
-                  className={`w-full text-left px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/5 transition-colors ${
+                  className={`w-full text-left px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/5 transition-colors cursor-pointer ${
                     notification.isRead ? "" : "bg-primary/5"
                   }`}
                 >
@@ -190,12 +204,31 @@ export const NotificationBell: React.FC = () => {
               ))}
           </div>
 
-          <div className="px-4 py-2 border-t border-border">
+          <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-t border-border bg-muted/5">
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                const role = (session?.user as { role?: string })?.role;
+                const path =
+                  role === "admin"
+                    ? "/dashboard/admin/notifications"
+                    : role === "seller"
+                    ? "/dashboard/seller/notifications"
+                    : role === "delivery" || role === "delivery_man"
+                    ? "/dashboard/delivery/notifications"
+                    : "/dashboard/user/notifications";
+                router.push(path);
+              }}
+              className="text-xs font-semibold text-primary hover:underline cursor-pointer"
+            >
+              View all
+            </button>
             <Button
               onPress={() => loadNotifications()}
               variant="outline"
               size="sm"
-              className="w-full"
+              className="text-xs h-7 px-2.5"
             >
               Refresh
             </Button>
