@@ -7,7 +7,7 @@ import { APP_NAME } from "@/lib/constants";
 import { AppHeroUIProvider } from "@/providers/HeroUIProvider";
 import { ConfirmDialogProvider } from "@/context/ConfirmDialogContext";
 import { AppShell } from "@/components/layout/AppShell";
-import { ThemeBootstrap } from "@/components/layout/ThemeBootstrap";
+import { ThemeProvider } from "@/providers/ThemeProvider";
 
 export const metadata: Metadata = {
   title: `${APP_NAME} - Multi-Vendor E-Commerce Platform`,
@@ -24,16 +24,22 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         suppressHydrationWarning
-        className="flex min-h-screen flex-col bg-background text-text"
+        className="flex min-h-screen flex-col bg-background text-text transition-colors duration-200"
       >
-        <div className="flex min-h-screen w-full flex-col overflow-x-clip">
-          <ThemeBootstrap />
-          <AppHeroUIProvider>
-            <ConfirmDialogProvider>
-              <AppShell>{children}</AppShell>
-            </ConfirmDialogProvider>
-          </AppHeroUIProvider>
-        </div>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem={false}
+          storageKey="shopnest-theme"
+        >
+          <div className="flex min-h-screen w-full flex-col overflow-x-clip">
+            <AppHeroUIProvider>
+              <ConfirmDialogProvider>
+                <AppShell>{children}</AppShell>
+              </ConfirmDialogProvider>
+            </AppHeroUIProvider>
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );

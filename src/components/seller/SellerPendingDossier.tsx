@@ -1,6 +1,6 @@
 import React from "react";
-import { MyStore } from "@/lib/api/sellers";
-import { FiRefreshCw, FiEdit3, FiShield } from "react-icons/fi";
+import { MyStore, resolveCategoryTitle } from "@/lib/api/sellers";
+import { FiClock, FiEdit3, FiShield, FiAlertCircle, FiRefreshCw } from "react-icons/fi";
 
 export interface SellerPendingDossierProps {
   store: MyStore;
@@ -42,7 +42,7 @@ export function SellerPendingDossier({
         <div className="rounded-2xl border border-border bg-muted-bg/30 p-4 space-y-2">
           <p className="font-bold text-text">Store Identity</p>
           <p className="text-muted">
-            <strong className="text-text">Category:</strong> {store.businessInfo?.categoryId || "General"}
+            <strong className="text-text">Category:</strong> {resolveCategoryTitle(store.businessInfo?.categoryId, "General")}
           </p>
           <p className="text-muted">
             <strong className="text-text">Description:</strong> {store.description}

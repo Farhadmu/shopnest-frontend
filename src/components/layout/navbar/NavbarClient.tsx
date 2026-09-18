@@ -17,7 +17,7 @@ import { NavbarActions } from "./NavbarActions";
 import { NavbarUserMenu, NavbarAuthButtons } from "./NavbarUserMenu";
 import { NavbarMobileMenu } from "./NavbarMobileMenu";
 import type { UserRole } from "./NavbarLinks";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
 
 interface NavbarClientProps {
   /** Server-rendered CategoryMegaMenu for desktop nav */
@@ -61,7 +61,6 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
   const [search, setSearch] = useState("");
   const [cartCount, setCartCount] = useState(0);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
   const isHydrated = useSyncExternalStore(
     () => () => {},
@@ -77,37 +76,17 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
   const role: UserRole = isHydrated ? (user?.role as UserRole) || (user ? "customer" : "guest") : "guest";
   const isAuthenticated = isHydrated && !!user;
 
-  // Scroll detection with 20px threshold and passive RAF throttling
+  // Butter-smooth scroll detection using Framer Motion (GPU-accelerated, zero unthrottled scroll lag)
+  const { scrollY } = useScroll();
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    const scrolled = latest > 30;
+    setIsScrolled((prev) => (prev !== scrolled ? scrolled : prev));
+  });
+
   useEffect(() => {
-    let ticking = false;
-
-    const updateScroll = () => {
-      const scrolled = window.scrollY > 20;
-      setIsScrolled((prev) => (prev !== scrolled ? scrolled : prev));
-      ticking = false;
-    };
-
-    const onScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(updateScroll);
-        ticking = true;
-      }
-    };
-
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    updateScroll();
-    checkMobile();
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", checkMobile, { passive: true });
-
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", checkMobile);
-    };
+    if (typeof window !== "undefined" && window.scrollY > 30) {
+      setIsScrolled(true);
+    }
   }, []);
 
   // Sync cart count
@@ -187,119 +166,114 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
   const isPill = isScrolled && !mobileMenuOpen;
 
   return (
-    <header
-      className={`sticky top-0 z-50 w-full transition-all duration-300 ${
-        isPill ? "px-3 sm:px-4" : "px-0"
+    <motion.header
+      layout
+      initial={false}
+      transition={{
+        type: "spring",
+        stiffness: 120,
+        damping: 19,
+        mass: 0.8,
+      }}
+      className={`sticky z-50 transition-colors duration-400 ${
+        isPill
+          ? "top-3 mt-3 w-[calc(100%-1.5rem)] sm:w-auto container mx-auto rounded-full bg-base-100/80 backdrop-blur-md border border-white/10 shadow-2xl shadow-purple-950/20"
+          : "top-0 mt-0 w-full rounded-none bg-linear-to-r from-indigo-600 via-violet-600 to-purple-600 dark:from-indigo-950 dark:via-purple-950 dark:to-violet-950 border-b border-white/15 shadow-sm"
       }`}
     >
-      <motion.div
-        layout
-        transition={{
-          duration: 0.35,
-          ease: [0.25, 0.1, 0.25, 1],
-        }}
-        className={`w-full transition-all duration-300 ${
-          isPill
-            ? "container mx-auto mt-3 rounded-full bg-base-100/80 backdrop-blur-md shadow-lg border border-white/20"
-            : "max-w-full rounded-none bg-linear-to-r from-indigo-600 via-violet-600 to-purple-600 dark:from-indigo-950 dark:via-purple-950 dark:to-violet-950 shadow-sm border-b border-white/15"
-        }`}
-      >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex min-h-16 items-center justify-between gap-2 lg:gap-4 xl:gap-5">
-
-            {/* Brand + desktop search */}
-            <NavbarBrand
-              onClose={() => setMobileMenuOpen(false)}
-              search={search}
-              setSearch={setSearch}
-              isScrolled={isScrolled}
-            />
-
-            {/* Desktop nav links + server category menu */}
-            <NavbarLinks
-              role={role}
-              isAuthenticated={isAuthenticated}
-              categoryMenu={desktopCategoryMenu}
-            />
-
-            {/* Right-side actions */}
-            <NavbarActions
-              isAuthenticated={isAuthenticated}
-              cartCount={totalCartCount}
-              onOpenCart={openCart}
-              userSlot={
-                isAuthenticated ? (
-                  <NavbarUserMenu
-                    user={user}
-                    role={role}
-                    onOpenCart={openCart}
-                    onSignOut={handleSignOut}
-                  />
-                ) : (
-                  <NavbarAuthButtons onClose={() => setMobileMenuOpen(false)} />
-                )
-              }
-              mobileToggle={
-                <button
-                  type="button"
-                  onClick={() => setMobileMenuOpen((v) => !v)}
-                  aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-                  className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/25 bg-white/15 text-white transition hover:bg-white/25 lg:hidden cursor-pointer active:scale-95"
-                >
-                  {mobileMenuOpen ? <FaTimes /> : <FaBars />}
-                </button>
-              }
-            />
-          </div>
-
-          {/* Mobile search bar */}
-          <AnimatePresence>
-            {(!isScrolled || mobileMenuOpen) && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.25, ease: "easeInOut" }}
-                className="overflow-hidden md:hidden"
-              >
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const q = search.trim();
-                    router.push(q ? `/products?search=${encodeURIComponent(q)}` : "/products");
-                    setMobileMenuOpen(false);
-                  }}
-                  className="pb-3"
-                >
-                  <div className="flex h-11 items-center rounded-xl border border-white/25 bg-white/15 px-3 focus-within:bg-white/25">
-                    <FaSearch className="text-white/70" size={14} />
-                    <input
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Search ShopNest..."
-                      className="min-w-0 flex-1 bg-transparent px-3 text-sm text-white outline-none placeholder:text-white/50"
-                    />
-                  </div>
-                </form>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Mobile dropdown */}
-          <NavbarMobileMenu
-            key={pathname}
-            open={mobileMenuOpen}
-            isAuthenticated={isAuthenticated}
-            user={user}
-            role={role}
-            dashboardHref={getDashboardHref()}
+      <div className="container mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex min-h-13 sm:min-h-14 items-center justify-between gap-2 lg:gap-4 xl:gap-5">
+          {/* Brand + desktop search */}
+          <NavbarBrand
             onClose={() => setMobileMenuOpen(false)}
-            onSignOut={handleSignOut}
-            categoryMenuSlot={mobileCategoryMenu}
-            roleBadge={<RoleBadge role={role} />}
+            search={search}
+            setSearch={setSearch}
+            isScrolled={isScrolled}
+          />
+
+          {/* Desktop nav links + server category menu */}
+          <NavbarLinks
+            role={role}
+            isAuthenticated={isAuthenticated}
+            categoryMenu={desktopCategoryMenu}
+          />
+
+          {/* Right-side actions */}
+          <NavbarActions
+            isAuthenticated={isAuthenticated}
+            cartCount={totalCartCount}
+            onOpenCart={openCart}
+            userSlot={
+              isAuthenticated ? (
+                <NavbarUserMenu
+                  user={user}
+                  role={role}
+                  onOpenCart={openCart}
+                  onSignOut={handleSignOut}
+                />
+              ) : (
+                <NavbarAuthButtons onClose={() => setMobileMenuOpen(false)} />
+              )
+            }
+            mobileToggle={
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen((v) => !v)}
+                aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20 lg:hidden cursor-pointer active:scale-95"
+              >
+                {mobileMenuOpen ? <FaTimes size={14} /> : <FaBars size={14} />}
+              </button>
+            }
           />
         </div>
-      </motion.div>
-    </header>
+
+        {/* Mobile search bar */}
+        <AnimatePresence>
+          {(!isScrolled || mobileMenuOpen) && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+              className="overflow-hidden md:hidden"
+            >
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const q = search.trim();
+                  router.push(q ? `/products?search=${encodeURIComponent(q)}` : "/products");
+                  setMobileMenuOpen(false);
+                }}
+                className="pb-3"
+              >
+                <div className="flex h-10 items-center rounded-full border border-white/20 bg-white/10 px-3 focus-within:bg-white/20">
+                  <FaSearch className="text-white/70" size={13} />
+                  <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search ShopNest..."
+                    className="min-w-0 flex-1 bg-transparent px-3 text-xs text-white outline-none placeholder:text-white/50"
+                  />
+                </div>
+              </form>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Mobile dropdown */}
+        <NavbarMobileMenu
+          key={pathname}
+          open={mobileMenuOpen}
+          isAuthenticated={isAuthenticated}
+          user={user}
+          role={role}
+          dashboardHref={getDashboardHref()}
+          onClose={() => setMobileMenuOpen(false)}
+          onSignOut={handleSignOut}
+          roleBadge={<RoleBadge role={role} />}
+        />
+      </div>
+    </motion.header>
   );
 }

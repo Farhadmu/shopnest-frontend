@@ -34,13 +34,33 @@ export interface PublicSellerStore {
 
 export type StoreStatus = "pending" | "approved" | "rejected" | "suspended";
 
+export interface CategoryObj {
+  _id?: string;
+  id?: string;
+  name?: string;
+  slug?: string;
+  image?: string;
+}
+
+export function resolveCategoryTitle(
+  cat: string | CategoryObj | undefined | null,
+  fallback = "General"
+): string {
+  if (!cat) return fallback;
+  if (typeof cat === "object" && cat !== null) {
+    return cat.name || fallback;
+  }
+  return typeof cat === "string" ? cat : fallback;
+}
+
 export interface BusinessInfo {
   ownerName?: string;
   contactPhone?: string;
   businessAddress?: string;
   nidOrTradeLicense?: string;
   taxId?: string;
-  categoryId?: string;
+  categoryId?: string | CategoryObj;
+  category?: string | CategoryObj;
   payoutMethod?: "bank" | "bkash" | "nagad" | "rocket" | string;
   payoutAccountNumber?: string;
   payoutAccountName?: string;

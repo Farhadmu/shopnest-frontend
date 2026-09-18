@@ -22,7 +22,6 @@ import {
 import { Product } from "@/lib/api/products";
 import { ProductCardData } from "@/features/products/types";
 import { formatCurrency } from "@/lib/utils";
-import { shopnestImageLoader } from "@/lib/utils/image-optimization";
 import { addToCart } from "@/lib/api/cart";
 import { addToWishlist } from "@/lib/api/wishlist";
 import { useSession } from "@/lib/auth-client";
@@ -67,6 +66,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const [internalAdded, setInternalAdded] = useState(false);
   const [internalWishlist, setInternalWishlist] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   const isAdded = externalIsAdded ?? internalAdded;
   const isWishlist = externalIsWishlisted ?? internalWishlist;
@@ -190,30 +190,30 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       className={`h-full ${className}`}
     >
       <Card
-        className="group relative flex h-full flex-col overflow-hidden rounded-lg border border-border/70 bg-surface shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/10 p-0"
+        className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-border/70 bg-surface shadow-xs transition-all duration-300 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10 p-0"
       >
         {/* Product Image Box */}
         <div className="relative block overflow-hidden">
           <Link href={`/products/${product.id}`} className="block">
             <div
               className={`relative w-full overflow-hidden bg-muted-bg ${
-                compact ? "h-40" : "h-52 sm:h-56"
+                compact ? "aspect-square" : "aspect-4/3 sm:aspect-4/3"
               }`}
             >
-              {imageSrc && !imageSrc.startsWith("linear-gradient") ? (
+              {imageSrc && !imageSrc.startsWith("linear-gradient") && !imgError ? (
                 <Image
                   src={imageSrc}
-                  loader={shopnestImageLoader}
                   alt={product.title}
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover transition-transform duration-700 ease-out group-hover:scale-108"
+                  className="object-cover transition-transform duration-500 ease-out group-hover:scale-106"
                   priority={index < 4}
+                  onError={() => setImgError(true)}
                   unoptimized={false}
                 />
               ) : (
                 <div
-                  className="grid h-full w-full place-items-center text-5xl select-none"
+                  className="grid h-full w-full place-items-center text-4xl select-none"
                   style={
                     imageSrc.startsWith("linear-gradient")
                       ? { background: imageSrc }
@@ -225,31 +225,34 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               )}
 
               {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-black/5 opacity-60 transition-opacity group-hover:opacity-75" />
+              <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-black/5 opacity-40 transition-opacity group-hover:opacity-60" />
             </div>
           </Link>
 
-          {/* Category Chip */}
-          <div className="absolute left-3 top-3 z-20">
+          {/* Category Chip & Featured Badge */}
+          <div className="absolute left-2.5 top-2.5 z-20 flex flex-wrap items-center gap-1.5 max-w-[calc(100%-48px)]">
             <Chip
               size="sm"
               variant="secondary"
-              className="border border-white/20 bg-black/40 text-[9px] font-black uppercase tracking-wider text-white backdrop-blur-md"
+              className="border border-white/20 bg-black/50 text-[9px] font-black uppercase tracking-wider text-white backdrop-blur-md px-2 py-0.5"
             >
               {category}
             </Chip>
+
+            {product.isFeatured && (
+              <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/95 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white shadow-xs backdrop-blur-md">
+                <FaStar className="fill-white" size={8} />
+                <span>Featured</span>
+              </span>
+            )}
           </div>
 
           {/* Savings Badge */}
           {hasDiscount && (
-            <div className="absolute bottom-3 left-3 z-20">
-              <motion.span
-                animate={{ scale: [1, 1.05, 1] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                className="inline-flex rounded-full bg-red-500 px-2.5 py-1 text-[9px] font-black text-white shadow-md backdrop-blur-md"
-              >
+            <div className="absolute bottom-2.5 left-2.5 z-20">
+              <span className="inline-flex rounded-md bg-rose-500/95 px-2 py-0.5 text-[9px] font-black text-white shadow-xs backdrop-blur-md">
                 Save {formatCurrency(savings)}
-              </motion.span>
+              </span>
             </div>
           )}
 
@@ -261,79 +264,72 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             title={isWishlist ? "Saved to Wishlist" : "Add to Wishlist"}
             whileTap={{ scale: 0.85 }}
             whileHover={{ scale: 1.1 }}
-            className={`absolute right-3 top-3 z-30 grid h-9 w-9 place-items-center rounded-full border border-white/50 bg-white/95 shadow-md backdrop-blur-xl transition-all duration-300 dark:border-white/10 dark:bg-slate-900/90 cursor-pointer ${
+            className={`absolute right-2.5 top-2.5 z-30 grid h-8 w-8 place-items-center rounded-full border border-white/40 bg-white/90 shadow-sm backdrop-blur-md transition-all duration-300 dark:border-white/10 dark:bg-slate-900/90 cursor-pointer ${
               isWishlist
                 ? "border-red-500 bg-red-500 text-white"
-                : "text-gray-400 hover:border-red-200 hover:text-red-500 dark:hover:border-red-500/30 dark:hover:text-red-500 cursor-pointer"
+                : "text-gray-400 hover:border-red-200 hover:text-red-500 dark:hover:border-red-500/30 dark:hover:text-red-500"
             }`}
           >
-            <FaHeart size={13} className={isWishlist ? "text-white" : ""} />
+            <FaHeart size={12} className={isWishlist ? "text-white" : ""} />
           </motion.button>
         </div>
 
         {/* Card Body / Content */}
-        <CardContent className="flex flex-1 flex-col p-3">
-          {/* Rating & Verification */}
-            <div className="mb-1 flex items-center justify-between gap-2">
+        <CardContent className="flex flex-1 flex-col justify-between p-3 pb-1 gap-2">
+          <div>
+            {/* Rating & Stock row */}
+            <div className="mb-1 flex items-center justify-between gap-1 text-xs">
               <div className="flex items-center gap-1">
-                <FaStar size={11} className="fill-amber-400 text-amber-400" />
+                <FaStar size={10} className="fill-amber-400 text-amber-400" />
                 <span className="text-xs font-black text-text">
                   {ratingAvg > 0 ? ratingAvg.toFixed(1) : "—"}
                 </span>
                 <span className="text-[10px] text-muted">
-                  {ratingCount > 0
-                    ? `(${ratingCount} review${ratingCount !== 1 ? "s" : ""})`
-                    : "(No reviews)"}
+                  ({ratingCount})
                 </span>
               </div>
 
-            <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
-              Verified
-            </span>
+              {stock > 0 ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  In Stock
+                </span>
+              ) : (
+                <span className="text-[10px] font-semibold text-rose-500">
+                  Out of Stock
+                </span>
+              )}
+            </div>
+
+            {/* Title */}
+            <Link href={`/products/${product.id}`} className="group/link block">
+              <h3 className="line-clamp-1 text-sm font-extrabold text-text transition-colors group-hover/link:text-primary" title={product.title}>
+                {product.title}
+              </h3>
+            </Link>
           </div>
 
-          {/* Title */}
-          <Link href={`/products/${product.id}`} className="group/link">
-            <h3 className="line-clamp-2 text-sm font-extrabold leading-5 text-text transition-colors group-hover/link:text-primary">
-              {product.title}
-            </h3>
-          </Link>
-
           {/* Pricing */}
-          <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-base sm:text-lg font-black text-text">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-base font-black text-text truncate">
               {formatCurrency(displayPrice)}
             </span>
             {hasDiscount && (
-              <span className="text-xs font-semibold text-muted line-through">
+              <span className="text-[11px] font-semibold text-muted line-through truncate">
                 {formatCurrency(product.price)}
-              </span>
-            )}
-          </div>
-
-          {/* Stock Status */}
-          <div>
-            {stock > 0 ? (
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                In Stock ({stock} left)
-              </span>
-            ) : (
-              <span className="text-[10px] font-bold text-error">
-                Out of Stock
               </span>
             )}
           </div>
         </CardContent>
 
-        {/* Card Footer with Hero UI Action Buttons */}
-        <CardFooter className="gap-2 pb-3 px-3">
+        {/* Card Footer with Action Buttons */}
+        <CardFooter className="gap-2 p-3 pt-1">
           <Button
             size="sm"
             variant="primary"
             isDisabled={stock <= 0}
             onClick={(e) => handleCartClick(e as unknown as React.MouseEvent)}
-            className={`flex-1 rounded-xl text-xs font-bold text-white shadow-sm transition-all ${
+            className={`flex-1 rounded-xl text-xs font-bold text-white shadow-xs transition-all ${
               isAdded
                 ? "bg-emerald-600 hover:bg-emerald-700"
                 : "bg-primary hover:bg-primary-hover shadow-primary/20"
@@ -352,6 +348,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               isDisabled={stock <= 0}
               onClick={(e) => handleBuyNowClick(e as unknown as React.MouseEvent)}
               className="rounded-xl border border-border/80 bg-surface/80 text-xs font-bold text-text hover:border-primary hover:bg-primary/5 hover:text-primary"
+              aria-label="Buy Now"
             >
               <span className="flex items-center gap-1">
                 <FaBolt size={10} className="text-amber-500 animate-pulse" />
@@ -365,8 +362,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <motion.div
           initial={{ width: "0%" }}
           whileHover={{ width: "100%" }}
-          transition={{ duration: 0.4 }}
-          className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-primary via-violet-500 to-fuchsia-500"
+          transition={{ duration: 0.3 }}
+          className="absolute bottom-0 left-0 h-0.5 bg-linear-to-r from-primary via-violet-500 to-fuchsia-500"
         />
       </Card>
     </motion.div>

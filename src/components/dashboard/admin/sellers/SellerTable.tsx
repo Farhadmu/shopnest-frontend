@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { AdminStoreRecord, StoreStatus } from "@/lib/api/sellers";
+import { AdminStoreRecord, StoreStatus, resolveCategoryTitle } from "@/lib/api/sellers";
 import {
   FiCheck,
   FiX,
@@ -91,7 +91,7 @@ export function SellerTable({
                       <span>/store/{s.slug}</span>
                       <span className="text-border">·</span>
                       <span className="text-primary font-sans font-semibold">
-                        {s.businessInfo?.categoryId || "General"}
+                        {resolveCategoryTitle(s.businessInfo?.categoryId, "General")}
                       </span>
                     </div>
                   </div>

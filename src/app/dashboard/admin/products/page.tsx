@@ -10,7 +10,8 @@ export default async function AdminProductsPage() {
 
   try {
     const res = await protectedFetch<Product[] | { data: Product[] }>("/products", {
-      params: { limit: 100 },
+      params: { limit: 100, nocache: "true" },
+      cache: "no-store",
     });
     products = Array.isArray(res) ? res : (res?.data ?? []);
   } catch (err) {

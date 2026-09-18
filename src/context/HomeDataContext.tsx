@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, {
   createContext,
@@ -63,8 +63,6 @@ export function HomeDataProvider({ children }: { children: React.ReactNode }) {
     }
 
     async function fetchCriticalData() {
-      safeProgress(20);
-
       const [categoriesResult, trendingResult, justForYouResult] =
         await Promise.allSettled([
           getCategories(),
@@ -75,14 +73,12 @@ export function HomeDataProvider({ children }: { children: React.ReactNode }) {
       if (categoriesResult.status === "fulfilled" && mountedRef.current) {
         setCategories(categoriesResult.value);
       }
-      safeProgress(45);
 
       if (trendingResult.status === "fulfilled" && mountedRef.current) {
         const res = trendingResult.value;
         const products = res && Array.isArray(res.products) ? res.products : [];
         setTrendingProducts(products);
       }
-      safeProgress(70);
 
       if (justForYouResult.status === "fulfilled" && mountedRef.current) {
         const res = justForYouResult.value;
@@ -97,15 +93,11 @@ export function HomeDataProvider({ children }: { children: React.ReactNode }) {
         }
         setJustForYouProducts(products);
       }
-      safeProgress(95);
 
-      setTimeout(() => {
-        if (!mountedRef.current) return;
+      if (mountedRef.current) {
         setLoadingProgress(100);
-        setTimeout(() => {
-          if (mountedRef.current) setIsHomeReady(true);
-        }, 400);
-      }, 300);
+        setIsHomeReady(true);
+      }
     }
 
     fetchCriticalData();

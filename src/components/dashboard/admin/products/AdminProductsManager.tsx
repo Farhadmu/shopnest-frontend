@@ -19,8 +19,9 @@ import {
   FiLayers,
   FiAlertCircle,
   FiExternalLink,
+  FiStar,
 } from "react-icons/fi";
-import { getProducts, deleteProduct, Product, updateProduct } from "@/lib/api/products";
+import { getProducts, deleteProduct, Product, updateProduct, updateProductFeatured } from "@/lib/api/products";
 import { clientMutation } from "@/lib/core/client";
 import { InventoryTrendChart } from "./InventoryTrendChart";
 import { ProductActionButtons } from "./ProductActionButtons";
@@ -31,6 +32,7 @@ import {
   getProductId,
   getSKU,
   isProductActive,
+  isProductFeatured,
   type AdminProduct,
 } from "./product-utils";
 
@@ -39,7 +41,12 @@ interface AdminProductsManagerProps {
 }
 
 export function AdminProductsManager({ initialProducts = [] }: AdminProductsManagerProps) {
-  const [items, setItems] = useState<AdminProduct[]>(initialProducts);
+  const [items, setItems] = useState<AdminProduct[]>(() =>
+    (initialProducts || []).map((p) => ({
+      ...p,
+      isFeatured: Boolean(p.isFeatured),
+    }))
+  );
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -48,6 +55,9 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [bulkLoadingAction, setBulkLoadingAction] = useState<
+    "featured-on" | "featured-off" | "status-active" | "status-inactive" | "delete" | null
+  >(null);
   const [toast, setToast] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Pagination
@@ -64,6 +74,7 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
     stock: 0,
     category: "",
     status: "active",
+    isFeatured: false,
   });
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
@@ -75,8 +86,15 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await getProducts({ page: 1, limit: 100 });
-      setItems(Array.isArray(data) ? data : []);
+      const data = await getProducts({ page: 1, limit: 100, nocache: "true" });
+      setItems(
+        Array.isArray(data)
+          ? data.map((p) => ({
+              ...p,
+              isFeatured: Boolean(p.isFeatured),
+            }))
+          : []
+      );
       showToast("success", "Catalog refreshed.");
     } catch (err) {
       console.error("Failed to load products:", err);
@@ -126,6 +144,92 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
       showToast("error", "Failed to update product status.");
     } finally {
       setActionLoadingId(null);
+    }
+  };
+
+  // Quick Toggle Featured
+  const handleToggleFeatured = async (p: AdminProduct) => {
+    const pid = getProductId(p);
+    const currentlyFeatured = isProductFeatured(p);
+    const nextFeatured = !currentlyFeatured;
+
+    setActionLoadingId(pid);
+
+    // Optimistic UI update across table/grid, inspecting modal, and editing modal
+    setItems((prev) =>
+      prev.map((item) =>
+        getProductId(item) === pid ? { ...item, isFeatured: nextFeatured } : item
+      )
+    );
+    setInspectingProduct((prev) =>
+      prev && getProductId(prev) === pid ? { ...prev, isFeatured: nextFeatured } : prev
+    );
+    setEditingProduct((prev) =>
+      prev && getProductId(prev) === pid ? { ...prev, isFeatured: nextFeatured } : prev
+    );
+
+    try {
+      await updateProductFeatured(pid, nextFeatured);
+      showToast(
+        "success",
+        nextFeatured
+          ? `"${p.title || "Product"}" marked as featured.`
+          : `"${p.title || "Product"}" removed from featured.`
+      );
+    } catch (err) {
+      console.error("Failed to update featured status:", err);
+      // Revert if API call fails
+      setItems((prev) =>
+        prev.map((item) =>
+          getProductId(item) === pid ? { ...item, isFeatured: currentlyFeatured } : item
+        )
+      );
+      setInspectingProduct((prev) =>
+        prev && getProductId(prev) === pid ? { ...prev, isFeatured: currentlyFeatured } : prev
+      );
+      setEditingProduct((prev) =>
+        prev && getProductId(prev) === pid ? { ...prev, isFeatured: currentlyFeatured } : prev
+      );
+      showToast("error", "Failed to update featured status on server.");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  // Bulk Featured Toggle
+  const handleBulkFeatured = async (featured: boolean) => {
+    if (selectedIds.length === 0) return;
+    setBulkLoadingAction(featured ? "featured-on" : "featured-off");
+    try {
+      const results = await Promise.allSettled(
+        selectedIds.map((id) => updateProductFeatured(id, featured))
+      );
+      const failedCount = results.filter((r) => r.status === "rejected").length;
+      if (failedCount > 0) {
+        throw new Error(`${failedCount} product(s) failed to update.`);
+      }
+
+      setItems((prev) =>
+        prev.map((item) =>
+          selectedIds.includes(getProductId(item)) ? { ...item, isFeatured: featured } : item
+        )
+      );
+      setInspectingProduct((prev) =>
+        prev && selectedIds.includes(getProductId(prev)) ? { ...prev, isFeatured: featured } : prev
+      );
+      showToast(
+        "success",
+        featured
+          ? `${selectedIds.length} product(s) marked as featured.`
+          : `${selectedIds.length} product(s) removed from featured.`
+      );
+      setSelectedIds([]);
+    } catch (err) {
+      console.error(err);
+      showToast("error", "Failed to update all selected products.");
+      await loadData();
+    } finally {
+      setBulkLoadingAction(null);
     }
   };
 
@@ -208,6 +312,7 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
       stock: p.stock || 0,
       category: getCategoryName(p),
       status: isProductActive(p) ? "active" : "inactive",
+      isFeatured: isProductFeatured(p),
     });
   };
 
@@ -225,6 +330,7 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
         discountPrice: editFormData.discountPrice ? Number(editFormData.discountPrice) : undefined,
         stock: Number(editFormData.stock),
         category: editFormData.category,
+        isFeatured: editFormData.isFeatured,
       });
 
       try {
@@ -235,9 +341,38 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
         // Fallback handled
       }
 
+      setItems((prev) =>
+        prev.map((item) =>
+          getProductId(item) === pid
+            ? {
+                ...item,
+                title: editFormData.title,
+                price: Number(editFormData.price),
+                discountPrice: editFormData.discountPrice ? Number(editFormData.discountPrice) : undefined,
+                stock: Number(editFormData.stock),
+                isFeatured: editFormData.isFeatured,
+                status: editFormData.status === "active" ? "approved" : "rejected",
+              }
+            : item
+        )
+      );
+
+      setInspectingProduct((prev) =>
+        prev && getProductId(prev) === pid
+          ? {
+              ...prev,
+              title: editFormData.title,
+              price: Number(editFormData.price),
+              discountPrice: editFormData.discountPrice ? Number(editFormData.discountPrice) : undefined,
+              stock: Number(editFormData.stock),
+              isFeatured: editFormData.isFeatured,
+              status: editFormData.status === "active" ? "approved" : "rejected",
+            }
+          : prev
+      );
+
       showToast("success", "Product updated successfully.");
       setEditingProduct(null);
-      await loadData();
     } catch (err) {
       console.error("Save edit failed:", err);
       showToast("error", "Failed to save product changes.");
@@ -292,6 +427,7 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
     const activeCount = items.filter((p) => isProductActive(p)).length;
     const inactiveCount = total - activeCount;
     const lowStockCount = items.filter((p) => (p.stock || 0) <= 5).length;
+    const featuredCount = items.filter((p) => isProductFeatured(p)).length;
     const totalValuation = items.reduce((sum, p) => sum + (p.price || 0) * (p.stock || 0), 0);
     const activeRate = total > 0 ? Math.round((activeCount / total) * 100) : 0;
 
@@ -300,6 +436,7 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
       activeCount,
       inactiveCount,
       lowStockCount,
+      featuredCount,
       totalValuation,
       activeRate,
     };
@@ -310,6 +447,7 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
     return items
       .filter((p) => {
         const active = isProductActive(p);
+        const featured = isProductFeatured(p);
         const pCat = getCategoryName(p);
         const stock = p.stock || 0;
 
@@ -317,7 +455,8 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
           statusFilter === "all" ||
           (statusFilter === "active" && active) ||
           (statusFilter === "inactive" && !active) ||
-          (statusFilter === "low_stock" && stock <= 5);
+          (statusFilter === "low_stock" && stock <= 5) ||
+          (statusFilter === "featured" && featured);
 
         const matchesCategory =
           categoryFilter === "all" || pCat.toLowerCase() === categoryFilter.toLowerCase();
@@ -459,6 +598,10 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
                 {metrics.activeRate}% live
               </span>
             </div>
+            <div className="flex items-center gap-1 mt-1 text-[10px] font-semibold text-muted">
+              <FiStar className="text-amber-500 fill-amber-500 shrink-0" size={10} />
+              <span className="truncate">{metrics.featuredCount} featured in showcase</span>
+            </div>
           </div>
         </div>
 
@@ -514,6 +657,7 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
           active: metrics.activeCount,
           inactive: metrics.inactiveCount,
           low_stock: metrics.lowStockCount,
+          featured: metrics.featuredCount,
         }}
         categoryFilter={categoryFilter}
         onCategoryChange={(value) => {
@@ -562,6 +706,30 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
                 className="px-3 py-1.5 rounded-xl bg-amber-600 text-white font-bold hover:bg-amber-700 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
               >
                 <FiXCircle size={13} /> Mark Inactive
+              </button>
+              <button
+                disabled={bulkLoadingAction !== null || loading}
+                onClick={() => handleBulkFeatured(true)}
+                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {bulkLoadingAction === "featured-on" ? (
+                  <FiRefreshCw size={13} className="animate-spin text-white" />
+                ) : (
+                  <FiStar size={13} className="fill-white" />
+                )}
+                <span>Mark Featured</span>
+              </button>
+              <button
+                disabled={bulkLoadingAction !== null || loading}
+                onClick={() => handleBulkFeatured(false)}
+                className="px-3 py-1.5 rounded-xl border border-border bg-surface text-text hover:bg-muted-bg transition-all flex items-center gap-1.5 cursor-pointer font-bold disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {bulkLoadingAction === "featured-off" ? (
+                  <FiRefreshCw size={13} className="animate-spin text-muted" />
+                ) : (
+                  <FiStar size={13} />
+                )}
+                <span>Remove Featured</span>
               </button>
               <button
                 onClick={handleBulkDelete}
@@ -627,183 +795,208 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
           )}
         </div>
       ) : viewMode === "table" ? (
-        /* TABLE VIEW - 100% responsive, NO horizontal scrollbar */
+        /* TABLE VIEW - responsive with overflow scroll on small screens */
         <div className="rounded-2xl border border-border bg-surface shadow-xs overflow-hidden w-full">
-          <table className="block w-full text-left border-collapse table-fixed 2xl:table">
-            <thead className="hidden 2xl:table-header-group">
-              <tr className="grid grid-cols-2 gap-x-3 gap-y-2 border-b border-border bg-muted-bg/40 p-3 text-[11px] font-extrabold uppercase tracking-wider text-muted 2xl:table-row 2xl:p-0">
-                <th className="hidden py-3.5 pl-3 pr-1 w-8 2xl:table-cell">
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={handleSelectAll}
-                    className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary/40 cursor-pointer accent-primary"
-                  />
-                </th>
-                <th className="hidden py-3.5 px-2 w-[40%] sm:w-[36%] md:w-[32%] 2xl:table-cell">Product</th>
-                <th className="hidden py-3.5 px-2 2xl:table-cell w-[14%]">Store</th>
-                <th className="hidden py-3.5 px-2 w-[18%] sm:w-[15%] md:w-[13%] 2xl:table-cell">Price</th>
-                <th className="hidden py-3.5 px-2 w-[18%] sm:w-[15%] md:w-[13%] 2xl:table-cell">Stock</th>
-                <th className="hidden py-3.5 px-2 2xl:table-cell w-[10%]">Trend</th>
-                <th className="hidden py-3.5 px-2 w-[14%] sm:w-[12%] md:w-[11%] 2xl:table-cell">Status</th>
-                <th className="hidden py-3.5 pl-1 pr-3 text-right w-[132px] 2xl:table-cell">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="block divide-y divide-border/60 text-xs 2xl:table-row-group">
-              {paginatedProducts.map((p, idx) => {
-                const pid = getProductId(p);
-                const isSelected = selectedIds.includes(pid);
-                const active = isProductActive(p);
-                const sku = getSKU(p);
-                const brand = getBrandName(p);
-                const category = getCategoryName(p);
-                const quantity = Number(p.stock || 0);
-                const price = Number(p.price || 0);
-                const isBusy = actionLoadingId === pid;
-                const imageUrl =
-                  p.images?.[0] ||
-                  "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&auto=format&fit=crop&q=60";
+          <div className="overflow-x-auto w-full">
+            <table className="w-full min-w-[700px] text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-border bg-muted-bg/40 text-[11px] font-extrabold uppercase tracking-wider text-muted">
+                  <th className="py-3.5 pl-4 pr-2 w-8">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={handleSelectAll}
+                      className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary/40 cursor-pointer accent-primary"
+                    />
+                  </th>
+                  <th className="py-3.5 px-3 min-w-[200px]">Product</th>
+                  <th className="py-3.5 px-3 min-w-[100px] hidden md:table-cell">Store</th>
+                  <th className="py-3.5 px-3 min-w-[90px]">Price</th>
+                  <th className="py-3.5 px-3 min-w-[90px]">Stock</th>
+                  <th className="py-3.5 px-3 min-w-[70px] hidden lg:table-cell">Trend</th>
+                  <th className="py-3.5 px-3 min-w-[75px] text-center">Featured</th>
+                  <th className="py-3.5 px-3 min-w-[90px]">Status</th>
+                  <th className="py-3.5 pl-2 pr-4 text-right min-w-[120px]">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/60">
+                {paginatedProducts.map((p, idx) => {
+                  const pid = getProductId(p);
+                  const isSelected = selectedIds.includes(pid);
+                  const active = isProductActive(p);
+                  const sku = getSKU(p);
+                  const brand = getBrandName(p);
+                  const category = getCategoryName(p);
+                  const quantity = Number(p.stock || 0);
+                  const price = Number(p.price || 0);
+                  const isBusy = actionLoadingId === pid;
+                  const imageUrl =
+                    p.images?.[0] ||
+                    "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&auto=format&fit=crop&q=60";
 
-                return (
-                  <tr
-                    key={pid}
-                    className={`relative grid grid-cols-2 gap-x-3 gap-y-2 p-3 transition-colors duration-150 2xl:table-row 2xl:p-0 ${
-                      isSelected
-                        ? "bg-primary/5 dark:bg-primary/10"
-                        : "hover:bg-muted-bg/30"
-                    }`}
-                  >
-                    {/* 1. Checkbox */}
-                    <td className="absolute left-3 top-3 z-10 block 2xl:static 2xl:table-cell 2xl:py-3 2xl:pl-3 2xl:pr-1">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => handleToggleSelect(pid)}
-                        className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary/40 cursor-pointer accent-primary"
-                      />
-                    </td>
+                  return (
+                    <tr
+                      key={pid}
+                      className={`transition-colors duration-150 ${
+                        isSelected
+                          ? "bg-primary/5 dark:bg-primary/10"
+                          : "hover:bg-muted-bg/30"
+                      }`}
+                    >
+                      {/* Checkbox */}
+                      <td className="py-3 pl-4 pr-2">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelect(pid)}
+                          className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary/40 cursor-pointer accent-primary"
+                        />
+                      </td>
 
-                    {/* 2. Product Info (Thumbnail, Title, Category Badge, SKU) */}
-                    <td className="col-span-2 block py-0 pl-8 pr-0 2xl:table-cell 2xl:p-3 2xl:pl-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="relative h-8 w-8 sm:h-9 sm:w-9 shrink-0 overflow-hidden rounded-lg border border-border bg-muted-bg flex items-center justify-center">
-                          {p.images?.[0] ? (
-                            <Image
-                              src={imageUrl}
-                              alt={p.title || "Product"}
-                              width={36}
-                              height={36}
-                              unoptimized
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <FiPackage className="text-muted text-sm" />
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <button
-                            onClick={() => setInspectingProduct(p)}
-                            className="text-left font-bold text-text hover:text-primary transition-colors truncate block w-full cursor-pointer leading-snug"
-                            title={p.title}
-                          >
-                            {p.title || "Untitled Product"}
-                          </button>
-                          <div className="flex items-center gap-1 mt-0.5">
-                            <span className="inline-block px-1.5 py-0.2 rounded bg-muted-bg text-muted text-[9px] font-semibold uppercase truncate max-w-[65px]">
-                              {category}
-                            </span>
-                            <span className="font-mono text-[9px] text-muted tracking-tight truncate max-w-[70px]">
-                              {sku}
-                            </span>
+                      {/* Product Info */}
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-border bg-muted-bg flex items-center justify-center">
+                            {p.images?.[0] ? (
+                              <Image
+                                src={imageUrl}
+                                alt={p.title || "Product"}
+                                width={36}
+                                height={36}
+                                unoptimized
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <FiPackage className="text-muted text-sm" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <button
+                              onClick={() => setInspectingProduct(p)}
+                              className="text-left font-bold text-text hover:text-primary transition-colors truncate block w-full cursor-pointer leading-snug max-w-[180px]"
+                              title={p.title}
+                            >
+                              {p.title || "Untitled Product"}
+                            </button>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <span className="inline-block px-1.5 rounded bg-muted-bg text-muted text-[9px] font-semibold uppercase truncate max-w-[70px]">
+                                {category}
+                              </span>
+                              <span className="font-mono text-[9px] text-muted tracking-tight truncate max-w-[80px]">
+                                {sku}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* 3. Brand */}
-                    <td className="py-3 px-2 hidden 2xl:table-cell">
-                      <span className="text-muted font-medium truncate block max-w-full text-[11px]" title={brand}>
-                        {brand}
-                      </span>
-                    </td>
-
-                    {/* 4. Price */}
-                    <td className="block py-0 px-0 font-bold text-text truncate 2xl:table-cell 2xl:py-3 2xl:px-2">
-                      ৳{price.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-                    </td>
-
-                    {/* 5. Stock Status */}
-                    <td className="block py-0 px-0 2xl:table-cell 2xl:py-3 2xl:px-2">
-                      <div className="flex items-center gap-1.5 truncate">
-                        <span
-                          className={`h-2 w-2 rounded-full shrink-0 ${
-                            quantity > 10
-                              ? "bg-emerald-500"
-                              : quantity > 0
-                              ? "bg-amber-500"
-                              : "bg-rose-500 animate-pulse"
-                          }`}
-                        />
-                        <span
-                          className={`font-bold text-[11px] truncate ${
-                            quantity > 10
-                              ? "text-text"
-                              : quantity > 0
-                              ? "text-amber-600 dark:text-amber-400 font-extrabold"
-                              : "text-rose-600 dark:text-rose-400 font-extrabold"
-                          }`}
-                        >
-                          {quantity === 0 ? "Out" : `${quantity} left`}
+                      {/* Brand */}
+                      <td className="py-3 px-3 hidden md:table-cell">
+                        <span className="text-muted font-medium truncate block max-w-[100px] text-[11px]" title={brand}>
+                          {brand}
                         </span>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* 6. Velocity Trend (Ultra wide only) */}
-                    <td className="py-3 px-2 hidden 2xl:table-cell">
-                      <InventoryTrendChart seed={idx + 1} />
-                    </td>
+                      {/* Price */}
+                      <td className="py-3 px-3 font-bold text-text whitespace-nowrap">
+                        ৳{price.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                      </td>
 
-                    {/* 7. Status Toggle Pill */}
-                    <td className="block py-0 px-0 2xl:table-cell 2xl:py-3 2xl:px-2">
-                      <button
-                        disabled={isBusy}
-                        onClick={() => handleToggleStatus(p)}
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border transition-all cursor-pointer ${
-                          active
-                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
-                            : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/20"
-                        } disabled:opacity-50`}
-                        title={`Click to ${active ? "deactivate" : "activate"}`}
-                      >
-                        {active ? (
-                          <>
-                            <FiCheckCircle size={10} className="shrink-0 text-emerald-500" />
-                            <span>Active</span>
-                          </>
-                        ) : (
-                          <>
-                            <FiXCircle size={10} className="shrink-0 text-rose-500" />
-                            <span>Inactive</span>
-                          </>
-                        )}
-                      </button>
-                    </td>
+                      {/* Stock */}
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`h-2 w-2 rounded-full shrink-0 ${
+                              quantity > 10
+                                ? "bg-emerald-500"
+                                : quantity > 0
+                                ? "bg-amber-500"
+                                : "bg-rose-500 animate-pulse"
+                            }`}
+                          />
+                          <span
+                            className={`font-bold text-[11px] whitespace-nowrap ${
+                              quantity > 10
+                                ? "text-text"
+                                : quantity > 0
+                                ? "text-amber-600 dark:text-amber-400 font-extrabold"
+                                : "text-rose-600 dark:text-rose-400 font-extrabold"
+                            }`}
+                          >
+                            {quantity === 0 ? "Out" : `${quantity} left`}
+                          </span>
+                        </div>
+                      </td>
 
-                    {/* 8. Actions */}
-                    <td className="col-span-2 block border-t border-border/60 pt-2 pl-0 pr-0 text-left 2xl:table-cell 2xl:border-0 2xl:py-3 2xl:pl-1 2xl:pr-3 2xl:text-right 2xl:w-[132px]">
-                      <ProductActionButtons
-                        productId={pid}
-                        isBusy={isBusy}
-                        onInspect={() => setInspectingProduct(p)}
-                        onEdit={() => handleOpenEdit(p)}
-                        onDelete={() => handleDeleteProduct(pid, p.title)}
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      {/* Velocity Trend */}
+                      <td className="py-3 px-3 hidden lg:table-cell">
+                        <InventoryTrendChart seed={idx + 1} />
+                      </td>
+
+                      {/* Featured Indicator / Toggle */}
+                      <td className="py-3 px-3 text-center">
+                        <button
+                          type="button"
+                          disabled={isBusy}
+                          onClick={() => handleToggleFeatured(p)}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all cursor-pointer whitespace-nowrap ${
+                            isProductFeatured(p)
+                              ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20 shadow-xs"
+                              : "text-muted border-transparent hover:border-border hover:bg-muted-bg/60"
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                          title={isProductFeatured(p) ? "Featured product (click to unmark)" : "Click to mark as featured"}
+                        >
+                          {isBusy ? (
+                            <FiRefreshCw size={10} className="animate-spin text-amber-500" />
+                          ) : (
+                            <FiStar size={11} className={isProductFeatured(p) ? "fill-amber-500 text-amber-500" : ""} />
+                          )}
+                          <span>{isProductFeatured(p) ? "Featured" : "Standard"}</span>
+                        </button>
+                      </td>
+
+                      {/* Status Toggle */}
+                      <td className="py-3 px-3">
+                        <button
+                          disabled={isBusy}
+                          onClick={() => handleToggleStatus(p)}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all cursor-pointer whitespace-nowrap ${
+                            active
+                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
+                              : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/20"
+                          } disabled:opacity-50`}
+                          title={`Click to ${active ? "deactivate" : "activate"}`}
+                        >
+                          {active ? (
+                            <>
+                              <FiCheckCircle size={10} className="shrink-0 text-emerald-500" />
+                              <span>Active</span>
+                            </>
+                          ) : (
+                            <>
+                              <FiXCircle size={10} className="shrink-0 text-rose-500" />
+                              <span>Inactive</span>
+                            </>
+                          )}
+                        </button>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-3 pl-2 pr-4 text-right">
+                        <ProductActionButtons
+                          productId={pid}
+                          isBusy={isBusy}
+                          onInspect={() => setInspectingProduct(p)}
+                          onEdit={() => handleOpenEdit(p)}
+                          onDelete={() => handleDeleteProduct(pid, p.title)}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
         /* GRID / CARDS VIEW */
@@ -851,6 +1044,27 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
                         className="h-4 w-4 rounded border-border text-primary focus:ring-primary/40 cursor-pointer accent-primary"
                       />
                     </div>
+
+                    {/* Featured Badge on Image */}
+                    {isProductFeatured(p) && (
+                      <button
+                        type="button"
+                        disabled={isBusy}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleFeatured(p);
+                        }}
+                        className="absolute top-2 left-8 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/95 hover:bg-amber-600 text-white shadow-xs backdrop-blur-xs cursor-pointer transition disabled:opacity-50"
+                        title="Featured product (click to unmark)"
+                      >
+                        {isBusy ? (
+                          <FiRefreshCw size={10} className="animate-spin text-white" />
+                        ) : (
+                          <FiStar size={10} className="fill-white" />
+                        )}
+                        <span>Featured</span>
+                      </button>
+                    )}
 
                     {/* Status Pill on Image */}
                     <button
@@ -907,6 +1121,25 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
 
                 {/* Card Action Buttons */}
                 <div className="mt-4 pt-3 border-t border-border flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    disabled={isBusy}
+                    onClick={() => handleToggleFeatured(p)}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all cursor-pointer whitespace-nowrap ${
+                      isProductFeatured(p)
+                        ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20 shadow-xs"
+                        : "text-muted border-border hover:border-amber-500/40 hover:text-amber-500"
+                    } disabled:opacity-50`}
+                    title={isProductFeatured(p) ? "Featured (click to unmark)" : "Mark as featured"}
+                  >
+                    {isBusy ? (
+                      <FiRefreshCw size={10} className="animate-spin text-amber-500" />
+                    ) : (
+                      <FiStar size={10} className={isProductFeatured(p) ? "fill-amber-500 text-amber-500" : ""} />
+                    )}
+                    <span>{isProductFeatured(p) ? "Featured" : "Standard"}</span>
+                  </button>
+
                   <ProductActionButtons
                     productId={pid}
                     isBusy={isBusy}
@@ -1113,6 +1346,46 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
                   </select>
                 </div>
 
+                {/* Featured Product ON/OFF Toggle */}
+                <div className="rounded-xl border border-border bg-background p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className={`grid h-8 w-8 place-items-center rounded-lg transition-colors ${
+                        editFormData.isFeatured
+                          ? "bg-amber-500/15 text-amber-500"
+                          : "bg-muted-bg text-muted"
+                      }`}
+                    >
+                      <FiStar
+                        size={16}
+                        className={editFormData.isFeatured ? "fill-amber-500 text-amber-500" : ""}
+                      />
+                    </div>
+                    <div>
+                      <span className="block font-bold text-text text-xs">Featured Product</span>
+                      <span className="block text-[11px] text-muted">
+                        Highlight on homepage showcase & promotional carousels
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditFormData({ ...editFormData, isFeatured: !editFormData.isFeatured })
+                    }
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      editFormData.isFeatured ? "bg-amber-500" : "bg-muted-bg border-border"
+                    }`}
+                    title="Toggle Featured Product"
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                        editFormData.isFeatured ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+
                 <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-border">
                   <button
                     type="button"
@@ -1179,7 +1452,7 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
 
               {/* Inspector Content */}
               <div className="space-y-4 text-xs">
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="p-3 rounded-xl bg-muted-bg/50 border border-border/50">
                     <span className="text-muted block text-[10px] font-bold uppercase">Price</span>
                     <span className="text-sm font-black text-text mt-0.5 block">
@@ -1197,6 +1470,34 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
                     <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 mt-0.5 block capitalize">
                       {isProductActive(inspectingProduct) ? "Active" : "Inactive"}
                     </span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-muted-bg/50 border border-border/50 flex flex-col justify-between">
+                    <span className="text-muted block text-[10px] font-bold uppercase">Featured</span>
+                    <button
+                      type="button"
+                      disabled={actionLoadingId === getProductId(inspectingProduct)}
+                      onClick={() => handleToggleFeatured(inspectingProduct)}
+                      className={`text-xs font-black mt-0.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg border transition cursor-pointer w-fit ${
+                        isProductFeatured(inspectingProduct)
+                          ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20"
+                          : "text-muted border-border hover:border-amber-500/40 hover:text-amber-500"
+                      } disabled:opacity-50`}
+                      title={isProductFeatured(inspectingProduct) ? "Click to unmark" : "Click to mark as featured"}
+                    >
+                      {actionLoadingId === getProductId(inspectingProduct) ? (
+                        <FiRefreshCw size={11} className="animate-spin text-amber-500" />
+                      ) : (
+                        <FiStar
+                          size={12}
+                          className={
+                            isProductFeatured(inspectingProduct)
+                              ? "fill-amber-500 text-amber-500"
+                              : ""
+                          }
+                        />
+                      )}
+                      <span>{isProductFeatured(inspectingProduct) ? "Featured" : "Standard"}</span>
+                    </button>
                   </div>
                 </div>
 

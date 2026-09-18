@@ -6,9 +6,9 @@ import type { DashboardLink } from "@/components/dashboard/DashboardUI";
  * that renders <DashboardShell links={...} /> stays in sync.
  */
 export const userDashboardLinks: DashboardLink[] = [
-  // SHOP
   { label: "Overview", href: "/dashboard/user", icon: "📊", description: "Shopping metrics & active status.", group: "SHOP" },
   { label: "My Orders", href: "/dashboard/user/orders", icon: "📦", description: "Order timeline & delivery status.", group: "SHOP" },
+  { label: "Returns & Refunds", href: "/dashboard/user/returns", icon: "🔄", description: "Track return requests and refunds.", group: "SHOP" },
   { label: "Wishlist", href: "/wishlist", icon: "❤️", description: "Saved favorite items.", group: "SHOP" },
   { label: "Smart Cart", href: "/cart", icon: "🛍️", description: "Live cart and checkout.", group: "SHOP" },
 
@@ -26,13 +26,15 @@ export const userDashboardLinks: DashboardLink[] = [
   // ACCOUNT
   { label: "Profile & Settings", href: "/dashboard/user/profile", icon: "👤", description: "Account identity and settings.", group: "ACCOUNT" },
   { label: "Security Center", href: "/dashboard/user/security", icon: "🔐", description: "Active sessions & security score.", group: "ACCOUNT" },
+  { label: "My Complaints", href: "/dashboard/user/complaints", icon: "📝", description: "Submit and track your complaints.", group: "ACCOUNT" },
 ];
 
 export const sellerDashboardLinks: DashboardLink[] = [
   { label: "Dashboard", href: "/dashboard/seller", icon: "🏠", description: "Seller Growth & Intelligence Hub — Store Overview." },
   { label: "Command Center", href: "/dashboard/seller/command-center", icon: "📊", description: "Real-time KPI dashboard." },
   { label: "Sales Analytics", href: "/dashboard/seller/analytics", icon: "📈", description: "Revenue & sales breakdown." },
-  { label: "Product Performance", href: "/dashboard/seller/product-performance", icon: "🏆", description: "Product-wise sales & revenue." },
+  { label: "Returns & Refunds", href: "/dashboard/seller/returns", icon: "🔄", description: "Manage customer returns and refunds.", group: "ORDERS" },
+  { label: "Orders", href: "/dashboard/seller/orders", icon: "🚚", description: "Order fulfillment." },
   { label: "Sales Forecast", href: "/dashboard/seller/forecast", icon: "🔮", description: "AI demand forecasting." },
   { label: "Smart Inventory", href: "/dashboard/seller/inventory", icon: "📦", description: "Stock levels & restock alerts." },
   { label: "Orders", href: "/dashboard/seller/orders", icon: "🚚", description: "Order fulfillment." },
@@ -46,6 +48,7 @@ export const sellerDashboardLinks: DashboardLink[] = [
   { label: "Add Product", href: "/dashboard/seller/products/add", icon: "➕", description: "List a new product manually or with AI." },
   { label: "AI Product Studio", href: "/dashboard/seller/ai-tools", icon: "🤖", description: "Create listings from product images with AI." },
   { label: "Security Center", href: "/dashboard/seller/security", icon: "🔐", description: "Sessions & security events." },
+  { label: "My Complaints", href: "/dashboard/seller/complaints", icon: "📝", description: "Submit and track seller complaints." },
   { label: "Notifications", href: "/dashboard/seller/notifications", icon: "🔔", description: "Order & store alerts." },
   { label: "Store Settings", href: "/dashboard/seller/store-settings", icon: "⚙️", description: "Store profile & preferences." },
 ];
@@ -72,9 +75,11 @@ export const adminDashboardLinks: DashboardLink[] = [
 export const deliveryManDashboardLinks: DashboardLink[] = [
   { label: "Dashboard", href: "/dashboard/delivery", icon: "🏠", description: "Delivery overview & live cockpit." },
   { label: "Available Deliveries", href: "/dashboard/delivery/available", icon: "📍", description: "Browse and accept open delivery requests." },
+  { label: "Reverse Deliveries", href: "/dashboard/delivery/returns", icon: "🔄", description: "Pick up returned items from customers." },
   { label: "My Deliveries", href: "/dashboard/delivery/my-deliveries", icon: "🚚", description: "Active & completed delivery missions." },
   { label: "AI Copilot", href: "/dashboard/delivery/copilot", icon: "🤖", description: "AI route, workload & earnings advisor." },
   { label: "Incidents & Issues", href: "/dashboard/delivery/incidents", icon: "⚠️", description: "Report and track delivery incidents." },
+  { label: "My Complaints", href: "/dashboard/delivery/complaints", icon: "📝", description: "Submit and track delivery complaints." },
   { label: "Notifications", href: "/dashboard/delivery/notifications", icon: "🔔", description: "Delivery alerts & updates." },
   { label: "My Profile", href: "/dashboard/delivery/profile", icon: "👤", description: "Profile, documents & vehicle info." },
 ];
