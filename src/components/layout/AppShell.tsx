@@ -7,6 +7,7 @@ import { Footer } from "@/components/layout/Footer";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { CartDrawerProvider } from "@/context/CartDrawerContext";
 import { WishlistProvider } from "@/context/WishlistContext";
+import { FlyToCartProvider } from "@/context/FlyToCartContext";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { useSession } from "@/lib/auth-client";
 import { recordSession } from "@/lib/api/security-intelligence";
@@ -41,11 +42,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return (
       <WishlistProvider>
         <CartDrawerProvider>
-          <div className="h-[100dvh] flex flex-col bg-background text-text overflow-hidden">
-            <Navbar />
-            <main className="flex-1 min-h-0 w-full flex flex-col overflow-hidden">{children}</main>
-          </div>
-          <CartDrawer />
+          <FlyToCartProvider>
+            <div className="h-[100dvh] flex flex-col bg-background text-text overflow-hidden">
+              <Navbar />
+              <main className="flex-1 min-h-0 w-full flex flex-col overflow-hidden">{children}</main>
+            </div>
+            <CartDrawer />
+          </FlyToCartProvider>
         </CartDrawerProvider>
       </WishlistProvider>
     );
@@ -55,8 +58,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return (
       <WishlistProvider>
         <CartDrawerProvider>
-          <div className="min-h-screen bg-background text-text">{children}</div>
-          <CartDrawer />
+          <FlyToCartProvider>
+            <div className="min-h-screen bg-background text-text">{children}</div>
+            <CartDrawer />
+          </FlyToCartProvider>
         </CartDrawerProvider>
       </WishlistProvider>
     );
@@ -65,16 +70,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <WishlistProvider>
       <CartDrawerProvider>
-        <div className="min-h-screen bg-background text-text pb-16 md:pb-0">
-          <Navbar />
-          {/* Container max-width setup */}
-          <main className="container mx-auto flex-1 px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
-            {children}
-          </main>
-          <Footer />
-          <MobileBottomNav />
-        </div>
-        <CartDrawer />
+        <FlyToCartProvider>
+          <div className="min-h-screen bg-background text-text pb-16 md:pb-0">
+            <Navbar />
+            {/* Container max-width setup */}
+            <main className="container mx-auto flex-1 px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
+              {children}
+            </main>
+            <Footer />
+            <MobileBottomNav />
+          </div>
+          <CartDrawer />
+        </FlyToCartProvider>
       </CartDrawerProvider>
     </WishlistProvider>
   );

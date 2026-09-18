@@ -8,6 +8,7 @@ import type { Product } from "@/lib/api/products";
 import { formatCurrency } from "@/lib/utils";
 import { addToCart } from "@/lib/api/cart";
 import { useWishlist } from "@/context/WishlistContext";
+import { useFlyToCart } from "@/context/FlyToCartContext";
 import { useSession } from "@/lib/auth-client";
 import { recordShoppingEvent, getPurchaseDecisionScore, type PurchaseDecisionScoreData } from "@/lib/api/customer-intelligence";
 import { addGuestCartItem, clearGuestCart } from "@/lib/guest-store";
@@ -22,6 +23,7 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const { isInWishlist, toggleWishlist } = useWishlist();
+  const { triggerFlyToCart } = useFlyToCart();
 
   const allVariants = React.useMemo(() => extractVariants(product), [product]);
   const hasRealVariants = allVariants.length > 0;
@@ -111,6 +113,11 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
   }, [product.id, (product as { _id?: string })._id]);
 
   const handleAddToCart = async () => {
+    triggerFlyToCart({
+      startElement: mainCtasRef.current,
+      imageSrc,
+    });
+
     const itemTitle = selectedVariant?.name
       ? `${product.title} (${selectedVariant.name})`
       : product.title;

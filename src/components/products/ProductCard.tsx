@@ -24,6 +24,7 @@ import { ProductCardData } from "@/features/products/types";
 import { formatCurrency } from "@/lib/utils";
 import { addToCart } from "@/lib/api/cart";
 import { useWishlist } from "@/context/WishlistContext";
+import { useFlyToCart } from "@/context/FlyToCartContext";
 import { useSession } from "@/lib/auth-client";
 import {
   addGuestCartItem,
@@ -62,6 +63,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const router = useRouter();
   const { data: session } = useSession();
   const { isInWishlist, toggleWishlist } = useWishlist();
+  const { triggerFlyToCart } = useFlyToCart();
+  const cardRef = React.useRef<HTMLDivElement | null>(null);
 
   const [internalAdded, setInternalAdded] = useState(false);
   const [imgError, setImgError] = useState(false);
@@ -86,6 +89,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const handleCartClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    const imgEl = cardRef.current?.querySelector("img");
+    triggerFlyToCart({
+      startElement: (imgEl as HTMLElement) || (cardRef.current as HTMLElement) || (e.currentTarget as HTMLElement),
+      imageSrc,
+    });
 
     if (onAddToCart) {
       onAddToCart(product, e);
@@ -171,6 +180,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   return (
     <motion.div
+      ref={cardRef}
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.4) }}
