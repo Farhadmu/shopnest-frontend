@@ -19,8 +19,8 @@ export function ProductPackageContents({ product }: ProductPackageContentsProps)
   ];
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
-      <div className="flex items-center gap-2 border-b border-border pb-3">
+    <div className="flex flex-col gap-3.5 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+      <div className="flex items-center gap-2 border-b border-border pb-2.5">
         <FiPackage className="text-primary" size={20} />
         <h3 className="text-base font-black text-text">Package Contents (In The Box)</h3>
       </div>
