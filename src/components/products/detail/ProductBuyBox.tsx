@@ -155,29 +155,31 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
       )}
 
       {/* Title + rating */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-5 shadow-sm">
-        <div className="flex flex-wrap items-center gap-2">
-          {hasDiscount && (
-            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-black text-primary">
-              FLASH DEAL
+      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {hasDiscount && (
+              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-black text-primary">
+                FLASH DEAL
+              </span>
+            )}
+            <span className="ml-auto text-xs text-muted">SKU: {product.id.slice(0, 10).toUpperCase()}</span>
+          </div>
+
+          <h1 className="text-2xl font-black leading-snug text-text sm:text-3xl">{product.title}</h1>
+
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <span className="flex items-center gap-1 rounded-lg bg-muted-bg px-2.5 py-1 font-bold text-text">
+              <FiStar size={15} className="fill-amber-400 text-amber-400" />
+              {(product.ratingAvg ?? 4.8).toFixed(1)}
             </span>
-          )}
-          <span className="ml-auto text-xs text-muted">SKU: {product.id.slice(0, 10).toUpperCase()}</span>
-        </div>
-
-        <h1 className="text-2xl font-black leading-snug text-text sm:text-3xl">{product.title}</h1>
-
-        <div className="flex flex-wrap items-center gap-3 text-sm">
-          <span className="flex items-center gap-1 rounded-lg bg-muted-bg px-2.5 py-1 font-bold text-text">
-            <FiStar size={15} className="fill-amber-400 text-amber-400" />
-            {(product.ratingAvg ?? 4.8).toFixed(1)}
-          </span>
-          <span className="text-muted">
-            {product.ratingCount ?? 0} verified review{(product.ratingCount ?? 0) === 1 ? "" : "s"}
-          </span>
-          <span className="flex items-center gap-1 font-semibold text-muted">
-            <FiCheckCircle size={14} className="text-primary" /> {product.sold ?? 0} units sold
-          </span>
+            <span className="text-muted">
+              {product.ratingCount ?? 0} verified review{(product.ratingCount ?? 0) === 1 ? "" : "s"}
+            </span>
+            <span className="flex items-center gap-1 font-semibold text-muted">
+              <FiCheckCircle size={14} className="text-primary" /> {product.sold ?? 0} units sold
+            </span>
+          </div>
         </div>
 
         {/* Price row */}
@@ -208,7 +210,7 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
         </div>
 
         {/* Variant selector */}
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1">
           <span className="text-xs font-bold uppercase tracking-wide text-muted">
             Variant: <span className="text-primary">{variant}</span>
           </span>
@@ -229,7 +231,7 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
         </div>
 
         {/* Quantity + CTAs */}
-        <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="flex h-12 w-full items-center justify-between rounded-lg bg-muted-bg p-1 sm:w-36">
             <button
               type="button"
@@ -250,30 +252,33 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
             </button>
           </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            isDisabled={product.stock <= 0}
-            onPress={handleAddToCart}
-            className="h-12 flex-1 rounded-lg border border-primary/30 text-sm font-bold text-primary"
-          >
-            <span className="flex items-center justify-center gap-2">
-              {isAdded ? <FiCheckCircle size={16} /> : <FiShoppingBag size={16} />}
-              {isAdded ? "Added" : "Add to Cart"}
-            </span>
-          </Button>
+          {/* Shared flex container to equalize button widths */}
+          <div className="flex flex-1 items-center gap-3 w-full">
+            <Button
+              type="button"
+              variant="outline"
+              isDisabled={product.stock <= 0}
+              onPress={handleAddToCart}
+              className="h-12 flex-1 w-full basis-0 rounded-lg border border-primary/30 text-sm font-bold text-primary flex items-center justify-center"
+            >
+              <span className="flex items-center justify-center gap-2">
+                {isAdded ? <FiCheckCircle size={16} /> : <FiShoppingBag size={16} />}
+                {isAdded ? "Added" : "Add to Cart"}
+              </span>
+            </Button>
 
-          <Button
-            type="button"
-            variant="primary"
-            isDisabled={product.stock <= 0}
-            onPress={handleBuyNow}
-            className="h-12 flex-1 rounded-lg text-sm font-bold text-white shadow-md"
-          >
-            <span className="flex items-center justify-center gap-2">
-              <FiZap size={16} /> Buy Now
-            </span>
-          </Button>
+            <Button
+              type="button"
+              variant="primary"
+              isDisabled={product.stock <= 0}
+              onPress={handleBuyNow}
+              className="h-12 flex-1 w-full basis-0 rounded-lg text-sm font-bold text-white shadow-md flex items-center justify-center"
+            >
+              <span className="flex items-center justify-center gap-2">
+                <FiZap size={16} /> Buy Now
+              </span>
+            </Button>
+          </div>
 
           <button
             type="button"
