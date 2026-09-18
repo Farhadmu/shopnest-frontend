@@ -16,8 +16,8 @@ export function ProductOverviewSection({ product }: ProductOverviewSectionProps)
       : ["Quality checked before dispatch", "Genuine manufacturer packaging", "Fast, trackable delivery", "Backed by buyer protection"];
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
-      <div className="flex items-center gap-2 border-b border-border pb-3">
+    <div className="flex flex-col gap-3.5 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+      <div className="flex items-center gap-2 border-b border-border pb-2.5">
         <FiFileText className="text-primary" size={20} />
         <h3 className="text-lg font-black text-text">Product Overview &amp; Experience</h3>
       </div>
