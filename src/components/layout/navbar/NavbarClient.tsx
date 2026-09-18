@@ -16,7 +16,9 @@ import { NavbarLinks } from "./NavbarLinks";
 import { NavbarActions } from "./NavbarActions";
 import { NavbarUserMenu, NavbarAuthButtons } from "./NavbarUserMenu";
 import { NavbarMobileMenu } from "./NavbarMobileMenu";
+import { NavbarSearchOverlay } from "./NavbarSearchOverlay";
 import type { UserRole } from "./NavbarLinks";
+import { RoleBadge } from "./NavbarRoleBadge";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface NavbarClientProps {
@@ -26,38 +28,13 @@ interface NavbarClientProps {
   mobileCategoryMenu: React.ReactNode;
 }
 
-function RoleBadge({ role }: { role: UserRole }) {
-  if (role === "admin")
-    return (
-      <span className="rounded-md bg-purple-500/15 px-2 py-0.5 text-[10px] font-black uppercase text-purple-600 dark:text-purple-400">
-        Admin
-      </span>
-    );
-  if (role === "seller")
-    return (
-      <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400">
-        Seller
-      </span>
-    );
-  if (role === "delivery_man" || role === "delivery")
-    return (
-      <span className="rounded-md bg-sky-500/15 px-2 py-0.5 text-[10px] font-black uppercase text-sky-600 dark:text-sky-400">
-        Delivery Partner
-      </span>
-    );
-  return (
-    <span className="rounded-md bg-primary/15 px-2 py-0.5 text-[10px] font-black uppercase text-primary">
-      Customer
-    </span>
-  );
-}
-
 export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: NavbarClientProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { openCart, itemCount: drawerItemCount } = useCartDrawer();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [cartCount, setCartCount] = useState(0);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -192,7 +169,13 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
   const isPill = isScrolled && !mobileMenuOpen;
 
   return (
-    <header className="sticky top-0 z-50 w-full">
+    <>
+    <motion.header
+      initial={{ y: -24, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ type: "spring", stiffness: 100, damping: 20 }}
+      className="sticky top-0 z-50 w-full"
+    >
       {/*
         LAYERED PILL MORPH — professional approach:
         ┌─ Shell div ─────────────────────────────────────────┐
@@ -211,73 +194,67 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
         │  └────────────────────────────────────────────────┘ │
         └─────────────────────────────────────────────────────┘
       */}
+      {/*
+        SPLIT SHELL APPROACH — outer div has NO overflow-hidden so dropdowns
+        (category flyout, user menu) can extend below the bar. Background
+        clipping lives in a separate pointer-events-none absolute child.
+      */}
       <div
-        className="relative overflow-hidden"
+        className="relative mx-auto transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
         style={{
-          borderRadius: isPill ? "9999px" : "0px",
-          margin: isPill ? "8px 64px 0" : "0",
+          width: isPill ? "min(1240px, calc(100% - 32px))" : "100%",
           boxShadow: isPill
             ? "0 8px 32px -8px rgba(0,0,0,0.18), 0 4px 8px -4px rgba(0,0,0,0.08)"
             : "none",
-          willChange: "border-radius, margin, box-shadow",
-          transition: [
-            "border-radius 0.25s cubic-bezier(0.25, 1, 0.3, 1)",
-            "margin 0.25s cubic-bezier(0.25, 1, 0.3, 1)",
-            "box-shadow 0.25s cubic-bezier(0.25, 1, 0.3, 1)",
-          ].join(", "),
         }}
       >
-        {/* ── BG Layer 1: gradient (visible at top) ── */}
+        {/* ── Clipped background shell (overflow-hidden lives here, NOT on the outer div) ── */}
         <div
-          className="pointer-events-none absolute inset-0 bg-linear-to-r from-indigo-600 via-violet-600 to-purple-600 dark:from-indigo-950 dark:via-purple-950 dark:to-violet-950"
+          className="pointer-events-none absolute inset-0 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
           aria-hidden="true"
-          style={{
-            opacity: isPill ? 0 : 1,
-            transition: "opacity 0.2s ease",
-          }}
-        />
+          style={{ borderRadius: isPill ? "0 0 24px 24px" : "0px" }}
+        >
+          {/* BG Layer 1: gradient (visible at top) */}
+          <div
+            className="absolute inset-0 bg-linear-to-r from-indigo-600 via-violet-600 to-purple-600 dark:from-indigo-950 dark:via-purple-950 dark:to-violet-950"
+            style={{ opacity: isPill ? 0 : 1, transition: "opacity 0.2s ease" }}
+          />
+          {/* BG Layer 2: frosted glass (visible when scrolled) */}
+          <div
+            className="absolute inset-0 bg-base-100/85 backdrop-blur-2xl"
+            style={{ opacity: isPill ? 1 : 0, transition: "opacity 0.2s ease" }}
+          />
+          {/* Border layer */}
+          <div
+            className="absolute inset-0"
+            style={{
+              borderRadius: "inherit",
+              boxShadow: isPill
+                ? "inset 0 0 0 1px rgba(255,255,255,0.12)"
+                : "inset 0 -1px 0 0 rgba(255,255,255,0.12)",
+              transition: "box-shadow 0.25s cubic-bezier(0.25, 1, 0.3, 1)",
+            }}
+          />
+        </div>
 
-        {/* ── BG Layer 2: frosted glass (visible when scrolled) ── */}
-        <div
-          className="pointer-events-none absolute inset-0 bg-base-100/85 backdrop-blur-2xl"
-          aria-hidden="true"
-          style={{
-            opacity: isPill ? 1 : 0,
-            transition: "opacity 0.2s ease",
-          }}
-        />
-
-        {/* ── Border Layer: inset shadow transitions from bottom-line → full ring ── */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          aria-hidden="true"
-          style={{
-            borderRadius: "inherit",
-            boxShadow: isPill
-              ? "inset 0 0 0 1px rgba(255,255,255,0.12)"
-              : "inset 0 -1px 0 0 rgba(255,255,255,0.12)",
-            transition: "box-shadow 0.25s cubic-bezier(0.25, 1, 0.3, 1)",
-          }}
-        />
-
-        {/* ── Content Layer: never shifts layout ── */}
+        {/* ── Content layer — z-index above bg, NO overflow restriction ── */}
         <div className="relative z-10 mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8">
           <div className="flex min-h-16 items-center justify-between gap-2 lg:gap-4 xl:gap-5">
 
-            {/* Brand + desktop search */}
+            {/* Brand + desktop search trigger */}
             <NavbarBrand
               onClose={() => setMobileMenuOpen(false)}
-              search={search}
-              setSearch={setSearch}
-              isScrolled={isScrolled}
+              onSearchOpen={() => setSearchOpen(true)}
             />
 
             {/* Desktop nav links + server category menu */}
-            <NavbarLinks
-              role={role}
-              isAuthenticated={isAuthenticated}
-              categoryMenu={desktopCategoryMenu}
-            />
+            <div className="relative z-30">
+              <NavbarLinks
+                role={role}
+                isAuthenticated={isAuthenticated}
+                categoryMenu={desktopCategoryMenu}
+              />
+            </div>
 
             {/* Right-side actions */}
             <NavbarActions
@@ -309,59 +286,57 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
             />
           </div>
 
-          {/* Mobile search bar */}
-          <AnimatePresence>
-            {(!isScrolled || mobileMenuOpen) && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-                className="overflow-hidden md:hidden"
+          {/* Mobile search bar — always rendered, hidden when scrolled & menu closed */}
+          {(!isScrolled || mobileMenuOpen) && (
+            <div className="overflow-hidden pb-3 md:hidden">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const q = search.trim();
+                  router.push(q ? `/products?search=${encodeURIComponent(q)}` : "/products");
+                  setMobileMenuOpen(false);
+                }}
               >
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const q = search.trim();
-                    router.push(q ? `/products?search=${encodeURIComponent(q)}` : "/products");
-                    setMobileMenuOpen(false);
-                  }}
-                  className="pb-3"
-                >
-                  <div className="flex h-11 items-center rounded-xl border border-white/25 bg-white/15 px-3 focus-within:bg-white/25">
-                    <FaSearch className="text-white/70" size={14} />
-                    <input
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Search ShopNest..."
-                      className="min-w-0 flex-1 bg-transparent px-3 text-sm text-white outline-none placeholder:text-white/50"
-                    />
-                  </div>
-                </form>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                <div className="flex h-11 items-center rounded-xl border border-white/25 bg-white/15 px-3 focus-within:bg-white/25">
+                  <FaSearch className="text-white/70" size={14} />
+                  <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search ShopNest..."
+                    className="min-w-0 flex-1 bg-transparent px-3 text-sm text-white outline-none placeholder:text-white/50"
+                  />
+                </div>
+              </form>
+            </div>
+          )}
 
           {/* Mobile menu drawer */}
-          <AnimatePresence>
-            {mobileMenuOpen && (
-              <NavbarMobileMenu
-                key={pathname}
-                open={mobileMenuOpen}
-                isAuthenticated={isAuthenticated}
-                user={user}
-                role={role}
-                dashboardHref={getDashboardHref()}
-                onClose={() => setMobileMenuOpen(false)}
-                onSignOut={handleSignOut}
-                categoryMenuSlot={mobileCategoryMenu}
-                roleBadge={<RoleBadge role={role} />}
-              />
-            )}
-          </AnimatePresence>
+          {mobileMenuOpen && (
+            <NavbarMobileMenu
+              key={pathname}
+              open={mobileMenuOpen}
+              isAuthenticated={isAuthenticated}
+              user={user}
+              role={role}
+              dashboardHref={getDashboardHref()}
+              onClose={() => setMobileMenuOpen(false)}
+              onSignOut={handleSignOut}
+              categoryMenuSlot={mobileCategoryMenu}
+              roleBadge={<RoleBadge role={role} />}
+            />
+          )}
         </div>
       </div>
-    </header>
+    </motion.header>
+
+      {/* Full-width search overlay — rendered outside the pill shell */}
+      <NavbarSearchOverlay
+        open={searchOpen}
+        value={search}
+        onChange={setSearch}
+        onClose={() => setSearchOpen(false)}
+      />
+    </>
   );
 }
 

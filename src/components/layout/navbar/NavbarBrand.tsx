@@ -3,29 +3,16 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { FaSearch } from "react-icons/fa";
-
 
 interface NavbarBrandProps {
   onClose?: () => void;
-  search: string;
-  setSearch: (v: string) => void;
-  isScrolled?: boolean;
+  onSearchOpen: () => void;
 }
 
-export function NavbarBrand({ onClose, search, setSearch, isScrolled = false }: NavbarBrandProps) {
-  const router = useRouter();
-
-  const submitSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const q = search.trim();
-    router.push(q ? `/products?search=${encodeURIComponent(q)}` : "/products");
-    onClose?.();
-  };
-
+export function NavbarBrand({ onClose, onSearchOpen }: NavbarBrandProps) {
   return (
-    <div className="flex min-w-0 items-center gap-2.5 sm:gap-3.5 lg:gap-5">
+    <div className="flex shrink-0 items-center gap-2.5 sm:gap-3.5">
       {/* Logo */}
       <Link
         href="/"
@@ -47,25 +34,15 @@ export function NavbarBrand({ onClose, search, setSearch, isScrolled = false }: 
         </span>
       </Link>
 
-      {/* Expand-on-hover desktop search */}
-      <form onSubmit={submitSearch} className="hidden min-w-0 shrink-0 items-center md:flex">
-        <div className="group relative flex h-11 w-11 shrink-0 items-center overflow-hidden rounded-full border border-white/25 bg-white/15 transition-all duration-300 ease-in-out hover:w-56 focus-within:w-56 xl:hover:w-72 xl:focus-within:w-72 focus-within:bg-white/25 pr-3">
-          <button
-            type="submit"
-            aria-label="Search"
-            className="grid h-11 w-11 shrink-0 place-items-center text-white/70 transition-colors hover:text-white"
-          >
-            <FaSearch size={14} />
-          </button>
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search products, stores..."
-            className="w-full min-w-0 bg-transparent pr-3 text-sm text-white outline-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100 placeholder:text-white/50"
-            aria-label="Search ShopNest"
-          />
-        </div>
-      </form>
+      {/* Search trigger (desktop only) */}
+      <button
+        type="button"
+        onClick={onSearchOpen}
+        aria-label="Open search"
+        className="hidden md:grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/25 bg-white/15 text-white/70 transition hover:bg-white/25 hover:text-white cursor-pointer active:scale-95"
+      >
+        <FaSearch size={13} />
+      </button>
     </div>
   );
 }

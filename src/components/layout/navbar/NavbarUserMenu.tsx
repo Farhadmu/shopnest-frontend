@@ -16,7 +16,9 @@ import {
   FaShoppingBag,
   FaChevronDown,
 } from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
 import type { DropdownItem, UserRole } from "./NavbarLinks";
+import { RoleBadge } from "./NavbarRoleBadge";
 
 const userDropdownItems: Record<Exclude<UserRole, "guest">, DropdownItem[]> = {
   customer: [
@@ -88,32 +90,6 @@ interface NavbarUserMenuProps {
   onSignOut: () => void;
 }
 
-function RoleBadge({ role }: { role: UserRole }) {
-  if (role === "admin")
-    return (
-      <span className="rounded-md bg-purple-500/15 px-2 py-0.5 text-[10px] font-black uppercase text-purple-600 dark:text-purple-400">
-        Admin
-      </span>
-    );
-  if (role === "seller")
-    return (
-      <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400">
-        Seller
-      </span>
-    );
-  if (role === "delivery_man" || role === "delivery")
-    return (
-      <span className="rounded-md bg-sky-500/15 px-2 py-0.5 text-[10px] font-black uppercase text-sky-600 dark:text-sky-400">
-        Delivery Partner
-      </span>
-    );
-  return (
-    <span className="rounded-md bg-primary/15 px-2 py-0.5 text-[10px] font-black uppercase text-primary">
-      Customer
-    </span>
-  );
-}
-
 export function NavbarUserMenu({ user, role, onOpenCart, onSignOut }: NavbarUserMenuProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -134,15 +110,15 @@ export function NavbarUserMenu({ user, role, onOpenCart, onSignOut }: NavbarUser
   const firstLetter = user?.name?.trim()
     ? user.name.trim().charAt(0).toUpperCase()
     : user?.email
-    ? user.email.charAt(0).toUpperCase()
-    : "U";
+      ? user.email.charAt(0).toUpperCase()
+      : "U";
 
   return (
     <div className="relative shrink-0" ref={ref}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative flex shrink-0 items-center justify-center rounded-full transition hover:opacity-90 active:scale-95 cursor-pointer focus:outline-none"
+        className="relative flex shrink-0 items-center justify-center gap-1.5 rounded-full transition hover:opacity-90 active:scale-95 cursor-pointer focus:outline-none"
         aria-expanded={open}
         aria-label="Open account menu"
       >
@@ -155,71 +131,90 @@ export function NavbarUserMenu({ user, role, onOpenCart, onSignOut }: NavbarUser
             {firstLetter || "JD"}
           </Avatar.Fallback>
         </Avatar>
+        <motion.span
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+          className="flex items-center text-white/70"
+        >
+          <FaChevronDown size={11} />
+        </motion.span>
       </button>
 
-      {open && (
-        <div className="absolute right-0 z-50 mt-2 w-64 rounded-2xl border border-border bg-surface p-2 shadow-2xl shadow-black/10 backdrop-blur-xl animate-in fade-in zoom-in-95">
-          {/* User info header */}
-          <div className="mb-2 rounded-xl bg-muted-bg p-3">
-            <div className="flex items-center justify-between gap-2">
-              <p className="truncate text-sm font-black text-text">{user?.name || "User"}</p>
-              <RoleBadge role={role} />
-            </div>
-            <p className="truncate text-xs text-muted">{user?.email}</p>
-          </div>
-
-          {/* Menu items */}
-          <div className="grid gap-0.5 text-xs font-bold">
-            {dropdownLinks.map((item: DropdownItem) => {
-              const Icon = item.icon;
-              if (item.href === "/cart") {
-                return (
-                  <button
-                    key={item.href}
-                    type="button"
-                    onClick={() => { setOpen(false); onOpenCart(); }}
-                    className="flex w-full items-center gap-2.5 rounded-lg p-2.5 text-left text-text transition hover:bg-primary/10 hover:text-primary cursor-pointer"
-                  >
-                    {typeof Icon === "string" ? (
-                      <span className="text-sm">{Icon}</span>
-                    ) : (
-                      <Icon className="text-muted" size={13} />
-                    )}
-                    <span>{item.label}</span>
-                  </button>
-                );
-              }
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  className={`flex items-center gap-2.5 rounded-lg p-2.5 transition ${item.isPrimary
-                    ? "text-primary hover:bg-primary/10"
-                    : "text-text hover:bg-primary/10 hover:text-primary"
-                    }`}
-                >
-                  {typeof Icon === "string" ? (
-                    <span className="text-sm">{Icon}</span>
-                  ) : (
-                    <Icon className="text-muted" size={13} />
-                  )}
-                  {item.label}
-                </Link>
-              );
-            })}
-          </div>
-
-          <div className="my-2 border-t border-border" />
-          <button
-            type="button"
-            onClick={() => { setOpen(false); onSignOut(); }}
-            className="flex w-full items-center gap-2.5 rounded-lg p-2.5 text-xs font-bold text-error transition hover:bg-error/10"
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.95 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute right-0 z-50 mt-2 w-64 rounded-2xl border border-border bg-surface p-2 shadow-2xl shadow-black/10 backdrop-blur-xl"
           >
-            <FaSignOutAlt size={13} /> Sign Out
-          </button>
-        </div>
-      )}
+            {/* User info header */}
+            <div className="mb-2 rounded-xl bg-muted-bg p-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="truncate text-sm font-black text-text">{user?.name || "User"}</p>
+                <RoleBadge role={role} />
+              </div>
+              <p className="truncate text-xs text-muted">{user?.email}</p>
+            </div>
+
+            {/* Menu items */}
+            <div className="grid gap-0.5 text-xs font-bold">
+              {dropdownLinks.map((item: DropdownItem, index: number) => {
+                const Icon = item.icon;
+                return (
+                  <motion.div
+                    key={item.href}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05, duration: 0.2 }}
+                  >
+                    {item.href === "/cart" ? (
+                      <button
+                        type="button"
+                        onClick={() => { setOpen(false); onOpenCart(); }}
+                        className="flex w-full items-center gap-2.5 rounded-lg p-2.5 text-left text-text transition hover:bg-primary/10 hover:text-primary cursor-pointer"
+                      >
+                        {typeof Icon === "string" ? (
+                          <span className="text-sm">{Icon}</span>
+                        ) : (
+                          <Icon className="text-muted" size={13} />
+                        )}
+                        <span>{item.label}</span>
+                      </button>
+                    ) : (
+                      <Link
+                        href={item.href}
+                        onClick={() => setOpen(false)}
+                        className={`flex items-center gap-2.5 rounded-lg p-2.5 transition ${item.isPrimary
+                          ? "text-primary hover:bg-primary/10"
+                          : "text-text hover:bg-primary/10 hover:text-primary"
+                          }`}
+                      >
+                        {typeof Icon === "string" ? (
+                          <span className="text-sm">{Icon}</span>
+                        ) : (
+                          <Icon className="text-muted" size={13} />
+                        )}
+                        {item.label}
+                      </Link>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            <div className="my-2 border-t border-border" />
+            <button
+              type="button"
+              onClick={() => { setOpen(false); onSignOut(); }}
+              className="flex w-full items-center gap-2.5 rounded-lg p-2.5 text-xs font-bold text-error transition hover:bg-error/10"
+            >
+              <FaSignOutAlt size={13} /> Sign Out
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

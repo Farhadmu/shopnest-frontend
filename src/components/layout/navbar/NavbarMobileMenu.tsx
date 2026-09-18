@@ -4,7 +4,6 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sparkles } from "lucide-react";
-import { motion } from "framer-motion";
 import type { NavItem, UserRole } from "./NavbarLinks";
 import { mainNavItems } from "./NavbarLinks";
 
@@ -36,19 +35,8 @@ export function NavbarMobileMenu({
   const pathname = usePathname();
   const navLinks = (isAuthenticated ? mainNavItems[role] : mainNavItems.guest) || mainNavItems.guest;
 
-  // Bug #4 fix: replaced hard `return null` with a motion.div that AnimatePresence
-  // in NavbarClient can animate. The open prop is kept for backward-compat but
-  // the conditional render now lives in the parent's AnimatePresence block.
-  // `overflow-hidden` on the wrapper lets `height` animate cleanly.
   return (
-    <motion.div
-      key="mobile-menu"
-      initial={{ height: 0, opacity: 0 }}
-      animate={{ height: "auto", opacity: 1 }}
-      exit={{ height: 0, opacity: 0 }}
-      transition={{ duration: 0.28, ease: [0.25, 0.1, 0.25, 1] }}
-      className="overflow-hidden lg:hidden"
-    >
+    <div className="overflow-hidden lg:hidden">
       <div className="border-t border-border py-3">
         <div className="grid gap-1">
           {/* Server-rendered category accordion */}
@@ -141,6 +129,6 @@ export function NavbarMobileMenu({
           )}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
