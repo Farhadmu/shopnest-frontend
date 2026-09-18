@@ -5,12 +5,14 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { AlertCircle, Package } from "lucide-react";
+import { FiStar } from "react-icons/fi";
 import { useSession } from "@/lib/auth-client";
 import {
   verifyStripeCheckoutSession,
   verifySSLCommerzPayment,
 } from "@/lib/api/payments";
 import { getOrderById, type Order } from "@/lib/api/orders";
+import { ReviewModal } from "@/components/reviews/ReviewModal";
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
@@ -23,6 +25,8 @@ function PaymentSuccessContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [order, setOrder] = useState<Order | null>(null);
+  const [reviewTarget, setReviewTarget] = useState<{ id: string; title: string } | null>(null);
+  const [reviewSuccessMsg, setReviewSuccessMsg] = useState<string | null>(null);
   const [customerEmail, setCustomerEmail] = useState<string>(
     () => authSession?.user?.email || "customer@example.com"
   );
@@ -277,6 +281,13 @@ function PaymentSuccessContent() {
           </p>
         </div>
 
+        {/* Success Banner for Review */}
+        {reviewSuccessMsg && (
+          <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs font-bold text-center animate-fadeIn">
+            {reviewSuccessMsg}
+          </div>
+        )}
+
         {/* Bordered Inner Receipt Card */}
         <div className="mt-6 rounded-md border border-slate-200/90 dark:border-slate-800 p-4 sm:p-5 bg-white dark:bg-[#120D28]">
           {/* Top 3 Columns: Order Date, Order Number, Order Status */}
@@ -334,9 +345,26 @@ function PaymentSuccessContent() {
                       </p>
                     </div>
 
-                    <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-slate-100 flex-shrink-0">
-                      ৳{(item.price * item.quantity).toLocaleString()}
-                    </span>
+                    <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                      <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-slate-100">
+                        ৳{(item.price * item.quantity).toLocaleString()}
+                      </span>
+                      {(item.productId || (item as any).id || (item as any)._id) && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setReviewTarget({
+                              id: item.productId || (item as any).id || (item as any)._id || "",
+                              title: item.title || item.name || `Product #${idx + 1}`,
+                            })
+                          }
+                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-lg text-[11px] font-bold transition-colors cursor-pointer"
+                        >
+                          <FiStar className="w-3 h-3 fill-amber-400 text-amber-400" />
+                          <span>Write Review</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -434,6 +462,19 @@ function PaymentSuccessContent() {
           </a>
         </p>
       </div>
+
+      {reviewTarget && (
+        <ReviewModal
+          productId={reviewTarget.id}
+          productTitle={reviewTarget.title}
+          isOpen={true}
+          onClose={() => setReviewTarget(null)}
+          onSuccess={() => {
+            setReviewSuccessMsg("Review submitted successfully! Thank you for your feedback.");
+            setTimeout(() => setReviewSuccessMsg(null), 6000);
+          }}
+        />
+      )}
     </div>
   );
 }
