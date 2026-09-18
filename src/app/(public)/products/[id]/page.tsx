@@ -46,12 +46,13 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   }
 
   const reviews = await getProductReviews(id).catch(() => []);
+  const currentId = product.id || (product as { _id?: string })._id || id;
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
       <ProductBreadcrumbs category={product.category} title={product.title} />
 
-      {/* Gallery + Buy box */}
+      {/* Gallery (Left, Sticky) + Buy Box, AI Score & Seller Card (Right) */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start">
         <div className="lg:col-span-5">
           <ProductGallery images={product.images ?? []} title={product.title} />
@@ -65,19 +66,28 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
       <ProductFeaturesBent product={product} />
 
-      {/* Overview + Specs */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start">
-        <div className="flex flex-col gap-6 lg:col-span-7">
+      {/* Details & Specs (balanced 2-column grid when specs or variants exist, full-width otherwise) */}
+      {(product.specifications && Object.keys(product.specifications).length > 0) ||
+      (product.variants && product.variants.length > 0) ? (
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:items-start">
+          <div className="space-y-8 lg:col-span-2">
+            <ProductOverviewSection product={product} />
+            <ProductPackageContents product={product} />
+          </div>
+          <div className="lg:col-span-1">
+            <ProductSpecsTable product={product} />
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-8">
           <ProductOverviewSection product={product} />
           <ProductPackageContents product={product} />
         </div>
-        <div className="lg:col-span-5">
-          <ProductSpecsTable product={product} />
-        </div>
-      </div>
+      )}
 
+      {/* Customer Reviews Section */}
       <ProductReviewsSection
-        productId={product.id || (product as { _id?: string })._id || id}
+        productId={currentId}
         initialReviews={reviews}
       />
     </div>

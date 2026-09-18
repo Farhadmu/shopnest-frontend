@@ -12,34 +12,31 @@ import { useSession } from "@/lib/auth-client";
 import { recordShoppingEvent } from "@/lib/api/customer-intelligence";
 import { addGuestCartItem, addGuestWishlistItem, clearGuestCart, clearGuestWishlist } from "@/lib/guest-store";
 
+import { extractVariants, SpecVariant } from "./ProductSpecsTable";
+
 export interface ProductBuyBoxProps {
   product: Product;
-}
-
-/**
- * TODO(backend): color/size variants aren't part of the `Product` schema
- * yet. Falling back to a single "Standard" variant (derived from the first
- * product tag when available) until the API exposes real variants.
- */
-function getVariantOptions(product: Product): string[] {
-  if (product.tags && product.tags.length > 0) return product.tags.slice(0, 3);
-  return ["Standard"];
 }
 
 export function ProductBuyBox({ product }: ProductBuyBoxProps) {
   const router = useRouter();
   const { data: session } = useSession();
 
-  const variants = getVariantOptions(product);
-  const [variant, setVariant] = useState(variants[0]);
+  const allVariants = React.useMemo(() => extractVariants(product), [product]);
+  const hasRealVariants = allVariants.length > 0;
+  const [selectedVariant, setSelectedVariant] = useState<SpecVariant | null>(
+    hasRealVariants ? allVariants[0] : null
+  );
+
   const [quantity, setQuantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const viewRecordedRef = useRef(false);
 
   const hasDiscount = !!product.discountPrice && product.discountPrice < product.price;
-  const displayPrice = hasDiscount ? (product.discountPrice as number) : product.price;
-  const discountPct = hasDiscount
+  const activeBasePrice = selectedVariant?.price ?? (hasDiscount ? (product.discountPrice as number) : product.price);
+  const displayPrice = activeBasePrice;
+  const discountPct = hasDiscount && (!selectedVariant || !selectedVariant.price)
     ? Math.round(((product.price - (product.discountPrice as number)) / product.price) * 100)
     : 0;
 
@@ -65,17 +62,21 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
   }, [session?.user, product.id, product.title, product.category, product.price]);
 
   const handleAddToCart = async () => {
+    const itemTitle = selectedVariant?.name
+      ? `${product.title} (${selectedVariant.name})`
+      : product.title;
+
     if (!session?.user) {
       addGuestCartItem({
         productId: product.id,
         quantity,
         price: displayPrice,
-        title: product.title,
+        title: itemTitle,
         images: imageSrc ? [imageSrc] : undefined,
         category: product.category,
       });
       setIsAdded(true);
-      showToast(`Added ${quantity} × "${product.title}" to cart!`);
+      showToast(`Added ${quantity} × "${itemTitle}" to cart!`);
       setTimeout(() => setIsAdded(false), 2000);
       return;
     }
@@ -83,12 +84,12 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
       await addToCart(product.id, quantity);
       clearGuestCart();
       setIsAdded(true);
-      showToast(`Added ${quantity} × "${product.title}" to cart!`);
+      showToast(`Added ${quantity} × "${itemTitle}" to cart!`);
       setTimeout(() => setIsAdded(false), 2000);
       recordShoppingEvent({
         eventType: "cart_add",
         productId: product.id,
-        productTitle: product.title,
+        productTitle: itemTitle,
         category: product.category,
         price: displayPrice,
       }).catch(() => {});
@@ -98,12 +99,16 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
   };
 
   const handleBuyNow = async () => {
+    const itemTitle = selectedVariant?.name
+      ? `${product.title} (${selectedVariant.name})`
+      : product.title;
+
     if (!session?.user) {
       addGuestCartItem({
         productId: product.id,
         quantity,
         price: displayPrice,
-        title: product.title,
+        title: itemTitle,
         images: imageSrc ? [imageSrc] : undefined,
         category: product.category,
       });
@@ -155,29 +160,31 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
       )}
 
       {/* Title + rating */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-5 shadow-sm">
-        <div className="flex flex-wrap items-center gap-2">
-          {hasDiscount && (
-            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-black text-primary">
-              FLASH DEAL
+      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {hasDiscount && (
+              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-black text-primary">
+                FLASH DEAL
+              </span>
+            )}
+            <span className="ml-auto text-xs text-muted">SKU: {product.id.slice(0, 10).toUpperCase()}</span>
+          </div>
+
+          <h1 className="text-2xl font-black leading-snug text-text sm:text-3xl">{product.title}</h1>
+
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <span className="flex items-center gap-1 rounded-lg bg-muted-bg px-2.5 py-1 font-bold text-text">
+              <FiStar size={15} className="fill-amber-400 text-amber-400" />
+              {(product.ratingAvg ?? 4.8).toFixed(1)}
             </span>
-          )}
-          <span className="ml-auto text-xs text-muted">SKU: {product.id.slice(0, 10).toUpperCase()}</span>
-        </div>
-
-        <h1 className="text-2xl font-black leading-snug text-text sm:text-3xl">{product.title}</h1>
-
-        <div className="flex flex-wrap items-center gap-3 text-sm">
-          <span className="flex items-center gap-1 rounded-lg bg-muted-bg px-2.5 py-1 font-bold text-text">
-            <FiStar size={15} className="fill-amber-400 text-amber-400" />
-            {(product.ratingAvg ?? 4.8).toFixed(1)}
-          </span>
-          <span className="text-muted">
-            {product.ratingCount ?? 0} verified review{(product.ratingCount ?? 0) === 1 ? "" : "s"}
-          </span>
-          <span className="flex items-center gap-1 font-semibold text-muted">
-            <FiCheckCircle size={14} className="text-primary" /> {product.sold ?? 0} units sold
-          </span>
+            <span className="text-muted">
+              {product.ratingCount ?? 0} verified review{(product.ratingCount ?? 0) === 1 ? "" : "s"}
+            </span>
+            <span className="flex items-center gap-1 font-semibold text-muted">
+              <FiCheckCircle size={14} className="text-primary" /> {product.sold ?? 0} units sold
+            </span>
+          </div>
         </div>
 
         {/* Price row */}
@@ -207,29 +214,63 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
           </div>
         </div>
 
-        {/* Variant selector */}
-        <div className="flex flex-col gap-1.5">
-          <span className="text-xs font-bold uppercase tracking-wide text-muted">
-            Variant: <span className="text-primary">{variant}</span>
-          </span>
-          <div className="flex flex-wrap gap-2">
-            {variants.map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setVariant(v)}
-                className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${
-                  variant === v ? "border-primary bg-primary/10 text-primary" : "border-border text-text hover:bg-muted-bg"
-                }`}
-              >
-                {v}
-              </button>
-            ))}
+        {/* Variant selector: only render if product has authentic variants */}
+        {hasRealVariants && (
+          <div className="flex flex-col gap-2 rounded-xl border border-border/80 bg-surface-muted/30 p-3.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+                Edition / Variant:{" "}
+                <span className="font-extrabold capitalize text-text">
+                  {selectedVariant?.name || "Standard"}
+                </span>
+              </span>
+              {selectedVariant?.stock !== undefined && (
+                <span
+                  className={`text-[11px] font-bold ${
+                    selectedVariant.stock > 0
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-error"
+                  }`}
+                >
+                  {selectedVariant.stock > 0 ? `${selectedVariant.stock} in stock` : "Out of stock"}
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {allVariants.map((v) => {
+                const isSelected = selectedVariant?.name === v.name;
+                const swatchColor = v.swatch || v.color || "#4f46e5";
+                return (
+                  <button
+                    key={v.name}
+                    type="button"
+                    onClick={() => setSelectedVariant(v)}
+                    className={`group relative flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all ${
+                      isSelected
+                        ? "border-primary bg-primary/10 text-primary ring-2 ring-primary/20 shadow-xs"
+                        : "border-border bg-surface text-text hover:border-primary/40 hover:bg-muted-bg"
+                    }`}
+                  >
+                    <span
+                      className="h-3.5 w-3.5 shrink-0 rounded-full border border-black/20 shadow-xs"
+                      style={{ backgroundColor: swatchColor }}
+                    />
+                    <span className="capitalize">{v.name}</span>
+                    {v.price && v.price !== product.price && (
+                      <span className="text-[10px] font-medium text-muted">
+                        ({formatCurrency(v.price)})
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Quantity + CTAs */}
-        <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="flex h-12 w-full items-center justify-between rounded-lg bg-muted-bg p-1 sm:w-36">
             <button
               type="button"
@@ -250,30 +291,33 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
             </button>
           </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            isDisabled={product.stock <= 0}
-            onPress={handleAddToCart}
-            className="h-12 flex-1 rounded-lg border border-primary/30 text-sm font-bold text-primary"
-          >
-            <span className="flex items-center justify-center gap-2">
-              {isAdded ? <FiCheckCircle size={16} /> : <FiShoppingBag size={16} />}
-              {isAdded ? "Added" : "Add to Cart"}
-            </span>
-          </Button>
+          {/* Shared flex container to equalize button widths */}
+          <div className="flex flex-1 items-center gap-3 w-full">
+            <Button
+              type="button"
+              variant="outline"
+              isDisabled={product.stock <= 0}
+              onPress={handleAddToCart}
+              className="h-12 flex-1 w-full basis-0 rounded-lg border border-primary/30 text-sm font-bold text-primary flex items-center justify-center"
+            >
+              <span className="flex items-center justify-center gap-2">
+                {isAdded ? <FiCheckCircle size={16} /> : <FiShoppingBag size={16} />}
+                {isAdded ? "Added" : "Add to Cart"}
+              </span>
+            </Button>
 
-          <Button
-            type="button"
-            variant="primary"
-            isDisabled={product.stock <= 0}
-            onPress={handleBuyNow}
-            className="h-12 flex-1 rounded-lg text-sm font-bold text-white shadow-md"
-          >
-            <span className="flex items-center justify-center gap-2">
-              <FiZap size={16} /> Buy Now
-            </span>
-          </Button>
+            <Button
+              type="button"
+              variant="primary"
+              isDisabled={product.stock <= 0}
+              onPress={handleBuyNow}
+              className="h-12 flex-1 w-full basis-0 rounded-lg text-sm font-bold text-white shadow-md flex items-center justify-center"
+            >
+              <span className="flex items-center justify-center gap-2">
+                <FiZap size={16} /> Buy Now
+              </span>
+            </Button>
+          </div>
 
           <button
             type="button"

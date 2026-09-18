@@ -19,6 +19,9 @@ export interface Product {
   views?: number;
   status?: "pending" | "approved" | "rejected" | string;
   specifications?: Record<string, string>;
+  variants?: string[] | Array<{ name: string; sku?: string; stock?: number; price?: number }>;
+  packageContents?: string[];
+  highlights?: Array<{ title: string; description?: string; icon?: string }> | string[];
   sentiment?: { positive: number; neutral: number; negative: number };
   isFeatured?: boolean;
   createdAt?: string;
@@ -36,6 +39,9 @@ export interface CreateProductInput {
   images?: string[];
   tags?: string[];
   specifications?: Record<string, string>;
+  variants?: Array<{ name: string; sku?: string; stock?: number; price?: number; color?: string }>;
+  highlights?: Array<{ title: string; description?: string; icon?: string }>;
+  packageContents?: string[];
 }
 
 /**
