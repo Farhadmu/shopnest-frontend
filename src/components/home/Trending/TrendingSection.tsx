@@ -136,8 +136,8 @@ export default function TrendingSection({ initialProducts }: {
       showToast(`Added "${product.title}" to cart! 🛒`);
 
       setTimeout(() => {
-        router.push("/cart");
-      }, 500);
+        setAddedMap((prev) => ({ ...prev, [product.id]: false }));
+      }, 2000);
       return;
     }
 
@@ -154,10 +154,9 @@ export default function TrendingSection({ initialProducts }: {
         `Added "${product.title}" to cart! 🛒`
       );
 
-      // Go to cart
       setTimeout(() => {
-        router.push("/cart");
-      }, 500);
+        setAddedMap((prev) => ({ ...prev, [product.id]: false }));
+      }, 2000);
     } catch (err) {
       showToast(
         err instanceof Error
@@ -412,7 +411,6 @@ export default function TrendingSection({ initialProducts }: {
               index={index}
               isAdded={!!addedMap[product.id]}
               onAddToCart={handleAddToCart}
-              onAddToWishlist={handleAddToWishlist}
             />
           ))}
         </div>

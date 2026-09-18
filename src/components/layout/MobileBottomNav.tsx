@@ -5,18 +5,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FiHome, FiGrid, FiShoppingCart, FiHeart, FiUser } from "react-icons/fi";
 import { getCart } from "@/lib/api/cart";
-import { getWishlist } from "@/lib/api/wishlist";
-import { getGuestCart, getGuestWishlist } from "@/lib/guest-store";
+import { getGuestCart } from "@/lib/guest-store";
 import { useSession } from "@/lib/auth-client";
 import { subscribeToCommerceUpdates } from "@/lib/commerce-events";
 import { useCartDrawer } from "@/context/CartDrawerContext";
+import { useWishlist } from "@/context/WishlistContext";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const { openCart, itemCount: drawerItemCount } = useCartDrawer();
+  const { itemCount: wishlistCount } = useWishlist();
   const [cartCount, setCartCount] = useState<number>(0);
-  const [wishlistCount, setWishlistCount] = useState<number>(0);
   const isHydrated = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -29,26 +29,18 @@ export function MobileBottomNav() {
     const fetchCounts = async () => {
       if (!isAuthenticated) {
         const guestCart = getGuestCart();
-        const guestWishlist = getGuestWishlist();
         if (isMounted) {
           setCartCount(guestCart.items.reduce((sum, item) => sum + item.quantity, 0));
-          setWishlistCount(guestWishlist.length);
         }
         return;
       }
 
       try {
-        const [cartData, wishlistData] = await Promise.allSettled([
-          getCart(),
-          getWishlist(),
-        ]);
+        const cartData = await getCart();
         if (!isMounted) return;
-        if (cartData.status === "fulfilled" && cartData.value?.items) {
-          const totalQty = cartData.value.items.reduce((sum, i) => sum + i.quantity, 0);
+        if (cartData?.items) {
+          const totalQty = cartData.items.reduce((sum, i) => sum + i.quantity, 0);
           setCartCount(totalQty);
-        }
-        if (wishlistData.status === "fulfilled" && Array.isArray(wishlistData.value)) {
-          setWishlistCount(wishlistData.value.length);
         }
       } catch {
         // Silently catch for guest users

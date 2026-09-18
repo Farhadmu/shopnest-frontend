@@ -12,7 +12,7 @@ interface TrendingCardProps {
     product: Product,
     e: React.MouseEvent<HTMLButtonElement>
   ) => void;
-  onAddToWishlist: (
+  onAddToWishlist?: (
     product: Product,
     e: React.MouseEvent<HTMLButtonElement>
   ) => void;
@@ -31,7 +31,7 @@ export default function TrendingCard({
       index={index}
       isAdded={isAdded}
       onAddToCart={(prod, e) => onAddToCart(prod as Product, e as React.MouseEvent<HTMLButtonElement>)}
-      onAddToWishlist={(prod, e) => onAddToWishlist(prod as Product, e as React.MouseEvent<HTMLButtonElement>)}
+      onAddToWishlist={onAddToWishlist ? (prod, e) => onAddToWishlist(prod as Product, e as React.MouseEvent<HTMLButtonElement>) : undefined}
     />
   );
 }

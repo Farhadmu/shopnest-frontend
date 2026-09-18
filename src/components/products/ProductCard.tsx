@@ -23,13 +23,11 @@ import { Product } from "@/lib/api/products";
 import { ProductCardData } from "@/features/products/types";
 import { formatCurrency } from "@/lib/utils";
 import { addToCart } from "@/lib/api/cart";
-import { addToWishlist } from "@/lib/api/wishlist";
+import { useWishlist } from "@/context/WishlistContext";
 import { useSession } from "@/lib/auth-client";
 import {
   addGuestCartItem,
-  addGuestWishlistItem,
   clearGuestCart,
-  clearGuestWishlist,
 } from "@/lib/guest-store";
 
 export type UnifiedProduct = Partial<Product> & Partial<ProductCardData> & {
@@ -63,13 +61,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 }) => {
   const router = useRouter();
   const { data: session } = useSession();
+  const { isInWishlist, toggleWishlist } = useWishlist();
 
   const [internalAdded, setInternalAdded] = useState(false);
-  const [internalWishlist, setInternalWishlist] = useState(false);
   const [imgError, setImgError] = useState(false);
 
   const isAdded = externalIsAdded ?? internalAdded;
-  const isWishlist = externalIsWishlisted ?? internalWishlist;
+  const isWishlist = externalIsWishlisted ?? isInWishlist(product.id);
 
   const imageSrc =
     product.images?.[0] ||
@@ -127,25 +125,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       return;
     }
 
-    if (!session?.user) {
-      addGuestWishlistItem({
-        productId: product.id,
-        price: displayPrice,
+    try {
+      await toggleWishlist({
+        id: product.id,
         title: product.title,
-        images: imageSrc ? [imageSrc] : undefined,
+        price: displayPrice,
         image: imageSrc,
+        images: product.images,
         category: category,
       });
-      setInternalWishlist(true);
-      setTimeout(() => setInternalWishlist(false), 2000);
-      return;
-    }
-
-    try {
-      await addToWishlist(product.id);
-      clearGuestWishlist();
-      setInternalWishlist(true);
-      setTimeout(() => setInternalWishlist(false), 2000);
     } catch {
       // ignore error
     }
@@ -196,9 +184,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <div className="relative block overflow-hidden">
           <Link href={`/products/${product.id}`} className="block">
             <div
-              className={`relative w-full overflow-hidden bg-muted-bg ${
-                compact ? "aspect-square" : "aspect-4/3 sm:aspect-4/3"
-              }`}
+              className={`relative w-full overflow-hidden bg-muted-bg ${compact ? "aspect-square" : "aspect-4/3 sm:aspect-4/3"
+                }`}
             >
               {imageSrc && !imageSrc.startsWith("linear-gradient") && !imgError ? (
                 <Image
@@ -260,17 +247,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <motion.button
             type="button"
             onClick={handleWishlistClick}
-            aria-label="Add to wishlist"
-            title={isWishlist ? "Saved to Wishlist" : "Add to Wishlist"}
+            aria-label={isWishlist ? "Remove from wishlist" : "Add to wishlist"}
+            title={isWishlist ? "In Wishlist (Click to remove)" : "Add to Wishlist"}
             whileTap={{ scale: 0.85 }}
-            whileHover={{ scale: 1.1 }}
-            className={`absolute right-2.5 top-2.5 z-30 grid h-8 w-8 place-items-center rounded-full border border-white/40 bg-white/90 shadow-sm backdrop-blur-md transition-all duration-300 dark:border-white/10 dark:bg-slate-900/90 cursor-pointer ${
-              isWishlist
-                ? "border-red-500 bg-red-500 text-white"
-                : "text-gray-400 hover:border-red-200 hover:text-red-500 dark:hover:border-red-500/30 dark:hover:text-red-500"
-            }`}
+            whileHover={{ scale: 1.08 }}
+            className={`absolute right-2.5 top-2.5 z-30 grid h-9 w-9 place-items-center rounded-full border backdrop-blur-md transition-all duration-300 cursor-pointer shadow-sm active:scale-95 ${isWishlist
+              ? "border-primary/50 bg-primary/10 text-primary shadow-primary/20 hover:bg-primary/30"
+              : "border-white/20 bg-black/40 text-white/80 hover:bg-black/60 hover:text-white hover:border-white/35"
+              }`}
           >
-            <FaHeart size={12} className={isWishlist ? "text-white" : ""} />
+            <FaHeart
+              size={13}
+              className={`transition-all duration-300 ${isWishlist ? "text-primary fill-primary scale-110 drop-shadow-sm" : ""
+                }`}
+            />
           </motion.button>
         </div>
 
@@ -329,11 +319,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             variant="primary"
             isDisabled={stock <= 0}
             onClick={(e) => handleCartClick(e as unknown as React.MouseEvent)}
-            className={`flex-1 rounded-xl text-xs font-bold text-white shadow-xs transition-all ${
-              isAdded
-                ? "bg-emerald-600 hover:bg-emerald-700"
-                : "bg-primary hover:bg-primary-hover shadow-primary/20"
-            }`}
+            className={`flex-1 rounded-xl text-xs font-bold text-white shadow-xs transition-all ${isAdded
+              ? "bg-emerald-600 hover:bg-emerald-700"
+              : "bg-primary hover:bg-primary-hover shadow-primary/20"
+              }`}
           >
             <span className="flex items-center gap-1.5">
               {isAdded ? <FaCheck size={11} /> : <FaShoppingBag size={11} />}
