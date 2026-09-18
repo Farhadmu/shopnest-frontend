@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sparkles } from "lucide-react";
+import { MobileCategoryMenu } from "@/components/layout/CategoryMegaMenu/MobileCategoryMenu";
 import type { NavItem, UserRole } from "./NavbarLinks";
 import { mainNavItems } from "./NavbarLinks";
 
@@ -39,8 +40,8 @@ export function NavbarMobileMenu({
     <div className="overflow-hidden lg:hidden">
       <div className="border-t border-border py-3">
         <div className="grid gap-1">
-          {/* Server-rendered category accordion */}
-          {categoryMenuSlot}
+          {/* Collapsible category accordion with auto-close */}
+          <MobileCategoryMenu onClose={onClose} />
 
           {/* Authenticated user info card */}
           {isAuthenticated && (
