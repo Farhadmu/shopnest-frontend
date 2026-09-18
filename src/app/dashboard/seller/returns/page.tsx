@@ -229,7 +229,7 @@ export default function SellerReturnsPage() {
                       <>
                         <button
                           type="button"
-                        onClick={() => handleReceive(ret.id)}
+                          onClick={() => handleInspect(ret.id, "approved")}
                           disabled={actioningId === ret.id}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white rounded-xl text-[11px] font-bold hover:bg-emerald-600 transition disabled:opacity-50 cursor-pointer"
                         >
@@ -248,7 +248,7 @@ export default function SellerReturnsPage() {
                     {canReceive && (
                       <button
                         type="button"
-                        onClick={() => handleInspect(ret.id, "approved")}
+                        onClick={() => handleReceive(ret.id)}
                         disabled={actioningId === ret.id}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white rounded-xl text-[11px] font-bold hover:bg-emerald-600 transition disabled:opacity-50 cursor-pointer"
                       >
