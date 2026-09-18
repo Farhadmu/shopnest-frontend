@@ -26,6 +26,7 @@ import { clientMutation } from "@/lib/core/client";
 import { InventoryTrendChart } from "./InventoryTrendChart";
 import { ProductActionButtons } from "./ProductActionButtons";
 import { ProductFilters, type SortOption, type StatusFilter } from "./ProductFilters";
+import { toast } from "@/context/ToastContext";
 import {
   getBrandName,
   getCategoryName,
@@ -58,7 +59,6 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
   const [bulkLoadingAction, setBulkLoadingAction] = useState<
     "featured-on" | "featured-off" | "status-active" | "status-inactive" | "delete" | null
   >(null);
-  const [toast, setToast] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -79,8 +79,11 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const showToast = (type: "success" | "error", text: string) => {
-    setToast({ type, text });
-    setTimeout(() => setToast(null), 3500);
+    if (type === "success") {
+      toast.success(text);
+    } else {
+      toast.error(text);
+    }
   };
 
   const loadData = async () => {
@@ -502,26 +505,6 @@ export function AdminProductsManager({ initialProducts = [] }: AdminProductsMana
 
   return (
     <div className="space-y-6 pb-12 font-sans w-full max-w-full">
-      
-      {/* Toast Notification */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            className={`fixed top-4 left-4 right-4 sm:left-auto sm:right-6 sm:top-6 z-50 flex items-center gap-3 px-4 sm:px-5 py-3.5 rounded-2xl shadow-xl border text-sm font-semibold backdrop-blur-md ${
-              toast.type === "success"
-                ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
-                : "bg-rose-500/15 border-rose-500/30 text-rose-600 dark:text-rose-400"
-            }`}
-          >
-            {toast.type === "success" ? <FiCheckCircle size={18} /> : <FiAlertTriangle size={18} />}
-            <span>{toast.text}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Top Header Card */}
       <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
