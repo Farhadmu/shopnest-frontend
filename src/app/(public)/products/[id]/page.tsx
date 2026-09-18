@@ -1,17 +1,16 @@
 import React from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getProductById } from "@/lib/api/products";
+import { getProductById, getRecommendedProducts } from "@/lib/api/products";
 import { getProductReviews } from "@/lib/api/reviews";
 import { ProductBreadcrumbs } from "@/components/products/detail/ProductBreadcrumbs";
 import { ProductGallery } from "@/components/products/detail/ProductGallery";
 import { ProductBuyBox } from "@/components/products/detail/ProductBuyBox";
 import { ProductAiScoreBanner } from "@/components/products/detail/ProductAiScoreBanner";
 import { ProductSellerCard } from "@/components/products/detail/ProductSellerCard";
-import { ProductOverviewSection } from "@/components/products/detail/ProductOverviewSection";
-import { ProductPackageContents } from "@/components/products/detail/ProductPackageContents";
-import { ProductSpecsTable } from "@/components/products/detail/ProductSpecsTable";
+import { ProductDetailsSection } from "@/components/products/detail/ProductDetailsSection";
 import { ProductReviewsSection } from "@/components/products/detail/ProductReviewsSection";
+import { ProductRecommendationsSection } from "@/components/products/detail/ProductRecommendationsSection";
 import { ProductFeaturesBent } from "@/components/products/detail/ProductFeaturesBento";
 
 export interface ProductDetailPageProps {
@@ -45,50 +44,46 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
     notFound();
   }
 
-  const reviews = await getProductReviews(id).catch(() => []);
   const currentId = product.id || (product as { _id?: string })._id || id;
+  const [reviews, recommendations] = await Promise.all([
+    getProductReviews(id).catch(() => []),
+    getRecommendedProducts(currentId).catch(() => null),
+  ]);
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
       <ProductBreadcrumbs category={product.category} title={product.title} />
 
-      {/* Gallery (Left, Sticky) + Buy Box, AI Score & Seller Card (Right) */}
+      {/* Gallery (Left, Sticky) + Buy Box & Seller Card (Right) */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start">
         <div className="lg:col-span-5">
           <ProductGallery images={product.images ?? []} title={product.title} />
         </div>
-        <div className="flex flex-col gap-6 lg:col-span-7">
+        <div className="flex flex-col gap-4 lg:col-span-7">
           <ProductBuyBox product={product} />
-          <ProductAiScoreBanner product={product} />
           <ProductSellerCard product={product} />
         </div>
       </div>
 
+      {/* AI Purchase Decision Engine Dashboard (Full Width) */}
+      <ProductAiScoreBanner product={product} />
+
       <ProductFeaturesBent product={product} />
 
-      {/* Details & Specs (balanced 2-column grid when specs or variants exist, full-width otherwise) */}
-      {(product.specifications && Object.keys(product.specifications).length > 0) ||
-      (product.variants && product.variants.length > 0) ? (
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:items-start">
-          <div className="space-y-8 lg:col-span-2">
-            <ProductOverviewSection product={product} />
-            <ProductPackageContents product={product} />
-          </div>
-          <div className="lg:col-span-1">
-            <ProductSpecsTable product={product} />
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-8">
-          <ProductOverviewSection product={product} />
-          <ProductPackageContents product={product} />
-        </div>
-      )}
+      {/* Details & Specs Section (Dynamic height synchronization with collapsible toggle) */}
+      <ProductDetailsSection product={product} />
 
       {/* Customer Reviews Section */}
       <ProductReviewsSection
         productId={currentId}
         initialReviews={reviews}
+      />
+
+      {/* Recommended Products Section */}
+      <ProductRecommendationsSection
+        productId={currentId}
+        currentCategory={product.category}
+        recommendations={recommendations}
       />
     </div>
   );
