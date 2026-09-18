@@ -57,7 +57,7 @@ export function ProductContentEditor({ content, onChange, disabled }: ProductCon
 
   const addVariant = () => {
     const variants = [...((content.variants as Array<Record<string, unknown>>) || [])];
-    variants.push({ name: "", color: "", priceDelta: 0 });
+    variants.push({ name: "", color: "", price: undefined });
     update("variants", variants);
   };
 
@@ -285,11 +285,12 @@ export function ProductContentEditor({ content, onChange, disabled }: ProductCon
               />
               <input
                 type="number"
-                value={Number(variant.priceDelta || 0)}
-                onChange={(e) => updateVariant(idx, { priceDelta: Number(e.target.value) })}
+                min="0"
+                value={variant.price != null ? Number(variant.price) : ""}
+                onChange={(e) => updateVariant(idx, { price: e.target.value ? Number(e.target.value) : undefined })}
                 disabled={disabled}
                 className="w-20 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-text outline-none transition focus:border-primary disabled:opacity-60"
-                placeholder="Δ Price"
+                placeholder="Price"
               />
               <button
                 type="button"

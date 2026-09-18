@@ -9,7 +9,7 @@ import { formatCurrency } from "@/lib/utils";
 import { addToCart } from "@/lib/api/cart";
 import { addToWishlist } from "@/lib/api/wishlist";
 import { useSession } from "@/lib/auth-client";
-import { recordShoppingEvent } from "@/lib/api/customer-intelligence";
+import { recordShoppingEvent, getPurchaseDecisionScore, type PurchaseDecisionScoreData } from "@/lib/api/customer-intelligence";
 import { addGuestCartItem, addGuestWishlistItem, clearGuestCart, clearGuestWishlist } from "@/lib/guest-store";
 
 import { extractVariants, SpecVariant } from "./ProductSpecsTable";
@@ -31,13 +31,46 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
   const [quantity, setQuantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [showStickyBar, setShowStickyBar] = useState(false);
+  const [aiScore, setAiScore] = useState<PurchaseDecisionScoreData | null>(null);
   const viewRecordedRef = useRef(false);
+  const mainCtasRef = useRef<HTMLDivElement | null>(null);
 
-  const hasDiscount = !!product.discountPrice && product.discountPrice < product.price;
-  const activeBasePrice = selectedVariant?.price ?? (hasDiscount ? (product.discountPrice as number) : product.price);
+  useEffect(() => {
+    const el = mainCtasRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // When main buttons scroll above the visible viewport
+        const isPast = !entry.isIntersecting && entry.boundingClientRect.top < 0;
+        setShowStickyBar(isPast);
+      },
+      { threshold: 0 }
+    );
+
+    observer.observe(el);
+
+    const handleScroll = () => {
+      if (!mainCtasRef.current) return;
+      const rect = mainCtasRef.current.getBoundingClientRect();
+      setShowStickyBar(rect.bottom < 0);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  const hasBaseDiscount = !!product.discountPrice && product.discountPrice < product.price;
+  const activeBasePrice = selectedVariant?.price ?? (hasBaseDiscount ? (product.discountPrice as number) : product.price);
   const displayPrice = activeBasePrice;
-  const discountPct = hasDiscount && (!selectedVariant || !selectedVariant.price)
-    ? Math.round(((product.price - (product.discountPrice as number)) / product.price) * 100)
+  const showDiscount = displayPrice < product.price;
+  const discountPct = showDiscount && product.price > 0
+    ? Math.round(((product.price - displayPrice) / product.price) * 100)
     : 0;
 
   const imageSrc = product.images?.[0];
@@ -61,6 +94,19 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
     });
   }, [session?.user, product.id, product.title, product.category, product.price]);
 
+  useEffect(() => {
+    const prodId = product.id || (product as { _id?: string })._id;
+    if (!prodId) return;
+
+    getPurchaseDecisionScore(prodId)
+      .then((res) => {
+        if (res && !res.insufficientData && typeof res.overallScore === "number") {
+          setAiScore(res);
+        }
+      })
+      .catch(() => setAiScore(null));
+  }, [product.id, (product as { _id?: string })._id]);
+
   const handleAddToCart = async () => {
     const itemTitle = selectedVariant?.name
       ? `${product.title} (${selectedVariant.name})`
@@ -81,7 +127,7 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
       return;
     }
     try {
-      await addToCart(product.id, quantity);
+      await addToCart(product.id, quantity, selectedVariant?.name ?? undefined);
       clearGuestCart();
       setIsAdded(true);
       showToast(`Added ${quantity} × "${itemTitle}" to cart!`);
@@ -116,7 +162,7 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
       return;
     }
     try {
-      await addToCart(product.id, quantity);
+      await addToCart(product.id, quantity, selectedVariant?.name ?? undefined);
       router.push("/checkout");
     } catch {
       router.push("/cart");
@@ -163,7 +209,7 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
       <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            {hasDiscount && (
+            {showDiscount && discountPct > 0 && (
               <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-black text-primary">
                 FLASH DEAL
               </span>
@@ -184,6 +230,23 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
             <span className="flex items-center gap-1 font-semibold text-muted">
               <FiCheckCircle size={14} className="text-primary" /> {product.sold ?? 0} units sold
             </span>
+            {aiScore && (
+              <a
+                href="#ai-decision-card"
+                className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary hover:bg-primary/20 hover:scale-105 transition-all shadow-2xs group cursor-pointer"
+                title="Click to view comprehensive AI Decision Score and evaluation breakdown"
+              >
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-black text-white">
+                  {aiScore.overallScore}
+                </span>
+                <span>
+                  AI Score: <strong className="font-extrabold">{aiScore.recommendation?.split(":")[0] || "Strong Buy"}</strong>
+                </span>
+                <span className="text-[10px] opacity-70 group-hover:translate-y-0.5 transition-transform">
+                  ↓
+                </span>
+              </a>
+            )}
           </div>
         </div>
 
@@ -192,7 +255,7 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
           <div>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-black text-text">{formatCurrency(displayPrice)}</span>
-              {hasDiscount && (
+              {showDiscount && discountPct > 0 && (
                 <>
                   <span className="text-lg font-semibold text-muted line-through">
                     {formatCurrency(product.price)}
@@ -239,7 +302,7 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
 
             <div className="flex flex-wrap gap-2">
               {allVariants.map((v) => {
-                const isSelected = selectedVariant?.name === v.name;
+                const isSelected = selectedVariant?.name?.toLowerCase() === v.name?.toLowerCase();
                 const swatchColor = v.swatch || v.color || "#4f46e5";
                 return (
                   <button
@@ -270,7 +333,7 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
         )}
 
         {/* Quantity + CTAs */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div ref={mainCtasRef} className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="flex h-12 w-full items-center justify-between rounded-lg bg-muted-bg p-1 sm:w-36">
             <button
               type="button"
@@ -284,7 +347,7 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
             <button
               type="button"
               aria-label="Increase quantity"
-              onClick={() => setQuantity((q) => Math.min(product.stock || 99, q + 1))}
+              onClick={() => setQuantity((q) => Math.min(selectedVariant?.stock ?? product.stock ?? 99, q + 1))}
               className="grid h-10 w-10 place-items-center rounded bg-surface text-text shadow-sm"
             >
               <FiPlus size={14} />
@@ -296,7 +359,7 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
             <Button
               type="button"
               variant="outline"
-              isDisabled={product.stock <= 0}
+              isDisabled={(selectedVariant?.stock ?? product.stock) <= 0}
               onPress={handleAddToCart}
               className="h-12 flex-1 w-full basis-0 rounded-lg border border-primary/30 text-sm font-bold text-primary flex items-center justify-center"
             >
@@ -309,7 +372,7 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
             <Button
               type="button"
               variant="primary"
-              isDisabled={product.stock <= 0}
+              isDisabled={(selectedVariant?.stock ?? product.stock) <= 0}
               onPress={handleBuyNow}
               className="h-12 flex-1 w-full basis-0 rounded-lg text-sm font-bold text-white shadow-md flex items-center justify-center"
             >
@@ -323,19 +386,108 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
             type="button"
             aria-label="Add to wishlist"
             onClick={handleWishlist}
-            className="grid h-12 w-12 shrink-0 place-items-center rounded-lg border border-border text-muted transition-colors hover:border-error hover:text-error"
+            className="grid h-12 w-12 shrink-0 place-items-center rounded-lg border border-border text-muted transition-colors hover:border-error hover:text-error cursor-pointer"
           >
             <FiHeart size={18} />
           </button>
         </div>
 
         <p className="text-xs font-semibold text-text">
-          {product.stock > 0 ? (
-            <span className="text-primary">In Stock ({product.stock} units available)</span>
-          ) : (
-            <span className="text-error">Out of Stock</span>
-          )}
+          {(() => {
+            const stock = selectedVariant?.stock ?? product.stock;
+            return stock > 0 ? (
+              <span className="text-primary">In Stock ({stock} units available)</span>
+            ) : (
+              <span className="text-error">Out of Stock</span>
+            );
+          })()}
         </p>
+      </div>
+
+      {/* Persistent Floating / Sticky Bottom Action Bar on Scroll */}
+      <div
+        className={`fixed bottom-0 left-0 right-0 z-40 border-t border-border/80 bg-surface/95 dark:bg-slate-900/95 backdrop-blur-md shadow-2xl transition-all duration-300 ease-out transform ${
+          showStickyBar
+            ? "translate-y-0 opacity-100"
+            : "translate-y-full opacity-0 pointer-events-none"
+        }`}
+      >
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2.5 sm:px-8">
+          {/* Product Info (Thumbnail, Title, Price, Active Variant) */}
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-border/80 bg-muted-bg shadow-xs">
+              {imageSrc ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={imageSrc}
+                  alt={product.title}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="grid h-full w-full place-items-center text-xs font-bold text-muted">
+                  SN
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col min-w-0">
+              <h4 className="text-xs font-black text-text truncate max-w-[150px] sm:max-w-xs md:max-w-md lg:max-w-lg">
+                {product.title}
+              </h4>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-text sm:text-sm">
+                  {formatCurrency(displayPrice)}
+                </span>
+                {showDiscount && discountPct > 0 && (
+                  <span className="text-[10px] font-semibold text-muted line-through">
+                    {formatCurrency(product.price)}
+                  </span>
+                )}
+                {selectedVariant && (
+                  <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary capitalize">
+                    <span
+                      className="h-2 w-2 rounded-full border border-black/20"
+                      style={{ backgroundColor: selectedVariant.swatch || selectedVariant.color || "#4f46e5" }}
+                    />
+                    {selectedVariant.name}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Compact CTA Actions */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleWishlist}
+              className="grid h-9 w-9 place-items-center rounded-xl border border-border bg-surface text-muted transition-colors hover:border-error/40 hover:text-error hover:bg-error/5 cursor-pointer"
+              title="Save to Wishlist"
+            >
+              <FiHeart size={15} />
+            </button>
+
+            <button
+              type="button"
+              disabled={(selectedVariant?.stock ?? product.stock) <= 0}
+              onClick={handleAddToCart}
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-3 text-xs font-bold text-primary transition-all hover:bg-primary/20 active:scale-95 disabled:opacity-50 cursor-pointer"
+            >
+              {isAdded ? <FiCheckCircle size={14} /> : <FiShoppingBag size={14} />}
+              <span className="hidden sm:inline">{isAdded ? "Added" : "Add to Cart"}</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={(selectedVariant?.stock ?? product.stock) <= 0}
+              onClick={handleBuyNow}
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-primary px-3.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-primary-focus hover:shadow-md active:scale-95 disabled:opacity-50 cursor-pointer"
+            >
+              <FiZap size={14} />
+              <span>Buy Now</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -73,9 +73,10 @@ export function useProductForm(editId: string | null, aiPrefill?: Record<string,
       return aiPrefill.variants.map((v: Record<string, unknown>, idx: number) => ({
         id: uid(),
         name: String(v.name || ""),
-        swatch: SWATCH_PALETTE[idx % SWATCH_PALETTE.length],
-        stock: "0",
-        priceDelta: String(v.priceDelta || 0),
+        sku: v.sku ? String(v.sku) : "",
+        swatch: String(v.color || SWATCH_PALETTE[idx % SWATCH_PALETTE.length]),
+        stock: v.stock != null ? String(v.stock) : "0",
+        price: v.price ? String(v.price) : "",
       }));
     }
     return [];
@@ -83,7 +84,7 @@ export function useProductForm(editId: string | null, aiPrefill?: Record<string,
   const [specs, setSpecs] = useState<SpecRow[]>(() => {
     if (aiPrefill?.specifications && typeof aiPrefill.specifications === "object") {
       return Object.entries(aiPrefill.specifications as Record<string, string>)
-        .filter(([, v]) => v && String(v).trim())
+        .filter(([key, v]) => !RESERVED_SPEC_KEYS.includes(key) && key.toLowerCase() !== "variants" && v && String(v).trim())
         .map(([key, value]) => ({ id: uid(), key, value: String(value) }));
     }
     return [{ id: uid(), key: "", value: "" }];
@@ -127,7 +128,7 @@ export function useProductForm(editId: string | null, aiPrefill?: Record<string,
       .then((p) => {
         const specifications = p.specifications || {};
         const restSpecRows: SpecRow[] = Object.entries(specifications)
-          .filter(([key]) => !RESERVED_SPEC_KEYS.includes(key))
+          .filter(([key]) => !RESERVED_SPEC_KEYS.includes(key) && key.toLowerCase() !== "variants")
           .map(([key, value]) => ({ id: uid(), key, value: String(value) }));
 
         setForm({
@@ -154,14 +155,13 @@ export function useProductForm(editId: string | null, aiPrefill?: Record<string,
         if (p.variants && Array.isArray(p.variants) && p.variants.length > 0) {
           setVariants(
             p.variants.map((v: any, idx: number) => {
-              const basePrice = p.price || 0;
-              const vPrice = typeof v.price === "number" ? v.price : basePrice;
               return {
                 id: uid(),
                 name: v.name || "",
+                sku: v.sku || "",
                 swatch: v.color || SWATCH_PALETTE[idx % SWATCH_PALETTE.length],
                 stock: String(v.stock ?? 0),
-                priceDelta: String(vPrice - basePrice),
+                price: typeof v.price === "number" ? String(v.price) : "",
               };
             })
           );
@@ -173,9 +173,10 @@ export function useProductForm(editId: string | null, aiPrefill?: Record<string,
                 parsed.map((v: any) => ({
                   id: uid(),
                   name: v.name || "",
+                  sku: v.sku || "",
                   swatch: v.swatch || SWATCH_PALETTE[0],
                   stock: String(v.stock ?? 0),
-                  priceDelta: String(v.priceDelta ?? 0),
+                  price: v.price ? String(v.price) : "",
                 }))
               );
             }
@@ -242,9 +243,10 @@ export function useProductForm(editId: string | null, aiPrefill?: Record<string,
       {
         id: uid(),
         name: "",
+        sku: "",
         swatch: SWATCH_PALETTE[prev.length % SWATCH_PALETTE.length],
         stock: "0",
-        priceDelta: "0",
+        price: "",
       },
     ]);
   const updateVariant = (id: string, patch: Partial<VariantRow>) =>
@@ -316,6 +318,19 @@ export function useProductForm(editId: string | null, aiPrefill?: Record<string,
   };
 
   // ── Submit ──────────────────────────────────────────────────────────────
+  function generateVariantSku(productTitle: string, variantName: string, masterSku?: string): string {
+    const prefix = (masterSku?.trim() || productTitle.trim() || "PROD")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .slice(0, 8);
+    const cleanVar = variantName
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .slice(0, 8);
+    return `${prefix || "PROD"}-${cleanVar || "VAR"}`;
+  }
+
   const buildSpecifications = (): Record<string, string> => {
     const specifications: Record<string, string> = {};
     if (form.brand.trim()) specifications["Brand"] = form.brand.trim();
@@ -328,21 +343,13 @@ export function useProductForm(editId: string | null, aiPrefill?: Record<string,
     specifications["Express Dispatch"] = form.expressDispatch ? "Enabled" : "Disabled";
 
     filledSpecRows.forEach((row) => {
-      specifications[row.key.trim()] = row.value.trim();
+      const key = row.key.trim();
+      if (key && key.toLowerCase() !== "variants") {
+        specifications[key] = row.value.trim();
+      }
     });
 
-    if (variants.length > 0) {
-      specifications["Variants"] = JSON.stringify(
-        variants
-          .filter((v) => v.name.trim())
-          .map((v) => ({
-            name: v.name.trim(),
-            swatch: v.swatch,
-            stock: parseInt(v.stock, 10) || 0,
-            priceDelta: parseFloat(v.priceDelta) || 0,
-          }))
-      );
-    }
+    // Dual storage elimination: we no longer write specifications["Variants"]
 
     if (packageContents.length > 0) {
       specifications["Package Contents"] = packageContents.join(" | ");
@@ -371,6 +378,24 @@ export function useProductForm(editId: string | null, aiPrefill?: Record<string,
       return;
     }
 
+    // Validate duplicate variant names
+    if (variants.length > 0) {
+      const seenNames = new Set<string>();
+      for (const v of variants) {
+        const vName = v.name.trim();
+        if (!vName) {
+          setErrorMsg("Variant name cannot be empty");
+          return;
+        }
+        const lower = vName.toLowerCase();
+        if (seenNames.has(lower)) {
+          setErrorMsg(`Duplicate variant name "${vName}" is not allowed`);
+          return;
+        }
+        seenNames.add(lower);
+      }
+    }
+
     setIsLoading(true);
     setErrorMsg("");
 
@@ -393,9 +418,9 @@ export function useProductForm(editId: string | null, aiPrefill?: Record<string,
       .filter((v) => v.name.trim())
       .map((v) => ({
         name: v.name.trim(),
-        sku: v.id || "",
+        sku: v.sku?.trim() ? v.sku.trim().toUpperCase() : generateVariantSku(title, v.name, form.masterSku),
         stock: parseInt(v.stock, 10) || 0,
-        price: priceNum + (parseFloat(v.priceDelta) || 0),
+        price: parseFloat(v.price) || undefined,
         color: v.swatch,
       }));
 

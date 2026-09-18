@@ -51,6 +51,11 @@ export interface ExtendedCartItem extends CartItem {
   stock?: number;
 }
 
+/** Build a unique key for deduplication: same product + same variant = one line item */
+function itemKey(item: { productId: string; variantName?: string }): string {
+  return item.variantName ? `${item.productId}|${item.variantName}` : item.productId;
+}
+
 interface CartDrawerContextType {
   isOpen: boolean;
   openCart: () => void;
@@ -77,6 +82,7 @@ interface CartDrawerContextType {
     category?: string;
     brand?: string;
     variant?: string;
+    variantName?: string;
     originalPrice?: number;
     isBestseller?: boolean;
   }) => Promise<void>;
@@ -156,15 +162,16 @@ export function CartDrawerProvider({ children }: { children: React.ReactNode }) 
     };
   }, [isAuthenticated, loadCart]);
 
-  // Merge items if there are any duplicate product IDs
+  // Merge items if there are any duplicate product+variant combos
   const items = useMemo<ExtendedCartItem[]>(() => {
     if (!cart?.items?.length) return [];
 
     const map = new Map<string, ExtendedCartItem>();
     cart.items.forEach((item) => {
-      const existing = map.get(item.productId);
+      const key = itemKey(item);
+      const existing = map.get(key);
       if (existing) {
-        map.set(item.productId, {
+        map.set(key, {
           ...existing,
           quantity: existing.quantity + item.quantity,
         });
@@ -177,12 +184,13 @@ export function CartDrawerProvider({ children }: { children: React.ReactNode }) 
             : "SHOPNEST LUXE");
         const syntheticColor =
           (item as ExtendedCartItem).color ||
+          item.variantName ||
           (item as ExtendedCartItem).variant ||
           "Standard Edition";
         const isBestseller =
           (item as ExtendedCartItem).isBestseller ?? (item.quantity >= 2 || item.price > 50);
 
-        map.set(item.productId, {
+        map.set(key, {
           ...item,
           brand: syntheticBrand,
           variant: syntheticColor,
@@ -232,6 +240,7 @@ export function CartDrawerProvider({ children }: { children: React.ReactNode }) 
       category?: string;
       brand?: string;
       variant?: string;
+      variantName?: string;
       originalPrice?: number;
       isBestseller?: boolean;
     }) => {
@@ -244,7 +253,7 @@ export function CartDrawerProvider({ children }: { children: React.ReactNode }) 
           const updated = addGuestCartItem(item);
           setCart(updated);
         } else {
-          const updatedCart = await apiAddToCart(item.productId, qty);
+          const updatedCart = await apiAddToCart(item.productId, qty, item.variantName);
           clearGuestCart();
           setCart(updatedCart);
           notifyCommerceUpdated();

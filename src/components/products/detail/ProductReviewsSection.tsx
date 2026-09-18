@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useRef } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@heroui/react";
@@ -53,6 +53,9 @@ export function ProductReviewsSection({ productId, initialReviews }: ProductRevi
 
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
   const [filter, setFilter] = useState<"all" | "images" | "verified">("all");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Review Form States
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
   const [title, setTitle] = useState("");
@@ -68,8 +71,19 @@ export function ProductReviewsSection({ productId, initialReviews }: ProductRevi
 
   const total = reviews.length;
   const average = total > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / total : 0;
-
   const activeRating = hoverRating !== null ? hoverRating : rating;
+
+  // Close modal on Escape key
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isModalOpen]);
 
   const breakdown = useMemo(() => {
     const counts = [0, 0, 0, 0, 0];
@@ -96,7 +110,6 @@ export function ProductReviewsSection({ productId, initialReviews }: ProductRevi
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    // Reset so the user can pick again if desired
     e.target.value = "";
 
     const availableSlots = 4 - uploadedImages.length;
@@ -128,10 +141,13 @@ export function ProductReviewsSection({ productId, initialReviews }: ProductRevi
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !comment.trim()) return;
-
     setFormError(null);
-    setFormSuccess(null);
+
+    if (!title.trim() || !comment.trim()) {
+      setFormError("Please fill in both the review headline and detailed feedback.");
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -149,6 +165,7 @@ export function ProductReviewsSection({ productId, initialReviews }: ProductRevi
       setUploadedImages([]);
       setUploadError(null);
       setFormSuccess("Thank you! Your review has been submitted successfully.");
+      setIsModalOpen(false);
 
       setTimeout(() => {
         setFormSuccess(null);
@@ -165,17 +182,36 @@ export function ProductReviewsSection({ productId, initialReviews }: ProductRevi
   };
 
   return (
-    <section className="flex flex-col gap-8">
-      {/* Summary Header */}
+    <section className="flex flex-col gap-6">
+      {/* Toast / Global Success alert */}
+      {formSuccess && (
+        <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-xs font-bold text-emerald-600 dark:text-emerald-400 shadow-sm animate-fade-in">
+          <FiCheckCircle size={16} className="shrink-0" />
+          <span>{formSuccess}</span>
+        </div>
+      )}
+
+      {/* Summary Header & Ratings Card */}
       <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-border pb-3.5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <span className="text-[10px] font-black uppercase tracking-wider text-primary">Community Validation</span>
             <h2 className="text-lg font-black text-text sm:text-xl">Customer Reviews &amp; Experiences ({total})</h2>
             <p className="mt-0.5 text-xs text-muted">Verified feedback from ShopNest buyers.</p>
           </div>
+
+          {/* Clean "Write a Review" button replacing the full inline form */}
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            className="inline-flex items-center justify-center gap-2 self-start sm:self-auto rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-primary-focus hover:shadow-md active:scale-95 cursor-pointer"
+          >
+            <FiEdit3 size={15} />
+            Write a Review
+          </button>
         </div>
 
+        {/* Ratings Breakdown Stats */}
         <div className="grid grid-cols-1 items-center gap-4 pt-4 lg:grid-cols-12">
           <div className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-muted-bg p-4 text-center lg:col-span-4">
             <span className="text-3xl font-black leading-none text-text">{average.toFixed(1)}</span>
@@ -188,7 +224,7 @@ export function ProductReviewsSection({ productId, initialReviews }: ProductRevi
               <div key={stars} className="flex items-center gap-3">
                 <span className="w-14 text-xs font-bold text-text">{stars} Stars</span>
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted-bg">
-                  <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+                  <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${pct}%` }} />
                 </div>
                 <span className="w-10 text-right text-xs text-muted">{pct}%</span>
               </div>
@@ -197,211 +233,241 @@ export function ProductReviewsSection({ productId, initialReviews }: ProductRevi
         </div>
       </div>
 
-      {/* Write a review form */}
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6 rounded-2xl border border-border bg-surface p-5 shadow-sm">
-        <div className="flex items-center justify-between border-b border-border pb-3">
-          <div className="flex items-center gap-2">
-            <FiEdit3 className="text-primary" size={16} />
-            <h3 className="text-sm font-black text-text">Write a Product Review</h3>
-          </div>
-          {!session?.user && (
-            <span className="text-xs text-muted">
-              <Link href={`/login?next=${encodeURIComponent(pathname || "")}`} className="font-bold text-primary hover:underline">
-                Sign in
-              </Link>{" "}
-              to review as a verified buyer
-            </span>
-          )}
-        </div>
-
-        {formSuccess && (
-          <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-            <FiCheckCircle size={15} className="shrink-0" />
-            <span>{formSuccess}</span>
-          </div>
-        )}
-
-        {formError && (
-          <div className="flex items-center gap-2 rounded-xl border border-error/20 bg-error/10 p-2.5 text-xs font-bold text-error">
-            <FiAlertCircle size={15} className="shrink-0" />
-            <span>{formError}</span>
-          </div>
-        )}
-
-        {/* Field 1: Interactive Star Rating (~8px gap) */}
-        <div className="flex flex-col gap-2">
-          <label className="text-xs font-bold text-text">Overall Experience Rating</label>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div
-              className="flex items-center gap-1"
-              onMouseLeave={() => setHoverRating(null)}
-              role="radiogroup"
-              aria-label="Star rating"
-            >
-              {[1, 2, 3, 4, 5].map((n) => {
-                const isFilled = n <= activeRating;
-                return (
-                  <button
-                    key={n}
-                    type="button"
-                    role="radio"
-                    aria-checked={rating === n}
-                    aria-label={`Rate ${n} of 5 stars - ${RATING_LABELS[n]}`}
-                    onClick={() => setRating(n)}
-                    onMouseEnter={() => setHoverRating(n)}
-                    className="group relative cursor-pointer p-0.5 transition-transform hover:scale-125 active:scale-95 focus:outline-none"
-                  >
-                    <FiStar
-                      size={24}
-                      className={`transition-all duration-150 ${
-                        isFilled
-                          ? "fill-amber-400 text-amber-400 drop-shadow-xs"
-                          : "text-border hover:text-amber-300"
-                      }`}
-                    />
-                  </button>
-                );
-              })}
-            </div>
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/10 px-2.5 py-0.5 text-xs font-bold text-amber-600 dark:text-amber-400">
-              <FiStar size={12} className="fill-current" />
-              {activeRating} {activeRating === 1 ? "Star" : "Stars"} &middot; {RATING_LABELS[activeRating] || ""}
-            </span>
-          </div>
-        </div>
-
-        {/* Field 2: Review Headline (~8px gap) */}
-        <div className="flex flex-col gap-2">
-          <label className="text-xs font-bold text-text" htmlFor="review-title">
-            Review Headline
-          </label>
-          <input
-            id="review-title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Excellent build quality, sounds amazing!"
-            required
-            className="rounded-lg bg-muted-bg px-3 py-2 text-sm text-text outline-none focus:ring-2 focus:ring-primary/40"
-          />
-        </div>
-
-        {/* Field 3: Detailed Feedback (~8px gap) */}
-        <div className="flex flex-col gap-2">
-          <label className="text-xs font-bold text-text" htmlFor="review-content">
-            Detailed Feedback
-          </label>
-          <textarea
-            id="review-content"
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            placeholder="Tell other shoppers about the material quality, packaging, delivery time, and seller experience..."
-            required
-            rows={3}
-            className="rounded-lg bg-muted-bg p-3 text-sm text-text outline-none focus:ring-2 focus:ring-primary/40"
-          />
-        </div>
-
-        {/* Field 4: Image Upload (Optional) (~8px gap) */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <FiImage size={15} className="text-primary" />
-              <label className="text-xs font-bold text-text">
-                Product Photos <span className="font-normal text-muted">(Optional)</span>
-              </label>
-            </div>
-            <span className="text-[11px] text-muted">
-              {uploadedImages.length}/4 photos uploaded
-            </span>
-          </div>
-
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            multiple
-            accept="image/*"
-            className="hidden"
-          />
-
-          <div className="flex flex-wrap items-center gap-3 pt-1">
-            {/* Uploaded image previews */}
-            {uploadedImages.map((url, idx) => (
-              <div
-                key={`${url}-${idx}`}
-                className="group relative h-20 w-20 overflow-hidden rounded-xl border border-border bg-muted-bg shadow-xs"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={url}
-                  alt={`Review thumbnail ${idx + 1}`}
-                  className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeImage(idx)}
-                  aria-label="Remove photo"
-                  className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/75 text-white shadow-xs transition-colors hover:bg-error"
-                >
-                  <FiX size={13} />
-                </button>
+      {/* Write Review Modal Dialog */}
+      {isModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="review-modal-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs transition-opacity animate-fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsModalOpen(false);
+          }}
+        >
+          <div className="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-border p-5">
+              <div className="flex items-center gap-2">
+                <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                  <FiEdit3 size={16} />
+                </div>
+                <div>
+                  <h3 id="review-modal-title" className="text-base font-black text-text">
+                    Write a Product Review
+                  </h3>
+                  <p className="text-[11px] text-muted">Share your experience to help other buyers</p>
+                </div>
               </div>
-            ))}
-
-            {/* Uploading loading indicator */}
-            {uploading && (
-              <div className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-primary/50 bg-primary/5 text-primary">
-                <FiLoader size={20} className="animate-spin" />
-                <span className="text-[10px] font-bold">Uploading...</span>
-              </div>
-            )}
-
-            {/* Add photos trigger button */}
-            {uploadedImages.length < 4 && !uploading && (
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex h-20 w-32 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border bg-muted-bg/60 p-2 text-center transition-colors hover:border-primary/50 hover:bg-muted-bg focus:outline-none cursor-pointer"
+                onClick={() => setIsModalOpen(false)}
+                aria-label="Close dialog"
+                className="grid h-8 w-8 place-items-center rounded-lg text-muted transition-colors hover:bg-muted-bg hover:text-text cursor-pointer"
               >
-                <FiUploadCloud size={20} className="text-primary" />
-                <span className="text-[11px] font-bold text-text">Add Photos</span>
-                <span className="text-[9px] text-muted">Max 4 images</span>
+                <FiX size={18} />
               </button>
-            )}
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5 overflow-y-auto p-5 text-sm">
+              {!session?.user && (
+                <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-300">
+                  You are not signed in.{" "}
+                  <Link
+                    href={`/login?next=${encodeURIComponent(pathname || "")}`}
+                    className="font-bold underline hover:text-amber-900"
+                  >
+                    Sign in
+                  </Link>{" "}
+                  to submit your review with a Verified Buyer badge.
+                </div>
+              )}
+
+              {formError && (
+                <div className="flex items-center gap-2 rounded-xl border border-error/20 bg-error/10 p-3 text-xs font-bold text-error">
+                  <FiAlertCircle size={15} className="shrink-0" />
+                  <span>{formError}</span>
+                </div>
+              )}
+
+              {/* Star Rating Picker */}
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold text-text">Overall Rating</label>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div
+                    className="flex items-center gap-1.5"
+                    onMouseLeave={() => setHoverRating(null)}
+                    role="radiogroup"
+                    aria-label="Star rating"
+                  >
+                    {[1, 2, 3, 4, 5].map((n) => {
+                      const isFilled = n <= activeRating;
+                      return (
+                        <button
+                          key={n}
+                          type="button"
+                          role="radio"
+                          aria-checked={rating === n}
+                          aria-label={`Rate ${n} of 5 stars`}
+                          onClick={() => setRating(n)}
+                          onMouseEnter={() => setHoverRating(n)}
+                          className="group p-0.5 transition-transform hover:scale-125 active:scale-95 focus:outline-none cursor-pointer"
+                        >
+                          <FiStar
+                            size={26}
+                            className={`transition-all duration-150 ${
+                              isFilled
+                                ? "fill-amber-400 text-amber-400 drop-shadow-xs"
+                                : "text-border hover:text-amber-300"
+                            }`}
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/10 px-2.5 py-0.5 text-xs font-bold text-amber-600 dark:text-amber-400">
+                    <FiStar size={12} className="fill-current" />
+                    {activeRating} Stars &middot; {RATING_LABELS[activeRating] || ""}
+                  </span>
+                </div>
+              </div>
+
+              {/* Headline */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-text" htmlFor="modal-review-title">
+                  Review Headline
+                </label>
+                <input
+                  id="modal-review-title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Excellent build quality, sounds amazing!"
+                  required
+                  className="rounded-xl border border-border bg-muted-bg/50 px-3.5 py-2.5 text-sm text-text outline-none transition-all focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+
+              {/* Detailed Description */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-text" htmlFor="modal-review-content">
+                  Detailed Feedback
+                </label>
+                <textarea
+                  id="modal-review-content"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Tell other shoppers about sound performance, build quality, battery life, packaging, and seller speed..."
+                  required
+                  rows={4}
+                  className="rounded-xl border border-border bg-muted-bg/50 p-3 text-sm text-text outline-none transition-all focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+
+              {/* Photo Upload */}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <FiImage size={15} className="text-primary" />
+                    <label className="text-xs font-bold text-text">
+                      Product Photos <span className="font-normal text-muted">(Optional)</span>
+                    </label>
+                  </div>
+                  <span className="text-[11px] text-muted">
+                    {uploadedImages.length}/4 uploaded
+                  </span>
+                </div>
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  multiple
+                  accept="image/*"
+                  className="hidden"
+                />
+
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  {uploadedImages.map((url, idx) => (
+                    <div
+                      key={`${url}-${idx}`}
+                      className="group relative h-16 w-16 overflow-hidden rounded-xl border border-border bg-muted-bg shadow-xs"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={url}
+                        alt={`Review thumbnail ${idx + 1}`}
+                        className="h-full w-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(idx)}
+                        aria-label="Remove photo"
+                        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/75 text-white transition-colors hover:bg-error cursor-pointer"
+                      >
+                        <FiX size={11} />
+                      </button>
+                    </div>
+                  ))}
+
+                  {uploading && (
+                    <div className="flex h-16 w-16 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-primary/50 bg-primary/5 text-primary">
+                      <FiLoader size={18} className="animate-spin" />
+                      <span className="text-[9px] font-bold">Uploading...</span>
+                    </div>
+                  )}
+
+                  {uploadedImages.length < 4 && !uploading && (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex h-16 w-28 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border bg-muted-bg/50 p-2 text-center transition-all hover:border-primary/50 hover:bg-muted-bg cursor-pointer"
+                    >
+                      <FiUploadCloud size={18} className="text-primary" />
+                      <span className="text-[10px] font-bold text-text">Add Photos</span>
+                    </button>
+                  )}
+                </div>
+
+                {uploadError && (
+                  <p className="flex items-center gap-1 text-xs font-semibold text-error">
+                    <FiAlertCircle size={13} /> {uploadError}
+                  </p>
+                )}
+              </div>
+
+              {/* Modal Footer Actions */}
+              <div className="mt-2 flex items-center justify-end gap-3 border-t border-border pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="rounded-xl border border-border px-4 py-2 text-xs font-bold text-muted transition-colors hover:bg-muted-bg hover:text-text cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  isDisabled={submitting || uploading}
+                  className="rounded-xl px-5 py-2 text-xs font-bold text-white shadow-sm"
+                >
+                  {submitting ? "Submitting..." : "Submit Review"}
+                </Button>
+              </div>
+            </form>
           </div>
-
-          {uploadError && (
-            <p className="flex items-center gap-1 text-xs font-semibold text-error">
-              <FiAlertCircle size={13} /> {uploadError}
-            </p>
-          )}
         </div>
-
-        <div className="flex items-center justify-between border-t border-border pt-4">
-          <p className="text-[11px] text-muted">
-            Photos will be verified and displayed to other shoppers.
-          </p>
-          <Button
-            type="submit"
-            variant="primary"
-            isDisabled={submitting || uploading}
-            className="rounded-lg px-6 py-2.5 text-sm font-bold text-white"
-          >
-            {submitting ? "Submitting..." : "Submit Review"}
-          </Button>
-        </div>
-      </form>
+      )}
 
       {/* Filters + Reviews list */}
       <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center gap-2 rounded-xl bg-surface p-3 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2 rounded-xl bg-surface p-3 shadow-sm border border-border">
           {(["all", "images", "verified"] as const).map((key) => (
             <button
               key={key}
               type="button"
               onClick={() => setFilter(key)}
-              className={`rounded-lg px-4 py-1.5 text-xs font-bold transition-colors ${
-                filter === key ? "bg-primary text-white" : "bg-muted-bg text-text hover:bg-border/60"
+              className={`rounded-lg px-4 py-1.5 text-xs font-bold transition-colors cursor-pointer ${
+                filter === key ? "bg-primary text-white shadow-xs" : "bg-muted-bg text-text hover:bg-border/60"
               }`}
             >
               {key === "all" ? `All Reviews (${total})` : key === "images" ? "With Images" : "Verified Purchases"}
@@ -410,7 +476,7 @@ export function ProductReviewsSection({ productId, initialReviews }: ProductRevi
         </div>
 
         {visibleReviews.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted">
+          <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted bg-surface/50">
             No reviews to show yet — be the first to leave feedback.
           </div>
         ) : (

@@ -12,9 +12,10 @@ export interface Category {
 export interface VariantRow {
   id: string;
   name: string;
+  sku?: string;
   swatch: string;
   stock: string;
-  priceDelta: string;
+  price: string;
 }
 
 export interface SpecRow {

@@ -2,7 +2,8 @@
 
 import React, { useState } from "react";
 import { FiStar, FiX, FiCheck, FiUploadCloud } from "react-icons/fi";
-import { clientMutation } from "@/lib/core/client";
+import { addProductReview } from "@/lib/api/reviews";
+import { uploadImageToImgBB } from "@/lib/utils/imgbb";
 
 interface ReviewModalProps {
   productId: string;
@@ -25,6 +26,7 @@ export function ReviewModal({
   const [comment, setComment] = useState<string>("");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDone, setIsDone] = useState<boolean>(false);
 
@@ -37,16 +39,35 @@ export function ReviewModal({
       return;
     }
 
+    if (!productId) {
+      setError("Unable to identify product ID for review.");
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
     try {
-      const payload = new FormData();
-      payload.append("rating", String(rating));
-      payload.append("comment", comment.trim());
-      if (title.trim()) payload.append("title", title.trim());
-      imageFiles.forEach((file) => payload.append("images", file));
-      await clientMutation(`/products/${productId}/reviews`, "POST", payload);
+      let imageUrls: string[] = [];
+      if (imageFiles.length > 0) {
+        setUploadStatus(`Uploading ${imageFiles.length} photo(s)...`);
+        try {
+          imageUrls = await Promise.all(
+            imageFiles.map((f) => uploadImageToImgBB(f).then((res) => res.url))
+          );
+        } catch (uploadErr) {
+          console.warn("Failed to upload review images to ImgBB:", uploadErr);
+        }
+      }
+
+      setUploadStatus("Submitting review...");
+      const fullComment = title.trim() ? `${title.trim()}. ${comment.trim()}` : comment.trim();
+
+      await addProductReview(productId, {
+        rating,
+        comment: fullComment,
+        images: imageUrls.length > 0 ? imageUrls : undefined,
+      });
 
       setIsDone(true);
       setTimeout(() => {
@@ -58,6 +79,7 @@ export function ReviewModal({
       setError(err?.message || "Failed to submit review. Please try again.");
     } finally {
       setIsSubmitting(false);
+      setUploadStatus(null);
     }
   };
 
@@ -190,7 +212,7 @@ export function ReviewModal({
                 disabled={isSubmitting}
                 className="px-5 py-2 bg-primary hover:bg-primary-hover text-white font-bold rounded-xl text-xs shadow-md shadow-primary/20 transition-all disabled:opacity-50"
               >
-                {isSubmitting ? "Submitting..." : "Post Review"}
+                {uploadStatus || (isSubmitting ? "Submitting..." : "Post Review")}
               </button>
             </div>
           </form>
