@@ -75,10 +75,10 @@ export function NavbarSearchOverlay({
             // Stop clicks inside the panel from hitting the backdrop
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mx-auto max-w-2xl rounded-2xl border border-white/10 bg-base-100/95 shadow-2xl backdrop-blur-2xl">
+            <div className="mx-auto max-w-2xl rounded-2xl border border-border bg-surface/95 text-text shadow-2xl backdrop-blur-2xl">
               <form onSubmit={handleSubmit} className="flex items-center gap-3 px-4 py-3">
                 {/* Search icon */}
-                <FaSearch className="shrink-0 text-base-content/40" size={16} />
+                <FaSearch className="shrink-0 text-muted" size={16} />
 
                 {/* Input */}
                 <input
@@ -87,7 +87,7 @@ export function NavbarSearchOverlay({
                   value={value}
                   onChange={(e) => onChange(e.target.value)}
                   placeholder="Search products, stores, categories…"
-                  className="min-w-0 flex-1 bg-transparent text-base text-base-content outline-none placeholder:text-base-content/35"
+                  className="min-w-0 flex-1 bg-transparent text-base text-text outline-none placeholder:text-muted"
                   aria-label="Search ShopNest"
                 />
 
@@ -96,15 +96,15 @@ export function NavbarSearchOverlay({
                   type="button"
                   onClick={() => (value ? onChange("") : onClose())}
                   aria-label={value ? "Clear search" : "Close search"}
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-base-content/40 transition hover:bg-base-200 hover:text-base-content cursor-pointer"
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted transition hover:bg-muted-bg hover:text-text cursor-pointer"
                 >
                   <FaTimes size={13} />
                 </button>
               </form>
 
-              {/* Optional: hint row */}
-              <div className="border-t border-base-200 px-4 py-2 text-xs text-base-content/35">
-                Press <kbd className="rounded bg-base-200 px-1 py-0.5 font-mono text-[10px]">Enter</kbd> to search &nbsp;·&nbsp; <kbd className="rounded bg-base-200 px-1 py-0.5 font-mono text-[10px]">Esc</kbd> to dismiss
+              {/* Hint row */}
+              <div className="border-t border-border px-4 py-2 text-xs text-muted">
+                Press <kbd className="rounded border border-border bg-muted-bg px-1.5 py-0.5 font-mono text-[10px] text-text">Enter</kbd> to search &nbsp;·&nbsp; <kbd className="rounded border border-border bg-muted-bg px-1.5 py-0.5 font-mono text-[10px] text-text">Esc</kbd> to dismiss
               </div>
             </div>
           </motion.div>
