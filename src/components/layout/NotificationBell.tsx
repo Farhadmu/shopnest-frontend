@@ -132,13 +132,13 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
         className={
           isDashboard
             ? `relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-text hover:bg-muted-bg hover:text-primary transition cursor-pointer active:scale-95 shadow-xs ${className}`
-            : `relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20 cursor-pointer active:scale-95 ${className}`
+            : `relative flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20 cursor-pointer active:scale-95 ${className}`
         }
         aria-label="Notifications"
         aria-haspopup="menu"
         aria-expanded={isOpen}
       >
-        <IoIosNotifications size={18} />
+        <IoIosNotifications className="text-base sm:text-lg" />
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-xs animate-in zoom-in">
             {unreadCount > 99 ? "99+" : unreadCount}
