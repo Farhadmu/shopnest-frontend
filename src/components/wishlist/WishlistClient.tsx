@@ -3,16 +3,16 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useSession } from "@/lib/auth-client";
-import { getWishlist, removeFromWishlist, WishlistItem } from "@/lib/api/wishlist";
+import { getWishlist, WishlistItem } from "@/lib/api/wishlist";
 import { getProductById, Product } from "@/lib/api/products";
 import {
   getGuestWishlist,
-  removeGuestWishlistItem,
   clearGuestWishlist,
   syncGuestDataToServer,
 } from "@/lib/guest-store";
 import { LoadingState } from "@/components/common/LoadingState";
 import { useConfirm } from "@/context/ConfirmDialogContext";
+import { useWishlist } from "@/context/WishlistContext";
 import { SmartWishlistGroups } from "@/components/wishlist/SmartWishlistGroups";
 import { WishlistProductCard } from "@/components/wishlist/WishlistProductCard";
 import { updateWishlistGroup, WishlistGroupItem } from "@/lib/api/customer-intelligence-features";
@@ -21,6 +21,7 @@ import { FaHeart, FaShoppingBag } from "react-icons/fa";
 export default function WishlistClient() {
   const { data: session, isPending } = useSession();
   const confirm = useConfirm();
+  const { removeFromWishlist: contextRemoveFromWishlist } = useWishlist();
   const [items, setItems] = useState<WishlistItem[]>([]);
   const [products, setProducts] = useState<Record<string, Product>>({});
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
@@ -109,17 +110,11 @@ export default function WishlistClient() {
 
     if (!shouldRemove) return;
 
-    if (!session?.user) {
-      setItems(removeGuestWishlistItem(productId));
-      return;
-    }
-
     const previousItems = items;
     setItems((currentItems) => currentItems.filter((item) => item.productId !== productId));
 
     try {
-      await removeFromWishlist(productId);
-      clearGuestWishlist();
+      await contextRemoveFromWishlist(productId);
     } catch {
       setItems(previousItems);
     }

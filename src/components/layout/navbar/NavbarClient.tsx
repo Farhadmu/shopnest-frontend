@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { FaBars, FaTimes, FaSearch } from "react-icons/fa";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useCartDrawer } from "@/context/CartDrawerContext";
+import { useWishlist } from "@/context/WishlistContext";
 import { getCart } from "@/lib/api/cart";
 import {
   getGuestCart,
@@ -32,6 +33,7 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
   const pathname = usePathname();
   const router = useRouter();
   const { openCart, itemCount: drawerItemCount } = useCartDrawer();
+  const { itemCount: wishlistCount } = useWishlist();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -260,6 +262,7 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
             <NavbarActions
               isAuthenticated={isAuthenticated}
               cartCount={totalCartCount}
+              wishlistCount={wishlistCount}
               onOpenCart={openCart}
               userSlot={
                 isAuthenticated ? (

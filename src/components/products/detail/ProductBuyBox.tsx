@@ -7,10 +7,10 @@ import { FiStar, FiCheckCircle, FiTruck, FiShoppingBag, FiZap, FiHeart, FiMinus,
 import type { Product } from "@/lib/api/products";
 import { formatCurrency } from "@/lib/utils";
 import { addToCart } from "@/lib/api/cart";
-import { addToWishlist } from "@/lib/api/wishlist";
+import { useWishlist } from "@/context/WishlistContext";
 import { useSession } from "@/lib/auth-client";
 import { recordShoppingEvent, getPurchaseDecisionScore, type PurchaseDecisionScoreData } from "@/lib/api/customer-intelligence";
-import { addGuestCartItem, addGuestWishlistItem, clearGuestCart, clearGuestWishlist } from "@/lib/guest-store";
+import { addGuestCartItem, clearGuestCart } from "@/lib/guest-store";
 
 import { extractVariants, SpecVariant } from "./ProductSpecsTable";
 
@@ -21,12 +21,15 @@ export interface ProductBuyBoxProps {
 export function ProductBuyBox({ product }: ProductBuyBoxProps) {
   const router = useRouter();
   const { data: session } = useSession();
+  const { isInWishlist, toggleWishlist } = useWishlist();
 
   const allVariants = React.useMemo(() => extractVariants(product), [product]);
   const hasRealVariants = allVariants.length > 0;
   const [selectedVariant, setSelectedVariant] = useState<SpecVariant | null>(
     hasRealVariants ? allVariants[0] : null
   );
+
+  const isWishlisted = isInWishlist(product.id);
 
   const [quantity, setQuantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
@@ -170,28 +173,25 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
   };
 
   const handleWishlist = async () => {
-    if (!session?.user) {
-      addGuestWishlistItem({
-        productId: product.id,
-        price: displayPrice,
+    try {
+      const { added } = await toggleWishlist({
+        id: product.id,
         title: product.title,
-        images: imageSrc ? [imageSrc] : undefined,
+        price: displayPrice,
+        image: imageSrc,
+        images: product.images,
         category: product.category,
       });
-      showToast("Saved to wishlist!");
-      return;
-    }
-    try {
-      await addToWishlist(product.id);
-      clearGuestWishlist();
-      showToast("Saved to wishlist!");
-      recordShoppingEvent({
-        eventType: "wishlist_add",
-        productId: product.id,
-        productTitle: product.title,
-        category: product.category,
-        price: displayPrice,
-      }).catch(() => {});
+      showToast(added ? "Saved to wishlist!" : "Removed from wishlist!");
+      if (added && session?.user) {
+        recordShoppingEvent({
+          eventType: "wishlist_add",
+          productId: product.id,
+          productTitle: product.title,
+          category: product.category,
+          price: displayPrice,
+        }).catch(() => {});
+      }
     } catch {
       showToast("Could not update wishlist");
     }
@@ -384,11 +384,16 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
 
           <button
             type="button"
-            aria-label="Add to wishlist"
+            aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+            title={isWishlisted ? "In Wishlist (Click to remove)" : "Add to wishlist"}
             onClick={handleWishlist}
-            className="grid h-12 w-12 shrink-0 place-items-center rounded-lg border border-border text-muted transition-colors hover:border-error hover:text-error cursor-pointer"
+            className={`grid h-12 w-12 shrink-0 place-items-center rounded-lg border transition-all cursor-pointer ${
+              isWishlisted
+                ? "border-primary/50 bg-primary/10 text-primary shadow-xs"
+                : "border-border text-muted hover:border-primary/40 hover:text-primary"
+            }`}
           >
-            <FiHeart size={18} />
+            <FiHeart size={18} className={isWishlisted ? "fill-primary text-primary" : ""} />
           </button>
         </div>
 
@@ -461,10 +466,14 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
             <button
               type="button"
               onClick={handleWishlist}
-              className="grid h-9 w-9 place-items-center rounded-xl border border-border bg-surface text-muted transition-colors hover:border-error/40 hover:text-error hover:bg-error/5 cursor-pointer"
-              title="Save to Wishlist"
+              className={`grid h-9 w-9 place-items-center rounded-xl border transition-colors cursor-pointer ${
+                isWishlisted
+                  ? "border-primary/50 bg-primary/10 text-primary"
+                  : "border-border bg-surface text-muted hover:border-primary/40 hover:text-primary"
+              }`}
+              title={isWishlisted ? "In Wishlist (Click to remove)" : "Save to Wishlist"}
             >
-              <FiHeart size={15} />
+              <FiHeart size={15} className={isWishlisted ? "fill-primary text-primary" : ""} />
             </button>
 
             <button

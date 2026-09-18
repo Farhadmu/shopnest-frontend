@@ -111,7 +111,7 @@ export default function JustForYouSection({ initialProducts }: {
       });
       setAddedMap((prev) => ({ ...prev, [prod.id]: true }));
       showToast(`Added "${prod.title}" to cart!`);
-      setTimeout(() => router.push("/cart"), 500);
+      setTimeout(() => setAddedMap((prev) => ({ ...prev, [prod.id]: false })), 2000);
       return;
     }
 
@@ -120,7 +120,7 @@ export default function JustForYouSection({ initialProducts }: {
       clearGuestCart();
       setAddedMap((prev) => ({ ...prev, [prod.id]: true }));
       showToast(`Added "${prod.title}" to cart!`);
-      setTimeout(() => router.push("/cart"), 500);
+      setTimeout(() => setAddedMap((prev) => ({ ...prev, [prod.id]: false })), 2000);
     } catch {
       showToast("Failed to add to cart", "error");
     }
@@ -249,7 +249,6 @@ export default function JustForYouSection({ initialProducts }: {
               index={index}
               isAdded={!!addedMap[product.id]}
               onAddToCart={handleAddToCart}
-              onAddToWishlist={handleAddToWishlist}
             />
           ))}
         </div>
