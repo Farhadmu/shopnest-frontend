@@ -22,12 +22,12 @@ export function ProductFeaturesBent({ product }: ProductFeaturesBentProps) {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
       {DUMMY_FEATURES.map(({ icon: Icon, title, description }) => (
-        <div key={title} className="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+        <div key={title} className="flex flex-col gap-2.5 rounded-2xl border border-border bg-surface p-5 sm:p-6 shadow-sm">
           <div className="mb-1 grid h-11 w-11 place-items-center rounded-xl bg-muted-bg text-primary">
-            <Icon size={22} />
+            <Icon size={20} />
           </div>
           <h4 className="text-sm font-black text-text">{title}</h4>
-          <p className="text-xs text-muted">{description}</p>
+          <p className="text-xs leading-relaxed text-muted">{description}</p>
         </div>
       ))}
     </div>
