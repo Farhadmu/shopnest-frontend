@@ -88,7 +88,20 @@ export function useProductForm(editId: string | null, aiPrefill?: Record<string,
     }
     return [{ id: uid(), key: "", value: "" }];
   });
-  const [packageContents, setPackageContents] = useState<string[]>([]);
+  const [packageContents, setPackageContents] = useState<string[]>(() => {
+    if (aiPrefill?.packageContents && Array.isArray(aiPrefill.packageContents)) {
+      return (aiPrefill.packageContents as string[]).map((s) => String(s).trim()).filter(Boolean);
+    }
+    return [];
+  });
+  const [highlights, setHighlights] = useState<Array<{ title: string; description?: string; icon?: string }>>(() => {
+    if (aiPrefill?.highlights && Array.isArray(aiPrefill.highlights)) {
+      return aiPrefill.highlights.map((h: any) =>
+        typeof h === "string" ? { title: h, description: "", icon: "" } : h
+      );
+    }
+    return [];
+  });
   const [newPackageItem, setNewPackageItem] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
@@ -138,7 +151,21 @@ export function useProductForm(editId: string | null, aiPrefill?: Record<string,
 
         setImages(p.images && p.images.length > 0 ? p.images : []);
 
-        if (specifications["Variants"]) {
+        if (p.variants && Array.isArray(p.variants) && p.variants.length > 0) {
+          setVariants(
+            p.variants.map((v: any, idx: number) => {
+              const basePrice = p.price || 0;
+              const vPrice = typeof v.price === "number" ? v.price : basePrice;
+              return {
+                id: uid(),
+                name: v.name || "",
+                swatch: v.color || SWATCH_PALETTE[idx % SWATCH_PALETTE.length],
+                stock: String(v.stock ?? 0),
+                priceDelta: String(vPrice - basePrice),
+              };
+            })
+          );
+        } else if (specifications["Variants"]) {
           try {
             const parsed = JSON.parse(specifications["Variants"]);
             if (Array.isArray(parsed)) {
@@ -157,12 +184,22 @@ export function useProductForm(editId: string | null, aiPrefill?: Record<string,
           }
         }
 
-        if (specifications["Package Contents"]) {
+        if (p.packageContents && Array.isArray(p.packageContents) && p.packageContents.length > 0) {
+          setPackageContents(p.packageContents);
+        } else if (specifications["Package Contents"]) {
           setPackageContents(
             specifications["Package Contents"]
               .split("|")
               .map((s: string) => s.trim())
               .filter(Boolean)
+          );
+        }
+
+        if (p.highlights && Array.isArray(p.highlights) && p.highlights.length > 0) {
+          setHighlights(
+            p.highlights.map((h: any) =>
+              typeof h === "string" ? { title: h, description: "", icon: "" } : h
+            )
           );
         }
 
@@ -352,6 +389,18 @@ export function useProductForm(editId: string | null, aiPrefill?: Record<string,
 
     const safeStock = Math.max(0, Math.floor(effectiveStock || 0));
 
+    const mappedVariants = variants
+      .filter((v) => v.name.trim())
+      .map((v) => ({
+        name: v.name.trim(),
+        sku: v.id || "",
+        stock: parseInt(v.stock, 10) || 0,
+        price: priceNum + (parseFloat(v.priceDelta) || 0),
+        color: v.swatch,
+      }));
+
+    const validPackageContents = packageContents.map((s) => s.trim()).filter(Boolean);
+
     const payload = {
       title,
       category: form.category || "Electronics",
@@ -362,6 +411,9 @@ export function useProductForm(editId: string | null, aiPrefill?: Record<string,
       images: validImages,
       tags,
       specifications: buildSpecifications(),
+      variants: mappedVariants,
+      highlights,
+      packageContents: validPackageContents,
     };
 
     console.log("🚀 [Submitting Product Payload]:", payload);
@@ -392,6 +444,8 @@ export function useProductForm(editId: string | null, aiPrefill?: Record<string,
     setImages,
     variants,
     specs,
+    highlights,
+    setHighlights,
     packageContents,
     newPackageItem,
     setNewPackageItem,

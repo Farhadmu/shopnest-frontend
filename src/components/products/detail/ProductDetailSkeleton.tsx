@@ -2,20 +2,17 @@ import React from "react";
 
 /**
  * Loading skeleton for the individual product details page (/products/[id]).
- * Mirrors the exact layout of `ProductDetailPage`:
+ * Accurately mirrors `ProductDetailPage`:
  * - Breadcrumbs bar
- * - Gallery (sticky left) & Buy Box + AI Score + Seller Card (right)
- * - Bento feature highlights
- * - Overview + Package Contents + Tech Specs Table
- * - Customer Reviews breakdown
- *
- * Replaces the product listing card grid skeleton that was erroneously
- * displaying during product detail page loads.
+ * - Row 1: Gallery (Sticky left, 5 cols) & Buy Box + AI Score + Seller Card (Right, 7 cols)
+ * - Row 2: Bento feature highlights
+ * - Row 3: Overview & Package Contents (7 cols) + Tech Specs Table (5 cols)
+ * - Row 4: Customer Reviews breakdown
  */
 export function ProductDetailSkeleton() {
   return (
     <div
-      className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8"
+      className="mx-auto flex w-full max-w-7xl flex-col gap-8"
       role="status"
       aria-label="Loading product details"
     >
@@ -28,7 +25,7 @@ export function ProductDetailSkeleton() {
         <div className="shimmer h-4 w-40 rounded" />
       </div>
 
-      {/* 02. Gallery + Buy Box Grid */}
+      {/* 02. Gallery (Left Sticky) + Buy Box, AI Score & Seller Card (Right) */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start">
         {/* Left: Gallery Skeleton */}
         <div className="lg:col-span-5">
@@ -85,7 +82,7 @@ export function ProductDetailSkeleton() {
             </div>
 
             {/* Variants */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1">
               <div className="shimmer h-3 w-20 rounded" />
               <div className="flex gap-2">
                 <div className="shimmer h-8 w-20 rounded-lg" />
@@ -95,10 +92,12 @@ export function ProductDetailSkeleton() {
             </div>
 
             {/* Quantity + CTA buttons */}
-            <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center">
-              <div className="shimmer h-12 w-full rounded-lg sm:w-36" />
-              <div className="shimmer h-12 flex-1 rounded-lg" />
-              <div className="shimmer h-12 flex-1 rounded-lg" />
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="shimmer h-12 w-full rounded-lg sm:w-36 shrink-0" />
+              <div className="flex flex-1 items-center gap-3 w-full">
+                <div className="shimmer h-12 flex-1 w-full basis-0 rounded-lg" />
+                <div className="shimmer h-12 flex-1 w-full basis-0 rounded-lg" />
+              </div>
               <div className="shimmer h-12 w-12 shrink-0 rounded-lg" />
             </div>
 
@@ -157,7 +156,7 @@ export function ProductDetailSkeleton() {
       {/* 03. Features Bento */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         {Array.from({ length: 4 }).map((_, idx) => (
-          <div key={idx} className="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+          <div key={idx} className="flex flex-col gap-2.5 rounded-2xl border border-border bg-surface p-5 sm:p-6 shadow-sm">
             <div className="shimmer mb-1 h-11 w-11 rounded-xl" />
             <div className="shimmer h-4 w-28 rounded" />
             <div className="shimmer h-3 w-full rounded" />
@@ -166,12 +165,12 @@ export function ProductDetailSkeleton() {
         ))}
       </div>
 
-      {/* 04. Overview + Specs */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start">
-        <div className="flex flex-col gap-6 lg:col-span-7">
+      {/* 04. Balanced 2-Column Grid for Details & Specs */}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:items-start">
+        <div className="space-y-8 lg:col-span-2">
           {/* Overview Section */}
-          <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
-            <div className="border-b border-border pb-3">
+          <div className="flex flex-col gap-3.5 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+            <div className="border-b border-border pb-2.5">
               <div className="shimmer h-6 w-52 rounded" />
             </div>
             <div className="flex flex-col gap-2">
@@ -181,35 +180,35 @@ export function ProductDetailSkeleton() {
             </div>
             <div className="grid grid-cols-1 gap-2.5 pt-1 sm:grid-cols-2">
               {Array.from({ length: 4 }).map((_, idx) => (
-                <div key={idx} className="shimmer h-11 rounded-xl" />
+                <div key={idx} className="shimmer h-10 rounded-xl" />
               ))}
             </div>
           </div>
 
           {/* Package Contents */}
-          <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
-            <div className="border-b border-border pb-3">
+          <div className="flex flex-col gap-3.5 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+            <div className="border-b border-border pb-2.5">
               <div className="shimmer h-5 w-48 rounded" />
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {Array.from({ length: 3 }).map((_, idx) => (
-                <div key={idx} className="shimmer h-20 rounded-xl" />
+                <div key={idx} className="shimmer h-18 rounded-xl" />
               ))}
             </div>
           </div>
         </div>
 
-        {/* Specs Table */}
-        <div className="lg:col-span-5">
-          <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-6 shadow-sm">
-            <div className="border-b border-border pb-3">
+        {/* Tech Specs Table */}
+        <div className="lg:col-span-1">
+          <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+            <div className="border-b border-border pb-2.5">
               <div className="shimmer h-6 w-36 rounded" />
             </div>
             <div className="flex flex-col divide-y divide-border">
               {Array.from({ length: 5 }).map((_, idx) => (
-                <div key={idx} className="flex items-center justify-between py-2.5">
+                <div key={idx} className="flex items-center justify-between py-2">
+                  <div className="shimmer h-4 w-24 rounded" />
                   <div className="shimmer h-4 w-28 rounded" />
-                  <div className="shimmer h-4 w-32 rounded" />
                 </div>
               ))}
             </div>
@@ -217,7 +216,7 @@ export function ProductDetailSkeleton() {
         </div>
       </div>
 
-      {/* 05. Reviews Section */}
+      {/* 05. Reviews Section Skeleton */}
       <div className="flex flex-col gap-6 rounded-2xl border border-border bg-surface p-6 shadow-sm">
         <div className="flex items-center justify-between border-b border-border pb-4">
           <div className="shimmer h-6 w-44 rounded" />

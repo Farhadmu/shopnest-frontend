@@ -157,14 +157,16 @@ export interface PriceHistoryData {
 
 export interface PurchaseDecisionScoreData {
   productId: string;
-  overallScore: number;
-  dimensions: {
+  overallScore?: number;
+  dimensions?: {
     value: { score: number; label: string; note: string };
     quality: { score: number; label: string; note: string };
     popularity: { score: number; label: string; note: string };
     reliability: { score: number; label: string; note: string };
   };
-  recommendation: string;
+  recommendation?: string;
+  insufficientData?: boolean;
+  reason?: string;
 }
 
 export interface ProductTrustCheckerData {
