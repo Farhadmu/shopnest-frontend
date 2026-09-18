@@ -85,12 +85,24 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
     updateScroll();
     checkMobile();
 
+    const handleOpenSearch = () => {
+      setSearchOpen(true);
+    };
+
+    const handleCloseMobileMenu = () => {
+      setMobileMenuOpen(false);
+    };
+
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", checkMobile, { passive: true });
+    window.addEventListener("open_search_overlay", handleOpenSearch);
+    window.addEventListener("close_mobile_menu", handleCloseMobileMenu);
 
     return () => {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", checkMobile);
+      window.removeEventListener("open_search_overlay", handleOpenSearch);
+      window.removeEventListener("close_mobile_menu", handleCloseMobileMenu);
     };
   }, []);
 
@@ -281,9 +293,9 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
                   type="button"
                   onClick={() => setMobileMenuOpen((v) => !v)}
                   aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-                  className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/25 bg-white/15 text-white transition hover:bg-white/25 lg:hidden cursor-pointer active:scale-95"
+                  className="grid h-8 w-8 sm:h-9 sm:w-9 shrink-0 place-items-center rounded-xl border border-white/25 bg-white/15 text-white transition hover:bg-white/25 lg:hidden cursor-pointer active:scale-95 text-xs"
                 >
-                  {mobileMenuOpen ? <FaTimes /> : <FaBars />}
+                  {mobileMenuOpen ? <FaTimes size={13} /> : <FaBars size={13} />}
                 </button>
               }
             />
