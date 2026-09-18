@@ -161,6 +161,9 @@ export function DashboardSidebarLayout({
           roleIcon={roleIconFor(role)}
           userName={userName}
           userImage={userImage}
+          userEmail={userEmail}
+          user={session?.user as any}
+          onSignOut={handleLogout}
           mobileMenuOpen={mobileDrawerOpen}
           onToggleMobileMenu={() => setMobileDrawerOpen((v) => !v)}
         />

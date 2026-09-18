@@ -86,11 +86,18 @@ interface NavbarUserMenuProps {
     image?: string;
   };
   role: UserRole;
-  onOpenCart: () => void;
+  onOpenCart?: () => void;
   onSignOut: () => void;
+  variant?: "navbar" | "dashboard";
 }
 
-export function NavbarUserMenu({ user, role, onOpenCart, onSignOut }: NavbarUserMenuProps) {
+export function NavbarUserMenu({
+  user,
+  role,
+  onOpenCart,
+  onSignOut,
+  variant = "navbar",
+}: NavbarUserMenuProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const dropdownLinks = role !== "guest" ? userDropdownItems[role as Exclude<UserRole, "guest">] || [] : [];
@@ -113,16 +120,25 @@ export function NavbarUserMenu({ user, role, onOpenCart, onSignOut }: NavbarUser
       ? user.email.charAt(0).toUpperCase()
       : "U";
 
+  const isDashboard = variant === "dashboard";
+
   return (
     <div className="relative shrink-0" ref={ref}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative flex shrink-0 items-center justify-center gap-1.5 rounded-full transition hover:opacity-90 active:scale-95 cursor-pointer focus:outline-none"
+        className={
+          isDashboard
+            ? "relative flex shrink-0 items-center justify-center gap-2 rounded-full p-1 transition hover:bg-muted-bg active:scale-95 cursor-pointer focus:outline-none"
+            : "relative flex shrink-0 items-center justify-center gap-1.5 rounded-full transition hover:opacity-90 active:scale-95 cursor-pointer focus:outline-none"
+        }
         aria-expanded={open}
         aria-label="Open account menu"
       >
-        <Avatar className="ring-2 ring-white/20" size="sm">
+        <Avatar
+          className={isDashboard ? "ring-2 ring-border shadow-xs" : "ring-2 ring-white/20"}
+          size="sm"
+        >
           <Avatar.Image
             alt={user?.name || "User"}
             src={user?.image || "https://img.heroui.chat/image/avatar?w=400&h=400&u=3"}
@@ -131,10 +147,17 @@ export function NavbarUserMenu({ user, role, onOpenCart, onSignOut }: NavbarUser
             {firstLetter || "JD"}
           </Avatar.Fallback>
         </Avatar>
+
+        {isDashboard && (
+          <span className="hidden text-xs font-bold text-text sm:inline max-w-[140px] truncate">
+            {user?.name || "Member"}
+          </span>
+        )}
+
         <motion.span
           animate={{ rotate: open ? 180 : 0 }}
           transition={{ duration: 0.2 }}
-          className="flex items-center text-white/70"
+          className={`flex items-center ${isDashboard ? "text-muted" : "text-white/70"}`}
         >
           <FaChevronDown size={11} />
         </motion.span>
@@ -169,7 +192,7 @@ export function NavbarUserMenu({ user, role, onOpenCart, onSignOut }: NavbarUser
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05, duration: 0.2 }}
                   >
-                    {item.href === "/cart" ? (
+                    {item.href === "/cart" && onOpenCart ? (
                       <button
                         type="button"
                         onClick={() => { setOpen(false); onOpenCart(); }}
