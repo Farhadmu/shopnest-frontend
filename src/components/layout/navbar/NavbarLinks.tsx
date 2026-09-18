@@ -81,11 +81,10 @@ export function NavbarLinks({ role, isAuthenticated, categoryMenu }: NavbarLinks
             <Link
               key={item.href}
               href={item.href}
-              className={`group shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold tracking-wide transition-all duration-200 xl:px-3.5 xl:text-sm ${
-                active
+              className={`group shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold tracking-wide transition-all duration-200 xl:px-3.5 xl:text-sm ${active
                   ? "border-white/60 bg-white/25 text-white shadow-[0_0_12px_rgba(255,255,255,0.25)] ring-1 ring-white/30"
                   : "border-white/35 bg-white/15 text-white shadow-xs hover:border-white/60 hover:bg-white/25 hover:shadow-[0_0_10px_rgba(255,255,255,0.2)]"
-              }`}
+                }`}
             >
               <Sparkles
                 className="h-3.5 w-3.5 text-amber-300 fill-amber-300/80 transition-transform duration-200 group-hover:scale-110 group-hover:rotate-6 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]"
@@ -99,11 +98,10 @@ export function NavbarLinks({ role, isAuthenticated, categoryMenu }: NavbarLinks
           <Link
             key={item.href}
             href={item.href}
-            className={`shrink-0 rounded-xl px-2 py-1.5 text-xs font-semibold transition xl:px-3 xl:py-2 xl:text-sm ${
-              active
+            className={`shrink-0 rounded-xl px-2 py-1.5 text-xs font-semibold transition xl:px-3 xl:py-2 xl:text-sm ${active
                 ? "bg-white/20 text-white"
                 : "text-white/80 hover:bg-white/15 hover:text-white"
-            }`}
+              }`}
           >
             {item.label}
           </Link>

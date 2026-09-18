@@ -16,8 +16,10 @@ import { NavbarLinks } from "./NavbarLinks";
 import { NavbarActions } from "./NavbarActions";
 import { NavbarUserMenu, NavbarAuthButtons } from "./NavbarUserMenu";
 import { NavbarMobileMenu } from "./NavbarMobileMenu";
+import { NavbarSearchOverlay } from "./NavbarSearchOverlay";
 import type { UserRole } from "./NavbarLinks";
-import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
+import { RoleBadge } from "./NavbarRoleBadge";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface NavbarClientProps {
   /** Server-rendered CategoryMegaMenu for desktop nav */
@@ -26,44 +28,21 @@ interface NavbarClientProps {
   mobileCategoryMenu: React.ReactNode;
 }
 
-function RoleBadge({ role }: { role: UserRole }) {
-  if (role === "admin")
-    return (
-      <span className="rounded-md bg-purple-500/15 px-2 py-0.5 text-[10px] font-black uppercase text-purple-600 dark:text-purple-400">
-        Admin
-      </span>
-    );
-  if (role === "seller")
-    return (
-      <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400">
-        Seller
-      </span>
-    );
-  if (role === "delivery_man" || role === "delivery")
-    return (
-      <span className="rounded-md bg-sky-500/15 px-2 py-0.5 text-[10px] font-black uppercase text-sky-600 dark:text-sky-400">
-        Delivery Partner
-      </span>
-    );
-  return (
-    <span className="rounded-md bg-primary/15 px-2 py-0.5 text-[10px] font-black uppercase text-primary">
-      Customer
-    </span>
-  );
-}
-
 export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: NavbarClientProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { openCart, itemCount: drawerItemCount } = useCartDrawer();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [cartCount, setCartCount] = useState(0);
   const [isScrolled, setIsScrolled] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [isMobile, setIsMobile] = useState(false);
 
   const isHydrated = useSyncExternalStore(
-    () => () => {},
+    () => () => { },
     () => true,
     () => false,
   );
@@ -76,17 +55,41 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
   const role: UserRole = isHydrated ? (user?.role as UserRole) || (user ? "customer" : "guest") : "guest";
   const isAuthenticated = isHydrated && !!user;
 
-  // Butter-smooth scroll detection using Framer Motion (GPU-accelerated, zero unthrottled scroll lag)
-  const { scrollY } = useScroll();
-  useMotionValueEvent(scrollY, "change", (latest) => {
-    const scrolled = latest > 30;
-    setIsScrolled((prev) => (prev !== scrolled ? scrolled : prev));
-  });
-
+  // Scroll detection with hysteresis to eliminate fluttering/bouncing at boundary
   useEffect(() => {
-    if (typeof window !== "undefined" && window.scrollY > 30) {
-      setIsScrolled(true);
-    }
+    let ticking = false;
+
+    const updateScroll = () => {
+      const y = window.scrollY;
+      setIsScrolled((prev) => {
+        if (!prev && y > 35) return true;
+        if (prev && y < 15) return false;
+        return prev;
+      });
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(updateScroll);
+        ticking = true;
+      }
+    };
+
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    updateScroll();
+    checkMobile();
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", checkMobile, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", checkMobile);
+    };
   }, []);
 
   // Sync cart count
@@ -166,78 +169,126 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
   const isPill = isScrolled && !mobileMenuOpen;
 
   return (
+    <>
     <motion.header
-      layout
-      initial={false}
-      transition={{
-        type: "spring",
-        stiffness: 120,
-        damping: 19,
-        mass: 0.8,
-      }}
-      className={`sticky z-50 transition-colors duration-400 ${
-        isPill
-          ? "top-3 mt-3 w-[calc(100%-1.5rem)] sm:w-auto container mx-auto rounded-full bg-base-100/80 backdrop-blur-md border border-white/10 shadow-2xl shadow-purple-950/20"
-          : "top-0 mt-0 w-full rounded-none bg-linear-to-r from-indigo-600 via-violet-600 to-purple-600 dark:from-indigo-950 dark:via-purple-950 dark:to-violet-950 border-b border-white/15 shadow-sm"
-      }`}
+      initial={{ y: -24, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ type: "spring", stiffness: 100, damping: 20 }}
+      className="sticky top-0 z-50 w-full"
     >
-      <div className="container mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="flex min-h-13 sm:min-h-14 items-center justify-between gap-2 lg:gap-4 xl:gap-5">
-          {/* Brand + desktop search */}
-          <NavbarBrand
-            onClose={() => setMobileMenuOpen(false)}
-            search={search}
-            setSearch={setSearch}
-            isScrolled={isScrolled}
+      {/*
+        LAYERED PILL MORPH — professional approach:
+        ┌─ Shell div ─────────────────────────────────────────┐
+        │  Animates: border-radius, margin, box-shadow        │
+        │  ┌─ BG Layer 1 (absolute) ── gradient ────────────┐ │
+        │  │  Animates: opacity (fades OUT on scroll)        │ │
+        │  └────────────────────────────────────────────────┘ │
+        │  ┌─ BG Layer 2 (absolute) ── frosted glass ───────┐ │
+        │  │  Animates: opacity (fades IN on scroll)         │ │
+        │  └────────────────────────────────────────────────┘ │
+        │  ┌─ Border Layer (absolute) ── inset box-shadow ──┐ │
+        │  │  Animates: box-shadow (bottom-line → ring)      │ │
+        │  └────────────────────────────────────────────────┘ │
+        │  ┌─ Content (relative z-10) ──────────────────────┐ │
+        │  │  NEVER MOVES — no width/padding animation       │ │
+        │  └────────────────────────────────────────────────┘ │
+        └─────────────────────────────────────────────────────┘
+      */}
+      {/*
+        SPLIT SHELL APPROACH — outer div has NO overflow-hidden so dropdowns
+        (category flyout, user menu) can extend below the bar. Background
+        clipping lives in a separate pointer-events-none absolute child.
+      */}
+      <div
+        className="relative mx-auto transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+        style={{
+          width: isPill ? "min(1240px, calc(100% - 32px))" : "100%",
+          boxShadow: isPill
+            ? "0 8px 32px -8px rgba(0,0,0,0.18), 0 4px 8px -4px rgba(0,0,0,0.08)"
+            : "none",
+        }}
+      >
+        {/* ── Clipped background shell (overflow-hidden lives here, NOT on the outer div) ── */}
+        <div
+          className="pointer-events-none absolute inset-0 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+          aria-hidden="true"
+          style={{ borderRadius: isPill ? "0 0 24px 24px" : "0px" }}
+        >
+          {/* BG Layer 1: gradient (visible at top) */}
+          <div
+            className="absolute inset-0 bg-linear-to-r from-indigo-600 via-violet-600 to-purple-600 dark:from-indigo-950 dark:via-purple-950 dark:to-violet-950"
+            style={{ opacity: isPill ? 0 : 1, transition: "opacity 0.2s ease" }}
           />
-
-          {/* Desktop nav links + server category menu */}
-          <NavbarLinks
-            role={role}
-            isAuthenticated={isAuthenticated}
-            categoryMenu={desktopCategoryMenu}
+          {/* BG Layer 2: frosted glass (visible when scrolled) */}
+          <div
+            className="absolute inset-0 bg-base-100/85 backdrop-blur-2xl"
+            style={{ opacity: isPill ? 1 : 0, transition: "opacity 0.2s ease" }}
           />
-
-          {/* Right-side actions */}
-          <NavbarActions
-            isAuthenticated={isAuthenticated}
-            cartCount={totalCartCount}
-            onOpenCart={openCart}
-            userSlot={
-              isAuthenticated ? (
-                <NavbarUserMenu
-                  user={user}
-                  role={role}
-                  onOpenCart={openCart}
-                  onSignOut={handleSignOut}
-                />
-              ) : (
-                <NavbarAuthButtons onClose={() => setMobileMenuOpen(false)} />
-              )
-            }
-            mobileToggle={
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen((v) => !v)}
-                aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20 lg:hidden cursor-pointer active:scale-95"
-              >
-                {mobileMenuOpen ? <FaTimes size={14} /> : <FaBars size={14} />}
-              </button>
-            }
+          {/* Border layer */}
+          <div
+            className="absolute inset-0"
+            style={{
+              borderRadius: "inherit",
+              boxShadow: isPill
+                ? "inset 0 0 0 1px rgba(255,255,255,0.12)"
+                : "inset 0 -1px 0 0 rgba(255,255,255,0.12)",
+              transition: "box-shadow 0.25s cubic-bezier(0.25, 1, 0.3, 1)",
+            }}
           />
         </div>
 
-        {/* Mobile search bar */}
-        <AnimatePresence>
+        {/* ── Content layer — z-index above bg, NO overflow restriction ── */}
+        <div className="relative z-10 mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8">
+          <div className="flex min-h-16 items-center justify-between gap-2 lg:gap-4 xl:gap-5">
+
+            {/* Brand + desktop search trigger */}
+            <NavbarBrand
+              onClose={() => setMobileMenuOpen(false)}
+              onSearchOpen={() => setSearchOpen(true)}
+            />
+
+            {/* Desktop nav links + server category menu */}
+            <div className="relative z-30">
+              <NavbarLinks
+                role={role}
+                isAuthenticated={isAuthenticated}
+                categoryMenu={desktopCategoryMenu}
+              />
+            </div>
+
+            {/* Right-side actions */}
+            <NavbarActions
+              isAuthenticated={isAuthenticated}
+              cartCount={totalCartCount}
+              onOpenCart={openCart}
+              userSlot={
+                isAuthenticated ? (
+                  <NavbarUserMenu
+                    user={user}
+                    role={role}
+                    onOpenCart={openCart}
+                    onSignOut={handleSignOut}
+                  />
+                ) : (
+                  <NavbarAuthButtons onClose={() => setMobileMenuOpen(false)} />
+                )
+              }
+              mobileToggle={
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen((v) => !v)}
+                  aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/25 bg-white/15 text-white transition hover:bg-white/25 lg:hidden cursor-pointer active:scale-95"
+                >
+                  {mobileMenuOpen ? <FaTimes /> : <FaBars />}
+                </button>
+              }
+            />
+          </div>
+
+          {/* Mobile search bar — always rendered, hidden when scrolled & menu closed */}
           {(!isScrolled || mobileMenuOpen) && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.25, ease: "easeInOut" }}
-              className="overflow-hidden md:hidden"
-            >
+            <div className="overflow-hidden pb-3 md:hidden">
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -245,35 +296,47 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
                   router.push(q ? `/products?search=${encodeURIComponent(q)}` : "/products");
                   setMobileMenuOpen(false);
                 }}
-                className="pb-3"
               >
-                <div className="flex h-10 items-center rounded-full border border-white/20 bg-white/10 px-3 focus-within:bg-white/20">
-                  <FaSearch className="text-white/70" size={13} />
+                <div className="flex h-11 items-center rounded-xl border border-white/25 bg-white/15 px-3 focus-within:bg-white/25">
+                  <FaSearch className="text-white/70" size={14} />
                   <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search ShopNest..."
-                    className="min-w-0 flex-1 bg-transparent px-3 text-xs text-white outline-none placeholder:text-white/50"
+                    className="min-w-0 flex-1 bg-transparent px-3 text-sm text-white outline-none placeholder:text-white/50"
                   />
                 </div>
               </form>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
 
-        {/* Mobile dropdown */}
-        <NavbarMobileMenu
-          key={pathname}
-          open={mobileMenuOpen}
-          isAuthenticated={isAuthenticated}
-          user={user}
-          role={role}
-          dashboardHref={getDashboardHref()}
-          onClose={() => setMobileMenuOpen(false)}
-          onSignOut={handleSignOut}
-          roleBadge={<RoleBadge role={role} />}
-        />
+          {/* Mobile menu drawer */}
+          {mobileMenuOpen && (
+            <NavbarMobileMenu
+              key={pathname}
+              open={mobileMenuOpen}
+              isAuthenticated={isAuthenticated}
+              user={user}
+              role={role}
+              dashboardHref={getDashboardHref()}
+              onClose={() => setMobileMenuOpen(false)}
+              onSignOut={handleSignOut}
+              categoryMenuSlot={mobileCategoryMenu}
+              roleBadge={<RoleBadge role={role} />}
+            />
+          )}
+        </div>
       </div>
     </motion.header>
+
+      {/* Full-width search overlay — rendered outside the pill shell */}
+      <NavbarSearchOverlay
+        open={searchOpen}
+        value={search}
+        onChange={setSearch}
+        onClose={() => setSearchOpen(false)}
+      />
+    </>
   );
 }
+
