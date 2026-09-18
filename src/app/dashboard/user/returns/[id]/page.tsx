@@ -6,6 +6,8 @@ import Link from "next/link";
 import { DashboardShell, Panel } from "@/components/dashboard/DashboardUI";
 import { userDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { getReturnById, type ReturnRequest } from "@/lib/api/returns";
+import { useDeliveryLiveTracking } from "@/hooks/delivery/useDeliveryLiveTracking";
+import { LiveDeliveryMap } from "@/components/delivery/LiveDeliveryMap";
 import {
   FiArrowLeft,
   FiPackage,
@@ -218,6 +220,51 @@ function RefundCard({ returnRequest }: { returnRequest: ReturnRequest }) {
   );
 }
 
+function ReverseDeliveryLiveMapCard({ returnRequest }: { returnRequest: ReturnRequest }) {
+  const isReverseActive = [
+    "reverse_assigned",
+    "reverse_accepted",
+    "pickup_started",
+    "picked_up",
+    "in_transit",
+  ].includes(returnRequest.status);
+
+  const { currentLocation, trackingState, socketConnected, secondsSinceLastUpdate } = useDeliveryLiveTracking({
+    deliveryId: returnRequest.deliveryRequestId,
+    orderId: returnRequest.orderId,
+    initialStatus: returnRequest.status,
+    initialLocation: null,
+  });
+
+  if (!isReverseActive && !returnRequest.deliveryRequestId) return null;
+
+  return (
+    <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xs font-bold uppercase text-muted flex items-center gap-1.5">
+          <FiTruck className="text-primary" /> Live Reverse Delivery Radar
+        </h3>
+        <span className="text-[11px] font-bold text-muted">
+          {socketConnected ? "🟢 Live Telemetry" : "🟡 Telemetry Standby"}
+        </span>
+      </div>
+      <LiveDeliveryMap
+        pickupAddress={returnRequest.pickupAddress || "Customer Pickup"}
+        deliveryAddress={returnRequest.sellerReturnAddress || "Seller Destination"}
+        status={returnRequest.status}
+        orderId={String(returnRequest.orderId)}
+        deliveryId={returnRequest.deliveryRequestId}
+        riderName={returnRequest.deliveryManName || "Assigned Courier"}
+        trackingState={trackingState}
+        secondsSinceLastUpdate={secondsSinceLastUpdate}
+        riderLocation={currentLocation || undefined}
+        height="h-72 sm:h-80"
+        showControls={false}
+      />
+    </div>
+  );
+}
+
 export default function CustomerReturnTrackingPage() {
   const params = useParams();
   const id = typeof params?.id === "string" ? params.id : Array.isArray(params?.id) ? params.id[0] : "";
@@ -330,6 +377,9 @@ export default function CustomerReturnTrackingPage() {
             </div>
           </div>
         </div>
+
+        {/* Live Reverse Delivery Radar */}
+        <ReverseDeliveryLiveMapCard returnRequest={ret} />
 
         {/* Timeline */}
         <Timeline returnRequest={ret} />
