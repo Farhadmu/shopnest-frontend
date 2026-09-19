@@ -21,6 +21,7 @@ import {
   clearGuestWishlist,
 } from "@/lib/guest-store";
 import { useSession } from "@/lib/auth-client";
+import { useWishlist } from "@/context/WishlistContext";
 import { toast } from "@/context/ToastContext";
 
 import TrendingCard from "./TrendingCard";
@@ -152,8 +153,7 @@ export default function TrendingSection({ initialProducts }: {
   };
 
   
-  // Wishlist
-
+  const { toggleWishlist } = useWishlist();
 
   const handleAddToWishlist = async (
     product: Product,
@@ -162,34 +162,28 @@ export default function TrendingSection({ initialProducts }: {
     e.preventDefault();
     e.stopPropagation();
 
-    // Guest mode
-    if (!session?.user) {
-      addGuestWishlistItem({
-        productId: product.id,
+    try {
+      const res = await toggleWishlist({
+        id: product.id,
         title: product.title,
-        price: product.price,
+        price: product.discountPrice || product.price,
+        image: product.images?.[0],
         images: product.images,
         category: product.category,
       });
 
-      toast.wishlist(`Saved "${product.title}" to wishlist!`, {
-        description: "Item saved to your favorites",
-      });
-      return;
-    }
-
-    try {
-      await addToWishlist(product.id);
-      clearGuestWishlist();
-
-      toast.wishlist(`Saved "${product.title}" to wishlist!`, {
-        description: "Item saved to your favorites",
-      });
+      if (res.added) {
+        toast.wishlist(`Saved "${product.title}" to wishlist!`, {
+          description: "Item saved to your favorites",
+        });
+      } else {
+        toast.info(`Removed "${product.title}" from wishlist`);
+      }
     } catch (err) {
       toast.error(
         err instanceof Error
           ? err.message
-          : "Failed to add to wishlist"
+          : "Failed to update wishlist"
       );
     }
   };

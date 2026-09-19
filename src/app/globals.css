@@ -245,6 +245,16 @@ a {
 }
 .animate-spin-slow { animation: spin-slow 3s linear infinite; }
 
+@keyframes progress-indeterminate {
+  0% { transform: translateX(-100%) scaleX(0.2); }
+  50% { transform: translateX(20%) scaleX(0.7); }
+  100% { transform: translateX(100%) scaleX(0.2); }
+}
+.animate-progress-bar {
+  animation: progress-indeterminate 1.2s ease-in-out infinite;
+  transform-origin: 0% 50%;
+}
+
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 

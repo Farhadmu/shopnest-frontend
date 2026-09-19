@@ -18,6 +18,7 @@ import {
   clearGuestWishlist,
 } from "@/lib/guest-store";
 import { useSession } from "@/lib/auth-client";
+import { useWishlist } from "@/context/WishlistContext";
 import { toast } from "@/context/ToastContext";
 
 import { ProductCard } from "@/components/products/ProductCard";
@@ -123,34 +124,31 @@ export default function JustForYouSection({ initialProducts }: {
     }
   };
 
+  const { toggleWishlist } = useWishlist();
+
   const handleAddToWishlist = async (product: UnifiedProduct, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     const prod = product as Product;
-
-    if (!session?.user) {
-      addGuestWishlistItem({
-        productId: prod.id,
+    try {
+      const res = await toggleWishlist({
+        id: prod.id,
         title: prod.title,
         price: prod.price,
+        image: prod.images?.[0],
         images: prod.images,
         category: prod.category,
       });
-      toast.wishlist(`Saved "${prod.title}" to wishlist!`, {
-        description: "Item saved to your favorites",
-      });
-      return;
-    }
-
-    try {
-      await addToWishlist(prod.id);
-      clearGuestWishlist();
-      toast.wishlist(`Saved "${prod.title}" to wishlist!`, {
-        description: "Item saved to your favorites",
-      });
+      if (res.added) {
+        toast.wishlist(`Saved "${prod.title}" to wishlist!`, {
+          description: "Item saved to your favorites",
+        });
+      } else {
+        toast.info(`Removed "${prod.title}" from wishlist`);
+      }
     } catch {
-      toast.error("Failed to add to wishlist", {
+      toast.error("Failed to update wishlist", {
         description: "Could not update your wishlist right now",
       });
     }
