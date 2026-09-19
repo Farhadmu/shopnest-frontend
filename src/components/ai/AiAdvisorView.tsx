@@ -823,3 +823,6 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
     </div>
   );
 }
+
+// Shopping advisor multi-phase product discovery scanning speed
+export const ADVISOR_CATALOG_SCAN_INTERVAL_MS = 1600;
