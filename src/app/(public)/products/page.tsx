@@ -19,6 +19,7 @@ import {
 import { TrustAssuranceRibbon } from "@/components/products/listing/TrustAssuranceRibbon";
 import { AiAssistantFab } from "@/components/products/listing/AiAssistantFab";
 import { ProductsQueryState } from "@/lib/utils/product-query";
+import { ProductFilterProvider } from "@/components/products/listing/ProductFilterContext";
 
 export const metadata = {
   title: "All Products - ShopNest Marketplace",
@@ -135,34 +136,42 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const allCategoriesTotal = counts?.total ?? 0;
 
   const query: ProductsQueryState = { ...params, page: String(page) };
+  const queryKey = JSON.stringify(query);
 
   return (
-    <div className="mx-auto flex w-full container flex-col gap-6 px-4 pb-20 sm:px-6 lg:px-8">
-      <ProductsHero defaultSearch={search} />
+    <ProductFilterProvider>
+      <div className="mx-auto flex w-full container flex-col gap-6 px-4 pb-20 sm:px-6 lg:px-8">
+        <ProductsHero defaultSearch={search} />
 
-      <CategoryChipsBar
-        categories={categories}
-        categoryCounts={categoryCounts}
-        totalProducts={allCategoriesTotal}
-        activeCategory={category || undefined}
-        query={query}
-      />
+        <CategoryChipsBar
+          categories={categories}
+          categoryCounts={categoryCounts}
+          totalProducts={allCategoriesTotal}
+          activeCategory={category || undefined}
+          query={query}
+        />
 
-      <div className="flex flex-col items-start gap-6 lg:flex-row lg:items-start">
-        <ProductsFilterSidebar query={query} sellerOptions={sellerOptions} />
+        <div className="flex flex-col items-start gap-6 lg:flex-row lg:items-start">
+          <ProductsFilterSidebar
+            query={query}
+            sellerOptions={sellerOptions}
+            categories={categories}
+            categoryCounts={categoryCounts}
+          />
 
-        <Suspense fallback={<ProductsResultsSkeleton />}>
-          <ProductsGrid products={productsPromise} sort={sort} />
+          <Suspense key={queryKey} fallback={<ProductsResultsSkeleton />}>
+            <ProductsGrid products={productsPromise} sort={sort} />
+          </Suspense>
+        </div>
+
+        <Suspense key={`pag-${queryKey}`} fallback={<ProductsPaginationSkeleton />}>
+          <ProductsPagination products={productsPromise} query={query} />
         </Suspense>
+
+        <TrustAssuranceRibbon />
+
+        <AiAssistantFab />
       </div>
-
-      <Suspense fallback={<ProductsPaginationSkeleton />}>
-        <ProductsPagination products={productsPromise} query={query} />
-      </Suspense>
-
-      <TrustAssuranceRibbon />
-
-      <AiAssistantFab />
-    </div>
+    </ProductFilterProvider>
   );
 }
