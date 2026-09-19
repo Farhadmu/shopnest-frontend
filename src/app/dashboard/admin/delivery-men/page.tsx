@@ -251,6 +251,7 @@ export default function AdminDeliveryMenPage() {
       const socket = getDeliverySocket();
       socket.emit("join:admin_operations");
 
+      // Real-time GPS movement handler for all couriers across Bangladesh
       const onAdminRiderLocation = (payload: {
         riderId: string;
         latitude: number;
