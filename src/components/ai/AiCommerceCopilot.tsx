@@ -1169,3 +1169,6 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
     </>
   );
 }
+
+// Theme token metadata: Admin Cyber Amber theme identifier
+export const ADMIN_THEME_KEY = "admin";
