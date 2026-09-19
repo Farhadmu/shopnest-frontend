@@ -5,6 +5,7 @@ import { clientFetch, clientMutation } from "@/lib/core/client";
 import { getMyStore } from "@/lib/api/sellers";
 import { markOrderReadyForPickup, getDeliveryTracking, getSellerActiveDeliveries, DeliveryTrackingResponse, DeliveryRequest } from "@/lib/api/delivery";
 import { LiveDeliveryMap } from "@/components/delivery/LiveDeliveryMap";
+import { getDeliverySocket } from "@/lib/socket/delivery-socket";
 import { useSession } from "@/lib/auth-client";
 import {
   FiPackage,
@@ -98,14 +99,92 @@ export default function SellerOrdersPage() {
 
   useEffect(() => {
     loadOrders();
-    const interval = setInterval(() => {
-      getSellerActiveDeliveries()
-        .then((res) => {
-          if (res) setSellerActiveDeliveries(res);
-        })
-        .catch(() => {});
-    }, 12000);
-    return () => clearInterval(interval);
+
+    if (typeof window !== "undefined") {
+      const socket = getDeliverySocket();
+      socket.emit("join:seller_operations");
+
+      const onSellerDeliveryLocation = (payload: {
+        deliveryRequestId?: string;
+        riderId?: string;
+        latitude?: number;
+        longitude?: number;
+        speed?: number;
+        heading?: number;
+        accuracy?: number;
+        updatedAt?: string;
+      }) => {
+        if (!payload?.deliveryRequestId || typeof payload.latitude !== "number") return;
+        setSellerActiveDeliveries((prev) =>
+          prev.map((d: any) => {
+            const id = d.id || d._id;
+            if (id === payload.deliveryRequestId) {
+              return {
+                ...d,
+                currentLocation: {
+                  latitude: payload.latitude,
+                  longitude: payload.longitude,
+                  speed: payload.speed,
+                  heading: payload.heading,
+                  accuracy: payload.accuracy,
+                  updatedAt: payload.updatedAt || new Date().toISOString(),
+                },
+              };
+            }
+            return d;
+          })
+        );
+      };
+
+      const onDeliveryStatusChange = (payload?: {
+        deliveryRequestId?: string;
+        orderId?: string;
+        status?: string;
+      }) => {
+        if (payload?.status === "delivered" || payload?.status === "cancelled") {
+          setSellerActiveDeliveries((prev) =>
+            prev.filter(
+              (d: any) => (d.id || d._id) !== payload.deliveryRequestId && d.orderId !== payload.orderId
+            )
+          );
+        } else {
+          getSellerActiveDeliveries()
+            .then((res) => {
+              if (res) setSellerActiveDeliveries(res);
+            })
+            .catch(() => {});
+        }
+        loadOrders();
+      };
+
+      const onDeliveryCompleted = (payload: { deliveryRequestId?: string; orderId?: string }) => {
+        setSellerActiveDeliveries((prev) =>
+          prev.filter(
+            (d: any) => (d.id || d._id) !== payload.deliveryRequestId && d.orderId !== payload.orderId
+          )
+        );
+        loadOrders();
+      };
+
+      socket.on("seller:delivery_location", onSellerDeliveryLocation);
+      socket.on("seller:delivery_status", onDeliveryStatusChange);
+      socket.on("delivery:completed", onDeliveryCompleted);
+
+      const interval = setInterval(() => {
+        getSellerActiveDeliveries()
+          .then((res) => {
+            if (res) setSellerActiveDeliveries(res);
+          })
+          .catch(() => {});
+      }, 15000);
+
+      return () => {
+        clearInterval(interval);
+        socket.off("seller:delivery_location", onSellerDeliveryLocation);
+        socket.off("seller:delivery_status", onDeliveryStatusChange);
+        socket.off("delivery:completed", onDeliveryCompleted);
+      };
+    }
   }, []);
 
   const handleAdvanceStatus = async (orderId: string, newStatus: string) => {
@@ -272,6 +351,7 @@ export default function SellerOrdersPage() {
                 storeLocation={storeInfo?.location ? { latitude: storeInfo.location.latitude, longitude: storeInfo.location.longitude } : null}
                 trackingState="LIVE"
                 height="h-80 sm:h-96"
+                showFilterBar={true}
               />
             </div>
           )}
