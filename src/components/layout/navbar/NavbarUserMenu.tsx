@@ -2,6 +2,7 @@
 
 import React, { useRef, useState, useEffect } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "motion/react";
 import { Avatar, Button } from "@heroui/react";
 import {
   FaUser,
@@ -17,6 +18,12 @@ import {
   FaChevronDown,
 } from "react-icons/fa";
 import type { DropdownItem, UserRole } from "./NavbarLinks";
+
+const SPRING_TRANSITION = {
+  type: "spring",
+  stiffness: 400,
+  damping: 30,
+} as const;
 
 const userDropdownItems: Record<Exclude<UserRole, "guest">, DropdownItem[]> = {
   customer: [
@@ -117,6 +124,7 @@ function RoleBadge({ role }: { role: UserRole }) {
 
 export function NavbarUserMenu({ user, role, onOpenCart, onSignOut }: NavbarUserMenuProps) {
   const [open, setOpen] = useState(false);
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const dropdownLinks = role !== "guest" ? userDropdownItems[role as Exclude<UserRole, "guest">] || [] : [];
 
@@ -159,7 +167,10 @@ export function NavbarUserMenu({ user, role, onOpenCart, onSignOut }: NavbarUser
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-64 rounded-2xl border border-border bg-surface p-2 shadow-2xl shadow-black/10 backdrop-blur-xl animate-in fade-in zoom-in-95">
+        <div
+          className="absolute right-0 z-50 mt-2 w-64 rounded-2xl border border-border bg-surface p-2 shadow-2xl shadow-black/10 backdrop-blur-xl animate-in fade-in zoom-in-95"
+          onMouseLeave={() => setHoveredItem(null)}
+        >
           {/* User info header */}
           <div className="mb-2 rounded-xl bg-muted-bg p-3">
             <div className="flex items-center justify-between gap-2">
@@ -173,52 +184,126 @@ export function NavbarUserMenu({ user, role, onOpenCart, onSignOut }: NavbarUser
           <div className="grid gap-0.5 text-xs font-bold">
             {dropdownLinks.map((item: DropdownItem) => {
               const Icon = item.icon;
+              const isHovered = hoveredItem === item.href;
+
               if (item.href === "/cart") {
                 return (
-                  <button
+                  <motion.div
                     key={item.href}
-                    type="button"
-                    onClick={() => { setOpen(false); onOpenCart?.(); }}
-                    className="flex w-full items-center gap-2.5 rounded-lg p-2.5 text-left text-text transition hover:bg-primary/10 hover:text-primary cursor-pointer"
+                    animate={{ x: isHovered ? 5 : 0 }}
+                    transition={SPRING_TRANSITION}
+                    className="relative"
+                    onMouseEnter={() => setHoveredItem(item.href)}
+                    onFocus={() => setHoveredItem(item.href)}
+                    onBlur={() => setHoveredItem(null)}
                   >
-                    {typeof Icon === "string" ? (
-                      <span className="text-sm">{Icon}</span>
-                    ) : (
-                      <Icon className="text-muted" size={13} />
-                    )}
-                    <span>{item.label}</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => { setOpen(false); onOpenCart?.(); }}
+                      className="relative flex w-full items-center gap-2.5 rounded-lg p-2.5 text-left text-text transition-colors cursor-pointer"
+                    >
+                      <AnimatePresence>
+                        {isHovered && (
+                          <motion.span
+                            layoutId="userMenuHoverHighlight"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 rounded-lg bg-current/10 dark:bg-white/[0.08] pointer-events-none -z-0"
+                            transition={SPRING_TRANSITION}
+                          />
+                        )}
+                      </AnimatePresence>
+                      <div className="relative z-10 flex items-center gap-2.5 truncate">
+                        {typeof Icon === "string" ? (
+                          <span className="text-sm">{Icon}</span>
+                        ) : (
+                          <Icon className="text-muted" size={13} />
+                        )}
+                        <span>{item.label}</span>
+                      </div>
+                    </button>
+                  </motion.div>
                 );
               }
+
               return (
-                <Link
+                <motion.div
                   key={item.href}
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  className={`flex items-center gap-2.5 rounded-lg p-2.5 transition ${item.isPrimary
-                    ? "text-primary hover:bg-primary/10"
-                    : "text-text hover:bg-primary/10 hover:text-primary"
-                    }`}
+                  animate={{ x: isHovered ? 5 : 0 }}
+                  transition={SPRING_TRANSITION}
+                  className="relative"
+                  onMouseEnter={() => setHoveredItem(item.href)}
+                  onFocus={() => setHoveredItem(item.href)}
+                  onBlur={() => setHoveredItem(null)}
                 >
-                  {typeof Icon === "string" ? (
-                    <span className="text-sm">{Icon}</span>
-                  ) : (
-                    <Icon className="text-muted" size={13} />
-                  )}
-                  {item.label}
-                </Link>
+                  <Link
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className={`relative flex items-center gap-2.5 rounded-lg p-2.5 transition-colors ${
+                      item.isPrimary ? "text-primary" : "text-text"
+                    }`}
+                  >
+                    <AnimatePresence>
+                      {isHovered && (
+                        <motion.span
+                          layoutId="userMenuHoverHighlight"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className={`absolute inset-0 rounded-lg pointer-events-none -z-0 ${
+                            item.isPrimary ? "bg-primary/10" : "bg-current/10 dark:bg-white/[0.08]"
+                          }`}
+                          transition={SPRING_TRANSITION}
+                        />
+                      )}
+                    </AnimatePresence>
+                    <div className="relative z-10 flex items-center gap-2.5 truncate">
+                      {typeof Icon === "string" ? (
+                        <span className="text-sm">{Icon}</span>
+                      ) : (
+                        <Icon className={item.isPrimary ? "text-primary" : "text-muted"} size={13} />
+                      )}
+                      <span>{item.label}</span>
+                    </div>
+                  </Link>
+                </motion.div>
               );
             })}
           </div>
 
           <div className="my-2 border-t border-border" />
-          <button
-            type="button"
-            onClick={() => { setOpen(false); onSignOut(); }}
-            className="flex w-full items-center gap-2.5 rounded-lg p-2.5 text-xs font-bold text-error transition hover:bg-error/10"
+          <motion.div
+            animate={{ x: hoveredItem === "signout" ? 5 : 0 }}
+            transition={SPRING_TRANSITION}
+            className="relative"
+            onMouseEnter={() => setHoveredItem("signout")}
+            onFocus={() => setHoveredItem("signout")}
+            onBlur={() => setHoveredItem(null)}
           >
-            <FaSignOutAlt size={13} /> Sign Out
-          </button>
+            <button
+              type="button"
+              onClick={() => { setOpen(false); onSignOut(); }}
+              className="relative flex w-full items-center gap-2.5 rounded-lg p-2.5 text-xs font-bold text-error transition-colors cursor-pointer"
+            >
+              <AnimatePresence>
+                {hoveredItem === "signout" && (
+                  <motion.span
+                    layoutId="userMenuHoverHighlight"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 rounded-lg bg-error/10 pointer-events-none -z-0"
+                    transition={SPRING_TRANSITION}
+                  />
+                )}
+              </AnimatePresence>
+              <div className="relative z-10 flex items-center gap-2.5">
+                <FaSignOutAlt size={13} />
+                <span>Sign Out</span>
+              </div>
+            </button>
+          </motion.div>
         </div>
       )}
     </div>
