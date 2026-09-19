@@ -245,6 +245,7 @@ export default function DeliveryDashboard() {
   };
 
   useEffect(() => {
+    // Gracefully emits location:stop when closing or refreshing tab
     const handleBeforeUnload = () => {
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
