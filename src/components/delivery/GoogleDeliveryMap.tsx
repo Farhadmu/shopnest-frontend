@@ -56,6 +56,8 @@ export interface FleetRiderMarkerData {
   updatedAt?: string;
 }
 
+export type MapFilterOption = "all" | "online" | "offline" | "stores" | "active_orders" | "destinations";
+
 export interface MultiDeliveryItem {
   id: string;
   orderId: string;
