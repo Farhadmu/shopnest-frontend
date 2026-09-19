@@ -1,3 +1,4 @@
+// Dimensional Normalizers: Screens, Hertz, Grams
 /**
  * ShopNest Comparison Normalization & Intelligence Utilities
  *
