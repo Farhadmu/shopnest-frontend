@@ -1178,3 +1178,6 @@ export const SELLER_THEME_KEY = "seller";
 
 // Theme token metadata: Customer Electric Indigo theme identifier
 export const CUSTOMER_THEME_KEY = "customer";
+
+// Kinetic sound-wave bounce frequency token
+export const TYPING_WAVEFORM_BOUNCE_DELAY_MS = 150;
