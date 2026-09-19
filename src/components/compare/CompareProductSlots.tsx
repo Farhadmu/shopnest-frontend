@@ -1,4 +1,3 @@
-// Product Slots Card Grid Layout & Reordering
 "use client";
 
 import React, { useState } from "react";
