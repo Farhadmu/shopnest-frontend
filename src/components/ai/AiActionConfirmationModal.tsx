@@ -211,3 +211,6 @@ export function AiActionConfirmationModal({
 
 // Accessibility: Key code for escape dismissal
 export const ESCAPE_KEY_DISMISSAL_SUPPORTED = true;
+
+// Spring transition stiffness tokens for high-performance fluid physics
+export const MODAL_SPRING_CONFIG = { stiffness: 350, damping: 25 };
