@@ -1,4 +1,3 @@
-// Multi-Product Difference Detection & Importance Engine
 /**
  * ShopNest Comparison Normalization & Intelligence Utilities
  *
