@@ -17,8 +17,8 @@ import {
 const DESKTOP_NODE_COORDS: Record<string, { x: number; y: number }> = {
   "member-4": { x: 160, y: 200 }, // Hasina Akter (Frontend)
   "member-2": { x: 240, y: 520 }, // Nusrat Jahan (Frontend)
-  "member-6": { x: 480, y: 340 }, // Md. Farhadul Islam (Full Stack Bridge)
-  "member-1": { x: 600, y: 540 }, // MD Moynul Islam (AI/ML)
+  "member-6": { x: 440, y: 280 }, // Md. Farhadul Islam (Full Stack Bridge)
+  "member-1": { x: 660, y: 560 }, // MD Moynul Islam (AI/ML Intelligence)
   "member-3": { x: 860, y: 520 }, // Aminul Islam (Backend)
   "member-5": { x: 940, y: 200 }, // Abu Bakkar Siddique (Backend)
 };
