@@ -475,7 +475,7 @@ export function DeveloperNetworkVisualization() {
                     </div>
                   </div>
 
-                  {/* Connected Collaborators Pills */}
+                  {/* Connected Collaborators Pills — Live Facepile */}
                   <div className="mt-3 pt-3 border-t border-border/60 flex items-center justify-between">
                     <span className="text-[10px] font-bold text-muted uppercase tracking-wider">
                       Collaborates With:
