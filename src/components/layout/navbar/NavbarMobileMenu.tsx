@@ -4,7 +4,6 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sparkles } from "lucide-react";
-import { MobileCategoryMenu } from "@/components/layout/CategoryMegaMenu/MobileCategoryMenu";
 import type { NavItem, UserRole } from "./NavbarLinks";
 import { mainNavItems } from "./NavbarLinks";
 
@@ -36,99 +35,96 @@ export function NavbarMobileMenu({
   const pathname = usePathname();
   const navLinks = (isAuthenticated ? mainNavItems[role] : mainNavItems.guest) || mainNavItems.guest;
 
+  if (!open) return null;
+
   return (
-    <div className="overflow-hidden lg:hidden">
-      <div className="border-t border-border py-3">
-        <div className="grid gap-1">
-          {/* Collapsible category accordion with auto-close */}
-          <MobileCategoryMenu onClose={onClose} />
-
-          {/* Authenticated user info card */}
-          {isAuthenticated && (
-            <div className="mb-2 rounded-xl bg-muted-bg p-3">
-              <div className="flex items-center justify-between">
-                <p className="font-bold text-text">{user?.name}</p>
-                {roleBadge}
-              </div>
-              <p className="text-xs text-muted">{user?.email}</p>
+    <div className="border-t border-white/15 py-3 lg:hidden">
+      <div className="grid gap-1">
+        {/* Authenticated user info card */}
+        {isAuthenticated && (
+          <div className="mb-2 rounded-xl bg-white/15 p-3 text-white border border-white/20 backdrop-blur-md">
+            <div className="flex items-center justify-between">
+              <p className="font-bold text-white">{user?.name}</p>
+              {roleBadge}
             </div>
-          )}
+            <p className="text-xs text-white/80">{user?.email}</p>
+          </div>
+        )}
 
-          {/* Nav links */}
-          {navLinks.map((item: NavItem) => {
-            const isAiAdvisor = item.label === "AI Advisor";
-            const active =
-              pathname === item.href ||
-              (item.href !== "/" && pathname.startsWith(`${item.href}/`));
+        {/* Nav links */}
+        {navLinks.map((item: NavItem) => {
+          const isAiAdvisor = item.label === "AI Advisor";
+          const active =
+            pathname === item.href ||
+            (item.href !== "/" && pathname.startsWith(`${item.href}/`));
 
-            if (isAiAdvisor) {
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onClose}
-                  className={`flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition my-1 ${
-                    active
-                      ? "border-primary/40 bg-primary/15 text-primary"
-                      : "border-primary/25 bg-primary/5 text-primary hover:bg-primary/10"
-                  }`}
-                >
-                  <Sparkles className="h-4 w-4 text-amber-500 fill-amber-500/80" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            }
-
+          if (isAiAdvisor) {
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={onClose}
-                className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${
-                  active ? "bg-primary/10 text-primary" : "text-text hover:bg-muted-bg"
+                className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition my-1 ${
+                  active
+                    ? "border-white/60 bg-white/25 text-white shadow-xs"
+                    : "border-white/30 bg-white/10 text-white hover:bg-white/20"
                 }`}
               >
-                {item.label}
+                <Sparkles className="h-4 w-4 text-amber-300 fill-amber-300/80" />
+                <span>{item.label}</span>
               </Link>
             );
-          })}
+          }
 
-          {isAuthenticated ? (
-            <>
-              <Link
-                href={dashboardHref}
-                onClick={onClose}
-                className="rounded-xl px-4 py-2.5 text-sm font-bold text-primary hover:bg-muted-bg"
-              >
-                Open Dashboard
-              </Link>
-              <button
-                type="button"
-                onClick={() => { onClose(); onSignOut(); }}
-                className="mt-2 rounded-xl border border-error/30 bg-error/10 px-4 py-2.5 text-left text-sm font-bold text-error"
-              >
-                Sign Out
-              </button>
-            </>
-          ) : (
-            <>
-              <Link
-                href="/login"
-                onClick={onClose}
-                className="rounded-xl px-4 py-2.5 text-sm font-semibold text-text hover:bg-muted-bg"
-              >
-                Log in
-              </Link>
-              <Link
-                href="/register"
-                onClick={onClose}
-                className="mt-1 rounded-xl bg-primary px-4 py-3 text-center text-sm font-bold text-white"
-              >
-                Get started
-              </Link>
-            </>
-          )}
-        </div>
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={onClose}
+              className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+                active ? "bg-white/25 text-white font-bold" : "text-white/90 hover:bg-white/15 hover:text-white"
+              }`}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+
+        {isAuthenticated ? (
+          <>
+            <Link
+              href={dashboardHref}
+              onClick={onClose}
+              className="rounded-xl px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15"
+            >
+              Open Dashboard
+            </Link>
+            <button
+              type="button"
+              onClick={() => { onClose(); onSignOut(); }}
+              className="mt-2 rounded-xl border border-rose-400/40 bg-rose-500/20 px-4 py-2.5 text-left text-sm font-bold text-rose-200 hover:bg-rose-500/30 cursor-pointer"
+            >
+              Sign Out
+            </button>
+          </>
+        ) : (
+          <>
+            <Link
+              href="/login"
+              onClick={onClose}
+              className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white/90 hover:bg-white/15"
+            >
+              Log in
+            </Link>
+            <Link
+              href="/register"
+              onClick={onClose}
+              className="mt-1 rounded-xl bg-white px-4 py-2.5 text-center text-sm font-bold text-violet-700 shadow-sm"
+            >
+              Get started
+            </Link>
+          </>
+        )}
       </div>
     </div>
   );
