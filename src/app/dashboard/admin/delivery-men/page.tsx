@@ -5,7 +5,7 @@ import { DashboardShell, Panel, StatCard } from "@/components/dashboard/Dashboar
 import { adminDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { clientFetch, clientMutation } from "@/lib/core/client";
 import { getDeliverySocket } from "@/lib/socket/delivery-socket";
-import { LiveDeliveryMap, FleetRiderMarkerData } from "@/components/delivery/LiveDeliveryMap";
+import { LiveDeliveryMap, FleetRiderMarkerData, RealStoreMarkerData, MultiDeliveryItem } from "@/components/delivery/LiveDeliveryMap";
 import { getAdminDeliveryHeatmap, DeliveryHeatmapPoint } from "@/lib/api/delivery";
 import {
   FaSyncAlt,
@@ -140,6 +140,17 @@ export default function AdminDeliveryMenPage() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Active Radar Operations Data (Riders, Stores, Active Multi-Deliveries)
+  const [operationsData, setOperationsData] = useState<{
+    allRiders: FleetRiderMarkerData[];
+    stores: RealStoreMarkerData[];
+    activeDeliveries: MultiDeliveryItem[];
+  }>({
+    allRiders: [],
+    stores: [],
+    activeDeliveries: [],
+  });
+
   useEffect(() => {
     if (!showHeatmap) return;
     setLoadingHeatmap(true);
@@ -154,6 +165,66 @@ export default function AdminDeliveryMenPage() {
         setLoadingHeatmap(false);
       });
   }, [showHeatmap, heatmapTimeRange]);
+
+  const loadActiveOperations = useCallback(async () => {
+    try {
+      const res = await clientFetch<{
+        activeDeliveries?: any[];
+        allRiders?: any[];
+        stores?: any[];
+      }>("/delivery/admin/active-operations");
+
+      const allRiders: FleetRiderMarkerData[] = (res?.allRiders || [])
+        .filter((r: any) => r.currentLocation?.latitude !== undefined && r.currentLocation?.longitude !== undefined)
+        .map((r: any) => ({
+          id: r.userId || r.id,
+          name: r.name || "Delivery Partner",
+          latitude: r.currentLocation.latitude,
+          longitude: r.currentLocation.longitude,
+          speed: r.currentLocation.speed,
+          heading: r.currentLocation.heading,
+          accuracy: r.currentLocation.accuracy,
+          status: r.isLive ? (r.availabilityStatus || "available") : "offline",
+          isActive: Boolean(r.isLive),
+          isLive: Boolean(r.isLive),
+          phone: r.phone,
+          rating: r.rating,
+          vehicleType: r.vehicleType,
+          vehicleBrand: r.vehicleBrand,
+          vehicleModel: r.vehicleModel,
+          vehicleRegistrationNumber: r.vehicleRegistrationNumber,
+          lastSeenAt: r.lastSeenAt,
+          updatedAt: r.currentLocation.updatedAt,
+          activeDeliveriesCount: r.activeAssignmentsCount,
+          assignedOrders: r.assignedOrders,
+        }));
+
+      const stores: RealStoreMarkerData[] = (res?.stores || []).map((s: any) => ({
+        id: s.id,
+        storeName: s.name,
+        address: s.address,
+        latitude: s.latitude,
+        longitude: s.longitude,
+        status: "active",
+      }));
+
+      const activeDeliveries: MultiDeliveryItem[] = (res?.activeDeliveries || []).map((d: any) => ({
+        id: d.id,
+        orderId: d.orderTrackingId || d.orderId,
+        status: d.status,
+        sellerStoreName: d.sellerStoreName,
+        pickupCoordinates: d.pickupCoordinates,
+        deliveryCoordinates: d.dropoffCoordinates,
+        currentLocation: d.currentLocation,
+        riderName: d.deliveryManName,
+        riderPhone: d.deliveryManPhone,
+      }));
+
+      setOperationsData({ allRiders, stores, activeDeliveries });
+    } catch (err) {
+      console.error("Failed to load admin active operations:", err);
+    }
+  }, []);
 
   const loadDeliveryMen = useCallback(async () => {
     setLoading(true);
@@ -173,6 +244,7 @@ export default function AdminDeliveryMenPage() {
 
   useEffect(() => {
     loadDeliveryMen();
+    loadActiveOperations();
 
     if (typeof window !== "undefined") {
       const socket = getDeliverySocket();
@@ -189,6 +261,8 @@ export default function AdminDeliveryMenPage() {
         orderId?: string;
       }) => {
         if (!payload?.riderId || typeof payload.latitude !== "number") return;
+        
+        // Update list table
         setDeliveryMen((prev) =>
           prev.map((dm) => {
             if (dm.profile.userId === payload.riderId) {
@@ -208,29 +282,120 @@ export default function AdminDeliveryMenPage() {
             return dm;
           })
         );
+
+        // Update active operations fleet rider markers
+        setOperationsData((prev) => {
+          const exists = prev.allRiders.some((r) => r.id === payload.riderId);
+          let nextRiders: FleetRiderMarkerData[];
+          if (exists) {
+            nextRiders = prev.allRiders.map((r) =>
+              r.id === payload.riderId
+                ? {
+                    ...r,
+                    latitude: payload.latitude,
+                    longitude: payload.longitude,
+                    speed: payload.speed ?? r.speed,
+                    heading: payload.heading ?? r.heading,
+                    accuracy: payload.accuracy ?? r.accuracy,
+                    isActive: true,
+                    isLive: true,
+                    status: r.status === "busy" ? "busy" : "available",
+                    updatedAt: new Date().toISOString(),
+                  }
+                : r
+            );
+          } else {
+            nextRiders = [
+              ...prev.allRiders,
+              {
+                id: payload.riderId,
+                name: "Delivery Partner",
+                latitude: payload.latitude,
+                longitude: payload.longitude,
+                speed: payload.speed,
+                heading: payload.heading,
+                accuracy: payload.accuracy,
+                status: "available",
+                isActive: true,
+                isLive: true,
+                updatedAt: new Date().toISOString(),
+              },
+            ];
+          }
+          return { ...prev, allRiders: nextRiders };
+        });
       };
 
-      const onDeliveryStatusChange = () => {
+      const onAdminRiderStatus = (payload: {
+        riderId: string;
+        isActive: boolean;
+        availabilityStatus: string;
+        lastSeenAt?: string;
+      }) => {
+        if (!payload?.riderId) return;
+        setOperationsData((prev) => ({
+          ...prev,
+          allRiders: prev.allRiders.map((r) =>
+            r.id === payload.riderId
+              ? {
+                  ...r,
+                  isActive: payload.isActive,
+                  isLive: payload.isActive,
+                  status: payload.isActive ? payload.availabilityStatus : "offline",
+                  lastSeenAt: payload.lastSeenAt || r.lastSeenAt,
+                }
+              : r
+          ),
+        }));
+      };
+
+      const onDeliveryStatusChange = (payload?: {
+        deliveryRequestId?: string;
+        orderId?: string;
+        status?: string;
+      }) => {
+        if (payload?.status === "delivered" || payload?.status === "cancelled") {
+          setOperationsData((prev) => ({
+            ...prev,
+            activeDeliveries: prev.activeDeliveries.filter(
+              (d) => d.id !== payload.deliveryRequestId && d.orderId !== payload.orderId
+            ),
+          }));
+        }
         loadDeliveryMen();
+        loadActiveOperations();
+      };
+
+      const onDeliveryCompleted = (payload: { deliveryRequestId?: string; orderId?: string }) => {
+        setOperationsData((prev) => ({
+          ...prev,
+          activeDeliveries: prev.activeDeliveries.filter(
+            (d) => d.id !== payload.deliveryRequestId && d.orderId !== payload.orderId
+          ),
+        }));
+        loadActiveOperations();
       };
 
       socket.on("admin:rider_location", onAdminRiderLocation);
+      socket.on("admin:rider_status", onAdminRiderStatus);
       socket.on("admin:delivery_status", onDeliveryStatusChange);
       socket.on("admin:delivery_assigned", onDeliveryStatusChange);
-      socket.on("admin:delivery_completed", onDeliveryStatusChange);
+      socket.on("admin:delivery_completed", onDeliveryCompleted);
 
       return () => {
         socket.off("admin:rider_location", onAdminRiderLocation);
+        socket.off("admin:rider_status", onAdminRiderStatus);
         socket.off("admin:delivery_status", onDeliveryStatusChange);
         socket.off("admin:delivery_assigned", onDeliveryStatusChange);
-        socket.off("admin:delivery_completed", onDeliveryStatusChange);
+        socket.off("admin:delivery_completed", onDeliveryCompleted);
       };
     }
-  }, [loadDeliveryMen]);
+  }, [loadDeliveryMen, loadActiveOperations]);
 
   const handleRefresh = () => {
     setRefreshing(true);
     loadDeliveryMen();
+    loadActiveOperations();
   };
 
   const handleStatusChange = async (userId: string, status: string, reason?: string) => {
@@ -366,20 +531,30 @@ export default function AdminDeliveryMenPage() {
 
               <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>{fleetMarkers.length} GPS Riders</span>
+                <span>
+                  {operationsData.allRiders.filter((r) => r.isActive).length || fleetMarkers.filter((r) => r.isActive).length} Live / {operationsData.allRiders.length || fleetMarkers.length} Fleet
+                </span>
               </span>
+              {operationsData.activeDeliveries.length > 0 && (
+                <span className="flex items-center gap-1.5 text-xs font-bold text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-lg border border-indigo-500/20">
+                  <span>📦 {operationsData.activeDeliveries.length} Active Trips</span>
+                </span>
+              )}
             </div>
           }
         >
           <div className="space-y-3">
             <p className="text-xs text-muted">
-              Live geographic positioning of active delivery fleet across Bangladesh with demand density heatmap clustering.
+              Live geographic positioning of active delivery fleet across Bangladesh with real store locations, active customer delivery routes, and demand density heatmap clustering.
             </p>
             <LiveDeliveryMap
-              fleetRiders={fleetMarkers}
+              fleetRiders={operationsData.allRiders.length > 0 ? operationsData.allRiders : fleetMarkers}
+              stores={operationsData.stores}
+              multiDeliveries={operationsData.activeDeliveries}
               heatmapPoints={showHeatmap ? heatmapPoints : undefined}
-              trackingState={fleetMarkers.length > 0 ? "LIVE" : "LOCATION_UNAVAILABLE"}
-              height="h-80 sm:h-96"
+              trackingState={operationsData.allRiders.length > 0 || fleetMarkers.length > 0 ? "LIVE" : "LOCATION_UNAVAILABLE"}
+              height="h-80 sm:h-96 md:h-[480px]"
+              showFilterBar={true}
             />
           </div>
         </Panel>
