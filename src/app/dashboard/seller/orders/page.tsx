@@ -334,6 +334,7 @@ export default function SellerOrdersPage() {
               <p className="text-xs text-muted">
                 Displaying genuine GPS dispatch telemetry for your store orders across Bangladesh. Pickups (📦) and Customer Dropoffs (🏠) are scoped strictly to your store.
               </p>
+              {/* Multi-order logistics map with store pin and active customer destinations */}
               <LiveDeliveryMap
                 multiDeliveries={sellerActiveDeliveries.map((d: any) => ({
                   id: d.id || d._id,
