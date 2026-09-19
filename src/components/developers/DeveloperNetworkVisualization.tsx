@@ -13,14 +13,14 @@ import {
   CATEGORY_METADATA,
 } from "@/data/developers";
 
-// Coordinates for Desktop SVG Network (viewBox: 0 0 960 640)
+// Expanded desktop topology for engineering network mesh (viewBox: 0 0 1120 740)
 const DESKTOP_NODE_COORDS: Record<string, { x: number; y: number }> = {
-  "member-4": { x: 190, y: 160 }, // Hasina Akter (Frontend)
-  "member-2": { x: 340, y: 260 }, // Nusrat Jahan (Frontend)
-  "member-5": { x: 770, y: 160 }, // Abu Bakkar Siddique (Backend)
-  "member-3": { x: 620, y: 260 }, // Aminul Islam (Backend)
-  "member-6": { x: 480, y: 380 }, // Md. Farhadul Islam (Full Stack Bridge)
-  "member-1": { x: 480, y: 530 }, // MD Moynul Islam (AI/ML)
+  "member-4": { x: 160, y: 200 }, // Hasina Akter (Frontend)
+  "member-2": { x: 240, y: 520 }, // Nusrat Jahan (Frontend)
+  "member-6": { x: 480, y: 340 }, // Md. Farhadul Islam (Full Stack Bridge)
+  "member-1": { x: 600, y: 540 }, // MD Moynul Islam (AI/ML)
+  "member-3": { x: 860, y: 520 }, // Aminul Islam (Backend)
+  "member-5": { x: 940, y: 200 }, // Abu Bakkar Siddique (Backend)
 };
 
 export function DeveloperNetworkVisualization() {
