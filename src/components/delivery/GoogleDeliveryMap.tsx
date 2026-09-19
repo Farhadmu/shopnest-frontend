@@ -22,8 +22,21 @@ import {
 } from "react-icons/fa";
 
 /** Map animation and rendering defaults */
-export const MAP_TRANSITION_DURATION_MS = 300;
+export const MAP_TRANSITION_DURATION_MS = 350;
 export const MAP_DEFAULT_ZOOM_FALLBACK = 13;
+
+export interface RealStoreMarkerData {
+  id: string;
+  storeName: string;
+  ownerName?: string;
+  contactPhone?: string;
+  address?: string;
+  latitude: number;
+  longitude: number;
+  status?: string;
+  rating?: number;
+  ratingCount?: number;
+}
 
 export interface FleetRiderMarkerData {
   id: string;
