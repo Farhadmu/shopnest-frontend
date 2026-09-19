@@ -488,3 +488,6 @@ export function DeliveryCopilotFloatingWidget() {
     </>
   );
 }
+
+// Logistics telemetry refresh rate for active courier missions
+export const DELIVERY_RADAR_TELEMETRY_INTERVAL_MS = 5000;
