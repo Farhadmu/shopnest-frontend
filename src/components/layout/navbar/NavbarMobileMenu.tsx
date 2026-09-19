@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Sparkles } from "lucide-react";
 import type { NavItem, UserRole } from "./NavbarLinks";
 import { mainNavItems } from "./NavbarLinks";
+import { useWishlist } from "@/context/WishlistContext";
 
 interface NavbarMobileMenuProps {
   open: boolean;
@@ -19,6 +20,7 @@ interface NavbarMobileMenuProps {
   categoryMenuSlot?: React.ReactNode;
   /** Slot for role badge */
   roleBadge?: React.ReactNode;
+  wishlistCount?: number;
 }
 
 export function NavbarMobileMenu({
@@ -31,8 +33,11 @@ export function NavbarMobileMenu({
   onSignOut,
   categoryMenuSlot,
   roleBadge,
+  wishlistCount: propWishlistCount,
 }: NavbarMobileMenuProps) {
   const pathname = usePathname();
+  const wishlistCtx = useWishlist();
+  const wishlistCount = propWishlistCount !== undefined ? propWishlistCount : (wishlistCtx?.itemCount ?? 0);
   const navLinks = (isAuthenticated ? mainNavItems[role] : mainNavItems.guest) || mainNavItems.guest;
 
   if (!open) return null;
@@ -89,6 +94,22 @@ export function NavbarMobileMenu({
             </Link>
           );
         })}
+
+        {/* Wishlist Link for Mobile */}
+        <Link
+          href="/wishlist"
+          onClick={onClose}
+          className={`flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+            pathname === "/wishlist" ? "bg-white/25 text-white font-bold" : "text-white/90 hover:bg-white/15 hover:text-white"
+          }`}
+        >
+          <span>Saved Wishlist</span>
+          {wishlistCount > 0 && (
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 text-xs font-black text-white shadow-xs">
+              {wishlistCount > 99 ? "99+" : wishlistCount}
+            </span>
+          )}
+        </Link>
 
         {isAuthenticated ? (
           <>

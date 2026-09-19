@@ -6,6 +6,7 @@ import TrustFeatures from "@/components/home/TrustFeatures";
 import SellersSection from "@/components/home/SellersSection";
 import HowItWorksSection from "@/components/home/HowItWorksSection";
 import ProofSection from "@/components/home/ProofSection";
+import DevelopersBanner from "@/components/home/DevelopersBanner";
 import { defaultBannerData } from "@/lib/banner/BannerData";
 import AiIntelligenceSection from "@/components/home/AiIntelligenceSection";
 import FeaturedProductsSection from "@/components/home/FeaturedProductsSection";
@@ -69,6 +70,9 @@ function HomePageContent() {
 
         {/* 10 — Reviews (static) */}
         <ProofSection />
+
+        {/* 11 — Engineering Spotlight */}
+        <DevelopersBanner />
       </div>
     </>
   );

@@ -133,7 +133,6 @@ export default function FeaturedProductsSection({
     }
     return uniqueProducts;
   }, [uniqueProducts]);
-
   if (!loading && !errorMessage && uniqueProducts.length === 0) {
     return null;
   }

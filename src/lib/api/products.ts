@@ -24,6 +24,8 @@ export interface Product {
   highlights?: Array<{ title: string; description?: string; icon?: string }> | string[];
   sentiment?: { positive: number; neutral: number; negative: number };
   isFeatured?: boolean;
+  freeDelivery?: boolean;
+  aiPick?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -182,3 +184,67 @@ export async function getRecommendedProducts(
     params: { limit },
   });
 }
+
+export interface CompareProductStore {
+  id: string;
+  storeName: string;
+  slug: string;
+  rating: number;
+  ratingCount: number;
+  trustScore: number;
+  isVerified: boolean;
+  address?: string;
+  memberSince?: string;
+}
+
+export interface CompareProductReviewsSummary {
+  avgRating: number;
+  totalReviews: number;
+  verifiedPurchases: number;
+  distribution: {
+    5: number;
+    4: number;
+    3: number;
+    2: number;
+    1: number;
+  };
+  sampleReviews?: Array<{
+    rating: number;
+    comment: string;
+    userName: string;
+    verifiedPurchase?: boolean;
+    createdAt?: string;
+  }>;
+}
+
+export interface CompareProductDeliverySummary {
+  freeDelivery: boolean;
+  standardFee: number;
+  estimatedDays: string;
+  courierName: string;
+  cashOnDelivery: boolean;
+}
+
+export interface CompareProductReturnPolicy {
+  days: number;
+  type: string;
+  conditions: string;
+}
+
+export interface CompareProductData extends Product {
+  store?: CompareProductStore;
+  reviewsSummary?: CompareProductReviewsSummary;
+  deliverySummary?: CompareProductDeliverySummary;
+  returnPolicy?: CompareProductReturnPolicy;
+  warrantyMonths?: number;
+  warrantyProvider?: string;
+}
+
+export async function getCompareProducts(ids: string[]): Promise<CompareProductData[]> {
+  if (!ids || ids.length === 0) return [];
+  const cleanIds = ids.filter(Boolean);
+  if (cleanIds.length === 0) return [];
+  return clientFetch<CompareProductData[]>("/products/compare", {
+    params: { ids: cleanIds.join(",") },
+  });
+}
