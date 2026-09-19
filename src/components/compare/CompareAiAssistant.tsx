@@ -1,4 +1,4 @@
-// AI Assistant: Priority Chips and Decision Verdict
+// AI Assistant: Interactive Importance Sliders
 "use client";
 
 import React, { useState } from "react";
