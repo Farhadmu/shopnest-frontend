@@ -853,7 +853,7 @@ export function GoogleDeliveryMap({
     });
   }, [mapsLoaded, multiDeliveries, onMarkerClick]);
 
-  // ─── 7. Admin Multi-Rider Fleet Markers (Live vs Last Known Location) ────────
+  // ─── 7. Admin Multi-Rider Fleet Markers: Online Pulse & Speed (Live vs Last Known) ────────
   useEffect(() => {
     if (!mapsLoaded || !mapInstanceRef.current || !window.google?.maps) return;
     if (!fleetRiders) return;
