@@ -27,6 +27,15 @@ export function DeveloperNetworkVisualization() {
   const [activeCategory, setActiveCategory] = useState<"ALL" | DeveloperCategory>("ALL");
   const [hoveredDevId, setHoveredDevId] = useState<string | null>(null);
 
+
+  // Determine active collaboration count for hovered developer
+  const hoveredDevConnectionsCount = useMemo(() => {
+    if (!hoveredDevId) return 0;
+    return directlyConnectedDevIds.size - 1;
+  }, [hoveredDevId, directlyConnectedDevIds]);
+  const [activeCategory, setActiveCategory] = useState<"ALL" | DeveloperCategory>("ALL");
+  const [hoveredDevId, setHoveredDevId] = useState<string | null>(null);
+
   // Set of connected developers for the currently hovered developer
   const directlyConnectedDevIds = useMemo(() => {
     if (!hoveredDevId) return new Set<string>();
@@ -149,6 +158,12 @@ export function DeveloperNetworkVisualization() {
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
               <span>ShopNest Core Platform</span>
             </div>
+            {hoveredDevId && (
+              <span className="mt-2 text-[11px] font-bold px-3 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 backdrop-blur-md">
+                Active Channels: {hoveredDevConnectionsCount} direct link
+                {hoveredDevConnectionsCount === 1 ? "" : "s"}
+              </span>
+            )}
           </div>
 
           {/* SVG Connection Lines Canvas */}
