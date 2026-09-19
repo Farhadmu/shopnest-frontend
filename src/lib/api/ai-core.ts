@@ -104,3 +104,6 @@ export async function askUnifiedAiCore(params: {
 export async function consumeHandoffToken(handoffId: string): Promise<AIHandoffData> {
   return clientFetch<AIHandoffData>(`/ai/core/handoff/${handoffId}`);
 }
+
+// Client-side cache timeout for conversational suggestions
+export const AI_CLIENT_CACHE_TTL_MS = 60000;
