@@ -196,6 +196,7 @@ export default function DeliveryProfilePage() {
         <Panel title="Profile Status">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
+              {/* Courier Profile Avatar with Interactive Photo Upload Overlay */}
               <div className="relative group">
                 {currentPhoto ? (
                   <img
