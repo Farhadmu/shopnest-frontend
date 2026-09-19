@@ -328,6 +328,7 @@ export default function AdminDeliveryMenPage() {
         });
       };
 
+      // Real-time courier availability status handler (online vs offline)
       const onAdminRiderStatus = (payload: {
         riderId: string;
         isActive: boolean;
