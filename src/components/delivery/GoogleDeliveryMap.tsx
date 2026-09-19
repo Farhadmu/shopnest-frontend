@@ -596,29 +596,37 @@ export function GoogleDeliveryMap({
             url:
               "data:image/svg+xml;charset=UTF-8," +
               encodeURIComponent(
-                `<svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 38 38">
-                  <circle cx="19" cy="19" r="17" fill="#2563eb" stroke="#ffffff" stroke-width="2.5"/>
-                  <text x="19" y="24" font-size="16" text-anchor="middle" fill="#ffffff">🏪</text>
+                `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44">
+                  <defs>
+                    <linearGradient id="storeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#8b5cf6"/>
+                      <stop offset="100%" stop-color="#6366f1"/>
+                    </linearGradient>
+                  </defs>
+                  <circle cx="22" cy="22" r="19" fill="url(#storeGrad)" stroke="#ffffff" stroke-width="2.5"/>
+                  <text x="22" y="27" font-size="18" text-anchor="middle" fill="#ffffff">🏪</text>
                 </svg>`
               ),
-            scaledSize: new maps.Size(38, 38),
-            anchor: new maps.Point(19, 19),
+            scaledSize: new maps.Size(44, 44),
+            anchor: new maps.Point(22, 22),
           },
-          zIndex: 850,
+          zIndex: 880,
         });
 
         const infoWindow = new maps.InfoWindow({
           content: `
-            <div style="color: #0f172a; padding: 8px; font-family: sans-serif; min-width: 200px;">
-              <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                <span style="font-size: 16px;">🏪</span>
-                <strong style="font-size: 13px; color: #1e3a8a;">${store.storeName}</strong>
+            <div style="color: #0f172a; padding: 10px; font-family: sans-serif; min-width: 220px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span style="font-size: 20px;">🏪</span>
+                <div>
+                  <strong style="font-size: 14px; color: #1e3a8a; display: block;">${store.storeName}</strong>
+                  <span style="font-size: 10px; text-transform: uppercase; font-weight: 700; color: #16a34a; background: #dcfce7; padding: 1px 6px; border-radius: 4px; display: inline-block;">Active Merchant</span>
+                </div>
               </div>
-              <div style="font-size: 11px; color: #475569; line-height: 1.5;">
+              <div style="font-size: 11.5px; color: #475569; line-height: 1.6; border-top: 1px solid #e2e8f0; padding-top: 6px;">
                 ${store.ownerName ? `<div><strong>Merchant:</strong> ${store.ownerName}</div>` : ""}
                 ${store.address ? `<div><strong>Address:</strong> ${store.address}</div>` : ""}
                 <div><strong>GPS:</strong> ${store.latitude.toFixed(4)}, ${store.longitude.toFixed(4)}</div>
-                ${store.status ? `<div><strong>Status:</strong> <span style="text-transform: uppercase; font-weight: bold; color: ${store.status === 'approved' ? '#16a34a' : '#ea580c'}">${store.status}</span></div>` : ""}
                 ${store.rating ? `<div><strong>Rating:</strong> ⭐ ${store.rating.toFixed(1)}</div>` : ""}
               </div>
             </div>
@@ -972,7 +980,7 @@ export function GoogleDeliveryMap({
     // Pickups
     if (markersRef.current.multiPickups) {
       markersRef.current.multiPickups.forEach((marker) => {
-        if (activeFilter === "all" || activeFilter === "active_orders" || activeFilter === "stores") marker.setVisible(true);
+        if (activeFilter === "all" || activeFilter === "active_orders") marker.setVisible(true);
         else marker.setVisible(false);
       });
     }
@@ -984,7 +992,25 @@ export function GoogleDeliveryMap({
         else marker.setVisible(false);
       });
     }
-  }, [mapsLoaded, activeFilter, fleetRiders]);
+
+    // Automatically fit bounds to all stores when "stores" filter is active
+    if (activeFilter === "stores" && stores && stores.length > 0 && mapInstanceRef.current && window.google?.maps) {
+      const storeBounds = new window.google.maps.LatLngBounds();
+      let storeCount = 0;
+      stores.forEach((s) => {
+        if (typeof s.latitude === "number" && typeof s.longitude === "number") {
+          storeBounds.extend({ lat: s.latitude, lng: s.longitude });
+          storeCount++;
+        }
+      });
+      if (storeCount > 0) {
+        mapInstanceRef.current.fitBounds(storeBounds, { top: 80, right: 80, bottom: 80, left: 80 });
+        if (storeCount === 1) {
+          mapInstanceRef.current.setZoom(14);
+        }
+      }
+    }
+  }, [mapsLoaded, activeFilter, fleetRiders, stores]);
 
   // ─── 9. Auto Fit Bounds Across All Active Markers ────────────────────────────
   const handleFitBounds = useCallback(() => {
@@ -1336,7 +1362,7 @@ export function GoogleDeliveryMap({
               { key: "all", label: "All Telemetry" },
               { key: "online", label: "🟢 Online Riders" },
               { key: "offline", label: "⚪ Offline Last Known" },
-              { key: "stores", label: "🏪 Stores" },
+              { key: "stores", label: stores && stores.length > 0 ? `🏪 Stores (${stores.length})` : "🏪 Stores" },
               { key: "active_orders", label: "📦 Active Pickups" },
               { key: "destinations", label: "👤 Destinations" },
             ].map((f) => (

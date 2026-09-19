@@ -200,14 +200,18 @@ export default function AdminDeliveryMenPage() {
           assignedOrders: r.assignedOrders,
         }));
 
-      const stores: RealStoreMarkerData[] = (res?.stores || []).map((s: any) => ({
-        id: s.id,
-        storeName: s.name,
-        address: s.address,
-        latitude: s.latitude,
-        longitude: s.longitude,
-        status: "active",
-      }));
+      const stores: RealStoreMarkerData[] = (res?.stores || [])
+        .map((s: any) => ({
+          id: String(s.id || s._id),
+          storeName: s.storeName || s.name || "Seller Store",
+          address: s.location?.address || s.address || s.businessInfo?.businessAddress || "Bangladesh Commercial Hub",
+          latitude: typeof s.latitude === "number" ? s.latitude : s.location?.latitude,
+          longitude: typeof s.longitude === "number" ? s.longitude : s.location?.longitude,
+          ownerName: s.ownerName || s.businessInfo?.ownerName,
+          status: s.status || "active",
+          rating: s.rating,
+        }))
+        .filter((s: any) => typeof s.latitude === "number" && typeof s.longitude === "number");
 
       const activeDeliveries: MultiDeliveryItem[] = (res?.activeDeliveries || []).map((d: any) => ({
         id: d.id,
@@ -539,6 +543,11 @@ export default function AdminDeliveryMenPage() {
                   {operationsData.allRiders.filter((r) => r.isActive).length || fleetMarkers.filter((r) => r.isActive).length} Live / {operationsData.allRiders.length || fleetMarkers.length} Fleet
                 </span>
               </span>
+              {operationsData.stores.length > 0 && (
+                <span className="flex items-center gap-1.5 text-xs font-bold text-purple-400 bg-purple-500/10 px-3 py-1 rounded-lg border border-purple-500/20">
+                  <span>🏪 {operationsData.stores.length} Stores</span>
+                </span>
+              )}
               {operationsData.activeDeliveries.length > 0 && (
                 <span className="flex items-center gap-1.5 text-xs font-bold text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-lg border border-indigo-500/20">
                   <span>📦 {operationsData.activeDeliveries.length} Active Trips</span>
