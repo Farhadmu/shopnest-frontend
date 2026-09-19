@@ -157,6 +157,7 @@ export default function SellerOrdersPage() {
         loadOrders();
       };
 
+      // Automatically clears delivered customer destinations from the seller radar
       const onDeliveryCompleted = (payload: { deliveryRequestId?: string; orderId?: string }) => {
         setSellerActiveDeliveries((prev) =>
           prev.filter(
