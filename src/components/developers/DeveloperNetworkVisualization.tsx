@@ -264,6 +264,7 @@ export function DeveloperNetworkVisualization() {
 
               const isDimmed = isDevDimmed(dev);
               const isHovered = hoveredDevId === dev.id;
+              const isCollaborator = hoveredDevId && directlyConnectedDevIds.has(dev.id) && !isHovered;
               const meta = CATEGORY_METADATA[dev.category];
 
               return (
@@ -292,6 +293,8 @@ export function DeveloperNetworkVisualization() {
                         className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-full p-1 bg-card border-2 ${
                           isHovered
                             ? `${meta.borderColor} ring-4 ${meta.ringColor}`
+                            : isCollaborator
+                            ? "border-primary ring-2 ring-primary/40"
                             : "border-border/80"
                         } shadow-lg transition-all duration-300 group-hover:scale-105 overflow-hidden`}
                       >
