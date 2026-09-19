@@ -491,3 +491,6 @@ export function DeliveryCopilotFloatingWidget() {
 
 // Logistics telemetry refresh rate for active courier missions
 export const DELIVERY_RADAR_TELEMETRY_INTERVAL_MS = 5000;
+
+// Threshold for emergency route incident guidance
+export const DELIVERY_INCIDENT_ESCALATION_CALLS = 2;
