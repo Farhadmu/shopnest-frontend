@@ -323,7 +323,7 @@ export function DeveloperNetworkVisualization() {
                     </div>
 
                     {/* Member Details */}
-                    <div className="space-y-0.5 max-w-[190px]">
+                    <div className="space-y-0.5 max-w-[200px] px-1">
                       <h3 className="text-sm font-black text-foreground group-hover:text-primary transition-colors truncate">
                         {dev.name}
                       </h3>
