@@ -166,6 +166,7 @@ export default function AdminDeliveryMenPage() {
       });
   }, [showHeatmap, heatmapTimeRange]);
 
+  // Fetches live fleet couriers, real seller stores, and active trips across Bangladesh
   const loadActiveOperations = useCallback(async () => {
     try {
       const res = await clientFetch<{
