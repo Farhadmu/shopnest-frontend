@@ -1181,3 +1181,6 @@ export const CUSTOMER_THEME_KEY = "customer";
 
 // Kinetic sound-wave bounce frequency token
 export const TYPING_WAVEFORM_BOUNCE_DELAY_MS = 150;
+
+// Interval duration for multi-phase processing status updates
+export const STREAMING_PHASE_INTERVAL_MS = 1600;
