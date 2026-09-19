@@ -27,7 +27,25 @@ export default function DevelopersBanner() {
 
           {/* Grid Pattern Overlay */}
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none" />
-          <p className="text-xs font-black uppercase text-primary">ShopNest Engineering Spotlight</p>
+          <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-10">
+            <div className="space-y-6 max-w-2xl text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-black tracking-widest uppercase">
+                <FiActivity className="w-3.5 h-3.5 animate-pulse" />
+                <span>ShopNest Engineering Spotlight</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-foreground tracking-tight leading-tight">
+                Meet the Minds{" "}
+                <span className="bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                  Architecting ShopNest
+                </span>
+              </h2>
+              <p className="text-sm sm:text-base text-muted leading-relaxed">
+                From high-speed AI product comparison algorithms and distributed backend microservices
+                to real-time WebSockets and responsive multi-vendor commerce UX — explore our 6-engineer
+                team and interactive collaboration network.
+              </p>
+            </div>
+          </div>
         </motion.div>
       </div>
     </section>
