@@ -228,15 +228,14 @@ export function DeveloperNetworkVisualization() {
                   />
 
                   {/* Animated traveling pulse dot for highlighted line */}
-                  {highlighted && (
-                    <circle r="4" fill="#a855f7">
-                      <animateMotion
-                        path={pathD}
-                        dur="2.5s"
-                        repeatCount="indefinite"
-                      />
-                    </circle>
-                  )}
+                  {/* Animated traveling energy pulse dot */}
+                  <circle r={highlighted ? 5 : 3} fill={highlighted ? "#f43f5e" : "#8b5cf6"} opacity={highlighted ? 1 : 0.6}>
+                    <animateMotion
+                      path={pathD}
+                      dur={highlighted ? "2s" : "4s"}
+                      repeatCount="indefinite"
+                    />
+                  </circle>
                 </g>
               );
             })}
