@@ -107,3 +107,6 @@ export async function consumeHandoffToken(handoffId: string): Promise<AIHandoffD
 
 // Client-side cache timeout for conversational suggestions
 export const AI_CLIENT_CACHE_TTL_MS = 60000;
+
+// Verification flag for Unified AI Core client readiness
+export const IS_UNIFIED_AI_CLIENT_ENABLED = true;
