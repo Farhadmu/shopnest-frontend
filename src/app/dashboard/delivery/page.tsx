@@ -158,7 +158,7 @@ export default function DeliveryDashboard() {
   const remainingWeight = Math.max(0, maxWeightKg - currentLoadedWeight);
 
   // Live GPS Broadcaster (Adaptive Socket.IO)
-  const toggleLocationBroadcasting = () => {
+  const toggleLocationBroadcasting = async () => {
     if (isBroadcastingLocation) {
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
@@ -166,6 +166,24 @@ export default function DeliveryDashboard() {
       }
       setIsBroadcastingLocation(false);
       setBroadcasterError(null);
+
+      const socket = getDeliverySocket();
+      socket.emit("location:stop");
+
+      try {
+        const res = await setDeliveryAvailability({ availabilityStatus: "offline" });
+        setDetails((prev) =>
+          prev
+            ? {
+                ...prev,
+                availabilityStatus: "offline",
+                isActive: false,
+              }
+            : null
+        );
+      } catch (e) {
+        console.warn("Failed to set availability offline:", e);
+      }
     } else {
       if (!("geolocation" in navigator)) {
         setBroadcasterError("Geolocation is not supported by your browser.");
@@ -174,6 +192,21 @@ export default function DeliveryDashboard() {
 
       setIsBroadcastingLocation(true);
       setBroadcasterError(null);
+
+      try {
+        const res = await setDeliveryAvailability({ availabilityStatus: "available" });
+        setDetails((prev) =>
+          prev
+            ? {
+                ...prev,
+                availabilityStatus: "available",
+                isActive: true,
+              }
+            : null
+        );
+      } catch (e) {
+        console.warn("Failed to set availability available:", e);
+      }
 
       const socket = getDeliverySocket();
 
@@ -212,10 +245,23 @@ export default function DeliveryDashboard() {
   };
 
   useEffect(() => {
-    return () => {
+    const handleBeforeUnload = () => {
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
+      const socket = getDeliverySocket();
+      socket.emit("location:stop");
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+      const socket = getDeliverySocket();
+      socket.emit("location:stop");
     };
   }, []);
 
@@ -955,6 +1001,7 @@ export default function DeliveryDashboard() {
                   : null
               }
               height="h-96 sm:h-[480px]"
+              showFilterBar={true}
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
