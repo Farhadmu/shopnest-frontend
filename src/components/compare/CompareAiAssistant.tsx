@@ -1,4 +1,3 @@
-// AI Assistant: Interactive Importance Sliders
 "use client";
 
 import React, { useState } from "react";
