@@ -1,4 +1,4 @@
-// Spec Category Classification: 7 Domain Groups
+// Multi-Product Difference Detection & Importance Engine
 /**
  * ShopNest Comparison Normalization & Intelligence Utilities
  *
