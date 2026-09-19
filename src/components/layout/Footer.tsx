@@ -65,6 +65,7 @@ const footerColumns: Array<{ title: string; links: [string, string][] }> = [
     title: "Company",
     links: [
       ["About ShopNest", "/about"],
+      ["Meet the Developers", "/developers"],
       ["How It Works", "/how-it-works"],
       ["Support", "/support"],
       ["Contact", "/contact"],
