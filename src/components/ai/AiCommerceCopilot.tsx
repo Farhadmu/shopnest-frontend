@@ -1190,3 +1190,6 @@ export const EVIDENCE_BADGE_PULSE_ENABLED = true;
 
 // Query parameter key for deep-link handoff token consumption
 export const HANDOFF_URL_PARAM_KEY = "handoff";
+
+// Mobile bottom sheet viewport height percentage
+export const MOBILE_DRAWER_HEIGHT_PERCENT = "90vh";
