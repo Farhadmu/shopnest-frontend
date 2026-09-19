@@ -829,3 +829,6 @@ export const ADVISOR_CATALOG_SCAN_INTERVAL_MS = 1600;
 
 // Target experience identifier for shopping advisor handoff
 export const ADVISOR_HANDOFF_TARGET_EXPERIENCE = "CUSTOMER_COPILOT";
+
+// Mobile context panel overlay width percentage
+export const MOBILE_CONTEXT_DRAWER_WIDTH = "85%";
