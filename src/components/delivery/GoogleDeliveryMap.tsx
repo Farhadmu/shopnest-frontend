@@ -504,7 +504,7 @@ export function GoogleDeliveryMap({
     }
   }, [mapsLoaded, riderLocation, riderName, orderId, deliveryId, status, isDelivered, isLive, onMarkerClick]);
 
-  // ─── 4. Customer Self Location Marker ("📍 You") ─────────────────────────────
+  // ─── 4. Customer Self Location Marker with Blue Pulse ("📍 You") ─────────────────────────────
   useEffect(() => {
     if (!mapsLoaded || !mapInstanceRef.current || !window.google?.maps) return;
     const maps = window.google.maps;
