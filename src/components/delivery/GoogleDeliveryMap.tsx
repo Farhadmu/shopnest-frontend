@@ -85,6 +85,10 @@ export interface GoogleDeliveryMapProps {
   deliveryCoordinates?: { latitude: number; longitude: number } | null;
   sellerLocation?: { latitude: number; longitude: number } | null;
   storeLocation?: { latitude: number; longitude: number } | null;
+  customerLocation?: { latitude: number; longitude: number; label?: string } | null;
+  stores?: RealStoreMarkerData[];
+  showFilterBar?: boolean;
+  activeFilter?: MapFilterOption;
   status?: string;
   orderId?: string;
   deliveryId?: string;
