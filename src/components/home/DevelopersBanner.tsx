@@ -59,6 +59,32 @@ export default function DevelopersBanner() {
                 </span>
               </div>
             </div>
+            <div className="flex flex-col items-center lg:items-end gap-5">
+              <div className="p-4 sm:p-6 rounded-2xl bg-card/80 dark:bg-card/60 border border-border/80 dark:border-white/10 shadow-xl backdrop-blur-md flex flex-col items-center gap-4">
+                <div className="text-center">
+                  <p className="text-xs font-bold text-muted uppercase tracking-wider">
+                    6 Full-Stack & AI Builders
+                  </p>
+                </div>
+                <div className="flex items-center -space-x-3 hover:space-x-1 transition-all duration-300 py-1">
+                  {DEVELOPERS.map((dev) => (
+                    <div
+                      key={dev.id}
+                      className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-card shadow-md transition-transform duration-200 hover:scale-125 hover:z-30 overflow-hidden cursor-pointer group"
+                      title={`${dev.name} • ${dev.role}`}
+                    >
+                      <Image
+                        src={dev.image}
+                        alt={dev.name}
+                        width={56}
+                        height={56}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </motion.div>
       </div>
