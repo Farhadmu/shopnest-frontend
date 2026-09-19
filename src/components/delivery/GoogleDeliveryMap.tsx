@@ -558,7 +558,7 @@ export function GoogleDeliveryMap({
     }
   }, [mapsLoaded, customerLocation, onMarkerClick]);
 
-  // ─── 5. Real Seller Stores Markers (Admin Radar) ───────────────────────────
+  // ─── 5. Real Seller Stores Markers with Purple Pin & Dispatch Badge (Admin Radar) ───────────────────────────
   useEffect(() => {
     if (!mapsLoaded || !mapInstanceRef.current || !window.google?.maps) return;
     const maps = window.google.maps;
