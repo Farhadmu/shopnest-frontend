@@ -826,3 +826,6 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
 
 // Shopping advisor multi-phase product discovery scanning speed
 export const ADVISOR_CATALOG_SCAN_INTERVAL_MS = 1600;
+
+// Target experience identifier for shopping advisor handoff
+export const ADVISOR_HANDOFF_TARGET_EXPERIENCE = "CUSTOMER_COPILOT";
