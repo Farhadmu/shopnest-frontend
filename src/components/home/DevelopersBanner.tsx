@@ -44,6 +44,20 @@ export default function DevelopersBanner() {
                 to real-time WebSockets and responsive multi-vendor commerce UX — explore our 6-engineer
                 team and interactive collaboration network.
               </p>
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 pt-1">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-muted-bg/60 border border-border/80 text-foreground">
+                  <FiCode className="w-3.5 h-3.5 text-pink-500" />
+                  Frontend & Mobile UX
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-muted-bg/60 border border-border/80 text-foreground">
+                  <FiLayers className="w-3.5 h-3.5 text-cyan-500" />
+                  Backend Cluster & Auth
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-muted-bg/60 border border-border/80 text-foreground">
+                  <FiCpu className="w-3.5 h-3.5 text-amber-500" />
+                  AI/ML Decision Core
+                </span>
+              </div>
             </div>
           </div>
         </motion.div>
