@@ -200,7 +200,17 @@ export function DeveloperNetworkVisualization() {
               if (!start || !end) return null;
 
               const highlighted = isLineHighlighted(conn.from, conn.to);
-              const pathD = `M ${start.x} ${start.y} Q ${(start.x + end.x) / 2 + 15} ${(start.y + end.y) / 2 - 15} ${end.x} ${end.y}`;
+              // Dynamic curved bezier control point
+              const midX = (start.x + end.x) / 2;
+              const midY = (start.y + end.y) / 2;
+              const dx = end.x - start.x;
+              const dy = end.y - start.y;
+              const curvature = 25;
+              const len = Math.sqrt(dx * dx + dy * dy) || 1;
+              const ctrlX = midX - (dy / len) * curvature;
+              const ctrlY = midY + (dx / len) * curvature;
+
+              const pathD = `M ${start.x} ${start.y} Q ${ctrlX} ${ctrlY} ${end.x} ${end.y}`;
 
               return (
                 <g key={`conn-${idx}`}>
