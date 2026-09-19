@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
-import { GoogleDeliveryMap, GoogleDeliveryMapProps, FleetRiderMarkerData, MultiDeliveryItem } from "./GoogleDeliveryMap";
+import { GoogleDeliveryMap, GoogleDeliveryMapProps, FleetRiderMarkerData, MultiDeliveryItem, RealStoreMarkerData, MapFilterOption } from "./GoogleDeliveryMap";
 
 export { GoogleDeliveryMap };
-export type { FleetRiderMarkerData, MultiDeliveryItem };
+export type { FleetRiderMarkerData, MultiDeliveryItem, RealStoreMarkerData, MapFilterOption };
 
 export interface LiveDeliveryMapProps extends GoogleDeliveryMapProps {}
 
