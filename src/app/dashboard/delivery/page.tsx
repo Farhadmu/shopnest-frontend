@@ -59,6 +59,7 @@ export default function DeliveryDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [advancingId, setAdvancingId] = useState<string | null>(null);
+  const [togglingOnline, setTogglingOnline] = useState(false);
 
   // Active view tab
   const [activeTab, setActiveTab] = useState<"missions" | "available" | "map" | "copilot">("missions");
@@ -268,7 +269,14 @@ export default function DeliveryDashboard() {
 
   // Availability Toggle
   const handleToggleOnline = async () => {
-    const newStatus = details?.availabilityStatus === "offline" ? "available" : "offline";
+    if (togglingOnline) return;
+    const isCurrentlyOnline =
+      details?.availabilityStatus === "available" ||
+      details?.availabilityStatus === "busy" ||
+      details?.availabilityStatus === "full_capacity" ||
+      details?.isActive === true;
+    const newStatus = isCurrentlyOnline ? "offline" : "available";
+    setTogglingOnline(true);
     try {
       const res = await setDeliveryAvailability({ availabilityStatus: newStatus });
       setDetails((prev) =>
@@ -276,12 +284,17 @@ export default function DeliveryDashboard() {
           ? {
               ...prev,
               availabilityStatus: (res.availabilityStatus as any) || newStatus,
-              isActive: res.isActive,
+              isActive: res.isActive ?? (newStatus !== "offline"),
             }
-          : null
+          : ({
+              availabilityStatus: (res.availabilityStatus as any) || newStatus,
+              isActive: res.isActive ?? (newStatus !== "offline"),
+            } as any)
       );
     } catch (err: any) {
       alert(err?.message || "Failed to update availability");
+    } finally {
+      setTogglingOnline(false);
     }
   };
 
@@ -407,7 +420,11 @@ export default function DeliveryDashboard() {
   };
 
   const isApproved = profile?.status === "approved";
-  const isOnline = details?.availabilityStatus === "available" || details?.availabilityStatus === "busy";
+  const isOnline =
+    details?.availabilityStatus === "available" ||
+    details?.availabilityStatus === "busy" ||
+    details?.availabilityStatus === "full_capacity" ||
+    details?.isActive === true;
 
   return (
     <DashboardShell
@@ -490,15 +507,33 @@ export default function DeliveryDashboard() {
             {/* Online / Offline Switch */}
             <button
               onClick={handleToggleOnline}
-              disabled={!isApproved}
+              disabled={!isApproved || togglingOnline}
               className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all shadow-sm cursor-pointer disabled:opacity-50 ${
                 isOnline
                   ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20"
                   : "bg-slate-500/10 text-slate-500 border border-slate-500/30 hover:bg-slate-500/20"
               }`}
             >
-              <span className={`w-2 h-2 rounded-full ${isOnline ? "bg-emerald-500" : "bg-slate-400"}`} />
-              <span>{isOnline ? "ONLINE (READY)" : "OFFLINE"}</span>
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  togglingOnline
+                    ? "bg-amber-500 animate-ping"
+                    : isOnline
+                    ? "bg-emerald-500"
+                    : "bg-slate-400"
+                }`}
+              />
+              <span>
+                {togglingOnline
+                  ? "UPDATING..."
+                  : isOnline
+                  ? details?.availabilityStatus === "busy"
+                    ? "ONLINE (BUSY)"
+                    : details?.availabilityStatus === "full_capacity"
+                    ? "ONLINE (FULL)"
+                    : "ONLINE (READY)"
+                  : "OFFLINE"}
+              </span>
             </button>
           </div>
         </div>
