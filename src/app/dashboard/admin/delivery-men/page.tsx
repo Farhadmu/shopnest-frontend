@@ -369,6 +369,7 @@ export default function AdminDeliveryMenPage() {
         loadActiveOperations();
       };
 
+      // Auto-removes completed delivery mission markers from the radar
       const onDeliveryCompleted = (payload: { deliveryRequestId?: string; orderId?: string }) => {
         setOperationsData((prev) => ({
           ...prev,
