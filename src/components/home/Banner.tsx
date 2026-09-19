@@ -80,7 +80,7 @@ function PromoCard({
         {card.eyebrow && (
           <p
             style={customTextColor ? { color: customTextColor } : undefined}
-            className={`text-[9px] font-semibold tracking-widest sm:text-[10px] ${isLight ? "text-surface/70" : "text-muted"
+            className={`text-[9px] font-semibold tracking-widest sm:text-[10px] ${isLight ? "text-white/70" : "text-muted"
               }`}
           >
             {card.eyebrow}
@@ -88,7 +88,7 @@ function PromoCard({
         )}
         <h3
           style={customTextColor ? { color: customTextColor } : undefined}
-          className={`mt-1 text-sm font-bold leading-snug sm:text-base ${isLight ? "text-surface" : "text-text"
+          className={`mt-1 text-sm font-bold leading-snug sm:text-base ${isLight ? "text-white" : "text-text"
             }`}
         >
           {card.title}
@@ -108,7 +108,7 @@ function PromoCard({
         {card.description && (
           <p
             style={customTextColor ? { color: customTextColor } : undefined}
-            className={`mt-1 text-[11px] sm:text-xs ${isLight ? "text-surface/80" : "text-muted"
+            className={`mt-1 text-[11px] sm:text-xs ${isLight ? "text-white/80" : "text-muted"
               }`}
           >
             {card.description}
@@ -118,7 +118,7 @@ function PromoCard({
         {card.price && (
           <p
             style={customTextColor ? { color: customTextColor } : undefined}
-            className={`mt-1 text-[11px] sm:text-xs ${isLight ? "text-surface/80" : "text-text"
+            className={`mt-1 text-[11px] sm:text-xs ${isLight ? "text-white/80" : "text-text"
               }`}
           >
             {card.title.toLowerCase().includes("from") ? "" : "FROM "}
@@ -139,8 +139,8 @@ function PromoCard({
             className={`mt-2 inline-block rounded-md px-3 py-1.5 text-[10px] font-bold tracking-wide transition-colors sm:mt-3 sm:px-4 sm:py-2 sm:text-[11px] ${customButtonColor
                 ? "text-white"
                 : isLight
-                  ? "bg-surface text-text hover:bg-muted-bg"
-                  : "bg-primary text-surface hover:bg-primary-hover"
+                  ? "bg-white text-slate-900 hover:bg-white/90"
+                  : "bg-primary text-white hover:bg-primary-hover"
               }`}
           >
             {card.buttonText}
@@ -151,7 +151,7 @@ function PromoCard({
           <Link
             style={customTextColor ? { color: customTextColor } : undefined}
             href={card.buttonLink}
-            className={`mt-2 inline-block text-[11px] font-semibold underline sm:text-xs ${isLight ? "text-surface" : "text-text"
+            className={`mt-2 inline-block text-[11px] font-semibold underline sm:text-xs ${isLight ? "text-white" : "text-text"
               }`}
           >
             View
@@ -300,7 +300,7 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
         >
           <h2
             style={customTextColor ? { color: customTextColor } : undefined}
-            className={`text-xl font-extrabold leading-tight sm:text-2xl lg:text-3xl ${isLight ? "text-surface" : "text-text"
+            className={`text-xl font-extrabold leading-tight sm:text-2xl lg:text-3xl ${isLight ? "text-white" : "text-text"
               }`}
           >
             {slide.title}
@@ -308,7 +308,7 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           {slide.subtitle && (
             <p
               style={customTextColor ? { color: customTextColor } : undefined}
-              className={`text-lg font-extrabold leading-tight sm:text-xl lg:text-2xl ${isLight ? "text-surface" : "text-text"
+              className={`text-lg font-extrabold leading-tight sm:text-xl lg:text-2xl ${isLight ? "text-white" : "text-text"
                 }`}
             >
               {slide.subtitle}
@@ -317,7 +317,7 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           {slide.description && (
             <p
               style={customTextColor ? { color: customTextColor } : undefined}
-              className={`mt-1 text-xs leading-relaxed sm:text-sm ${isLight ? "text-surface/80" : "text-muted"
+              className={`mt-1 text-xs leading-relaxed sm:text-sm ${isLight ? "text-white/80" : "text-muted"
                 }`}
             >
               {slide.description}
@@ -330,8 +330,8 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
             className={`mt-3 inline-block w-fit rounded-md px-4 py-2 text-xs font-bold tracking-wide transition-colors sm:mt-4 sm:px-6 sm:py-3 sm:text-sm ${customButtonColor
                 ? "text-white"
                 : isLight
-                  ? "bg-surface text-text hover:bg-muted-bg"
-                  : "bg-primary text-surface hover:bg-primary-hover"
+                  ? "bg-white text-slate-900 hover:bg-white/90"
+                  : "bg-primary text-white hover:bg-primary-hover"
               }`}
           >
             {slide.buttonText}

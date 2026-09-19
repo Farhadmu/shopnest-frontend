@@ -65,10 +65,25 @@ function idOf(category: CategoryItem) {
 export function HeroBannerManager({ categories }: { categories: CategoryItem[] }) {
   const [categoryId, setCategoryId] = useState(() => idOf(categories[0]));
   const [banners, setBanners] = useState<HeroBanner[]>([]);
-  const [form, setForm] = useState<FormState>(() => ({
-    ...emptyForm,
-    categoryId: idOf(categories[0]),
-  }));
+  const categoryName = useMemo(
+    () => new Map(categories.map((category) => [idOf(category), category.name])),
+    [categories]
+  );
+
+  const getCategoryFilterUrl = (catId: string) => {
+    const name = categoryName.get(catId);
+    return name ? `/products?category=${encodeURIComponent(name.trim())}` : "/products";
+  };
+
+  const [form, setForm] = useState<FormState>(() => {
+    const initialCatId = idOf(categories[0]);
+    const initialCatName = categories[0]?.name;
+    return {
+      ...emptyForm,
+      categoryId: initialCatId,
+      targetUrl: initialCatName ? `/products?category=${encodeURIComponent(initialCatName.trim())}` : "",
+    };
+  });
   const [editing, setEditing] = useState<HeroBanner | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -76,11 +91,6 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
   const [notice, setNotice] = useState<string | null>(null);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [imageMode, setImageMode] = useState<"upload" | "url">("upload");
-
-  const categoryName = useMemo(
-    () => new Map(categories.map((category) => [idOf(category), category.name])),
-    [categories]
-  );
 
   const load = async () => {
     if (!categoryId) return setBanners([]);
@@ -104,7 +114,11 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
   const resetForm = (nextCategoryId = categoryId) => {
     setEditing(null);
     setImageMode("upload");
-    setForm({ ...emptyForm, categoryId: nextCategoryId });
+    setForm({
+      ...emptyForm,
+      categoryId: nextCategoryId,
+      targetUrl: getCategoryFilterUrl(nextCategoryId),
+    });
   };
 
   const edit = (banner: HeroBanner) => {

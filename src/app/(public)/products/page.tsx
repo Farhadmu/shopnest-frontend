@@ -155,8 +155,6 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           <ProductsFilterSidebar
             query={query}
             sellerOptions={sellerOptions}
-            categories={categories}
-            categoryCounts={categoryCounts}
           />
 
           <Suspense key={queryKey} fallback={<ProductsResultsSkeleton />}>
