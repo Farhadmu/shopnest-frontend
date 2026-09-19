@@ -494,3 +494,6 @@ export const DELIVERY_RADAR_TELEMETRY_INTERVAL_MS = 5000;
 
 // Threshold for emergency route incident guidance
 export const DELIVERY_INCIDENT_ESCALATION_CALLS = 2;
+
+// Mobile top-bar clearance constant
+export const DELIVERY_WIDGET_TOP_OFFSET_PX = 80;
