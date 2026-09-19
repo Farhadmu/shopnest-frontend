@@ -971,6 +971,7 @@ export default function DeliveryDashboard() {
       {activeTab === "map" && (
         <Panel title="Live Delivery Radar & Cockpit Telemetry">
           <div className="space-y-4">
+            {/* Full cockpit live delivery map with layer filtering and multi-trip support */}
             <LiveDeliveryMap
               pickupAddress={selectedMission?.pickupAddress || "Selected Pickup"}
               deliveryAddress={selectedMission?.deliveryAddress || "Selected Dropoff"}
