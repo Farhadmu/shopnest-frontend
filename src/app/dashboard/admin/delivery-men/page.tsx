@@ -551,6 +551,7 @@ export default function AdminDeliveryMenPage() {
             <p className="text-xs text-muted">
               Live geographic positioning of active delivery fleet across Bangladesh with real store locations, active customer delivery routes, and demand density heatmap clustering.
             </p>
+            {/* Main logistics radar rendering real stores, live fleet, and active routes */}
             <LiveDeliveryMap
               fleetRiders={operationsData.allRiders.length > 0 ? operationsData.allRiders : fleetMarkers}
               stores={operationsData.stores}
