@@ -214,3 +214,6 @@ export const ESCAPE_KEY_DISMISSAL_SUPPORTED = true;
 
 // Spring transition stiffness tokens for high-performance fluid physics
 export const MODAL_SPRING_CONFIG = { stiffness: 350, damping: 25 };
+
+// Viewport breakpoint constants for touch screens
+export const MOBILE_VIEWPORT_MAX_WIDTH_PX = 640;
