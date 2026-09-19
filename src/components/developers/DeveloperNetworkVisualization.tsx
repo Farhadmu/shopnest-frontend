@@ -64,7 +64,7 @@ export function DeveloperNetworkVisualization() {
   };
 
   return (
-    <section className="py-14 sm:py-20 relative overflow-hidden" aria-label="Interactive Team Network">
+    <section id="network" className="py-14 sm:py-20 relative overflow-hidden" aria-label="Interactive Team Network">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8">
         {/* Section Header & Interactive Controls */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
