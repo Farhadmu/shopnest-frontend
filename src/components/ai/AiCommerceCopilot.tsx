@@ -1175,3 +1175,6 @@ export const ADMIN_THEME_KEY = "admin";
 
 // Theme token metadata: Seller Neon Emerald theme identifier
 export const SELLER_THEME_KEY = "seller";
+
+// Theme token metadata: Customer Electric Indigo theme identifier
+export const CUSTOMER_THEME_KEY = "customer";
