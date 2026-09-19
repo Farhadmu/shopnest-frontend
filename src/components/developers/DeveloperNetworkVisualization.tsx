@@ -139,7 +139,7 @@ export function DeveloperNetworkVisualization() {
         {/* ---------------------------------------------------------------- */}
         {/* DESKTOP NETWORK CANVAS (Hidden on mobile/tablet < 1024px)       */}
         {/* ---------------------------------------------------------------- */}
-        <div className="hidden lg:block relative rounded-3xl border border-border/70 dark:border-white/10 bg-card/60 dark:bg-card/40 backdrop-blur-xl p-6 shadow-xl overflow-hidden min-h-[660px]">
+        <div className="hidden lg:block relative rounded-3xl border border-border/70 dark:border-white/10 bg-card/60 dark:bg-card/40 backdrop-blur-xl p-6 shadow-2xl overflow-hidden w-full aspect-[1120/740] min-h-[680px] max-h-[820px]">
           {/* Subtle Grid Backdrop */}
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800d_1px,transparent_1px),linear-gradient(to_bottom,#8080800d_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
@@ -154,7 +154,8 @@ export function DeveloperNetworkVisualization() {
           {/* SVG Connection Lines Canvas */}
           <svg
             className="absolute inset-0 w-full h-full pointer-events-none z-10"
-            viewBox="0 0 960 640"
+            viewBox="0 0 1120 740"
+            preserveAspectRatio="none"
             preserveAspectRatio="xMidYMid meet"
           >
             <defs>
@@ -232,7 +233,7 @@ export function DeveloperNetworkVisualization() {
           </svg>
 
           {/* Render Developer Nodes on Desktop Canvas */}
-          <div className="relative z-20 w-full h-[600px] pointer-events-none">
+          <div className="relative z-20 w-full h-full pointer-events-none">
             {DEVELOPERS.map((dev) => {
               const coords = DESKTOP_NODE_COORDS[dev.id];
               if (!coords) return null;
@@ -246,8 +247,8 @@ export function DeveloperNetworkVisualization() {
                   key={dev.id}
                   style={{
                     position: "absolute",
-                    left: `${(coords.x / 960) * 100}%`,
-                    top: `${(coords.y / 640) * 100}%`,
+                    left: `${(coords.x / 1120) * 100}%`,
+                    top: `${(coords.y / 740) * 100}%`,
                     transform: "translate(-50%, -50%)",
                   }}
                   className={`pointer-events-auto transition-all duration-300 ${
