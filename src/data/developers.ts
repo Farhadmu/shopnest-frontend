@@ -17,6 +17,8 @@ export interface DeveloperConnection {
   to: string;
   type: "collaboration" | "api-bridge" | "fullstack-bridge" | "ai-integration";
   label: string;
+  protocol?: string;
+  bandwidth?: string;
 }
 
 export const DEVELOPERS: Developer[] = [
