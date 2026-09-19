@@ -1329,7 +1329,7 @@ export function GoogleDeliveryMap({
           )}
         </div>
 
-        {/* Operational Filter Bar (Admin Radar Requirement 7) */}
+        {/* Fast Client-Side Operational Radar Filter Bar (Admin Radar Requirement 7) */}
         {showFilterBar && (
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[11px] font-semibold">
             {[
