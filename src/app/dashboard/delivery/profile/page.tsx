@@ -5,7 +5,8 @@ import { DashboardShell, Panel } from "@/components/dashboard/DashboardUI";
 import { deliveryManDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { clientFetch, clientMutation } from "@/lib/core/client";
 import { useSession } from "@/lib/auth-client";
-import { FaUser, FaIdCard, FaIdBadge, FaMotorcycle, FaUniversity, FaMapMarkerAlt, FaSave, FaStar, FaTimes } from "react-icons/fa";
+import { uploadDeliveryDocument } from "@/lib/api/delivery";
+import { FaUser, FaIdCard, FaIdBadge, FaMotorcycle, FaUniversity, FaMapMarkerAlt, FaSave, FaStar, FaTimes, FaCamera, FaSyncAlt } from "react-icons/fa";
 
 interface DeliveryManProfile {
   id: string;
@@ -70,6 +71,46 @@ export default function DeliveryProfilePage() {
   const [details, setDetails] = useState<DeliveryManDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File size exceeds 5MB limit.");
+      return;
+    }
+    setUploadingPhoto(true);
+    try {
+      const res = await uploadDeliveryDocument(file);
+      const fileUrl = (res as any)?.data?.url || (res as any)?.url || "";
+      if (fileUrl) {
+        await clientMutation("/delivery/profile", "PATCH", {
+          personal: {
+            ...details?.personal,
+            profilePhoto: fileUrl,
+          },
+        });
+        setDetails((prev) =>
+          prev
+            ? {
+                ...prev,
+                personal: {
+                  ...prev.personal,
+                  profilePhoto: fileUrl,
+                },
+              }
+            : null
+        );
+        alert("Profile photo updated successfully!");
+      }
+    } catch (err: any) {
+      alert(err?.message || "Failed to upload profile photo");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   const loadProfile = useCallback(async () => {
     setLoading(true);
@@ -141,6 +182,8 @@ export default function DeliveryProfilePage() {
     );
   }
 
+  const currentPhoto = details?.personal?.profilePhoto || (session?.user?.image as string);
+
   return (
     <DashboardShell
       role="Delivery Man"
@@ -153,8 +196,37 @@ export default function DeliveryProfilePage() {
         <Panel title="Profile Status">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                <FaUser className="text-primary text-2xl" />
+              <div className="relative group">
+                {currentPhoto ? (
+                  <img
+                    src={currentPhoto}
+                    alt="Profile"
+                    className="h-16 w-16 rounded-full object-cover border-2 border-primary shadow-sm"
+                  />
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 border border-primary/20">
+                    <FaUser className="text-primary text-2xl" />
+                  </div>
+                )}
+                <label
+                  htmlFor="profile-photo-input"
+                  className={`absolute -bottom-1 -right-1 p-1.5 rounded-full cursor-pointer shadow-md transition text-xs flex items-center justify-center ${
+                    uploadingPhoto
+                      ? "bg-muted text-foreground cursor-wait"
+                      : "bg-primary text-white hover:bg-primary-hover ring-2 ring-background"
+                  }`}
+                  title="Upload profile picture"
+                >
+                  {uploadingPhoto ? <FaSyncAlt className="animate-spin text-[10px]" /> : <FaCamera className="text-[10px]" />}
+                  <input
+                    id="profile-photo-input"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handlePhotoUpload}
+                    disabled={uploadingPhoto}
+                  />
+                </label>
               </div>
               <div className="text-xs">
                 <p className="font-black text-text text-lg">
@@ -317,6 +389,38 @@ export default function DeliveryProfilePage() {
                 placeholder="e.g. Dhaka, Chittagong, Sylhet"
                 className="w-full rounded-xl border border-border bg-background px-3.5 py-2 text-xs font-medium text-text"
               />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold text-text mb-1">Profile Photo</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="text"
+                  value={details?.personal?.profilePhoto || ""}
+                  onChange={(e) =>
+                    setDetails((prev) => ({
+                      ...prev!,
+                      personal: { ...prev!.personal, profilePhoto: e.target.value },
+                    }))
+                  }
+                  placeholder="https://... or click Upload New Photo"
+                  className="flex-1 rounded-xl border border-border bg-background px-3.5 py-2 text-xs font-medium text-text"
+                />
+                <label
+                  htmlFor="profile-photo-input-btn"
+                  className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary-hover transition cursor-pointer flex items-center gap-1.5 shrink-0"
+                >
+                  <FaCamera />
+                  <span>{uploadingPhoto ? "Uploading..." : "Upload Photo"}</span>
+                  <input
+                    id="profile-photo-input-btn"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handlePhotoUpload}
+                    disabled={uploadingPhoto}
+                  />
+                </label>
+              </div>
             </div>
           </div>
         </Panel>
