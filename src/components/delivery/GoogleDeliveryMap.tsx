@@ -300,6 +300,7 @@ export function GoogleDeliveryMap({
       if (activeInfoWindowRef.current) activeInfoWindowRef.current.close();
       if (directionsRendererRef.current) directionsRendererRef.current.setMap(null);
       if (heatmapLayerRef.current) heatmapLayerRef.current.setMap(null);
+      // Clean unmount disposal prevents memory leaks on navigation
     };
   }, []);
 
