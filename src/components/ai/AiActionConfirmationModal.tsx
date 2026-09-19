@@ -208,3 +208,6 @@ export function AiActionConfirmationModal({
     </AnimatePresence>
   );
 }
+
+// Accessibility: Key code for escape dismissal
+export const ESCAPE_KEY_DISMISSAL_SUPPORTED = true;
