@@ -1,4 +1,4 @@
-// Dimensional Normalizers: Screens, Hertz, Grams
+// Spec Category Classification: 7 Domain Groups
 /**
  * ShopNest Comparison Normalization & Intelligence Utilities
  *
