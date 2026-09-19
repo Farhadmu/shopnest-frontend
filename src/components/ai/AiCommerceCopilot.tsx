@@ -213,20 +213,20 @@ function MetricCard({ metric }: { metric: CopilotMetric }) {
   const TrendIcon = metric.trend === "up" ? TrendingUp : metric.trend === "down" ? TrendingDown : MinusIcon;
   const trendColor =
     metric.trend === "up"
-      ? "text-green-500"
+      ? "text-emerald-400"
       : metric.trend === "down"
-        ? "text-red-500"
-        : "text-gray-400";
+        ? "text-rose-400"
+        : "text-slate-400";
 
   return (
-    <div className="rounded-xl border border-border bg-card p-3 min-w-[120px]">
+    <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-2.5 sm:p-3 min-w-[125px] shadow-md backdrop-blur-md">
       <div className="flex items-center justify-between gap-1">
-        <span className="text-[10px] text-muted truncate">{metric.label}</span>
+        <span className="text-[10px] sm:text-[10.5px] font-bold text-slate-400 truncate">{metric.label}</span>
         {metric.trend && <TrendIcon className={"h-3 w-3 shrink-0 " + trendColor} />}
       </div>
-      <div className="mt-1 text-base font-bold text-text truncate">{metric.formatted}</div>
+      <div className="mt-1 text-sm sm:text-base font-black text-white truncate">{metric.formatted}</div>
       {metric.changePercent !== undefined && (
-        <div className={"text-[10px] font-medium " + (metric.changePercent >= 0 ? "text-green-500" : "text-red-500")}>
+        <div className={"text-[10px] font-bold " + (metric.changePercent >= 0 ? "text-emerald-400" : "text-rose-400")}>
           {metric.changePercent >= 0 ? "+" : ""}{metric.changePercent}%
         </div>
       )}
@@ -482,6 +482,18 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [isOpen, isMinimized]);
+
+  // Close on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [isOpen]);
 
   // Handle URL handoff token from AI Advisor
   useEffect(() => {
@@ -758,7 +770,7 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
                     <>
                       {/* Metrics */}
                       {m.data.metrics && m.data.metrics.length > 0 && (
-                        <div className="flex gap-2 overflow-x-auto pb-1">
+                        <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-none">
                           {m.data.metrics.slice(0, 6).map((metric, i) => (
                             <MetricCard key={i} metric={metric} />
                           ))}
@@ -850,7 +862,7 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
                 <div className="mt-2 space-y-3">
                   {/* Metrics */}
                   {m.basicData.metrics && m.basicData.metrics.length > 0 && (
-                    <div className="flex gap-2 overflow-x-auto pb-1">
+                    <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-none">
                       {m.basicData.metrics.slice(0, 6).map((metric, i) => (
                         <MetricCard key={i} metric={metric} />
                       ))}
@@ -980,7 +992,7 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
           className={
             compact
               ? "rounded-3xl border border-white/10 bg-slate-950/80 backdrop-blur-2xl p-4 shadow-2xl"
-              : "fixed inset-0 z-50 flex items-end sm:items-center sm:justify-end bg-black/65 backdrop-blur-sm p-0 sm:p-4 md:p-6"
+              : "fixed inset-0 z-50 flex flex-col justify-end items-center sm:items-end bg-black/70 backdrop-blur-sm p-0 sm:p-3 md:p-5 overflow-hidden"
           }
           onClick={(e) => {
             if (!compact && e.target === e.currentTarget) setIsOpen(false);
@@ -994,34 +1006,41 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
             className={
               compact
                 ? "w-full space-y-4"
-                : `relative w-full sm:max-w-2xl overflow-hidden rounded-t-3xl sm:rounded-3xl border ${theme.borderGlow} bg-slate-950/90 text-slate-100 shadow-[0_25px_80px_rgba(0,0,0,0.8)] backdrop-blur-2xl flex flex-col ` +
-                  (isMinimized ? "h-auto" : "h-[90vh] sm:h-[85vh] max-h-[92vh] sm:max-h-[640px] md:max-h-[740px]")
+                : `relative w-full sm:max-w-xl md:max-w-2xl overflow-hidden rounded-t-3xl sm:rounded-3xl border ${theme.borderGlow} bg-slate-950/95 text-slate-100 shadow-[0_25px_80px_rgba(0,0,0,0.85)] backdrop-blur-2xl flex flex-col ` +
+                  (isMinimized
+                    ? "h-auto"
+                    : "h-[88dvh] sm:h-[min(640px,calc(100dvh-2.5rem))] max-h-[calc(100dvh-0.5rem)] sm:max-h-[calc(100dvh-2rem)]")
             }
           >
             {/* Ambient Background Mesh Glow Orbs */}
             <div className={`pointer-events-none absolute -top-28 -right-28 h-72 w-72 rounded-full bg-gradient-to-br ${theme.glowOrb} blur-3xl opacity-50`} />
             <div className={`pointer-events-none absolute -bottom-28 -left-28 h-72 w-72 rounded-full bg-gradient-to-tr ${theme.glowOrb} blur-3xl opacity-40`} />
 
+            {/* Mobile Pull Handle */}
+            <div className="sm:hidden pt-2 pb-0.5 flex justify-center w-full relative z-10 shrink-0">
+              <div className="w-12 h-1 rounded-full bg-white/25" />
+            </div>
+
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-white/10 p-4 pb-3 relative z-10 bg-slate-900/40 backdrop-blur-md">
-              <div className="flex items-center gap-3">
-                <div className={`grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br ${theme.iconBg} text-white shadow-lg text-lg`}>
+            <div className="flex items-center justify-between border-b border-white/10 px-3.5 py-3 sm:px-5 sm:py-3.5 relative z-10 bg-slate-900/60 backdrop-blur-md shrink-0">
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                <div className={`grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-2xl bg-gradient-to-br ${theme.iconBg} text-white shadow-lg text-lg shrink-0`}>
                   <Bot className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-black text-sm text-white flex items-center gap-2">
+                  <h3 className="font-black text-xs sm:text-sm text-white flex items-center gap-2">
                     {theme.roleName}
                   </h3>
-                  <p className="text-[10.5px] font-medium text-slate-400 flex items-center gap-1.5 mt-0.5">
-                    <span className="relative flex h-2 w-2">
+                  <p className="text-[10px] sm:text-[10.5px] font-medium text-slate-400 flex items-center gap-1.5 mt-0.5">
+                    <span className="relative flex h-2 w-2 shrink-0">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
                     </span>
-                    {theme.subtitle}
+                    <span className="truncate max-w-[200px] sm:max-w-none">{theme.subtitle}</span>
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1 sm:gap-1.5">
                 {!compact && (
                   <>
                     <button
@@ -1040,8 +1059,8 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
                     </button>
                     <button
                       onClick={() => setIsOpen(false)}
-                      className="grid h-8 w-8 place-items-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition cursor-pointer"
-                      title="Close"
+                      className="grid h-8 w-8 place-items-center rounded-xl text-slate-400 hover:bg-rose-500/20 hover:text-rose-300 transition cursor-pointer"
+                      title="Close (Esc)"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -1053,7 +1072,7 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
             {/* Chat Body - Hidden when minimized */}
             {!isMinimized && (
               <>
-                <div className="flex-1 overflow-y-auto space-y-4 p-4 relative z-10">
+                <div className="flex-1 min-h-0 overflow-y-auto space-y-4 p-3 sm:p-4 relative z-10">
                   <AnimatePresence mode="popLayout">
                     {messages.map((m) => renderMessage(m))}
                   </AnimatePresence>
@@ -1114,7 +1133,7 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
                 )}
 
                 {/* Input Form */}
-                <div className="border-t border-white/10 p-4 relative z-10 bg-slate-900/50 backdrop-blur-md">
+                <div className="border-t border-white/10 p-3 sm:p-4 relative z-10 bg-slate-900/60 backdrop-blur-md shrink-0">
                   <form
                     onSubmit={(e) => { e.preventDefault(); handleSend(); }}
                     className="flex items-center gap-2"

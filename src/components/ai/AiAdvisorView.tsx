@@ -384,10 +384,10 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
           <div className="pointer-events-none absolute -bottom-28 -left-28 h-72 w-72 rounded-full bg-gradient-to-tr from-pink-600/20 via-purple-600/10 to-transparent blur-3xl opacity-40" />
 
           {/* Chat Header */}
-          <div className="flex items-center justify-between border-b border-white/10 px-4 sm:px-6 py-3 sm:py-4 bg-slate-900/40 backdrop-blur-md relative z-10">
+          <div className="flex items-center justify-between border-b border-white/10 px-4 sm:px-6 py-3 sm:py-4 bg-slate-900/40 backdrop-blur-md relative z-10 shrink-0">
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="relative">
-                <div className="h-9 w-9 sm:h-11 sm:w-11 rounded-2xl bg-gradient-to-br from-purple-600 via-fuchsia-600 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                <div className="h-9 w-9 sm:h-11 sm:w-11 rounded-2xl bg-gradient-to-br from-purple-600 via-fuchsia-600 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-500/30 shrink-0">
                   <FaRobot size={18} className="text-white" />
                 </div>
                 <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 border-2 border-slate-900 animate-pulse" />
@@ -416,7 +416,7 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 scroll-smooth relative z-10">
+          <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 scroll-smooth relative z-10">
             {messages.map((msg, idx) => {
               const isAi = msg.role === "assistant";
               return (
@@ -501,7 +501,7 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
           </div>
 
           {/* Input Area */}
-          <div className="border-t border-white/10 p-3 sm:p-4 bg-slate-900/50 backdrop-blur-md relative z-10">
+          <div className="border-t border-white/10 p-3 sm:p-4 bg-slate-900/50 backdrop-blur-md relative z-10 shrink-0">
             <form
               onSubmit={(e) => {
                 e.preventDefault();

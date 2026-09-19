@@ -83,6 +83,18 @@ export function DeliveryCopilotFloatingWidget() {
     }
   }, [isOpen, messages]);
 
+  // Close on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [isOpen]);
+
   const handleSendMessage = async (textToSend?: string) => {
     const query = (textToSend || inputQuery).trim();
     if (!query || isLoading) return;
@@ -232,9 +244,9 @@ export function DeliveryCopilotFloatingWidget() {
         <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-gradient-to-tr from-indigo-500/20 via-cyan-500/10 to-transparent blur-3xl opacity-40" />
 
         {/* Drawer Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-slate-900/40 backdrop-blur-md relative z-10">
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-white/10 bg-slate-900/40 backdrop-blur-md relative z-10 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shrink-0">
               <FaCompass className="text-base" />
             </div>
             <div>
@@ -270,7 +282,7 @@ export function DeliveryCopilotFloatingWidget() {
         </div>
 
         {/* Quick Suggestion Chips */}
-        <div className="px-4 py-2.5 bg-muted-bg/60 border-b border-border/50 overflow-x-auto flex gap-1.5 scrollbar-none">
+        <div className="px-4 py-2.5 bg-muted-bg/60 border-b border-border/50 overflow-x-auto flex gap-1.5 scrollbar-none shrink-0">
           {QUICK_PROMPTS.map((p, idx) => (
             <button
               key={idx}
@@ -285,7 +297,7 @@ export function DeliveryCopilotFloatingWidget() {
         </div>
 
         {/* Message Thread */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
           {messages.map((msg) => {
             const isUser = msg.role === "user";
             const meta = msg.responseMeta;
@@ -446,7 +458,7 @@ export function DeliveryCopilotFloatingWidget() {
                 </div>
 
                 {/* Drawer Footer Input Form */}
-                <div className="p-4 border-t border-white/10 bg-slate-900/50 backdrop-blur-md relative z-10">
+                <div className="p-3.5 sm:p-4 border-t border-white/10 bg-slate-900/50 backdrop-blur-md relative z-10 shrink-0">
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
