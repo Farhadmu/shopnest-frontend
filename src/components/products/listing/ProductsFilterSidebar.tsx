@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   FiSliders,
@@ -12,9 +12,6 @@ import {
   FiStar,
   FiMessageCircle,
   FiLoader,
-  FiChevronDown,
-  FiChevronRight,
-  FiFolder,
 } from "react-icons/fi";
 import {
   buildProductsHref,
@@ -22,8 +19,6 @@ import {
   toggleInList,
   ProductsQueryState,
 } from "@/lib/utils/product-query";
-import type { Category } from "@/lib/api/categories";
-import { buildCategoryTree, CategoryNode, idOf } from "@/lib/utils/category-tree";
 import { useProductFilter } from "./ProductFilterContext";
 
 export interface StoreFilterOption {
@@ -35,54 +30,14 @@ export interface StoreFilterOption {
 export interface ProductsFilterSidebarProps {
   query: ProductsQueryState;
   sellerOptions?: StoreFilterOption[];
-  categories?: Category[];
-  categoryCounts?: Record<string, number>;
-}
-
-function getNodeCount(node: CategoryNode, counts: Record<string, number>): number {
-  let sum = counts[node.name] ?? 0;
-  if (node.children && node.children.length > 0) {
-    for (const child of node.children) {
-      sum += getNodeCount(child, counts);
-    }
-  }
-  return sum;
 }
 
 export function ProductsFilterSidebar({
   query,
   sellerOptions = [],
-  categories = [],
-  categoryCounts = {},
 }: ProductsFilterSidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [expandedCats, setExpandedCats] = useState<Record<string, boolean>>({});
   const { isFiltering, pendingTarget, navigateWithFilter } = useProductFilter();
-
-  const tree = useMemo(() => buildCategoryTree(categories), [categories]);
-
-  // Automatically expand active category's branch
-  useEffect(() => {
-    if (query.category) {
-      const activeName = query.category.toLowerCase();
-      const newExpanded: Record<string, boolean> = {};
-      for (const root of tree) {
-        if (
-          root.name.toLowerCase() === activeName ||
-          root.children.some((c) => c.name.toLowerCase() === activeName)
-        ) {
-          newExpanded[root.id || root.name] = true;
-        }
-      }
-      setExpandedCats((prev) => ({ ...prev, ...newExpanded }));
-    }
-  }, [query.category, tree]);
-
-  const toggleCategoryExpand = (catId: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setExpandedCats((prev) => ({ ...prev, [catId]: !prev[catId] }));
-  };
 
   // Lock body scroll when mobile drawer is open
   useEffect(() => {
@@ -250,142 +205,6 @@ export function ProductsFilterSidebar({
         </div>
       )}
 
-      {/* 🟢 Categories Hierarchical Tree View */}
-      {tree.length > 0 && (
-        <div className="flex flex-col gap-1.5 border-t border-border/60 pt-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[9px] font-black uppercase tracking-wider text-muted">
-              Categories
-            </span>
-            {query.category && (
-              <Link
-                href={buildProductsHref(query, { category: undefined })}
-                onClick={(e) =>
-                  handleLinkClick(
-                    e,
-                    buildProductsHref(query, { category: undefined }),
-                    "cat-clear",
-                    onItemClick
-                  )
-                }
-                className="text-[10px] font-bold text-primary underline"
-              >
-                Clear
-              </Link>
-            )}
-          </div>
-
-          <div className="custom-scrollbar flex max-h-48 flex-col gap-0.5 overflow-y-auto pr-1">
-            {tree.map((root) => {
-              const rootId = idOf(root);
-              const isRootSelected =
-                query.category?.toLowerCase() === root.name.toLowerCase();
-              const hasChildren = root.children && root.children.length > 0;
-              const isExpanded = Boolean(expandedCats[rootId]);
-              const rootCount = getNodeCount(root, categoryCounts);
-              const targetHref = buildProductsHref(query, {
-                category: isRootSelected ? undefined : root.name,
-              });
-              const isPending = pendingTarget === `cat-side-${root.name}`;
-
-              return (
-                <div key={rootId} className="flex flex-col">
-                  <div
-                    className={`flex items-center justify-between rounded-lg px-2 py-1 transition-colors ${
-                      isRootSelected
-                        ? "bg-primary/10 text-primary font-bold"
-                        : "hover:bg-muted-bg text-text"
-                    }`}
-                  >
-                    <Link
-                      href={targetHref}
-                      onClick={(e) =>
-                        handleLinkClick(e, targetHref, `cat-side-${root.name}`, onItemClick)
-                      }
-                      className="flex items-center gap-1.5 min-w-0 flex-1 pr-1 text-xs"
-                    >
-                      <FiFolder
-                        size={12}
-                        className={isRootSelected ? "text-primary" : "text-muted"}
-                      />
-                      <span className="truncate">{root.name}</span>
-                    </Link>
-
-                    <div className="flex items-center gap-1 shrink-0">
-                      <span className="text-[10px] font-bold text-muted">
-                        ({rootCount})
-                      </span>
-                      {hasChildren && (
-                        <button
-                          type="button"
-                          onClick={(e) => toggleCategoryExpand(rootId, e)}
-                          className="flex h-5 w-5 items-center justify-center rounded hover:bg-border/60 text-muted transition-colors cursor-pointer"
-                          aria-label={isExpanded ? "Collapse" : "Expand"}
-                        >
-                          {isExpanded ? (
-                            <FiChevronDown size={12} />
-                          ) : (
-                            <FiChevronRight size={12} />
-                          )}
-                        </button>
-                      )}
-                      {isPending && (
-                        <FiLoader size={10} className="animate-spin text-primary ml-1" />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Nested child categories */}
-                  {hasChildren && isExpanded && (
-                    <div className="flex flex-col gap-0.5 pl-4 border-l border-primary/20 ml-2 my-0.5 animate-in fade-in duration-150">
-                      {root.children.map((child) => {
-                        const isChildSelected =
-                          query.category?.toLowerCase() === child.name.toLowerCase();
-                        const childCount = getNodeCount(child, categoryCounts);
-                        const childHref = buildProductsHref(query, {
-                          category: isChildSelected ? root.name : child.name,
-                        });
-                        const isChildPending =
-                          pendingTarget === `cat-side-${child.name}`;
-
-                        return (
-                          <Link
-                            key={idOf(child)}
-                            href={childHref}
-                            onClick={(e) =>
-                              handleLinkClick(
-                                e,
-                                childHref,
-                                `cat-side-${child.name}`,
-                                onItemClick
-                              )
-                            }
-                            className={`flex items-center justify-between rounded-md px-2 py-0.5 text-[11px] transition-colors ${
-                              isChildSelected
-                                ? "bg-primary text-white font-bold shadow-2xs"
-                                : "text-muted hover:text-text hover:bg-muted-bg"
-                            }`}
-                          >
-                            <span className="truncate">• {child.name}</span>
-                            <span
-                              className={`text-[9px] ${
-                                isChildSelected ? "text-white/80" : "text-muted"
-                              }`}
-                            >
-                              {childCount}
-                            </span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {/* Shop by Seller */}
       {sellerOptions.length > 0 && (
         <div className="flex flex-col gap-1.5 border-t border-border/60 pt-2.5">
@@ -397,7 +216,7 @@ export function ProductsFilterSidebar({
               {sellerOptions.length} Sellers
             </span>
           </div>
-          <div className="custom-scrollbar flex max-h-32 flex-col gap-0.5 overflow-y-auto pr-1">
+          <div className="custom-scrollbar flex max-h-36 flex-col gap-0.5 overflow-y-auto pr-1">
             {sellerOptions.map((seller) => {
               const checked = isInList(query.seller, seller.id);
               const targetId = `seller-${seller.id}`;
