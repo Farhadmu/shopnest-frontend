@@ -66,6 +66,22 @@ export function OrderDetailView({
   const [riderComment, setRiderComment] = useState("");
   const [submittingRiderRate, setSubmittingRiderRate] = useState(false);
   const [riderRateSuccess, setRiderRateSuccess] = useState(false);
+  const [customerGeoLocation, setCustomerGeoLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setCustomerGeoLocation({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          });
+        },
+        () => {},
+        { timeout: 8000 }
+      );
+    }
+  }, []);
 
   const {
     currentLocation: socketLocation,
@@ -412,6 +428,8 @@ export function OrderDetailView({
                 deliveryAddress={tracking.deliveryAddress || order.shippingAddress}
                 pickupCoordinates={tracking.pickupCoordinates}
                 deliveryCoordinates={tracking.deliveryCoordinates}
+                storeLocation={tracking.pickupCoordinates}
+                customerLocation={customerGeoLocation ? { latitude: customerGeoLocation.latitude, longitude: customerGeoLocation.longitude, label: "You" } : null}
                 orderId={String(order.id || (order as any)._id || "")}
                 riderName={tracking.assignedRider?.name || "Assigned Courier"}
                 riderPhone={tracking.assignedRider?.phone}
