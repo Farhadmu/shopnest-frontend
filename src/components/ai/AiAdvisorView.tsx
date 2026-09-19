@@ -2,7 +2,9 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
+import { clientMutation } from "@/lib/core/client";
 import {
   FaRobot,
   FaPaperPlane,
@@ -16,9 +18,12 @@ import {
   FaQuestionCircle,
   FaTimes,
   FaBars,
+  FaExchangeAlt,
 } from "react-icons/fa";
 import { HiSparkles } from "react-icons/hi2";
 import { askConversationalAdvisor, CommerceCompanionOrder, CommerceCompanionWishlistItem, CommerceCompanionCartItem, CommerceCompanionAction } from "@/lib/api/commerce-companion";
+import { AIActionItem } from "@/lib/api/ai-core";
+import { AiActionConfirmationModal } from "./AiActionConfirmationModal";
 
 export interface SuggestedProduct {
   id: string;
@@ -66,9 +71,21 @@ const SAMPLE_PROMPTS = [
 export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
   const { data: session } = useSession();
   const isAuthenticated = !!session?.user;
+  const router = useRouter();
 
   const [input, setInput] = useState("");
   const [conversationId, setConversationId] = useState<string>("");
+  const [isHandingOff, setIsHandingOff] = useState(false);
+  const [selectedAction, setSelectedAction] = useState<AIActionItem | null>(null);
+  const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+  const [typingPhase, setTypingPhase] = useState(0);
+
+  const TYPING_PHASES = [
+    "Scanning catalog across 10,000+ verified products...",
+    "Auditing customer reviews, ratings & merchant trust...",
+    "Synthesizing personalized shopping recommendations...",
+  ];
+
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome-msg",
@@ -79,12 +96,75 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
     },
   ]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!loading) return;
+    const interval = setInterval(() => {
+      setTypingPhase((p) => (p + 1) % TYPING_PHASES.length);
+    }, 1600);
+    return () => clearInterval(interval);
+  }, [loading]);
   const [activeProducts, setActiveProducts] = useState<SuggestedProduct[]>([]);
   const [showContextPanel, setShowContextPanel] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const idCounterRef = useRef(0);
 
   const generateId = useCallback((prefix: string) => `${prefix}-${++idCounterRef.current}`, []);
+
+  const handleHandoffToCustomerCopilot = async () => {
+    setIsHandingOff(true);
+    try {
+      if (!isAuthenticated) {
+        router.push("/login?redirect=/dashboard/user?copilot=open");
+        return;
+      }
+      const lastMessagesSummary = messages
+        .slice(-4)
+        .map((m) => `${m.role}: ${m.content}`)
+        .join("\n");
+      const res = await clientMutation<{ handoffId: string }>("/ai/core/handoff", "POST", {
+        from: "ADVISOR",
+        to: "CUSTOMER_COPILOT",
+        productIds: activeProducts.map((p) => p.id),
+        conversationSummary: lastMessagesSummary,
+      });
+      if (res?.handoffId) {
+        router.push(`/dashboard/user?copilot=open&handoff=${res.handoffId}`);
+      } else {
+        router.push("/dashboard/user?copilot=open");
+      }
+    } catch (err) {
+      console.warn("Handoff trigger error:", err);
+      router.push("/dashboard/user?copilot=open");
+    } finally {
+      setIsHandingOff(false);
+    }
+  };
+
+  const promptHandoffConfirmation = () => {
+    const actionItem: AIActionItem = {
+      id: `handoff-action-${Date.now()}`,
+      riskLevel: "LOW_RISK_WRITE",
+      requiresConfirmation: true,
+      action: "HANDOFF_TO_CUSTOMER_COPILOT",
+      label: "Transfer to Personal Customer Copilot",
+      description: "Transfer your current browsing context, shortlisted products, and recent chat history into your authenticated Customer Copilot drawer for order placement or delivery tracking.",
+      payload: {
+        shortlistedProductCount: activeProducts.length,
+        candidateProducts: activeProducts.map((p) => p.title),
+      },
+    };
+    setSelectedAction(actionItem);
+    setIsActionModalOpen(true);
+  };
+
+  const handleConfirmAction = async (action: AIActionItem) => {
+    if (action.action === "HANDOFF_TO_CUSTOMER_COPILOT") {
+      await handleHandoffToCustomerCopilot();
+    } else if (action.targetUrl) {
+      router.push(action.targetUrl);
+    }
+  };
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -295,24 +375,33 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
         </div>
       </div>
 
-      {/* Main Grid - Responsive Layout */}
+      {/* Main Grid - Responsive Glassmorphic Layout */}
       <div className="grid gap-4 lg:gap-6 lg:grid-cols-[1fr_400px]">
-        {/* Chat Area */}
-        <div className="flex flex-col rounded-2xl sm:rounded-3xl border border-border bg-card/50 backdrop-blur-sm shadow-2xl overflow-hidden animate-fadeIn" style={{ height: 'calc(100vh - 200px)', minHeight: '500px', maxHeight: '800px' }}>
+        {/* Chat Area - Ultra Glassmorphic */}
+        <div className="relative flex flex-col rounded-3xl border border-purple-500/30 bg-slate-950/85 text-slate-100 backdrop-blur-2xl shadow-[0_25px_80px_rgba(168,85,247,0.18)] overflow-hidden animate-fadeIn" style={{ height: 'calc(100vh - 200px)', minHeight: '500px', maxHeight: '800px' }}>
+          {/* Ambient Glow Orbs */}
+          <div className="pointer-events-none absolute -top-28 -right-28 h-72 w-72 rounded-full bg-gradient-to-br from-purple-600/20 via-fuchsia-600/10 to-transparent blur-3xl opacity-50" />
+          <div className="pointer-events-none absolute -bottom-28 -left-28 h-72 w-72 rounded-full bg-gradient-to-tr from-pink-600/20 via-purple-600/10 to-transparent blur-3xl opacity-40" />
+
           {/* Chat Header */}
-          <div className="flex items-center justify-between border-b border-border px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-primary/5 to-transparent">
+          <div className="flex items-center justify-between border-b border-white/10 px-4 sm:px-6 py-3 sm:py-4 bg-slate-900/40 backdrop-blur-md relative z-10">
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="relative">
-                <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/25 animate-float">
-                  <FaRobot size={16} className="text-white sm:text-lg" />
+                <div className="h-9 w-9 sm:h-11 sm:w-11 rounded-2xl bg-gradient-to-br from-purple-600 via-fuchsia-600 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                  <FaRobot size={18} className="text-white" />
                 </div>
-                <span className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full bg-emerald-500 border-2 border-card animate-pulse" />
+                <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 border-2 border-slate-900 animate-pulse" />
               </div>
               <div>
-                <p className="text-sm sm:text-base font-bold text-text">ShopNest AI</p>
-                <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-emerald-500 font-medium">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Online
+                <p className="text-sm sm:text-base font-black text-white flex items-center gap-2">
+                  <span>ShopNest AI Shopping Advisor</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-bold border border-purple-500/35">
+                    HOLOGRAPHIC
+                  </span>
+                </p>
+                <div className="flex items-center gap-1.5 text-[10.5px] text-slate-400 font-medium mt-0.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Live Product Discovery & Ground-Truth Fact Verification
                 </div>
               </div>
             </div>
@@ -320,14 +409,14 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
             {/* Mobile Context Panel Toggle */}
             <button
               onClick={() => setShowContextPanel(!showContextPanel)}
-              className="lg:hidden p-2 rounded-xl hover:bg-muted transition-colors"
+              className="lg:hidden p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
             >
               {showContextPanel ? <FaTimes size={18} /> : <FaBars size={18} />}
             </button>
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 scroll-smooth">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 scroll-smooth relative z-10">
             {messages.map((msg, idx) => {
               const isAi = msg.role === "assistant";
               return (
@@ -337,27 +426,27 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
                   style={{ animationDelay: `${idx * 50}ms` }}
                 >
                   {isAi && (
-                    <div className="h-7 w-7 sm:h-8 sm:w-8 shrink-0 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mt-1">
-                      <FaRobot size={14} className="text-primary" />
+                    <div className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 rounded-2xl bg-gradient-to-br from-purple-600 to-fuchsia-600 flex items-center justify-center text-white shadow-md mt-0.5">
+                      <FaRobot size={15} />
                     </div>
                   )}
 
                   <div
-                    className={`max-w-[85%] sm:max-w-[80%] rounded-2xl sm:rounded-3xl p-3 sm:p-4 text-sm transition-all duration-300 ${
+                    className={`max-w-[85%] sm:max-w-[80%] rounded-3xl p-4 text-xs sm:text-sm leading-relaxed transition-all duration-300 shadow-xl backdrop-blur-xl ${
                       isAi
-                        ? "border border-border bg-gradient-to-br from-card to-muted/30 text-text shadow-md backdrop-blur-sm"
-                        : "bg-gradient-to-br from-primary to-primary/90 text-white shadow-lg shadow-primary/25"
+                        ? "border border-purple-500/25 bg-slate-900/85 text-slate-100"
+                        : "bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 text-white shadow-purple-500/25 border border-purple-400/30"
                     }`}
                   >
                     {msg.thinking && (
-                      <p className="mb-2 text-[10px] sm:text-xs text-muted-foreground italic flex items-center gap-1">
+                      <p className="mb-2 text-[10px] sm:text-xs text-purple-300 italic flex items-center gap-1 font-mono">
                         <FaSpinner className="animate-spin" size={10} /> {msg.thinking}
                       </p>
                     )}
-                    <p className="whitespace-pre-wrap leading-relaxed text-xs sm:text-sm">{msg.content}</p>
+                    <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                     <span
                       className={`mt-2 block text-[9px] sm:text-[10px] ${
-                        isAi ? "text-muted-foreground" : "text-white/70"
+                        isAi ? "text-slate-400" : "text-white/80"
                       } text-right`}
                     >
                       {msg.timestamp}
@@ -367,18 +456,26 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
               );
             })}
 
+            {/* Kinetic Animated Waveform Typing State */}
             {loading && (
               <div className="flex items-start gap-3 justify-start animate-fadeInUp">
-                <div className="h-8 w-8 shrink-0 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mt-1">
-                  <FaSpinner size={14} className="animate-spin text-primary" />
+                <div className="h-9 w-9 shrink-0 rounded-2xl bg-gradient-to-br from-purple-600 via-fuchsia-600 to-pink-600 flex items-center justify-center text-white shadow-lg animate-pulse mt-0.5">
+                  <FaRobot size={15} />
                 </div>
-                <div className="flex items-center gap-2 rounded-3xl border border-border bg-gradient-to-br from-card to-muted/30 px-4 py-3 text-xs font-medium text-muted-foreground shadow-md">
-                  <div className="flex gap-1">
-                    <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div className="rounded-2xl border border-white/10 bg-slate-900/90 backdrop-blur-2xl p-3.5 shadow-2xl space-y-2 max-w-[85%]">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex gap-1.5 items-center">
+                      <span className="h-2 w-2 rounded-full bg-fuchsia-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <span className="h-2 w-2 rounded-full bg-fuchsia-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <span className="h-2 w-2 rounded-full bg-fuchsia-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
+                    <span className="text-[11px] font-black uppercase tracking-wider bg-gradient-to-r from-purple-200 via-pink-100 to-fuchsia-300 bg-clip-text text-transparent">
+                      {TYPING_PHASES[typingPhase]}
+                    </span>
                   </div>
-                  Thinking...
+                  <div className="h-1.5 w-52 rounded-full bg-white/10 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-500 animate-pulse w-full" />
+                  </div>
                 </div>
               </div>
             )}
@@ -386,15 +483,15 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
           </div>
 
           {/* Quick Prompt Chips */}
-          <div className="border-t border-border/50 bg-muted/30">
+          <div className="border-t border-white/10 bg-slate-900/40 backdrop-blur-md relative z-10">
             <div className="px-3 sm:px-4 py-2">
-              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+              <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
                 {SAMPLE_PROMPTS.map((prompt, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleSend(prompt)}
                     disabled={loading}
-                    className="shrink-0 rounded-xl border border-border bg-card px-3 py-2 text-xs sm:text-sm text-text transition-all duration-300 hover:border-primary hover:text-primary hover:shadow-md hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs text-slate-300 transition-all duration-300 hover:border-purple-400/40 hover:text-white hover:bg-white/10 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer backdrop-blur-sm"
                   >
                     {prompt}
                   </button>
@@ -404,7 +501,7 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
           </div>
 
           {/* Input Area */}
-          <div className="border-t border-border p-3 sm:p-4 bg-card/80 backdrop-blur-sm">
+          <div className="border-t border-white/10 p-3 sm:p-4 bg-slate-900/50 backdrop-blur-md relative z-10">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -415,14 +512,14 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask me anything about ShopNest..."
+                placeholder="Ask me anything about ShopNest products, pricing, or specs..."
                 disabled={loading}
-                className="flex-1 rounded-xl sm:rounded-2xl border border-border bg-background px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-text outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground transition-all disabled:opacity-50"
+                className="flex-1 rounded-2xl border border-white/15 bg-black/40 px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-white outline-none focus:border-purple-400/50 focus:ring-2 focus:ring-purple-400/20 placeholder:text-slate-400 transition-all disabled:opacity-50 backdrop-blur-sm"
               />
               <button
                 type="submit"
                 disabled={loading || !input.trim()}
-                className="h-10 w-10 sm:h-12 sm:w-12 shrink-0 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary to-primary/90 text-white shadow-lg shadow-primary/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center"
+                className="h-10 w-10 sm:h-12 sm:w-12 shrink-0 rounded-2xl bg-gradient-to-br from-purple-600 via-fuchsia-600 to-pink-600 text-white shadow-lg shadow-purple-500/30 transition-all duration-300 hover:shadow-purple-500/50 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer"
               >
                 {loading ? <FaSpinner className="animate-spin text-sm sm:text-base" /> : <FaPaperPlane size={14} className="sm:text-base" />}
               </button>
@@ -564,6 +661,37 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
                         </p>
                       </div>
                     )}
+
+                    {/* Pro-Level Intelligent Handoff Card */}
+                    <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-purple-500/5 to-indigo-500/10 p-4 shadow-sm backdrop-blur-sm mt-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="h-7 w-7 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+                          <FaExchangeAlt size={12} />
+                        </div>
+                        <span className="text-xs font-black uppercase tracking-wider text-primary">Intelligent Handoff</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
+                        Transfer your browsing context to your private <strong>Customer Copilot</strong> to manage orders, check loyalty balance, or track real-time deliveries.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={promptHandoffConfirmation}
+                        disabled={isHandingOff}
+                        className="w-full py-2.5 px-3 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 text-white text-xs font-black shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer border border-white/20"
+                      >
+                        {isHandingOff ? (
+                          <>
+                            <FaSpinner className="animate-spin text-xs" />
+                            <span>Transferring Context...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Switch to Customer Copilot</span>
+                            <FaArrowRight size={11} />
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </>
                 );
               })()}
@@ -571,6 +699,15 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
           </div>
         </div>
       </div>
+
+      {/* Action Confirmation Modal for Shopping Advisor */}
+      <AiActionConfirmationModal
+        isOpen={isActionModalOpen}
+        action={selectedAction}
+        roleTheme="advisor"
+        onClose={() => setIsActionModalOpen(false)}
+        onConfirm={handleConfirmAction}
+      />
 
       <style jsx global>{`
         @keyframes fadeIn {
