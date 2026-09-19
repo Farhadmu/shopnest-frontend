@@ -391,6 +391,7 @@ export default function DeliveryProfilePage() {
                 className="w-full rounded-xl border border-border bg-background px-3.5 py-2 text-xs font-medium text-text"
               />
             </div>
+            {/* Personal Info Profile Photo Field with File Upload Trigger */}
             <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-text mb-1">Profile Photo</label>
               <div className="flex items-center gap-3">
