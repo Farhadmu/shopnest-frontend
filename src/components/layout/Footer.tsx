@@ -7,11 +7,17 @@ import { FaFacebookF, FaInstagram, FaLinkedinIn, FaTwitter, FaChevronDown } from
 import type { IconType } from "react-icons";
 import { APP_NAME } from "@/lib/constants";
 
-const socials: Array<[IconType, string]> = [
-  [FaFacebookF, "Facebook"],
-  [FaInstagram, "Instagram"],
-  [FaTwitter, "Twitter"],
-  [FaLinkedinIn, "LinkedIn"],
+interface SocialItem {
+  icon: IconType;
+  label: string;
+  href: string;
+}
+
+const socials: SocialItem[] = [
+  { icon: FaFacebookF, label: "Facebook", href: "https://www.facebook.com" },
+  { icon: FaInstagram, label: "Instagram", href: "https://www.instagram.com" },
+  { icon: FaTwitter, label: "Twitter", href: "https://twitter.com" },
+  { icon: FaLinkedinIn, label: "LinkedIn", href: "https://www.linkedin.com" },
 ];
 
 const footerColumns: Array<{ title: string; links: [string, string][] }> = [
@@ -134,15 +140,18 @@ export const Footer: React.FC = () => {
               deliveries.
             </p>
             <div className="mt-6 flex gap-2">
-              {socials.map(([Icon, label]) => (
-                <div
+              {socials.map(({ icon: Icon, label, href }) => (
+                <a
                   key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   aria-label={label}
                   title={label}
-                  className="grid h-9 w-9 place-items-center rounded-lg border border-border bg-muted-bg text-muted transition hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
+                  className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-border bg-muted-bg text-muted transition hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
                 >
                   <Icon size={13} />
-                </div>
+                </a>
               ))}
             </div>
           </div>
