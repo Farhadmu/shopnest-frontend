@@ -282,29 +282,29 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
             </div>
 
             {imageUrl && (
-              <div className="mb-3 overflow-hidden rounded-lg border border-border bg-surface">
+              <div className="mb-3 overflow-hidden rounded-xl border border-border bg-surface">
                 {/* Preview only — safe to use a plain img for arbitrary/external admin-entered URLs */}
                 <img src={imageUrl} alt="Banner preview" className="h-32 w-full object-cover" />
-                <div className="flex items-center justify-between gap-2 px-3 py-2">
-                  <span className="truncate text-xs font-medium text-muted">{imageUrl.split("/").pop()}</span>
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 bg-surface px-3.5 py-2.5">
+                  <span className="max-w-[200px] truncate text-xs font-medium text-muted sm:max-w-xs">{imageUrl.split("/").pop()}</span>
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={handleAutoExtract}
                       disabled={extractingColors}
-                      className="flex items-center gap-1 rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary transition hover:bg-primary/20 disabled:opacity-50"
+                      className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary/10 px-3 text-xs font-semibold text-primary transition hover:bg-primary/20 disabled:opacity-50"
                     >
                       {extractingColors ? (
-                        <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                        <RefreshCw className="h-3.5 w-3.5 animate-spin shrink-0" />
                       ) : (
-                        <Sparkles className="h-3.5 w-3.5" />
+                        <Sparkles className="h-3.5 w-3.5 shrink-0" />
                       )}
-                      {extractingColors ? "Extracting..." : "Auto-Extract Colors"}
+                      <span>{extractingColors ? "Extracting..." : "Auto-Extract Colors"}</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => { setImageUrl(""); setExtractedData(null); }}
-                      className="flex-shrink-0 text-xs font-semibold text-error hover:underline"
+                      className="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg px-2.5 text-xs font-semibold text-error transition hover:bg-error/10"
                     >
                       Remove
                     </button>
@@ -318,12 +318,12 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
             )}
 
             {mode === "upload" ? (
-              <label className="flex cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-primary/40 bg-surface px-4 py-6 text-sm font-semibold text-primary transition hover:border-primary">
+              <label className="flex cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-primary/40 bg-surface px-4 py-3.5 text-xs font-semibold text-primary transition hover:border-primary hover:bg-primary/5">
                 {uploading ? "Uploading..." : imageUrl ? "Replace image" : "Click to upload an image"}
                 <input type="file" accept="image/*" onChange={chooseFile} className="sr-only" disabled={uploading} />
               </label>
             ) : (
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <input
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
@@ -335,7 +335,7 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
                     type="button"
                     onClick={handleAutoExtract}
                     disabled={extractingColors}
-                    className="mt-1 flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-50"
+                    className="mt-1 inline-flex h-[38px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-50"
                   >
                     <Sparkles className="h-3.5 w-3.5" />
                     Extract
@@ -356,20 +356,56 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
               </select>
             </div>
             <div>
-              <label className={labelClass}>Subtitle</label>
-              <input value={subtitle} onChange={(e) => setSubtitle(e.target.value)} className={inputClass} />
+              <div className="flex items-center justify-between">
+                <label className={labelClass}>Subtitle</label>
+                <span className="text-[10px] font-mono text-muted">{subtitle.length}/60</span>
+              </div>
+              <input
+                value={subtitle}
+                onChange={(e) => setSubtitle(e.target.value)}
+                maxLength={60}
+                placeholder="Short secondary slogan"
+                className={inputClass}
+              />
             </div>
             <div>
-              <label className={labelClass}>Eyebrow Chip</label>
-              <input value={eyebrow} onChange={(e) => setEyebrow(e.target.value)} className={inputClass} />
+              <div className="flex items-center justify-between">
+                <label className={labelClass}>Eyebrow Chip</label>
+                <span className="text-[10px] font-mono text-muted">{eyebrow.length}/25</span>
+              </div>
+              <input
+                value={eyebrow}
+                onChange={(e) => setEyebrow(e.target.value)}
+                maxLength={25}
+                placeholder="e.g. EXCLUSIVE DEALS"
+                className={inputClass}
+              />
             </div>
             <div>
-              <label className={labelClass}>CTA Button Label</label>
-              <input value={buttonText} onChange={(e) => setButtonText(e.target.value)} className={inputClass} />
+              <div className="flex items-center justify-between">
+                <label className={labelClass}>CTA Button Label</label>
+                <span className="text-[10px] font-mono text-muted">{buttonText.length}/18</span>
+              </div>
+              <input
+                value={buttonText}
+                onChange={(e) => setButtonText(e.target.value)}
+                maxLength={18}
+                placeholder="Shop Now"
+                className={inputClass}
+              />
             </div>
             <div>
-              <label className={labelClass}>Headline Title</label>
-              <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} />
+              <div className="flex items-center justify-between">
+                <label className={labelClass}>Headline Title</label>
+                <span className="text-[10px] font-mono text-muted">{title.length}/45</span>
+              </div>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                maxLength={45}
+                placeholder="Main headline title"
+                className={inputClass}
+              />
             </div>
             <div>
               <div className="flex items-center justify-between">
@@ -396,9 +432,15 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
             <div>
               <div className="flex items-center justify-between gap-2">
                 <label className={labelClass}>Highlight Word / Accent</label>
-                <span className="rounded border border-warm/30 bg-warm/10 px-1.5 py-0.5 text-[10px] font-semibold text-warm">Applied in accent color</span>
+                <span className="text-[10px] font-mono text-muted">{highlight.length}/20</span>
               </div>
-              <input value={highlight} onChange={(e) => setHighlight(e.target.value)} className={inputClass} />
+              <input
+                value={highlight}
+                onChange={(e) => setHighlight(e.target.value)}
+                maxLength={20}
+                placeholder="e.g. Ultimate Ride"
+                className={inputClass}
+              />
               <p className="mt-1 text-[11px] text-muted">Stylized in warm accent color within the headline.</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -422,10 +464,22 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
               </div>
             </div>
             <div className="md:col-span-2">
-              <label className={labelClass}>Body Description</label>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <label className={labelClass}>Body Description</label>
+                  {placement !== "hero" && (
+                    <span className="rounded bg-muted-bg px-1.5 py-0.5 text-[10px] font-medium text-muted">
+                      Hero slot only (hidden for {placement})
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] font-mono text-muted">{description.length}/120</span>
+              </div>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                maxLength={120}
+                placeholder={placement === "hero" ? "Short 1-2 sentence description..." : "Description is only shown on Hero slot banners"}
                 rows={2}
                 className={inputClass}
               />
@@ -684,87 +738,125 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
             </div>
 
             {/* Banner preview card */}
-            <div
-              className="relative overflow-hidden rounded-xl shadow-md"
-              style={{ aspectRatio: "16/7", background: previewTheme === "light" ? "#f1f5f9" : "#0f172a" }}
-            >
-              {imageUrl ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={imageUrl}
-                  alt="Banner preview"
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xs text-muted">No image selected</span>
-                </div>
-              )}
-
-              {/* Overlay scrim */}
-              {overlayColor && (
-                <div
-                  className="absolute inset-0 transition-all duration-300"
-                  style={{ backgroundColor: overlayColor, opacity: overlayOpacity / 100 }}
-                />
-              )}
-
-              {/* Text content overlay */}
+            <div className="flex justify-center">
               <div
-                className="absolute inset-0 flex flex-col justify-end gap-1 p-4 sm:p-6"
+                className={`relative w-full overflow-hidden rounded-xl shadow-md transition-all ${placement === "side" ? "max-w-xs" : "w-full"
+                  }`}
                 style={{
-                  color:
-                    previewTheme === "light"
-                      ? lightTextColor || "#ffffff"
-                      : darkTextColor || "#0f172a",
+                  aspectRatio: placement === "side" ? "4/5" : "16/7",
+                  background: previewTheme === "light" ? "#f1f5f9" : "#0f172a",
                 }}
               >
-                {eyebrow && (
-                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-80 sm:text-xs">
-                    {eyebrow}
-                  </span>
-                )}
-                <p className="text-sm font-extrabold leading-tight drop-shadow-sm sm:text-lg">
-                  {title || <span className="opacity-40">Headline title…</span>}{" "}
-                  {highlight && (
-                    <span className="text-warm">{highlight}</span>
-                  )}
-                </p>
-                {subtitle && (
-                  <p className="text-xs opacity-80 sm:text-sm">{subtitle}</p>
+                {imageUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={imageUrl}
+                    alt="Banner preview"
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-xs text-muted">No image selected</span>
+                  </div>
                 )}
 
-                {/* CTA button */}
-                {buttonText && (
-                  <span
-                    className="mt-2 inline-flex w-fit items-center rounded-lg px-3.5 py-1.5 text-xs font-bold shadow-lg transition-transform"
-                    style={{
-                      backgroundColor:
-                        previewTheme === "light"
-                          ? lightButtonColor || "#ffffff"
-                          : darkButtonColor || "#5b5cf0",
-                      color:
-                        previewTheme === "light"
-                          ? lightTextColor || "#0f172a"
-                          : darkTextColor || "#ffffff",
-                    }}
-                  >
-                    {buttonText}
-                  </span>
-                )}
-              </div>
+                {/* Overlay scrim */}
+                <div
+                  className="absolute inset-0 transition-all duration-300"
+                  style={{
+                    backgroundColor: overlayColor || "#0B0F19",
+                    opacity: (overlayOpacity ?? 70) / 100,
+                  }}
+                />
 
-              {/* Theme badge */}
-              <div className="absolute right-2 top-2">
-                <span
-                  className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold backdrop-blur-md ${previewTheme === "light"
-                      ? "bg-amber-400/30 text-amber-950 dark:text-amber-100"
-                      : "bg-indigo-500/30 text-indigo-950 dark:text-indigo-100"
+                {/* Text content overlay matching home page */}
+                <div
+                  className={`absolute inset-0 flex flex-col ${placement === "hero"
+                      ? "justify-center gap-1.5 p-5 sm:p-6 lg:p-7 max-w-[85%] sm:max-w-[75%]"
+                      : "justify-end gap-1 p-4 sm:p-5 max-w-[90%]"
                     }`}
+                  style={{
+                    color:
+                      previewTheme === "light"
+                        ? lightTextColor || "#ffffff"
+                        : darkTextColor || "#ffffff",
+                  }}
                 >
-                  {previewTheme === "light" ? <Sun className="h-2.5 w-2.5" /> : <Moon className="h-2.5 w-2.5" />}
-                  {previewTheme === "light" ? "Light Mode Preview" : "Dark Mode Preview"}
-                </span>
+                  {eyebrow && (
+                    <span
+                      style={{ opacity: 0.8 }}
+                      className="text-[9px] font-bold uppercase tracking-widest sm:text-[10px]"
+                    >
+                      {eyebrow}
+                    </span>
+                  )}
+                  <h3
+                    className={`font-extrabold leading-tight drop-shadow-sm ${placement === "hero"
+                        ? "text-base sm:text-xl lg:text-2xl"
+                        : "text-sm sm:text-base leading-snug"
+                      }`}
+                  >
+                    {title || <span className="opacity-40">Headline title…</span>}{" "}
+                    {highlight && (
+                      <span className="text-warm font-extrabold">{highlight}</span>
+                    )}
+                  </h3>
+                  {subtitle && (
+                    <p
+                      style={{ opacity: 0.85 }}
+                      className={`font-medium ${placement === "hero" ? "text-xs sm:text-sm" : "text-xs"}`}
+                    >
+                      {subtitle}
+                    </p>
+                  )}
+                  {placement === "hero" && description && (
+                    <p
+                      style={{ opacity: 0.8 }}
+                      className="line-clamp-2 leading-relaxed text-xs sm:text-sm"
+                    >
+                      {description}
+                    </p>
+                  )}
+
+                  {/* CTA button matching home page */}
+                  {buttonText && (
+                    <span
+                      className={`mt-2 inline-flex w-fit items-center rounded-lg font-bold shadow-md transition-transform hover:scale-[1.02] ${placement === "hero"
+                          ? "px-4 py-2 text-xs sm:text-sm"
+                          : "px-3 py-1.5 text-[10px] sm:text-[11px]"
+                        }`}
+                      style={{
+                        backgroundColor:
+                          previewTheme === "light"
+                            ? lightButtonColor || "#ffffff"
+                            : darkButtonColor || "#5b5cf0",
+                        color:
+                          (previewTheme === "light" ? lightButtonColor : darkButtonColor) === "#ffffff" ||
+                          (previewTheme === "light" ? lightButtonColor : darkButtonColor) === "#FFFFFF"
+                            ? "#0f172a"
+                            : "#ffffff",
+                      }}
+                    >
+                      {buttonText}
+                    </span>
+                  )}
+                </div>
+
+                {/* Theme badge & Slot indicator */}
+                <div className="absolute right-2 top-2 flex items-center gap-1.5">
+                  <span className="rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-bold text-white uppercase backdrop-blur-md">
+                    {placement} Slot
+                  </span>
+                  <span
+                    className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold backdrop-blur-md ${previewTheme === "light"
+                        ? "bg-amber-400/30 text-amber-950 dark:text-amber-100"
+                        : "bg-indigo-500/30 text-indigo-950 dark:text-indigo-100"
+                      }`}
+                  >
+                    {previewTheme === "light" ? <Sun className="h-2.5 w-2.5" /> : <Moon className="h-2.5 w-2.5" />}
+                    {previewTheme === "light" ? "Light" : "Dark"}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -811,22 +903,22 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
             </span>
           </label>
 
-          <div className="flex w-full items-center justify-end gap-2.5 sm:w-auto">
+          <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
             {existing && (
               <button
                 type="button"
                 onClick={remove}
                 disabled={deleting || saving}
-                className="flex items-center gap-1.5 rounded-xl border border-error/30 px-3 py-2 text-xs font-semibold text-error transition hover:bg-error/10 disabled:opacity-60"
+                className="inline-flex h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-error/30 bg-surface px-3.5 text-xs font-semibold text-error transition hover:bg-error/10 disabled:opacity-60"
               >
-                <Trash2 className="h-3.5 w-3.5" />
-                {deleting ? "Removing..." : "Remove"}
+                <Trash2 className="h-3.5 w-3.5 shrink-0" />
+                <span>{deleting ? "Removing..." : "Remove"}</span>
               </button>
             )}
             <button
               type="button"
               onClick={resetColors}
-              className="rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted transition hover:bg-muted-bg"
+              className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-xl border border-border bg-surface px-3.5 text-xs font-semibold text-muted transition hover:bg-muted-bg hover:text-text"
             >
               Reset to Default
             </button>
@@ -834,7 +926,7 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="rounded-xl border border-border bg-surface px-4 py-2 text-xs font-semibold text-muted transition hover:bg-muted-bg"
+              className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-xl border border-border bg-surface px-4 text-xs font-semibold text-muted transition hover:bg-muted-bg hover:text-text"
             >
               Cancel
             </button>
@@ -842,7 +934,7 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
               type="button"
               onClick={save}
               disabled={saving || uploading}
-              className="rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-60"
+              className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-xl bg-primary px-5 text-xs font-semibold text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-60"
             >
               {saving ? "Saving..." : "Save Changes"}
             </button>

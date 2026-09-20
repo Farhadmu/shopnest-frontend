@@ -312,7 +312,8 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
             <input
               value={form.eyebrow}
               onChange={(event) => setForm({ ...form, eyebrow: event.target.value })}
-              maxLength={100}
+              maxLength={25}
+              placeholder="e.g. EXCLUSIVE DEALS"
               className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
             />
           </label>
@@ -321,7 +322,8 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
             <input
               value={form.title}
               onChange={(event) => setForm({ ...form, title: event.target.value })}
-              maxLength={200}
+              maxLength={45}
+              placeholder="Main headline"
               className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
             />
           </label>
@@ -330,7 +332,8 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
             <input
               value={form.highlight}
               onChange={(event) => setForm({ ...form, highlight: event.target.value })}
-              maxLength={100}
+              maxLength={20}
+              placeholder="e.g. Ultimate Ride"
               className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
             />
           </label>
@@ -339,7 +342,8 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
             <input
               value={form.subtitle}
               onChange={(event) => setForm({ ...form, subtitle: event.target.value })}
-              maxLength={300}
+              maxLength={60}
+              placeholder="Short secondary slogan"
               className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
             />
           </label>
@@ -348,7 +352,8 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
             <textarea
               value={form.description}
               onChange={(event) => setForm({ ...form, description: event.target.value })}
-              maxLength={500}
+              maxLength={120}
+              placeholder="Short 1-2 sentence description"
               rows={2}
               className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
             />
@@ -358,7 +363,7 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
             <input
               value={form.price}
               onChange={(event) => setForm({ ...form, price: event.target.value })}
-              maxLength={50}
+              maxLength={30}
               className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
             />
           </label>
@@ -367,7 +372,8 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
             <input
               value={form.buttonText}
               onChange={(event) => setForm({ ...form, buttonText: event.target.value })}
-              maxLength={80}
+              maxLength={18}
+              placeholder="Shop Now"
               className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 font-normal"
             />
           </label>
