@@ -14,12 +14,12 @@ import {
   getContrastingTextColor,
   type ExtractedPalette,
 } from "@/lib/utils/banner-color-utils";
-import type { EditSlot } from "./types";
+import type { EditSlot, BannerSaveResult } from "./types";
 
 interface HeroBannerEditModalProps {
   slot: EditSlot;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (result?: BannerSaveResult) => void;
 }
 
 const inputClass =
@@ -192,11 +192,12 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
     };
     try {
       if (existing) {
-        await updateHeroBanner(existing.id, body);
+        const updated = await updateHeroBanner(existing.id, body);
+        onSaved({ type: "update", banner: updated });
       } else {
-        await createHeroBanner(body as Omit<HeroBanner, "id" | "createdAt" | "updatedAt">);
+        const created = await createHeroBanner(body as Omit<HeroBanner, "id" | "createdAt" | "updatedAt">);
+        onSaved({ type: "create", banner: created });
       }
-      onSaved();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Failed to save banner.");
     } finally {
@@ -210,7 +211,7 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
     setError(null);
     try {
       await deleteHeroBanner(existing.id);
-      onSaved();
+      onSaved({ type: "delete", id: existing.id });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Failed to remove banner.");
     } finally {
