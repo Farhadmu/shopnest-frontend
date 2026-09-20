@@ -501,7 +501,19 @@ export default function SellerOrdersPage() {
 
                     {/* READY FOR PICKUP & TRACK COURIER BUTTONS */}
                     <div className="flex items-center gap-2">
-                      {(o.status === "confirmed" || o.status === "processing") && (
+                      {o.status === "pending" && (
+                        <button
+                          type="button"
+                          onClick={() => handleAdvanceStatus(orderId, "confirmed")}
+                          disabled={isUpdating}
+                          className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2 text-xs font-black text-white shadow-md shadow-emerald-600/20 transition cursor-pointer disabled:opacity-50"
+                        >
+                          <FiCheckCircle size={13} />
+                          <span>{isUpdating ? "Accepting..." : "Accept Order"}</span>
+                        </button>
+                      )}
+
+                      {(o.status === "confirmed" || o.status === "processing") && !isReadyForPickup && (
                         <button
                           type="button"
                           onClick={() => handleOpenPickupModal(o)}
