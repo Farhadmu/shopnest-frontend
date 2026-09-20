@@ -1384,7 +1384,10 @@ export default function AdminDashboard() {
                         <span className="font-bold text-text">Stock Health</span>
                         <span className="font-extrabold text-emerald-500">{cat.stockHealthPercent ?? 100}% In-Stock</span>
                       </div>
-                      <div className="w-full h-2 bg-muted-bg rounded-full overflow-hidden flex">
+                      <div
+                        className="w-full h-2 bg-muted-bg rounded-full overflow-hidden flex"
+                        title={`${cat.stockHealthPercent ?? 100}% of catalog items in-stock`}
+                      >
                         <div
                           className="bg-emerald-500 h-full rounded-full transition-all"
                           style={{ width: `${cat.stockHealthPercent ?? 100}%` }}
