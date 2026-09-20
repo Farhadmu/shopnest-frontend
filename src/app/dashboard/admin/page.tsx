@@ -1062,7 +1062,7 @@ export default function AdminDashboard() {
                   forecastData.categoryForecasts.map((cf, idx) => (
                     <div
                       key={idx}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-3.5 text-xs"
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-3.5 text-xs transition-all hover:border-primary/40"
                     >
                       <div>
                         <div className="flex items-center gap-2">
