@@ -73,8 +73,8 @@ function PromoCard({
       <div className="relative z-10 flex flex-col justify-end gap-1 max-w-[90%] sm:max-w-[85%]">
         {card.eyebrow && (
           <p
-            style={customTextColor ? { color: customTextColor, opacity: 0.8 } : undefined}
-            className={`text-[9px] font-bold uppercase tracking-widest sm:text-[10px] ${isLight ? "text-white/80" : "text-muted"
+            style={customTextColor ? { color: customTextColor, opacity: 0.85 } : undefined}
+            className={`text-[8.5px] font-bold uppercase tracking-widest sm:text-[10px] ${isLight ? "text-white/80" : "text-muted"
               }`}
           >
             {card.eyebrow}
@@ -82,7 +82,7 @@ function PromoCard({
         )}
         <h3
           style={customTextColor ? { color: customTextColor } : undefined}
-          className={`text-sm font-extrabold leading-snug drop-shadow-sm sm:text-base ${isLight ? "text-white" : "text-text"
+          className={`text-xs font-extrabold leading-snug drop-shadow-sm sm:text-base ${isLight ? "text-white" : "text-text"
             }`}
         >
           {card.title}
@@ -99,7 +99,7 @@ function PromoCard({
         {card.subtitle && (
           <p
             style={customTextColor ? { color: customTextColor, opacity: 0.85 } : undefined}
-            className={`text-xs opacity-85 ${isLight ? "text-white/85" : "text-muted"}`}
+            className={`hidden text-xs opacity-85 sm:block ${isLight ? "text-white/85" : "text-muted"}`}
           >
             {card.subtitle}
           </p>
@@ -108,13 +108,13 @@ function PromoCard({
         {card.price && (
           <p
             style={customTextColor ? { color: customTextColor } : undefined}
-            className={`mt-0.5 text-[11px] sm:text-xs ${isLight ? "text-white/80" : "text-text"
+            className={`mt-0.5 text-[10px] sm:text-xs ${isLight ? "text-white/80" : "text-text"
               }`}
           >
             {card.title.toLowerCase().includes("from") ? "" : "FROM "}
             <span
               style={customTextColor ? { color: customTextColor } : undefined}
-              className={`text-sm font-bold sm:text-base ${isLight ? "text-success" : "text-primary"
+              className={`text-xs font-bold sm:text-base ${isLight ? "text-success" : "text-primary"
                 }`}
             >
               {card.price}
@@ -133,7 +133,7 @@ function PromoCard({
                 : undefined
             }
             href={card.buttonLink}
-            className={`mt-2 inline-flex w-fit items-center rounded-lg px-3 py-1.5 text-[10px] font-bold tracking-wide shadow-md transition-transform hover:scale-[1.02] sm:mt-2.5 sm:px-4 sm:py-2 sm:text-[11px] ${customButtonColor
+            className={`mt-1 inline-flex w-fit items-center rounded-lg px-2.5 py-1 text-[9.5px] font-bold tracking-wide shadow-md transition-transform hover:scale-[1.02] sm:mt-2.5 sm:px-4 sm:py-2 sm:text-[11px] ${customButtonColor
                 ? ""
                 : isLight
                   ? "bg-white text-slate-900 hover:bg-white/90"
@@ -298,13 +298,13 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
           exit={{ opacity: 0, x: -15, filter: "blur(3px)" }}
           transition={{ duration: 0.75, ease: PAGE_FLIP_EASE }}
-          className="relative z-10 flex h-full flex-col justify-center gap-1.5 max-w-[95%] p-5 sm:max-w-[85%] sm:gap-2 sm:p-6 lg:max-w-[75%] xl:max-w-[70%] lg:p-8"
+          className="relative z-10 flex h-full flex-col justify-center gap-1 max-w-[90%] p-4 sm:max-w-[85%] sm:gap-2 sm:p-6 lg:max-w-[75%] xl:max-w-[70%] lg:p-8"
           style={customTextColor ? { color: customTextColor, transformOrigin: "left center" } : { transformOrigin: "left center" }}
         >
           {slide.eyebrow && (
             <span
-              style={customTextColor ? { color: customTextColor, opacity: 0.8 } : undefined}
-              className={`text-[10px] font-bold uppercase tracking-widest sm:text-xs ${isLight ? "text-white/80" : "text-muted"}`}
+              style={customTextColor ? { color: customTextColor, opacity: 0.85 } : undefined}
+              className={`text-[9px] font-bold uppercase tracking-widest sm:text-xs ${isLight ? "text-white/80" : "text-muted"}`}
             >
               {slide.eyebrow}
             </span>
@@ -312,7 +312,7 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
 
           <h2
             style={customTextColor ? { color: customTextColor } : undefined}
-            className={`text-xl font-extrabold leading-tight drop-shadow-sm sm:text-2xl lg:text-3xl ${isLight ? "text-white" : "text-text"
+            className={`text-base font-extrabold leading-snug drop-shadow-sm sm:text-2xl lg:text-3xl ${isLight ? "text-white" : "text-text"
               }`}
           >
             {slide.title}
@@ -329,7 +329,7 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           {slide.subtitle && (
             <p
               style={customTextColor ? { color: customTextColor, opacity: 0.85 } : undefined}
-              className={`text-xs opacity-85 sm:text-sm ${isLight ? "text-white/85" : "text-muted"}`}
+              className={`hidden text-xs opacity-85 sm:block sm:text-sm ${isLight ? "text-white/85" : "text-muted"}`}
             >
               {slide.subtitle}
             </p>
@@ -338,7 +338,7 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           {slide.description && (
             <p
               style={customTextColor ? { color: customTextColor, opacity: 0.8 } : undefined}
-              className={`line-clamp-2 mt-0.5 text-xs leading-relaxed sm:text-sm ${isLight ? "text-white/80" : "text-muted"
+              className={`hidden line-clamp-2 mt-0.5 text-xs leading-relaxed sm:block sm:text-sm ${isLight ? "text-white/80" : "text-muted"
                 }`}
             >
               {slide.description}
@@ -355,7 +355,7 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                 : undefined
             }
             href={slide.buttonLink}
-            className={`mt-2 inline-flex w-fit items-center rounded-lg px-4 py-2 text-xs font-bold tracking-wide shadow-md transition-transform hover:scale-[1.02] sm:mt-3 sm:px-6 sm:py-2.5 sm:text-sm ${customButtonColor
+            className={`mt-1.5 inline-flex w-fit items-center rounded-lg px-3.5 py-1.5 text-xs font-bold tracking-wide shadow-md transition-transform hover:scale-[1.02] sm:mt-3 sm:px-6 sm:py-2.5 sm:text-sm ${customButtonColor
                 ? ""
                 : isLight
                   ? "bg-white text-slate-900 hover:bg-white/90"
