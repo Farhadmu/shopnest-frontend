@@ -565,28 +565,20 @@ export default function SellerOrdersPage() {
                   </div>
                 </div>
 
-                {/* Status Action Buttons */}
-                <div className="pt-2 border-t border-border/40 flex flex-wrap items-center justify-between gap-3">
-                  <span className="text-xs font-semibold text-muted">Advance Fulfillment Status:</span>
-                  <div className="flex flex-wrap gap-2">
-                    {ORDER_STEPS.map((step) => {
-                      const isActive = o.status === step.key;
-                      return (
-                        <button
-                          key={step.key}
-                          type="button"
-                          disabled={isUpdating || isActive}
-                          onClick={() => handleAdvanceStatus(orderId, step.key)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                            isActive
-                              ? "bg-emerald-500 text-white cursor-default"
-                              : "bg-background border border-border text-foreground hover:bg-primary hover:text-white"
-                          }`}
-                        >
-                          {isActive ? `✓ ${step.label}` : step.label}
-                        </button>
-                      );
-                    })}
+                {/* ─── FULFILLMENT & DELIVERY LIFECYCLE ─── */}
+                <div className="pt-3 border-t border-border/40 space-y-3">
+                  {/* Header with clear division of responsibility */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <span className="font-bold text-foreground flex items-center gap-1.5">
+                      <FiTruck className="text-primary" /> Fulfillment & Delivery Lifecycle:
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted bg-muted-bg/60 px-2.5 py-1 rounded-full border border-border/50">
+                      <FaLock size={10} className="text-amber-500" /> Delivery stages auto-update via Delivery Partner
+                    </span>
+                  </div>
+
+                  {/* Stepper Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-xs">
                   </div>
                 </div>
               </div>
