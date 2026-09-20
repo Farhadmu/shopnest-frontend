@@ -7,7 +7,6 @@ import SellersSection from "@/components/home/SellersSection";
 import HowItWorksSection from "@/components/home/HowItWorksSection";
 import ProofSection from "@/components/home/ProofSection";
 import DevelopersBanner from "@/components/home/DevelopersBanner";
-import { defaultBannerData } from "@/lib/banner/BannerData";
 import AiIntelligenceSection from "@/components/home/AiIntelligenceSection";
 import FeaturedProductsSection from "@/components/home/FeaturedProductsSection";
 import TrendingSection from "@/components/home/Trending/TrendingSection";
@@ -25,7 +24,7 @@ function HomePageContent() {
   return (
     <div className="flex flex-col gap-10 sm:gap-14 lg:gap-16 overflow-hidden">
       {/* 01 — Hero */}
-      <BannerSection data={defaultBannerData} initialCategories={categories} />
+      <BannerSection initialCategories={categories} />
 
       {/* 02 — Trust */}
       <TrustFeatures />
