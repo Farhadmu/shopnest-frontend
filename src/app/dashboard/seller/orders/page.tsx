@@ -650,6 +650,102 @@ export default function SellerOrdersPage() {
                         )}
                       </div>
                     </div>
+
+                    {/* Step 3: Courier Picked Up (Delivery Partner - LOCKED for Seller) */}
+                    <div
+                      className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
+                        isPickedUp
+                          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                          : activeDelivery?.status === "assigned" || activeDelivery?.status === "pickup_started"
+                          ? "border-amber-500/40 bg-amber-500/5 text-amber-600 dark:text-amber-400"
+                          : "border-border/60 bg-muted-bg/30 text-muted opacity-75"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-muted flex items-center gap-1">
+                            <FaLock size={8} /> Step 3 • Courier
+                          </span>
+                          {isPickedUp ? (
+                            <FiCheckCircle className="text-emerald-500 shrink-0" />
+                          ) : (
+                            (activeDelivery?.status === "assigned" || activeDelivery?.status === "pickup_started") && (
+                              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                            )
+                          )}
+                        </div>
+                        <div className="font-extrabold text-xs">
+                          {isPickedUp
+                            ? "Package Picked Up"
+                            : activeDelivery?.status === "assigned" || activeDelivery?.status === "pickup_started"
+                            ? "Courier Assigned"
+                            : "Courier Pickup"}
+                        </div>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-border/30">
+                        <span className="text-[10px] text-muted font-medium block">
+                          {isPickedUp
+                            ? "In Transit"
+                            : activeDelivery?.status === "assigned" || activeDelivery?.status === "pickup_started"
+                            ? "En route to store"
+                            : isReadyForPickup
+                            ? "Awaiting claim"
+                            : "Locked"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Step 4: Out for Delivery (Delivery Partner - LOCKED for Seller) */}
+                    <div
+                      className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
+                        isOutForDelivery
+                          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                          : "border-border/60 bg-muted-bg/30 text-muted opacity-75"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-muted flex items-center gap-1">
+                            <FaLock size={8} /> Step 4 • Courier
+                          </span>
+                          {isOutForDelivery && <FiCheckCircle className="text-emerald-500 shrink-0" />}
+                        </div>
+                        <div className="font-extrabold text-xs">
+                          {isOutForDelivery ? "Out for Delivery" : "Final Delivery"}
+                        </div>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-border/30">
+                        <span className="text-[10px] text-muted font-medium block">
+                          {isOutForDelivery ? "Heading to buyer" : "Courier auto-update"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Step 5: Delivered (Delivery Partner - LOCKED for Seller) */}
+                    <div
+                      className={`p-3 rounded-xl border flex flex-col justify-between transition-all col-span-2 sm:col-span-1 ${
+                        isDelivered
+                          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                          : "border-border/60 bg-muted-bg/30 text-muted opacity-75"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-muted flex items-center gap-1">
+                            <FaLock size={8} /> Step 5 • Courier
+                          </span>
+                          {isDelivered && <FiCheckCircle className="text-emerald-500 shrink-0" />}
+                        </div>
+                        <div className="font-extrabold text-xs">
+                          {isDelivered ? "Delivered" : "Delivery Handover"}
+                        </div>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-border/30">
+                        <span className="text-[10px] text-muted font-medium block">
+                          {isDelivered ? "Customer verified" : "OTP verified"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
