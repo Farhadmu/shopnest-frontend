@@ -107,7 +107,7 @@ export default function TrustFeatures() {
 
   return (
 
-    <section className="py-10">
+    <section className="w-full">
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
 

@@ -82,7 +82,7 @@ export default function HowItWorksSection() {
     "M 125 44 C 225 44, 275 256, 375 256 C 475 256, 525 44, 625 44 C 725 44, 775 256, 875 256";
 
   return (
-    <section className="relative w-full my-6 overflow-hidden rounded-[2.5rem] bg-slate-50/70 px-4 py-8 transition-colors duration-300 dark:bg-[#090614]/80 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
+    <section className="relative w-full overflow-hidden rounded-[2.5rem] bg-slate-50/70 px-4 py-8 transition-colors duration-300 dark:bg-[#090614]/80 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
       {/* Background soft ambient lighting */}
       <div
         aria-hidden="true"

@@ -31,7 +31,7 @@ function HomePageContent() {
       {/* Homepage content: fades in once isHomeReady */}
       <div
         className={[
-          "space-y-4 overflow-hidden",
+          "flex flex-col gap-10 sm:gap-14 lg:gap-16 overflow-hidden",
           "transition-opacity duration-500",
           isHomeReady ? "opacity-100" : "opacity-0",
         ].join(" ")}
