@@ -10,7 +10,7 @@ import { DEVELOPERS } from "@/data/developers";
 export default function DevelopersBanner() {
   return (
     <section
-      className="py-12 sm:py-16 relative overflow-hidden"
+      className="relative w-full overflow-hidden"
       aria-label="Engineering Team Spotlight"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">

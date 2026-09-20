@@ -92,7 +92,7 @@ export default function ShopByCategory({ initialCategories }: {
   };
 
   return (
-    <section className="py-12">
+    <section className="w-full">
       <div className="mb-8 flex items-end justify-between">
         <div>
           <div className="mb-3 flex items-center gap-2">

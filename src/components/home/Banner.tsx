@@ -780,7 +780,7 @@ export default function BannerSection({
   return (
     <section
       ref={sectionRef}
-      className={`grid gap-4 pb-8 ${hasSideCards
+      className={`grid gap-4 ${hasSideCards
           ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-[165px_1fr_260px] xl:grid-cols-[175px_1fr_280px]"
           : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-[165px_1fr] xl:grid-cols-[175px_1fr]"
         }`}

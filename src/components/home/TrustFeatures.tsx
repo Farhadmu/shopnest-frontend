@@ -88,7 +88,7 @@ const features: FeatureItem[] = [
 
 export default function TrustFeatures() {
   return (
-    <section className="py-6 sm:py-8" aria-label="Platform Trust Standards">
+    <section className="w-full" aria-label="Platform Trust Standards">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {features.map((item, index) => {
           const Icon = item.icon;
