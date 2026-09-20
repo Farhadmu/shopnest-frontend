@@ -253,16 +253,13 @@ function RegisterForm() {
         setError(res.error.message || "Registration failed.");
         return;
       }
-      // Sync guest cart & wishlist to database
-      await syncGuestDataToServer();
-      if (role === "delivery_man") {
-        router.replace("/delivery/register");
-      } else if (role === "seller") {
-        router.replace("/become-seller");
-      } else {
-        router.replace(next);
-      }
-      router.refresh();
+      // Redirect user to the OTP email verification page
+      const verifyParams = new URLSearchParams({
+        email: email.trim().toLowerCase(),
+        next: next || "/",
+        role,
+      });
+      router.replace(`/verify-email?${verifyParams.toString()}`);
     } catch (err) {
       console.error("Sign up error:", err);
       setError(err instanceof Error ? err.message : "Unable to register.");
