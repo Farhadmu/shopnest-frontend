@@ -58,8 +58,9 @@ interface Message {
 }
 
 interface AiCommerceCopilotProps {
-  role?: "customer" | "seller" | "admin";
+  role?: "customer" | "seller" | "admin" | "advisor";
   compact?: boolean;
+  positionClass?: string;
 }
 
 // Pro-Level Role Theme Matrix
@@ -105,6 +106,20 @@ const ROLE_THEMES = {
     dotColor: "bg-indigo-400",
     actionBtn: "bg-indigo-500/15 text-indigo-300 border-indigo-500/40 hover:bg-indigo-600 hover:text-white",
     launcherBg: "bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 shadow-indigo-500/30",
+  },
+  advisor: {
+    themeKey: "advisor" as const,
+    roleName: "ShopNest AI Advisor",
+    subtitle: "Product Discovery, Instant Answers & Live Recommendations",
+    iconBg: "from-indigo-600 via-violet-600 to-purple-600",
+    glowOrb: "from-violet-500/20 via-indigo-500/10 to-transparent",
+    borderGlow: "border-violet-500/35 shadow-[0_0_50px_rgba(139,92,246,0.22)]",
+    pillBadge: "bg-violet-500/15 text-violet-300 border-violet-500/35",
+    userBubble: "bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 text-white shadow-lg shadow-indigo-500/20 border border-violet-400/30",
+    assistantBubble: "bg-slate-900/85 border border-violet-500/25 text-slate-100 shadow-xl backdrop-blur-xl",
+    dotColor: "bg-amber-400",
+    actionBtn: "bg-violet-500/15 text-violet-300 border-violet-500/40 hover:bg-violet-600 hover:text-white",
+    launcherBg: "bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 shadow-violet-500/35",
   },
 };
 
@@ -398,11 +413,15 @@ function ExecutiveBriefing({ data }: { data: CopilotResponse }) {
 }
 
 // Main Component
-export function AiCommerceCopilot({ role = "customer", compact = false }: AiCommerceCopilotProps) {
+export function AiCommerceCopilot({
+  role = "customer",
+  compact = false,
+  positionClass,
+}: AiCommerceCopilotProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const sessionRole = (session?.user as any)?.role as "customer" | "seller" | "admin" | undefined;
-  const effectiveRole = sessionRole || role;
+  const effectiveRole = role === "advisor" ? "advisor" : (sessionRole || role);
   const theme = ROLE_THEMES[effectiveRole] || ROLE_THEMES.customer;
 
   const [isOpen, setIsOpen] = useState(false);
@@ -424,8 +443,12 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
       ? "Querying marketplace schema & risk radar..."
       : effectiveRole === "seller"
       ? "Analyzing store sales & inventory velocity..."
+      : effectiveRole === "advisor"
+      ? "Scanning 10,000+ verified products & live deals..."
       : "Verifying live prices, reviews & stock...",
-    "Auditing Anti-IDOR role constraints...",
+    effectiveRole === "advisor"
+      ? "Auditing merchant quality, stock & customer ratings..."
+      : "Auditing Anti-IDOR role constraints...",
     "Synthesizing verified AI recommendations...",
   ];
 
@@ -460,6 +483,8 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
           ? "Good day, Admin. I'm your Marketplace Intelligence Copilot with direct, secure access to your marketplace schema, anomalies, and store audits.\n\nHere is your real-time operations console."
           : effectiveRole === "seller"
           ? "Welcome! I'm your AI Business Intelligence Copilot. I can analyze your sales velocity, low-stock hazards, and customer order statuses in real time."
+          : effectiveRole === "advisor"
+          ? "Hello! 👋 I'm your ShopNest AI Advisor. I can help you find products, discover deals, compare options, and answer any questions about shopping with ShopNest. What are you looking for today?"
           : "Hello! I'm your Personal Shopping Copilot. I have live access to verified products, your active orders, wishlist, and cart. How can I help you today?",
         timestamp: new Date(),
       };
@@ -562,6 +587,8 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
           ? "ADMIN_COPILOT"
           : effectiveRole === "seller"
           ? "SELLER_COPILOT"
+          : effectiveRole === "advisor"
+          ? "ADVISOR"
           : "CUSTOMER_COPILOT";
 
       try {
@@ -961,6 +988,14 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
       { label: "Review summary", query: "Summarize my recent reviews" },
     ],
     admin: ADMIN_QUICK_ACTIONS,
+    advisor: [
+      { label: "🔥 Trending Products", query: "What are the most popular and trending products right now?" },
+      { label: "🏷️ Best Deals Today", query: "Show me the top discount offers and deals today" },
+      { label: "⚡ Smart Gadgets", query: "Recommend best-rated electronic gadgets and smartphones" },
+      { label: "🚚 Shipping & Delivery", query: "How does shipping, payment, and delivery work on ShopNest?" },
+      { label: "🔍 Under ৳3,000", query: "Find me high-rated products under ৳3,000" },
+      { label: "🛡️ Return & Warranty", query: "What is ShopNest's return and replacement policy?" },
+    ],
   };
 
   return (
@@ -970,17 +1005,22 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
         <button
           type="button"
           onClick={() => { setIsOpen(true); setIsMinimized(false); }}
-          className={`group fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex items-center gap-2 sm:gap-3 rounded-full ${theme.launcherBg} px-3.5 py-2.5 sm:px-5 sm:py-3.5 text-xs font-black tracking-wide text-white shadow-2xl hover:shadow-[0_0_35px_rgba(0,0,0,0.5)] transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer border border-white/25 backdrop-blur-xl`}
+          className={`group fixed ${positionClass || "bottom-4 right-4 sm:bottom-6 sm:right-6"} z-40 flex items-center justify-center gap-2 sm:gap-3 rounded-full ${theme.launcherBg} p-3 sm:px-5 sm:py-3.5 text-xs font-black tracking-wide text-white shadow-2xl hover:shadow-[0_0_35px_rgba(139,92,246,0.5)] transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer border border-white/30 backdrop-blur-xl ring-2 ring-white/20`}
           aria-label={`Open ${theme.roleName}`}
+          title={theme.roleName}
         >
+          {/* Subtle Outer Glow Ring on Hover */}
+          <span className="pointer-events-none absolute -inset-0.5 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 opacity-0 blur-sm transition-opacity duration-300 group-hover:opacity-80" />
+
           <span className="relative flex h-2.5 w-2.5 sm:h-3 sm:w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-85" />
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 sm:h-3 sm:w-3 bg-white" />
           </span>
-          <Bot className="h-4 w-4 group-hover:rotate-12 transition-transform duration-200" />
-          <span className="sm:hidden uppercase font-black tracking-wider text-[11px]">AI Copilot</span>
-          <span className="hidden sm:inline uppercase font-black tracking-wider">{theme.roleName}</span>
-          <span className="hidden sm:inline-block text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full uppercase border border-white/20">
+          <Sparkles className="relative h-4 w-4 sm:h-4.5 sm:w-4.5 text-amber-300 fill-amber-300/80 group-hover:rotate-12 transition-transform duration-200 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)] shrink-0" />
+          <span className="hidden sm:inline uppercase font-black tracking-wider text-xs relative truncate max-w-[180px]">
+            {theme.roleName}
+          </span>
+          <span className="hidden sm:inline-block text-[9.5px] font-extrabold bg-white/25 px-2 py-0.5 rounded-full uppercase border border-white/25 tracking-widest relative shrink-0">
             PRO AI
           </span>
         </button>
@@ -992,7 +1032,7 @@ export function AiCommerceCopilot({ role = "customer", compact = false }: AiComm
           className={
             compact
               ? "rounded-3xl border border-white/10 bg-slate-950/80 backdrop-blur-2xl p-4 shadow-2xl"
-              : "fixed inset-0 z-50 flex flex-col justify-end items-center sm:items-end bg-black/70 backdrop-blur-sm p-0 sm:p-3 md:p-5 overflow-hidden"
+              : "fixed inset-0 z-[60] flex flex-col justify-end items-center sm:items-end bg-black/70 backdrop-blur-sm p-0 sm:p-3 md:p-5 overflow-hidden"
           }
           onClick={(e) => {
             if (!compact && e.target === e.currentTarget) setIsOpen(false);
