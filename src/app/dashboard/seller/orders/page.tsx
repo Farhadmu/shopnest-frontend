@@ -579,6 +579,77 @@ export default function SellerOrdersPage() {
 
                   {/* Stepper Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-xs">
+                    {/* Step 1: Accept Order (Seller Control) */}
+                    <div
+                      className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
+                        isAccepted
+                          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                          : "border-primary/40 bg-primary/5 text-primary"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-muted">Step 1 • Seller</span>
+                          {isAccepted && <FiCheckCircle className="text-emerald-500 shrink-0" />}
+                        </div>
+                        <div className="font-extrabold text-xs">
+                          {isAccepted ? "Order Accepted" : "Pending Acceptance"}
+                        </div>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-border/30">
+                        {o.status === "pending" ? (
+                          <button
+                            type="button"
+                            disabled={isUpdating}
+                            onClick={() => handleAdvanceStatus(orderId, "confirmed")}
+                            className="w-full py-1 px-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[11px] shadow-sm transition"
+                          >
+                            {isUpdating ? "Accepting..." : "Accept Order"}
+                          </button>
+                        ) : (
+                          <span className="text-[10px] text-muted font-medium flex items-center gap-1">
+                            ✓ Confirmed
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Step 2: Ready for Pickup (Seller Control) */}
+                    <div
+                      className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
+                        isReadyForPickup
+                          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                          : isAccepted
+                          ? "border-primary/40 bg-primary/5 text-primary"
+                          : "border-border/60 bg-card text-muted opacity-60"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-muted">Step 2 • Seller</span>
+                          {isReadyForPickup && <FiCheckCircle className="text-emerald-500 shrink-0" />}
+                        </div>
+                        <div className="font-extrabold text-xs">
+                          {isReadyForPickup ? "Ready for Pickup" : "Pack & Dispatch"}
+                        </div>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-border/30">
+                        {!isReadyForPickup && isAccepted ? (
+                          <button
+                            type="button"
+                            disabled={isReadying}
+                            onClick={() => handleOpenPickupModal(o)}
+                            className="w-full py-1 px-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-[11px] shadow-sm transition"
+                          >
+                            {isReadying ? "Dispatching..." : "Ready for Pickup"}
+                          </button>
+                        ) : (
+                          <span className="text-[10px] text-muted font-medium">
+                            {isReadyForPickup ? "In Delivery Pool" : "Accept order first"}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
