@@ -15,11 +15,19 @@ import { useSession } from "@/lib/auth-client";
 import { recordSession } from "@/lib/api/security-intelligence";
 
 const AUTH_ROUTES = ["/login", "/register", "/forgot-password", "/reset-password"];
+const emptySubscribe = () => () => {};
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const recognizedUserId = useRef<string | null>(null);
+
+  const isHydrated = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
+  const isAuthenticated = isHydrated && Boolean(session?.user);
 
   // Report this browser as a device for the signed-in user as soon as a session
   // exists — password login, sign-up, social login and restored sessions all
@@ -72,13 +80,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </ToastProvider>
     );
   }
-
-  const isHydrated = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false,
-  );
-  const isAuthenticated = isHydrated && Boolean(session?.user);
 
   return (
     <ToastProvider>
