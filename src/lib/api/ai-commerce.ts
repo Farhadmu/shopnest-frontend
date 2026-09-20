@@ -68,14 +68,44 @@ export interface CompareResult {
   summary: string;
   verdict?: string;
   bestValueId?: string;
+  winnerByValue?: string;
+  winnerByPriority?: {
+    criterion: string;
+    productId: string;
+    reason: string;
+  } | null;
+  table?: Array<{
+    id: string;
+    prosText: string;
+    consText: string;
+  }>;
+  keyDifferences?: Array<{
+    aspect: string;
+    analysis: string;
+  }>;
+  tradeoffs?: Array<{
+    productId: string;
+    advantages: string[];
+    disadvantages: string[];
+  }>;
+  suggestedQuestions?: string[];
   comparisonTable?: Array<{
     feature: string;
     items: Record<string, string>;
   }>;
+  isFallback?: boolean;
 }
 
-export async function compareProductsAI(productIds: string[]) {
-  return clientMutation<CompareResult>("/ai/compare", "POST", { productIds });
+export interface CompareAiInput {
+  productIds: string[];
+  userPrompt?: string;
+  priority?: string;
+  weights?: Record<string, number>;
+}
+
+export async function compareProductsAI(input: string[] | CompareAiInput) {
+  const payload = Array.isArray(input) ? { productIds: input } : input;
+  return clientMutation<CompareResult>("/ai/compare", "POST", payload);
 }
 
 export interface VisualSearchResult {
