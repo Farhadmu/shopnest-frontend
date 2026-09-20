@@ -430,6 +430,19 @@ export default function SellerOrdersPage() {
             const isUpdating = updatingId === orderId;
             const isReadying = readyingPickupId === orderId;
 
+            const activeDelivery =
+              sellerActiveDeliveries.find((d: any) => String(d.orderId) === orderId) ||
+              (o as any).deliveryRequest;
+            const isReadyForPickup = Boolean(activeDelivery);
+            const isAccepted = o.status !== "pending";
+            const isPickedUp =
+              ["shipped", "picked_up", "in_transit", "out_for_delivery", "delivered"].includes(o.status) ||
+              ["picked_up", "in_transit", "out_for_delivery", "delivered"].includes(activeDelivery?.status);
+            const isOutForDelivery =
+              ["out_for_delivery", "delivered"].includes(o.status) ||
+              ["out_for_delivery", "delivered"].includes(activeDelivery?.status);
+            const isDelivered = o.status === "delivered" || activeDelivery?.status === "delivered";
+
             // Seller items on this order
             const sellerItems = (o.items || []).filter(
               (it: any) =>
