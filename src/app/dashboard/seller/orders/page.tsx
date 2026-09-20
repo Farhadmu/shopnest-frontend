@@ -747,6 +747,40 @@ export default function SellerOrdersPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Active Rider Status Banner if assigned */}
+                  {activeDelivery && activeDelivery.status !== "available" && activeDelivery.assignedRider && (
+                    <div className="p-3 rounded-xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs animate-in fade-in duration-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                          <FaMotorcycle size={14} />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-foreground">Delivery Partner:</span>
+                            <span className="font-black text-primary">{activeDelivery.assignedRider.name}</span>
+                          </div>
+                          {activeDelivery.assignedRider.phone && (
+                            <p className="text-[11px] text-muted font-medium mt-0.5">
+                              Contact: <span className="font-mono text-foreground font-semibold">{activeDelivery.assignedRider.phone}</span>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 uppercase tracking-wider">
+                          {activeDelivery.status.replaceAll("_", " ")}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenTrackingModal(o)}
+                          className="px-3 py-1.5 rounded-lg bg-card border border-primary/30 text-primary hover:bg-primary/10 font-bold text-xs transition cursor-pointer"
+                        >
+                          View Live GPS
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             );
