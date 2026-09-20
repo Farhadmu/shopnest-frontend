@@ -176,6 +176,7 @@ export interface MarketplaceForecastData {
 }
 
 export interface CategoryIntelligenceData {
+  /** Real-time catalog categories evaluated across orders, returns, and inventory */
   categories: Array<{
     name: string;
     products: number;
