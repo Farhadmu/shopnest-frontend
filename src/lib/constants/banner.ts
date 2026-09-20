@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Banner section — shared types and static default data.
  */
 
@@ -14,9 +14,12 @@ export type BannerCategory = {
 
 export type HeroSlide = {
   id: string;
+  eyebrow?: string;
   title: string;
+  highlight?: string;
   subtitle?: string;
   description?: string;
+  price?: string;
   image: string;
   buttonText: string;
   buttonLink: string;
@@ -37,6 +40,7 @@ export type PromoCard = {
   eyebrow?: string;
   title: string;
   highlight?: string;
+  subtitle?: string;
   description?: string;
   price?: string;
   image: string;
