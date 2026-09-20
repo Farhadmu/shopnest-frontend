@@ -1046,6 +1046,8 @@ export default function AdminDashboard() {
                   valuePrefix="৳"
                   primaryLabel="Actual GMV"
                   secondaryLabel="Projected Baseline"
+                  primaryColor="var(--primary, #0ea5e9)"
+                  secondaryColor="#10b981"
                 />
               </div>
             </Panel>
