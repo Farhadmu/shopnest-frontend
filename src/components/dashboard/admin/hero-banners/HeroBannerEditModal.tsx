@@ -1,16 +1,25 @@
 "use client";
 
 import { useState, type ChangeEvent } from "react";
-import { X, Trash2, Sun, Moon } from "lucide-react";
+import { X, Trash2, Sun, Moon, Sparkles, Wand2, Check, AlertTriangle, CheckCircle2, RefreshCw, Palette } from "lucide-react";
 import type { HeroBanner } from "@/lib/api/hero-banners";
 import { createHeroBanner, updateHeroBanner, deleteHeroBanner } from "@/lib/api/hero-banners";
 import { uploadImageToImgBB } from "@/lib/utils/imgbb";
-import type { EditSlot } from "./types";
+import {
+  BANNER_COLOR_PRESETS,
+  type BannerColorPreset,
+  extractColorsFromImageUrl,
+  analyzeBannerContrast,
+  getAutoFixColors,
+  getContrastingTextColor,
+  type ExtractedPalette,
+} from "@/lib/utils/banner-color-utils";
+import type { EditSlot, BannerSaveResult } from "./types";
 
 interface HeroBannerEditModalProps {
   slot: EditSlot;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (result?: BannerSaveResult) => void;
 }
 
 const inputClass =
@@ -29,8 +38,12 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
   const [highlight, setHighlight] = useState(existing?.highlight ?? "");
   const [subtitle, setSubtitle] = useState(existing?.subtitle ?? "");
   const [description, setDescription] = useState(existing?.description ?? "");
+  const defaultCategoryUrl = slot.categoryName && slot.categoryName.trim() && slot.categoryName !== "General"
+    ? `/products?category=${encodeURIComponent(slot.categoryName.trim())}`
+    : "/products";
+
   const [buttonText, setButtonText] = useState(existing?.buttonText ?? "Shop Now");
-  const [targetUrl, setTargetUrl] = useState(existing?.targetUrl ?? "");
+  const [targetUrl, setTargetUrl] = useState(existing?.targetUrl || defaultCategoryUrl);
   const [displayOrder, setDisplayOrder] = useState(existing?.displayOrder ?? 1);
   const [textTheme, setTextTheme] = useState<"light" | "dark">(existing?.textTheme ?? "light");
   const [isActive, setIsActive] = useState(existing?.isActive ?? true);
@@ -39,13 +52,69 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
   const [overlayColor, setOverlayColor] = useState(existing?.overlayColor ?? "#0B0F19");
   const [overlayOpacity, setOverlayOpacity] = useState(existing?.overlayOpacity ?? 70);
   const [lightTextColor, setLightTextColor] = useState(existing?.lightTextColor ?? "#FFFFFF");
-  const [darkTextColor, setDarkTextColor] = useState(existing?.darkTextColor ?? "#0F172A");
+  const [darkTextColor, setDarkTextColor] = useState(existing?.darkTextColor ?? "#FFFFFF");
   const [lightButtonColor, setLightButtonColor] = useState(existing?.lightButtonColor ?? "#FFFFFF");
   const [darkButtonColor, setDarkButtonColor] = useState(existing?.darkButtonColor ?? "#5B5CF0");
+
+  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
+  const [extractingColors, setExtractingColors] = useState(false);
+  const [extractedData, setExtractedData] = useState<ExtractedPalette | null>(null);
+  const [extractError, setExtractError] = useState<string | null>(null);
 
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // Active text color based on preview/text theme
+  const activeTextColor = previewTheme === "light" ? lightTextColor : darkTextColor;
+  const contrastInfo = analyzeBannerContrast(activeTextColor, overlayColor, overlayOpacity);
+
+  const applyPreset = (preset: BannerColorPreset) => {
+    setSelectedPresetId(preset.id);
+    setOverlayColor(preset.overlayColor);
+    setOverlayOpacity(preset.overlayOpacity);
+    setLightTextColor(preset.lightTextColor);
+    setDarkTextColor(preset.darkTextColor);
+    setLightButtonColor(preset.lightButtonColor);
+    setDarkButtonColor(preset.darkButtonColor);
+    setTextTheme(preset.textTheme);
+    setPreviewTheme(preset.textTheme);
+  };
+
+  const handleAutoExtract = async () => {
+    if (!imageUrl) {
+      setExtractError("Please upload or enter an image URL first.");
+      return;
+    }
+    setExtractError(null);
+    setExtractingColors(true);
+    try {
+      const palette = await extractColorsFromImageUrl(imageUrl);
+      setExtractedData(palette);
+      setOverlayColor(palette.suggestedOverlay);
+      setOverlayOpacity(palette.suggestedOpacity);
+      setLightTextColor(palette.suggestedLightText);
+      setDarkTextColor(palette.suggestedDarkText);
+      setLightButtonColor(palette.suggestedLightBtn);
+      setDarkButtonColor(palette.suggestedDarkBtn);
+      setTextTheme(palette.recommendedTheme);
+      setPreviewTheme(palette.recommendedTheme);
+      setSelectedPresetId(null);
+    } catch {
+      setExtractError("Could not auto-extract colors (image may have CORS restrictions). Try choosing a preset below!");
+    } finally {
+      setExtractingColors(false);
+    }
+  };
+
+  const handleAutoFixContrast = () => {
+    const fix = getAutoFixColors(overlayColor, overlayOpacity);
+    setOverlayOpacity(fix.overlayOpacity);
+    setLightTextColor(fix.textColor);
+    setDarkTextColor(fix.textColor);
+    setLightButtonColor(fix.buttonColor);
+    setDarkButtonColor(fix.buttonColor);
+  };
 
   const chooseFile = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
@@ -59,6 +128,19 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
     try {
       const result = await uploadImageToImgBB(file);
       setImageUrl(result.url);
+      // Automatically attempt color extraction on new upload
+      try {
+        const palette = await extractColorsFromImageUrl(result.url);
+        setExtractedData(palette);
+        setOverlayColor(palette.suggestedOverlay);
+        setOverlayOpacity(palette.suggestedOpacity);
+        setLightTextColor(palette.suggestedLightText);
+        setDarkTextColor(palette.suggestedDarkText);
+        setLightButtonColor(palette.suggestedLightBtn);
+        setDarkButtonColor(palette.suggestedDarkBtn);
+      } catch {
+        // quiet fallback
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Image upload failed.");
     } finally {
@@ -67,10 +149,11 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
   };
 
   const resetColors = () => {
+    setSelectedPresetId(null);
     setOverlayColor("#0B0F19");
     setOverlayOpacity(70);
     setLightTextColor("#FFFFFF");
-    setDarkTextColor("#0F172A");
+    setDarkTextColor("#FFFFFF");
     setLightButtonColor("#FFFFFF");
     setDarkButtonColor("#5B5CF0");
   };
@@ -109,11 +192,12 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
     };
     try {
       if (existing) {
-        await updateHeroBanner(existing.id, body);
+        const updated = await updateHeroBanner(existing.id, body);
+        onSaved({ type: "update", banner: updated });
       } else {
-        await createHeroBanner(body as Omit<HeroBanner, "id" | "createdAt" | "updatedAt">);
+        const created = await createHeroBanner(body as Omit<HeroBanner, "id" | "createdAt" | "updatedAt">);
+        onSaved({ type: "create", banner: created });
       }
-      onSaved();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Failed to save banner.");
     } finally {
@@ -127,7 +211,7 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
     setError(null);
     try {
       await deleteHeroBanner(existing.id);
-      onSaved();
+      onSaved({ type: "delete", id: existing.id });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Failed to remove banner.");
     } finally {
@@ -200,34 +284,66 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
             </div>
 
             {imageUrl && (
-              <div className="mb-3 overflow-hidden rounded-lg border border-border bg-surface">
+              <div className="mb-3 overflow-hidden rounded-xl border border-border bg-surface">
                 {/* Preview only — safe to use a plain img for arbitrary/external admin-entered URLs */}
                 <img src={imageUrl} alt="Banner preview" className="h-32 w-full object-cover" />
-                <div className="flex items-center justify-between gap-2 px-3 py-2">
-                  <span className="truncate text-xs font-medium text-muted">{imageUrl.split("/").pop()}</span>
-                  <button
-                    type="button"
-                    onClick={() => setImageUrl("")}
-                    className="flex-shrink-0 text-xs font-semibold text-error hover:underline"
-                  >
-                    Remove
-                  </button>
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 bg-surface px-3.5 py-2.5">
+                  <span className="max-w-[200px] truncate text-xs font-medium text-muted sm:max-w-xs">{imageUrl.split("/").pop()}</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleAutoExtract}
+                      disabled={extractingColors}
+                      className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary/10 px-3 text-xs font-semibold text-primary transition hover:bg-primary/20 disabled:opacity-50"
+                    >
+                      {extractingColors ? (
+                        <RefreshCw className="h-3.5 w-3.5 animate-spin shrink-0" />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5 shrink-0" />
+                      )}
+                      <span>{extractingColors ? "Extracting..." : "Auto-Extract Colors"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setImageUrl(""); setExtractedData(null); }}
+                      className="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg px-2.5 text-xs font-semibold text-error transition hover:bg-error/10"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
 
+            {extractError && (
+              <p className="mb-2 text-xs text-amber-600 dark:text-amber-400">{extractError}</p>
+            )}
+
             {mode === "upload" ? (
-              <label className="flex cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-primary/40 bg-surface px-4 py-6 text-sm font-semibold text-primary transition hover:border-primary">
+              <label className="flex cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-primary/40 bg-surface px-4 py-3.5 text-xs font-semibold text-primary transition hover:border-primary hover:bg-primary/5">
                 {uploading ? "Uploading..." : imageUrl ? "Replace image" : "Click to upload an image"}
                 <input type="file" accept="image/*" onChange={chooseFile} className="sr-only" disabled={uploading} />
               </label>
             ) : (
-              <input
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://domain.com/path-to-banner-image.jpg"
-                className={inputClass}
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="https://domain.com/path-to-banner-image.jpg"
+                  className={inputClass}
+                />
+                {imageUrl && (
+                  <button
+                    type="button"
+                    onClick={handleAutoExtract}
+                    disabled={extractingColors}
+                    className="mt-1 inline-flex h-[38px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-50"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Extract
+                  </button>
+                )}
+              </div>
             )}
           </section>
 
@@ -242,31 +358,91 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
               </select>
             </div>
             <div>
-              <label className={labelClass}>Subtitle</label>
-              <input value={subtitle} onChange={(e) => setSubtitle(e.target.value)} className={inputClass} />
+              <div className="flex items-center justify-between">
+                <label className={labelClass}>Subtitle</label>
+                <span className="text-[10px] font-mono text-muted">{subtitle.length}/60</span>
+              </div>
+              <input
+                value={subtitle}
+                onChange={(e) => setSubtitle(e.target.value)}
+                maxLength={60}
+                placeholder="Short secondary slogan"
+                className={inputClass}
+              />
             </div>
             <div>
-              <label className={labelClass}>Eyebrow Chip</label>
-              <input value={eyebrow} onChange={(e) => setEyebrow(e.target.value)} className={inputClass} />
+              <div className="flex items-center justify-between">
+                <label className={labelClass}>Eyebrow Chip</label>
+                <span className="text-[10px] font-mono text-muted">{eyebrow.length}/25</span>
+              </div>
+              <input
+                value={eyebrow}
+                onChange={(e) => setEyebrow(e.target.value)}
+                maxLength={25}
+                placeholder="e.g. EXCLUSIVE DEALS"
+                className={inputClass}
+              />
             </div>
             <div>
-              <label className={labelClass}>CTA Button Label</label>
-              <input value={buttonText} onChange={(e) => setButtonText(e.target.value)} className={inputClass} />
+              <div className="flex items-center justify-between">
+                <label className={labelClass}>CTA Button Label</label>
+                <span className="text-[10px] font-mono text-muted">{buttonText.length}/18</span>
+              </div>
+              <input
+                value={buttonText}
+                onChange={(e) => setButtonText(e.target.value)}
+                maxLength={18}
+                placeholder="Shop Now"
+                className={inputClass}
+              />
             </div>
             <div>
-              <label className={labelClass}>Headline Title</label>
-              <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} />
+              <div className="flex items-center justify-between">
+                <label className={labelClass}>Headline Title</label>
+                <span className="text-[10px] font-mono text-muted">{title.length}/45</span>
+              </div>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                maxLength={45}
+                placeholder="Main headline title"
+                className={inputClass}
+              />
             </div>
             <div>
-              <label className={labelClass}>Target Destination URL</label>
-              <input value={targetUrl} onChange={(e) => setTargetUrl(e.target.value)} className={`${inputClass} font-mono text-xs`} />
+              <div className="flex items-center justify-between">
+                <label className={labelClass}>Target Destination URL</label>
+                {slot.categoryName && (
+                  <button
+                    type="button"
+                    onClick={() => setTargetUrl(defaultCategoryUrl)}
+                    className="text-[10px] font-semibold text-primary transition hover:underline"
+                    title="Auto-set to this category's filter URL"
+                  >
+                    Auto-set Category URL
+                  </button>
+                )}
+              </div>
+              <input
+                value={targetUrl}
+                onChange={(e) => setTargetUrl(e.target.value)}
+                placeholder={defaultCategoryUrl}
+                className={`${inputClass} font-mono text-xs`}
+              />
+              <p className="mt-1 text-[11px] text-muted">Auto-routes to category product filter: {defaultCategoryUrl}</p>
             </div>
             <div>
               <div className="flex items-center justify-between gap-2">
                 <label className={labelClass}>Highlight Word / Accent</label>
-                <span className="rounded border border-warm/30 bg-warm/10 px-1.5 py-0.5 text-[10px] font-semibold text-warm">Applied in accent color</span>
+                <span className="text-[10px] font-mono text-muted">{highlight.length}/20</span>
               </div>
-              <input value={highlight} onChange={(e) => setHighlight(e.target.value)} className={inputClass} />
+              <input
+                value={highlight}
+                onChange={(e) => setHighlight(e.target.value)}
+                maxLength={20}
+                placeholder="e.g. Ultimate Ride"
+                className={inputClass}
+              />
               <p className="mt-1 text-[11px] text-muted">Stylized in warm accent color within the headline.</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -290,26 +466,135 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
               </div>
             </div>
             <div className="md:col-span-2">
-              <label className={labelClass}>Body Description</label>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <label className={labelClass}>Body Description</label>
+                  {placement !== "hero" && (
+                    <span className="rounded bg-muted-bg px-1.5 py-0.5 text-[10px] font-medium text-muted">
+                      Hero slot only (hidden for {placement})
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] font-mono text-muted">{description.length}/120</span>
+              </div>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                maxLength={120}
+                placeholder={placement === "hero" ? "Short 1-2 sentence description..." : "Description is only shown on Hero slot banners"}
                 rows={2}
                 className={inputClass}
               />
             </div>
           </section>
 
+          {/* ── Smart Color Assistant & Presets ── */}
+          <section className="space-y-4 rounded-xl border border-primary/20 bg-gradient-to-b from-primary/5 via-muted-bg/30 to-muted-bg/50 p-4 sm:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg bg-primary/10 p-1.5 text-primary">
+                  <Palette className="h-4 w-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-text">Designer Theme Presets</h4>
+                  <p className="text-[11px] text-muted">1-Click designer-crafted color palettes to prevent readability and contrast issues.</p>
+                </div>
+              </div>
+              {selectedPresetId && (
+                <button
+                  type="button"
+                  onClick={resetColors}
+                  className="text-xs font-semibold text-primary hover:underline"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+
+            {/* Presets Grid */}
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+              {BANNER_COLOR_PRESETS.map((preset) => {
+                const isSelected = selectedPresetId === preset.id;
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => applyPreset(preset)}
+                    className={`group relative flex flex-col items-start overflow-hidden rounded-xl border p-2.5 text-left transition-all ${isSelected
+                        ? "border-primary bg-surface ring-2 ring-primary/40 shadow-sm"
+                        : "border-border bg-surface/80 hover:border-primary/50 hover:bg-surface"
+                      }`}
+                  >
+                    {/* Gradient Swatch Header */}
+                    <div
+                      className="mb-2 h-7 w-full rounded-md shadow-inner flex items-center justify-between px-2"
+                      style={{ background: preset.previewGradient }}
+                    >
+                      <span
+                        className="h-2.5 w-2.5 rounded-full border border-white/40 shadow"
+                        style={{ backgroundColor: preset.lightButtonColor }}
+                      />
+                      {isSelected && (
+                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-white shadow">
+                          <Check className="h-2.5 w-2.5" />
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs font-bold text-text group-hover:text-primary">
+                      {preset.name}
+                    </span>
+                    <span className="line-clamp-1 text-[10px] text-muted">
+                      {preset.tagline}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Extracted Swatches row (if available) */}
+            {extractedData && extractedData.palette.length > 0 && (
+              <div className="rounded-lg border border-border bg-surface p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-xs font-bold text-text">Extracted Image Swatches</span>
+                  </div>
+                  <span className="text-[10px] text-muted">Click a swatch to apply as CTA button color</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {extractedData.palette.map((hex, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => {
+                        setLightButtonColor(hex);
+                        setDarkButtonColor(hex);
+                        setSelectedPresetId(null);
+                      }}
+                      className="group flex items-center gap-1.5 rounded-md border border-border bg-muted-bg/50 px-2 py-1 transition hover:border-primary"
+                    >
+                      <span
+                        className="h-3.5 w-3.5 rounded-full border border-black/10 shadow-inner"
+                        style={{ backgroundColor: hex }}
+                      />
+                      <span className="font-mono text-[10px] text-text group-hover:text-primary">{hex}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+
           {/* Overlay & color customization */}
           <section className="rounded-xl border border-border bg-muted-bg/40 p-4 sm:p-5">
             <div className="mb-3 border-b border-border pb-3">
-              <h4 className={labelClass}>Overlay & Color Customization</h4>
-              <p className="mt-0.5 text-xs text-muted">Control the scrim tint, adaptive theme contrast colors, and overlay opacity.</p>
+              <h4 className={labelClass}>Manual Color & Scrim Customization</h4>
+              <p className="mt-0.5 text-xs text-muted">Fine-tune individual hex values and background darkness.</p>
             </div>
 
             <div className="space-y-4">
               {/* Overlay color — always active */}
-              <ColorField label="Overlay Color" value={overlayColor} onChange={setOverlayColor} alwaysActive />
+              <ColorField label="Overlay Color" value={overlayColor} onChange={(c) => { setOverlayColor(c); setSelectedPresetId(null); }} alwaysActive />
 
               {/* Text colors — both modes visible; current theme highlighted */}
               <div>
@@ -318,14 +603,14 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
                   <ColorField
                     label="Light Mode Text"
                     value={lightTextColor}
-                    onChange={setLightTextColor}
+                    onChange={(c) => { setLightTextColor(c); setSelectedPresetId(null); }}
                     activeTheme={textTheme}
                     ownTheme="light"
                   />
                   <ColorField
                     label="Dark Mode Text"
                     value={darkTextColor}
-                    onChange={setDarkTextColor}
+                    onChange={(c) => { setDarkTextColor(c); setSelectedPresetId(null); }}
                     activeTheme={textTheme}
                     ownTheme="dark"
                   />
@@ -334,19 +619,33 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
 
               {/* Button colors — both modes visible; current theme highlighted */}
               <div>
-                <p className={`mb-2 ${labelClass}`}>Button Color</p>
+                <div className="mb-2 flex items-center justify-between">
+                  <p className={labelClass}>Button Color</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const activeColor = previewTheme === "light" ? lightButtonColor : darkButtonColor;
+                      setLightButtonColor(activeColor);
+                      setDarkButtonColor(activeColor);
+                    }}
+                    className="text-[11px] font-semibold text-primary hover:underline"
+                    title="Copy active button color to both Light and Dark modes"
+                  >
+                    Sync to both modes
+                  </button>
+                </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <ColorField
                     label="Light Mode Button"
                     value={lightButtonColor}
-                    onChange={setLightButtonColor}
+                    onChange={(c) => { setLightButtonColor(c); setSelectedPresetId(null); }}
                     activeTheme={textTheme}
                     ownTheme="light"
                   />
                   <ColorField
                     label="Dark Mode Button"
                     value={darkButtonColor}
-                    onChange={setDarkButtonColor}
+                    onChange={(c) => { setDarkButtonColor(c); setSelectedPresetId(null); }}
                     activeTheme={textTheme}
                     ownTheme="dark"
                   />
@@ -354,6 +653,7 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
               </div>
             </div>
 
+            {/* Darkness Slider */}
             <div className="mt-4 flex flex-col gap-2 pt-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="flex items-center justify-between gap-3">
@@ -371,7 +671,7 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
                   min={0}
                   max={95}
                   value={overlayOpacity}
-                  onChange={(e) => setOverlayOpacity(Number(e.target.value))}
+                  onChange={(e) => { setOverlayOpacity(Number(e.target.value)); setSelectedPresetId(null); }}
                   className="w-full accent-primary"
                 />
                 <span className="font-mono text-xs text-muted">95%</span>
@@ -379,115 +679,201 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
             </div>
           </section>
 
-          {/* ── Live Banner Preview ── */}
+          {/* ── Live Banner Preview with WCAG Contrast Assistant ── */}
           <section className="rounded-xl border border-border bg-muted-bg/40 p-4 sm:p-5">
-            {/* Section header with toggle */}
-            <div className="mb-3 flex items-center justify-between border-b border-border pb-3">
+            {/* Section header with toggle & WCAG Status */}
+            <div className="mb-3 flex flex-col gap-2 border-b border-border pb-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h4 className={labelClass}>Live Preview</h4>
-                <p className="mt-0.5 text-xs text-muted">Toggle between light &amp; dark to see how text and button colors render.</p>
+                <h4 className={labelClass}>Live Preview & Accessibility Check</h4>
+                <p className="mt-0.5 text-xs text-muted">Real-time rendering and WCAG 2.1 readability analysis.</p>
               </div>
-              {/* Theme toggle pill */}
-              <button
-                type="button"
-                onClick={() => setPreviewTheme((t) => (t === "light" ? "dark" : "light"))}
-                aria-label="Toggle preview theme"
-                className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-all ${previewTheme === "light"
-                    ? "border-amber-400/60 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-400/10 dark:text-amber-300"
-                    : "border-indigo-400/60 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-400/10 dark:text-indigo-300"
-                  }`}
-              >
-                {previewTheme === "light" ? (
-                  <><Sun className="h-3.5 w-3.5" /> Light Mode</>
+              <div className="flex items-center gap-2">
+                {/* Theme toggle pill */}
+                <button
+                  type="button"
+                  onClick={() => setPreviewTheme((t) => (t === "light" ? "dark" : "light"))}
+                  aria-label="Toggle preview theme"
+                  className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-all ${previewTheme === "light"
+                      ? "border-amber-400/60 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-400/10 dark:text-amber-300"
+                      : "border-indigo-400/60 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-400/10 dark:text-indigo-300"
+                    }`}
+                >
+                  {previewTheme === "light" ? (
+                    <><Sun className="h-3.5 w-3.5" /> Light Mode</>
+                  ) : (
+                    <><Moon className="h-3.5 w-3.5" /> Dark Mode</>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* WCAG Contrast Bar */}
+            <div
+              className={`mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 ${contrastInfo.level === "AAA"
+                  ? "border-emerald-500/30 bg-emerald-50/50 text-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-300"
+                  : contrastInfo.level === "AA"
+                    ? "border-blue-500/30 bg-blue-50/50 text-blue-900 dark:bg-blue-950/20 dark:text-blue-300"
+                    : "border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-300"
+                }`}
+            >
+              <div className="flex items-center gap-2">
+                {contrastInfo.isAccessible ? (
+                  <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
                 ) : (
-                  <><Moon className="h-3.5 w-3.5" /> Dark Mode</>
+                  <AlertTriangle className="h-4 w-4 flex-shrink-0 text-amber-600 dark:text-amber-400" />
                 )}
-              </button>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold">
+                      Contrast Ratio: {contrastInfo.ratio}:1
+                    </span>
+                    <span
+                      className={`rounded px-1.5 py-0.5 text-[10px] font-extrabold uppercase ${contrastInfo.level === "AAA"
+                          ? "bg-emerald-600 text-white"
+                          : contrastInfo.level === "AA"
+                            ? "bg-blue-600 text-white"
+                            : "bg-amber-600 text-white"
+                        }`}
+                    >
+                      {contrastInfo.level === "AAA" ? "WCAG AAA" : contrastInfo.level === "AA" ? "WCAG AA" : "Low Contrast"}
+                    </span>
+                  </div>
+                  <p className="text-[11px] opacity-80">{contrastInfo.message}</p>
+                </div>
+              </div>
+
+              {!contrastInfo.isAccessible && (
+                <button
+                  type="button"
+                  onClick={handleAutoFixContrast}
+                  className="flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-amber-700"
+                >
+                  <Wand2 className="h-3.5 w-3.5" />
+                  Auto-Fix Contrast
+                </button>
+              )}
             </div>
 
             {/* Banner preview card */}
-            <div
-              className="relative overflow-hidden rounded-xl"
-              style={{ aspectRatio: "16/7", background: previewTheme === "light" ? "#f1f5f9" : "#0f172a" }}
-            >
-              {imageUrl ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={imageUrl}
-                  alt="Banner preview"
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xs text-muted">No image selected</span>
-                </div>
-              )}
-
-              {/* Overlay scrim */}
-              {overlayColor && (
-                <div
-                  className="absolute inset-0"
-                  style={{ backgroundColor: overlayColor, opacity: overlayOpacity / 100 }}
-                />
-              )}
-
-              {/* Text content overlay */}
+            <div className="flex justify-center">
               <div
-                className="absolute inset-0 flex flex-col justify-end gap-1 p-4"
+                className={`relative w-full overflow-hidden rounded-xl shadow-md transition-all ${placement === "side" ? "max-w-xs" : "w-full"
+                  }`}
                 style={{
-                  color:
-                    previewTheme === "light"
-                      ? lightTextColor || "#ffffff"
-                      : darkTextColor || "#0f172a",
+                  aspectRatio: placement === "side" ? "4/5" : "16/7",
+                  background: previewTheme === "light" ? "#f1f5f9" : "#0f172a",
                 }}
               >
-                {eyebrow && (
-                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">
-                    {eyebrow}
-                  </span>
-                )}
-                <p className="text-sm font-extrabold leading-tight drop-shadow-sm sm:text-base">
-                  {title || <span className="opacity-40">Headline title…</span>}{" "}
-                  {highlight && (
-                    <span className="text-warm">{highlight}</span>
-                  )}
-                </p>
-                {subtitle && (
-                  <p className="text-xs opacity-80">{subtitle}</p>
+                {imageUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={imageUrl}
+                    alt="Banner preview"
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-xs text-muted">No image selected</span>
+                  </div>
                 )}
 
-                {/* CTA button */}
-                {buttonText && (
-                  <span
-                    className="mt-1 inline-flex w-fit items-center rounded-lg px-3 py-1.5 text-xs font-bold shadow"
-                    style={{
-                      backgroundColor:
-                        previewTheme === "light"
-                          ? lightButtonColor || "#ffffff"
-                          : darkButtonColor || "#5b5cf0",
-                      color:
-                        previewTheme === "light"
-                          ? lightTextColor || "#0f172a"
-                          : darkTextColor || "#ffffff",
-                      filter: "brightness(1)",
-                    }}
-                  >
-                    {buttonText}
-                  </span>
-                )}
-              </div>
+                {/* Overlay scrim */}
+                <div
+                  className="absolute inset-0 transition-all duration-300"
+                  style={{
+                    backgroundColor: overlayColor || "#0B0F19",
+                    opacity: (overlayOpacity ?? 70) / 100,
+                  }}
+                />
 
-              {/* Theme badge */}
-              <div className="absolute right-2 top-2">
-                <span
-                  className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold backdrop-blur-sm ${previewTheme === "light"
-                      ? "bg-amber-400/20 text-amber-200"
-                      : "bg-indigo-500/20 text-indigo-200"
+                {/* Text content overlay matching home page */}
+                <div
+                  className={`absolute inset-0 flex flex-col ${placement === "hero"
+                      ? "justify-center gap-1.5 p-5 sm:p-6 lg:p-7 max-w-[85%] sm:max-w-[75%]"
+                      : "justify-end gap-1 p-4 sm:p-5 max-w-[90%]"
                     }`}
+                  style={{
+                    color:
+                      previewTheme === "light"
+                        ? lightTextColor || "#ffffff"
+                        : darkTextColor || "#ffffff",
+                  }}
                 >
-                  {previewTheme === "light" ? <Sun className="h-2.5 w-2.5" /> : <Moon className="h-2.5 w-2.5" />}
-                  {previewTheme === "light" ? "Light" : "Dark"}
-                </span>
+                  {eyebrow && (
+                    <span
+                      style={{ opacity: 0.8 }}
+                      className="text-[9px] font-bold uppercase tracking-widest sm:text-[10px]"
+                    >
+                      {eyebrow}
+                    </span>
+                  )}
+                  <h3
+                    className={`font-extrabold leading-tight drop-shadow-sm ${placement === "hero"
+                        ? "text-base sm:text-xl lg:text-2xl"
+                        : "text-sm sm:text-base leading-snug"
+                      }`}
+                  >
+                    {title || <span className="opacity-40">Headline title…</span>}{" "}
+                    {highlight && (
+                      <span className="text-warm font-extrabold">{highlight}</span>
+                    )}
+                  </h3>
+                  {subtitle && (
+                    <p
+                      style={{ opacity: 0.85 }}
+                      className={`hidden font-medium sm:block ${placement === "hero" ? "text-xs sm:text-sm" : "text-xs"}`}
+                    >
+                      {subtitle}
+                    </p>
+                  )}
+                  {placement === "hero" && description && (
+                    <p
+                      style={{ opacity: 0.8 }}
+                      className="hidden line-clamp-2 leading-relaxed text-xs sm:block sm:text-sm"
+                    >
+                      {description}
+                    </p>
+                  )}
+
+                  {/* CTA button matching home page */}
+                  {buttonText && (
+                    <span
+                      className={`mt-2 inline-flex w-fit items-center rounded-lg font-bold shadow-md transition-transform hover:scale-[1.02] ${placement === "hero"
+                          ? "px-4 py-2 text-xs sm:text-sm"
+                          : "px-3 py-1.5 text-[10px] sm:text-[11px]"
+                        }`}
+                      style={{
+                        backgroundColor:
+                          previewTheme === "light"
+                            ? lightButtonColor || "#ffffff"
+                            : darkButtonColor || "#5b5cf0",
+                        color: getContrastingTextColor(
+                          previewTheme === "light"
+                            ? lightButtonColor || "#ffffff"
+                            : darkButtonColor || "#5b5cf0"
+                        ),
+                      }}
+                    >
+                      {buttonText}
+                    </span>
+                  )}
+                </div>
+
+                {/* Theme badge & Slot indicator */}
+                <div className="absolute right-2 top-2 flex items-center gap-1.5">
+                  <span className="rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-bold text-white uppercase backdrop-blur-md">
+                    {placement} Slot
+                  </span>
+                  <span
+                    className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold backdrop-blur-md ${previewTheme === "light"
+                        ? "bg-amber-400/30 text-amber-950 dark:text-amber-100"
+                        : "bg-indigo-500/30 text-indigo-950 dark:text-indigo-100"
+                      }`}
+                  >
+                    {previewTheme === "light" ? <Sun className="h-2.5 w-2.5" /> : <Moon className="h-2.5 w-2.5" />}
+                    {previewTheme === "light" ? "Light" : "Dark"}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -498,14 +884,14 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
                   className="h-3 w-3 rounded-full border border-border shadow-inner"
                   style={{ backgroundColor: previewTheme === "light" ? lightTextColor || "#ffffff" : darkTextColor || "#0f172a" }}
                 />
-                <span className="text-[11px] text-muted">Text</span>
+                <span className="text-[11px] text-muted">Text: {previewTheme === "light" ? lightTextColor : darkTextColor}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span
                   className="h-3 w-3 rounded-full border border-border shadow-inner"
                   style={{ backgroundColor: previewTheme === "light" ? lightButtonColor || "#ffffff" : darkButtonColor || "#5b5cf0" }}
                 />
-                <span className="text-[11px] text-muted">Button</span>
+                <span className="text-[11px] text-muted">Button: {previewTheme === "light" ? lightButtonColor : darkButtonColor}</span>
               </div>
               {overlayColor && (
                 <div className="flex items-center gap-1.5">
@@ -513,7 +899,7 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
                     className="h-3 w-3 rounded-full border border-border shadow-inner"
                     style={{ backgroundColor: overlayColor, opacity: overlayOpacity / 100 + 0.3 }}
                   />
-                  <span className="text-[11px] text-muted">Overlay ({overlayOpacity}%)</span>
+                  <span className="text-[11px] text-muted">Overlay: {overlayColor} ({overlayOpacity}%)</span>
                 </div>
               )}
             </div>
@@ -534,22 +920,22 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
             </span>
           </label>
 
-          <div className="flex w-full items-center justify-end gap-2.5 sm:w-auto">
+          <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
             {existing && (
               <button
                 type="button"
                 onClick={remove}
                 disabled={deleting || saving}
-                className="flex items-center gap-1.5 rounded-xl border border-error/30 px-3 py-2 text-xs font-semibold text-error transition hover:bg-error/10 disabled:opacity-60"
+                className="inline-flex h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-error/30 bg-surface px-3.5 text-xs font-semibold text-error transition hover:bg-error/10 disabled:opacity-60"
               >
-                <Trash2 className="h-3.5 w-3.5" />
-                {deleting ? "Removing..." : "Remove"}
+                <Trash2 className="h-3.5 w-3.5 shrink-0" />
+                <span>{deleting ? "Removing..." : "Remove"}</span>
               </button>
             )}
             <button
               type="button"
               onClick={resetColors}
-              className="rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted transition hover:bg-muted-bg"
+              className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-xl border border-border bg-surface px-3.5 text-xs font-semibold text-muted transition hover:bg-muted-bg hover:text-text"
             >
               Reset to Default
             </button>
@@ -557,7 +943,7 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="rounded-xl border border-border bg-surface px-4 py-2 text-xs font-semibold text-muted transition hover:bg-muted-bg"
+              className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-xl border border-border bg-surface px-4 text-xs font-semibold text-muted transition hover:bg-muted-bg hover:text-text"
             >
               Cancel
             </button>
@@ -565,7 +951,7 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
               type="button"
               onClick={save}
               disabled={saving || uploading}
-              className="rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-60"
+              className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-xl bg-primary px-5 text-xs font-semibold text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-60"
             >
               {saving ? "Saving..." : "Save Changes"}
             </button>

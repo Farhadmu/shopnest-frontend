@@ -18,7 +18,7 @@ import { getAllHeroBannersForAdmin, updateHeroBanner, type HeroBanner } from "@/
 import { idOf } from "@/lib/utils/category-tree";
 import { CategoryBannerGroup, type CategoryBanners } from "./CategoryBannerGroup";
 import { HeroBannerEditModal } from "./HeroBannerEditModal";
-import type { EditSlot } from "./types";
+import type { EditSlot, BannerSaveResult } from "./types";
 
 type FilterTab = "all" | "active" | "none";
 type SortMode = "default" | "name-asc" | "name-desc";
@@ -46,16 +46,18 @@ export function HeroBannersOverview({ categories }: HeroBannersOverviewProps) {
     return () => clearInterval(interval);
   }, []);
 
-  const loadBanners = () => {
-    setLoading(true);
+  const loadBanners = (showLoading = false) => {
+    if (showLoading) setLoading(true);
     getAllHeroBannersForAdmin()
       .then(setBanners)
       .catch(() => setBanners([]))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (showLoading) setLoading(false);
+      });
   };
 
   useEffect(() => {
-    loadBanners();
+    loadBanners(true);
   }, []);
 
   const parentCategories = useMemo(() => categories.filter((c) => !c.parent), [categories]);
@@ -116,6 +118,25 @@ export function HeroBannersOverview({ categories }: HeroBannersOverviewProps) {
       // revert on failure
       setBanners((prev) => prev.map((b) => (b.id === banner.id ? { ...b, isActive: banner.isActive } : b)));
     }
+  };
+
+  const handleBannerSaved = (result?: BannerSaveResult) => {
+    setEditSlot(null);
+    if (!result) {
+      loadBanners(false);
+      return;
+    }
+
+    if (result.type === "create") {
+      setBanners((prev) => [result.banner, ...prev.filter((b) => b.id !== result.banner.id)]);
+    } else if (result.type === "update") {
+      setBanners((prev) => prev.map((b) => (b.id === result.banner.id ? result.banner : b)));
+    } else if (result.type === "delete") {
+      setBanners((prev) => prev.filter((b) => b.id !== result.id));
+    }
+
+    // Silent background sync without showing full-page loader or collapsing accordions
+    loadBanners(false);
   };
 
   return (
@@ -264,10 +285,7 @@ export function HeroBannersOverview({ categories }: HeroBannersOverviewProps) {
         <HeroBannerEditModal
           slot={editSlot}
           onClose={() => setEditSlot(null)}
-          onSaved={() => {
-            setEditSlot(null);
-            loadBanners();
-          }}
+          onSaved={handleBannerSaved}
         />
       )}
     </div>

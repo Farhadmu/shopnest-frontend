@@ -14,6 +14,7 @@ import {
 } from "@/lib/constants/banner";
 import { getCategories } from "@/lib/api/categories";
 import { getHeroBanners, HeroBanner } from "@/lib/api/hero-banners";
+import { getContrastingTextColor } from "@/lib/utils/banner-color-utils";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -38,14 +39,15 @@ function PromoCard({
   imageSizes: string;
   className?: string;
 }) {
-  const isLight = card.textTheme === "light";
+  const isLight = card.textTheme !== "dark";
   const customTextColor = isLight ? card.lightTextColor : card.darkTextColor;
-  const customButtonColor = isLight ? card.lightButtonColor : card.darkButtonColor;
+  const customButtonColor = (isLight ? card.lightButtonColor : card.darkButtonColor) || card.lightButtonColor || card.darkButtonColor;
+  const buttonTextColor = customButtonColor ? getContrastingTextColor(customButtonColor) : undefined;
 
   return (
     <div
       style={customTextColor ? { color: customTextColor } : undefined}
-      className={`relative flex h-full flex-col justify-between overflow-hidden rounded-xl p-4 sm:p-5 ${card.bgClassName ?? "bg-secondary"
+      className={`relative flex h-full flex-col justify-end overflow-hidden rounded-xl p-4 sm:p-5 ${card.bgClassName ?? "bg-secondary"
         } ${className}`}
     >
       <div className="absolute inset-0">
@@ -58,29 +60,21 @@ function PromoCard({
           className="object-cover"
           priority={false}
         />
+        {/* Overlay Scrim */}
         <div
-          className={`absolute inset-0 ${card.overlayColor === undefined
-              ? isLight
-                ? "bg-secondary/50"
-                : "bg-surface/70"
-              : ""
-            }`}
-          style={
-            card.overlayColor
-              ? {
-                backgroundColor: card.overlayColor,
-                opacity: (card.overlayOpacity ?? 50) / 100,
-              }
-              : undefined
-          }
+          className="absolute inset-0 transition-opacity"
+          style={{
+            backgroundColor: card.overlayColor || "#0B0F19",
+            opacity: (card.overlayOpacity ?? 70) / 100,
+          }}
         />
       </div>
 
-      <div className="relative z-10 max-w-[85%] sm:max-w-[75%]">
+      <div className="relative z-10 flex flex-col justify-end gap-1 max-w-[90%] sm:max-w-[85%]">
         {card.eyebrow && (
           <p
-            style={customTextColor ? { color: customTextColor } : undefined}
-            className={`text-[9px] font-semibold tracking-widest sm:text-[10px] ${isLight ? "text-surface/70" : "text-muted"
+            style={customTextColor ? { color: customTextColor, opacity: 0.85 } : undefined}
+            className={`text-[8.5px] font-bold uppercase tracking-widest sm:text-[10px] ${isLight ? "text-white/80" : "text-muted"
               }`}
           >
             {card.eyebrow}
@@ -88,43 +82,39 @@ function PromoCard({
         )}
         <h3
           style={customTextColor ? { color: customTextColor } : undefined}
-          className={`mt-1 text-sm font-bold leading-snug sm:text-base ${isLight ? "text-surface" : "text-text"
+          className={`text-xs font-extrabold leading-snug drop-shadow-sm sm:text-base ${isLight ? "text-white" : "text-text"
             }`}
         >
           {card.title}
           {card.highlight && (
             <>
               {" "}
-              <span
-                className={isLight ? "text-warm" : "text-primary"}
-                style={customTextColor ? { color: customTextColor } : undefined}
-              >
+              <span className="text-warm font-extrabold">
                 {card.highlight}
               </span>
             </>
           )}
         </h3>
 
-        {card.description && (
+        {card.subtitle && (
           <p
-            style={customTextColor ? { color: customTextColor } : undefined}
-            className={`mt-1 text-[11px] sm:text-xs ${isLight ? "text-surface/80" : "text-muted"
-              }`}
+            style={customTextColor ? { color: customTextColor, opacity: 0.85 } : undefined}
+            className={`hidden text-xs opacity-85 sm:block ${isLight ? "text-white/85" : "text-muted"}`}
           >
-            {card.description}
+            {card.subtitle}
           </p>
         )}
 
         {card.price && (
           <p
             style={customTextColor ? { color: customTextColor } : undefined}
-            className={`mt-1 text-[11px] sm:text-xs ${isLight ? "text-surface/80" : "text-text"
+            className={`mt-0.5 text-[10px] sm:text-xs ${isLight ? "text-white/80" : "text-text"
               }`}
           >
             {card.title.toLowerCase().includes("from") ? "" : "FROM "}
             <span
               style={customTextColor ? { color: customTextColor } : undefined}
-              className={`text-sm font-bold sm:text-base ${isLight ? "text-success" : "text-primary"
+              className={`text-xs font-bold sm:text-base ${isLight ? "text-success" : "text-primary"
                 }`}
             >
               {card.price}
@@ -134,13 +124,20 @@ function PromoCard({
 
         {card.buttonText && card.buttonLink && (
           <Link
-            style={customButtonColor ? { backgroundColor: customButtonColor } : undefined}
+            style={
+              customButtonColor
+                ? {
+                    backgroundColor: customButtonColor,
+                    color: buttonTextColor,
+                  }
+                : undefined
+            }
             href={card.buttonLink}
-            className={`mt-2 inline-block rounded-md px-3 py-1.5 text-[10px] font-bold tracking-wide transition-colors sm:mt-3 sm:px-4 sm:py-2 sm:text-[11px] ${customButtonColor
-                ? "text-white"
+            className={`mt-1 inline-flex w-fit items-center rounded-lg px-2.5 py-1 text-[9.5px] font-bold tracking-wide shadow-md transition-transform hover:scale-[1.02] sm:mt-2.5 sm:px-4 sm:py-2 sm:text-[11px] ${customButtonColor
+                ? ""
                 : isLight
-                  ? "bg-surface text-text hover:bg-muted-bg"
-                  : "bg-primary text-surface hover:bg-primary-hover"
+                  ? "bg-white text-slate-900 hover:bg-white/90"
+                  : "bg-primary text-white hover:bg-primary-hover"
               }`}
           >
             {card.buttonText}
@@ -151,7 +148,7 @@ function PromoCard({
           <Link
             style={customTextColor ? { color: customTextColor } : undefined}
             href={card.buttonLink}
-            className={`mt-2 inline-block text-[11px] font-semibold underline sm:text-xs ${isLight ? "text-surface" : "text-text"
+            className={`mt-1.5 inline-block text-[11px] font-semibold underline sm:text-xs ${isLight ? "text-white" : "text-text"
               }`}
           >
             View
@@ -210,18 +207,24 @@ function AnimatedPromoCard({
 function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   const [active, setActive] = useState(0);
   const total = slides.length;
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startTimer = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (total <= 1) return;
+    timerRef.current = setInterval(() => {
+      setActive((prev) => (prev + 1) % total);
+    }, HERO_ADVANCE_MS);
+  };
 
   useEffect(() => {
     setActive(0);
-  }, [slides]);
-
-  useEffect(() => {
-    if (total <= 1) return;
-    const timer = setInterval(() => {
-      setActive((prev) => (prev + 1) % total);
-    }, HERO_ADVANCE_MS);
-    return () => clearInterval(timer);
-  }, [total]);
+    startTimer();
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slides, total]);
 
   if (total === 0) return null;
 
@@ -229,11 +232,20 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   const slide = slides[currentIndex];
   const isLight = slide.textTheme !== "dark";
   const customTextColor = isLight ? slide.lightTextColor : slide.darkTextColor;
-  const customButtonColor = isLight ? slide.lightButtonColor : slide.darkButtonColor;
-  const goTo = (index: number) => setActive((index + total) % total);
+  const customButtonColor = (isLight ? slide.lightButtonColor : slide.darkButtonColor) || slide.lightButtonColor || slide.darkButtonColor;
+  const buttonTextColor = customButtonColor ? getContrastingTextColor(customButtonColor) : undefined;
+
+  const goTo = (index: number) => {
+    setActive((index + total) % total);
+    startTimer(); // Reset animation timer on manual click!
+  };
 
   return (
     <div
+      onMouseEnter={() => {
+        if (timerRef.current) clearInterval(timerRef.current);
+      }}
+      onMouseLeave={startTimer}
       className={`group relative h-full min-h-56 overflow-hidden rounded-xl sm:min-h-72 lg:min-h-80 [perspective:1400px] ${slide.bgClassName ?? "bg-muted-bg"
         }`}
     >
@@ -259,20 +271,11 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
               priority
             />
             <div
-              className={`absolute inset-0 ${slide.overlayColor === undefined
-                  ? isLight
-                    ? "bg-secondary/50"
-                    : "bg-surface/70"
-                  : ""
-                }`}
-              style={
-                slide.overlayColor
-                  ? {
-                    backgroundColor: slide.overlayColor,
-                    opacity: (slide.overlayOpacity ?? 50) / 100,
-                  }
-                  : undefined
-              }
+              className="absolute inset-0 transition-opacity"
+              style={{
+                backgroundColor: slide.overlayColor || "#0B0F19",
+                opacity: (slide.overlayOpacity ?? 70) / 100,
+              }}
             />
 
             {/* Page Spine & Book Fold Shadow during smooth turning */}
@@ -295,29 +298,47 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
           exit={{ opacity: 0, x: -15, filter: "blur(3px)" }}
           transition={{ duration: 0.75, ease: PAGE_FLIP_EASE }}
-          className="relative z-10 flex h-full flex-col justify-center gap-2 max-w-[85%] p-5 sm:max-w-[70%] sm:gap-3 sm:p-6 lg:max-w-[55%] lg:p-8"
+          className="relative z-10 flex h-full flex-col justify-center gap-1 max-w-[90%] p-4 sm:max-w-[85%] sm:gap-2 sm:p-6 lg:max-w-[75%] xl:max-w-[70%] lg:p-8"
           style={customTextColor ? { color: customTextColor, transformOrigin: "left center" } : { transformOrigin: "left center" }}
         >
+          {slide.eyebrow && (
+            <span
+              style={customTextColor ? { color: customTextColor, opacity: 0.85 } : undefined}
+              className={`text-[9px] font-bold uppercase tracking-widest sm:text-xs ${isLight ? "text-white/80" : "text-muted"}`}
+            >
+              {slide.eyebrow}
+            </span>
+          )}
+
           <h2
             style={customTextColor ? { color: customTextColor } : undefined}
-            className={`text-xl font-extrabold leading-tight sm:text-2xl lg:text-3xl ${isLight ? "text-surface" : "text-text"
+            className={`text-base font-extrabold leading-snug drop-shadow-sm sm:text-2xl lg:text-3xl ${isLight ? "text-white" : "text-text"
               }`}
           >
             {slide.title}
+            {slide.highlight && (
+              <>
+                {" "}
+                <span className="text-warm font-extrabold">
+                  {slide.highlight}
+                </span>
+              </>
+            )}
           </h2>
+
           {slide.subtitle && (
             <p
-              style={customTextColor ? { color: customTextColor } : undefined}
-              className={`text-lg font-extrabold leading-tight sm:text-xl lg:text-2xl ${isLight ? "text-surface" : "text-text"
-                }`}
+              style={customTextColor ? { color: customTextColor, opacity: 0.85 } : undefined}
+              className={`hidden text-xs opacity-85 sm:block sm:text-sm ${isLight ? "text-white/85" : "text-muted"}`}
             >
               {slide.subtitle}
             </p>
           )}
+
           {slide.description && (
             <p
-              style={customTextColor ? { color: customTextColor } : undefined}
-              className={`mt-1 text-xs leading-relaxed sm:text-sm ${isLight ? "text-surface/80" : "text-muted"
+              style={customTextColor ? { color: customTextColor, opacity: 0.8 } : undefined}
+              className={`hidden line-clamp-2 mt-0.5 text-xs leading-relaxed sm:block sm:text-sm ${isLight ? "text-white/80" : "text-muted"
                 }`}
             >
               {slide.description}
@@ -325,13 +346,20 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           )}
 
           <Link
-            style={customButtonColor ? { backgroundColor: customButtonColor } : undefined}
+            style={
+              customButtonColor
+                ? {
+                    backgroundColor: customButtonColor,
+                    color: buttonTextColor,
+                  }
+                : undefined
+            }
             href={slide.buttonLink}
-            className={`mt-3 inline-block w-fit rounded-md px-4 py-2 text-xs font-bold tracking-wide transition-colors sm:mt-4 sm:px-6 sm:py-3 sm:text-sm ${customButtonColor
-                ? "text-white"
+            className={`mt-1.5 inline-flex w-fit items-center rounded-lg px-3.5 py-1.5 text-xs font-bold tracking-wide shadow-md transition-transform hover:scale-[1.02] sm:mt-3 sm:px-6 sm:py-2.5 sm:text-sm ${customButtonColor
+                ? ""
                 : isLight
-                  ? "bg-surface text-text hover:bg-muted-bg"
-                  : "bg-primary text-surface hover:bg-primary-hover"
+                  ? "bg-white text-slate-900 hover:bg-white/90"
+                  : "bg-primary text-white hover:bg-primary-hover"
               }`}
           >
             {slide.buttonText}
@@ -381,7 +409,7 @@ function customBannerSlides(banners: HeroBanner[], categoryLabel: string): HeroS
     buttonLink: banner.targetUrl || `/products?category=${encodeURIComponent(categoryLabel)}`,
     bgClassName: banner.bgClassName || undefined,
     overlayColor: banner.overlayColor ?? null,
-    overlayOpacity: banner.overlayColor ? banner.overlayOpacity ?? 50 : null,
+    overlayOpacity: banner.overlayOpacity ?? 70,
     lightTextColor: banner.lightTextColor ?? null,
     darkTextColor: banner.darkTextColor ?? null,
     lightButtonColor: banner.lightButtonColor ?? null,
@@ -396,14 +424,15 @@ function customPromoCards(banners: HeroBanner[], categoryLabel: string): PromoCa
     eyebrow: banner.eyebrow || undefined,
     title: banner.title || categoryLabel,
     highlight: banner.highlight || undefined,
-    description: banner.description || banner.subtitle || undefined,
+    subtitle: banner.subtitle || undefined,
+    description: banner.description || undefined,
     price: banner.price || undefined,
     image: banner.imageUrl,
     buttonText: banner.buttonText || (banner.targetUrl ? "SHOP NOW" : undefined),
     buttonLink: banner.targetUrl || undefined,
     bgClassName: banner.bgClassName || undefined,
     overlayColor: banner.overlayColor ?? null,
-    overlayOpacity: banner.overlayColor ? banner.overlayOpacity ?? 50 : null,
+    overlayOpacity: banner.overlayOpacity ?? 70,
     lightTextColor: banner.lightTextColor ?? null,
     darkTextColor: banner.darkTextColor ?? null,
     lightButtonColor: banner.lightButtonColor ?? null,
@@ -628,7 +657,25 @@ export default function BannerSection({
     });
   }, [categories, activeIdx]);
 
+  // Invalidate banner cache on window focus so admin changes show immediately on homepage
   useEffect(() => {
+    const handleFocus = () => {
+      const activeId = categories[activeIdx]?.id;
+      if (activeId && /^[a-f\d]{24}$/i.test(activeId)) {
+        getHeroBanners(activeId)
+          .then((categoryBanners) => {
+            bannerCache.current.set(activeId, categoryBanners);
+            setBannerCategoryId(activeId);
+            setCustomBanners(categoryBanners);
+          })
+          .catch(() => {});
+      }
+    };
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [categories, activeIdx]);
+
+  const startCategoryTimer = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (categories.length === 0) return;
     timerRef.current = setInterval(() => {
@@ -644,7 +691,14 @@ export default function BannerSection({
         });
       }
     }, CATEGORY_CYCLE_MS);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  };
+
+  useEffect(() => {
+    startCategoryTimer();
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categories]);
 
   useEffect(() => {
@@ -665,6 +719,7 @@ export default function BannerSection({
       setCustomBanners(bannerCache.current.get(cat.id) ?? []);
     }
     setActiveIdx(idx);
+    startCategoryTimer(); // Reset the category auto-cycle timer on user click!
   };
 
   const activeCat = categories[activeIdx];
@@ -725,7 +780,7 @@ export default function BannerSection({
   return (
     <section
       ref={sectionRef}
-      className={`grid gap-4 pb-8 ${hasSideCards
+      className={`grid gap-4 ${hasSideCards
           ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-[165px_1fr_260px] xl:grid-cols-[175px_1fr_280px]"
           : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-[165px_1fr] xl:grid-cols-[175px_1fr]"
         }`}

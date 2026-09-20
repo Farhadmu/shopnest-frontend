@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { ImageOff, Pencil, Plus } from "lucide-react";
 import type { HeroBanner } from "@/lib/api/hero-banners";
+import { getContrastingTextColor } from "@/lib/utils/banner-color-utils";
 
 export type TileVariant = "hero" | "bottom" | "side";
 
@@ -56,7 +57,8 @@ export function BannerTile({ banner, variant, onEdit }: BannerTileProps) {
 
   const isLight = banner.textTheme !== "dark";
   const customTextColor = isLight ? banner.lightTextColor : banner.darkTextColor;
-  const customButtonColor = isLight ? banner.lightButtonColor : banner.darkButtonColor;
+  const customButtonColor = (isLight ? banner.lightButtonColor : banner.darkButtonColor) || banner.lightButtonColor || banner.darkButtonColor;
+  const buttonTextColor = customButtonColor ? getContrastingTextColor(customButtonColor) : undefined;
   const overlayStyle = banner.overlayColor
     ? { backgroundColor: banner.overlayColor, opacity: (banner.overlayOpacity ?? 50) / 100 }
     : undefined;
@@ -103,9 +105,13 @@ export function BannerTile({ banner, variant, onEdit }: BannerTileProps) {
         {banner.buttonText && (
           <span
             className={`mt-1.5 inline-block rounded-md px-2.5 py-1 text-[10px] font-bold tracking-wide md:px-3 md:py-1.5 md:text-[11px] ${
-              customButtonColor ? "text-white" : isLight ? "bg-surface text-text" : "bg-primary text-surface"
+              customButtonColor ? "" : isLight ? "bg-surface text-text" : "bg-primary text-surface"
             }`}
-            style={customButtonColor ? { backgroundColor: customButtonColor } : undefined}
+            style={
+              customButtonColor
+                ? { backgroundColor: customButtonColor, color: buttonTextColor }
+                : undefined
+            }
           >
             {banner.buttonText}
           </span>
