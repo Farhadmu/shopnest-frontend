@@ -949,7 +949,7 @@ export default function AdminDashboard() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {forecastData?.metrics && (
               <>
-                <div className="rounded-2xl border border-border bg-surface p-4 transition-all hover:border-primary/50">
+                <div className="rounded-2xl border border-border bg-surface p-4 transition-all hover:border-primary/50 hover:shadow-md">
                   <div className="flex items-center justify-between text-xs text-muted font-bold">
                     <span>USER ADOPTION</span>
                     <span className="text-[10px] text-emerald-500 font-extrabold bg-emerald-500/10 px-2 py-0.5 rounded-full">
