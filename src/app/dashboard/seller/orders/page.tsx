@@ -18,15 +18,7 @@ import {
   FiUser,
   FiCompass,
 } from "react-icons/fi";
-import { FaMotorcycle, FaBoxOpen, FaTimes } from "react-icons/fa";
-
-const ORDER_STEPS = [
-  { key: "confirmed", label: "Accept Order" },
-  { key: "processing", label: "Mark Packing" },
-  { key: "shipped", label: "Dispatched to Courier" },
-  { key: "out_for_delivery", label: "Out for Delivery" },
-  { key: "delivered", label: "Mark Delivered" },
-];
+import { FaMotorcycle, FaBoxOpen, FaTimes, FaLock } from "react-icons/fa";
 
 export default function SellerOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -189,12 +181,26 @@ export default function SellerOrdersPage() {
   }, []);
 
   const handleAdvanceStatus = async (orderId: string, newStatus: string) => {
+    if (!["confirmed", "processing"].includes(newStatus)) {
+      setNotification({
+        type: "error",
+        message: "Delivery fulfillment stages (Dispatched, Out for Delivery, Delivered) are automatically updated by the courier partner.",
+      });
+      return;
+    }
     setUpdatingId(orderId);
     try {
       await clientMutation(`/orders/${orderId}/status`, "PATCH", { status: newStatus });
+      setNotification({
+        type: "success",
+        message: `Order #${orderId.slice(-8).toUpperCase()} status updated to ${newStatus}.`,
+      });
       loadOrders();
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      setNotification({
+        type: "error",
+        message: err?.message || "Failed to update order status.",
+      });
     } finally {
       setUpdatingId(null);
     }
@@ -416,6 +422,19 @@ export default function SellerOrdersPage() {
             const isUpdating = updatingId === orderId;
             const isReadying = readyingPickupId === orderId;
 
+            const activeDelivery =
+              sellerActiveDeliveries.find((d: any) => String(d.orderId) === orderId) ||
+              (o as any).deliveryRequest;
+            const isReadyForPickup = Boolean(activeDelivery);
+            const isAccepted = o.status !== "pending";
+            const isPickedUp =
+              ["shipped", "picked_up", "in_transit", "out_for_delivery", "delivered"].includes(o.status) ||
+              ["picked_up", "in_transit", "out_for_delivery", "delivered"].includes(activeDelivery?.status);
+            const isOutForDelivery =
+              ["out_for_delivery", "delivered"].includes(o.status) ||
+              ["out_for_delivery", "delivered"].includes(activeDelivery?.status);
+            const isDelivered = o.status === "delivered" || activeDelivery?.status === "delivered";
+
             // Seller items on this order
             const sellerItems = (o.items || []).filter(
               (it: any) =>
@@ -474,7 +493,19 @@ export default function SellerOrdersPage() {
 
                     {/* READY FOR PICKUP & TRACK COURIER BUTTONS */}
                     <div className="flex items-center gap-2">
-                      {(o.status === "confirmed" || o.status === "processing") && (
+                      {o.status === "pending" && (
+                        <button
+                          type="button"
+                          onClick={() => handleAdvanceStatus(orderId, "confirmed")}
+                          disabled={isUpdating}
+                          className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2 text-xs font-black text-white shadow-md shadow-emerald-600/20 transition cursor-pointer disabled:opacity-50"
+                        >
+                          <FiCheckCircle size={13} />
+                          <span>{isUpdating ? "Accepting..." : "Accept Order"}</span>
+                        </button>
+                      )}
+
+                      {(o.status === "confirmed" || o.status === "processing") && !isReadyForPickup && (
                         <button
                           type="button"
                           onClick={() => handleOpenPickupModal(o)}
@@ -486,7 +517,14 @@ export default function SellerOrdersPage() {
                         </button>
                       )}
 
-                      {["shipped", "out_for_delivery", "delivered", "picked_up", "in_transit"].includes(o.status) && (
+                      {isReadyForPickup && activeDelivery?.status === "available" && (
+                        <span className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
+                          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                          Awaiting Courier Claim
+                        </span>
+                      )}
+
+                      {(isReadyForPickup || ["shipped", "out_for_delivery", "delivered", "picked_up", "in_transit"].includes(o.status)) && (
                         <button
                           type="button"
                           onClick={() => handleOpenTrackingModal(o)}
@@ -527,29 +565,222 @@ export default function SellerOrdersPage() {
                   </div>
                 </div>
 
-                {/* Status Action Buttons */}
-                <div className="pt-2 border-t border-border/40 flex flex-wrap items-center justify-between gap-3">
-                  <span className="text-xs font-semibold text-muted">Advance Fulfillment Status:</span>
-                  <div className="flex flex-wrap gap-2">
-                    {ORDER_STEPS.map((step) => {
-                      const isActive = o.status === step.key;
-                      return (
-                        <button
-                          key={step.key}
-                          type="button"
-                          disabled={isUpdating || isActive}
-                          onClick={() => handleAdvanceStatus(orderId, step.key)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                            isActive
-                              ? "bg-emerald-500 text-white cursor-default"
-                              : "bg-background border border-border text-foreground hover:bg-primary hover:text-white"
-                          }`}
-                        >
-                          {isActive ? `✓ ${step.label}` : step.label}
-                        </button>
-                      );
-                    })}
+                {/* ─── FULFILLMENT & DELIVERY LIFECYCLE ─── */}
+                <div className="pt-3 border-t border-border/40 space-y-3">
+                  {/* Header with clear division of responsibility */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <span className="font-bold text-foreground flex items-center gap-1.5">
+                      <FiTruck className="text-primary" /> Fulfillment & Delivery Lifecycle:
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted bg-muted-bg/60 px-2.5 py-1 rounded-full border border-border/50">
+                      <FaLock size={10} className="text-amber-500" /> Delivery stages auto-update via Delivery Partner
+                    </span>
                   </div>
+
+                  {/* Stepper Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-xs">
+                    {/* Step 1: Accept Order (Seller Control) */}
+                    <div
+                      className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
+                        isAccepted
+                          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                          : "border-primary/40 bg-primary/5 text-primary"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-muted">Step 1 • Seller</span>
+                          {isAccepted && <FiCheckCircle className="text-emerald-500 shrink-0" />}
+                        </div>
+                        <div className="font-extrabold text-xs">
+                          {isAccepted ? "Order Accepted" : "Pending Acceptance"}
+                        </div>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-border/30">
+                        {o.status === "pending" ? (
+                          <button
+                            type="button"
+                            disabled={isUpdating}
+                            onClick={() => handleAdvanceStatus(orderId, "confirmed")}
+                            className="w-full py-1 px-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[11px] shadow-sm transition"
+                          >
+                            {isUpdating ? "Accepting..." : "Accept Order"}
+                          </button>
+                        ) : (
+                          <span className="text-[10px] text-muted font-medium flex items-center gap-1">
+                            ✓ Confirmed
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Step 2: Ready for Pickup (Seller Control) */}
+                    <div
+                      className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
+                        isReadyForPickup
+                          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                          : isAccepted
+                          ? "border-primary/40 bg-primary/5 text-primary"
+                          : "border-border/60 bg-card text-muted opacity-60"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-muted">Step 2 • Seller</span>
+                          {isReadyForPickup && <FiCheckCircle className="text-emerald-500 shrink-0" />}
+                        </div>
+                        <div className="font-extrabold text-xs">
+                          {isReadyForPickup ? "Ready for Pickup" : "Pack & Dispatch"}
+                        </div>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-border/30">
+                        {!isReadyForPickup && isAccepted ? (
+                          <button
+                            type="button"
+                            disabled={isReadying}
+                            onClick={() => handleOpenPickupModal(o)}
+                            className="w-full py-1 px-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-[11px] shadow-sm transition"
+                          >
+                            {isReadying ? "Dispatching..." : "Ready for Pickup"}
+                          </button>
+                        ) : (
+                          <span className="text-[10px] text-muted font-medium">
+                            {isReadyForPickup ? "In Delivery Pool" : "Accept order first"}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Step 3: Courier Picked Up (Delivery Partner - LOCKED for Seller) */}
+                    <div
+                      className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
+                        isPickedUp
+                          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                          : activeDelivery?.status === "assigned" || activeDelivery?.status === "pickup_started"
+                          ? "border-amber-500/40 bg-amber-500/5 text-amber-600 dark:text-amber-400"
+                          : "border-border/60 bg-muted-bg/30 text-muted opacity-75"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-muted flex items-center gap-1">
+                            <FaLock size={8} /> Step 3 • Courier
+                          </span>
+                          {isPickedUp ? (
+                            <FiCheckCircle className="text-emerald-500 shrink-0" />
+                          ) : (
+                            (activeDelivery?.status === "assigned" || activeDelivery?.status === "pickup_started") && (
+                              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                            )
+                          )}
+                        </div>
+                        <div className="font-extrabold text-xs">
+                          {isPickedUp
+                            ? "Package Picked Up"
+                            : activeDelivery?.status === "assigned" || activeDelivery?.status === "pickup_started"
+                            ? "Courier Assigned"
+                            : "Courier Pickup"}
+                        </div>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-border/30">
+                        <span className="text-[10px] text-muted font-medium block">
+                          {isPickedUp
+                            ? "In Transit"
+                            : activeDelivery?.status === "assigned" || activeDelivery?.status === "pickup_started"
+                            ? "En route to store"
+                            : isReadyForPickup
+                            ? "Awaiting claim"
+                            : "Locked"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Step 4: Out for Delivery (Delivery Partner - LOCKED for Seller) */}
+                    <div
+                      className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
+                        isOutForDelivery
+                          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                          : "border-border/60 bg-muted-bg/30 text-muted opacity-75"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-muted flex items-center gap-1">
+                            <FaLock size={8} /> Step 4 • Courier
+                          </span>
+                          {isOutForDelivery && <FiCheckCircle className="text-emerald-500 shrink-0" />}
+                        </div>
+                        <div className="font-extrabold text-xs">
+                          {isOutForDelivery ? "Out for Delivery" : "Final Delivery"}
+                        </div>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-border/30">
+                        <span className="text-[10px] text-muted font-medium block">
+                          {isOutForDelivery ? "Heading to buyer" : "Courier auto-update"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Step 5: Delivered (Delivery Partner - LOCKED for Seller) */}
+                    <div
+                      className={`p-3 rounded-xl border flex flex-col justify-between transition-all col-span-2 sm:col-span-1 ${
+                        isDelivered
+                          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                          : "border-border/60 bg-muted-bg/30 text-muted opacity-75"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-muted flex items-center gap-1">
+                            <FaLock size={8} /> Step 5 • Courier
+                          </span>
+                          {isDelivered && <FiCheckCircle className="text-emerald-500 shrink-0" />}
+                        </div>
+                        <div className="font-extrabold text-xs">
+                          {isDelivered ? "Delivered" : "Delivery Handover"}
+                        </div>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-border/30">
+                        <span className="text-[10px] text-muted font-medium block">
+                          {isDelivered ? "Customer verified" : "OTP verified"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Active Rider Status Banner if assigned */}
+                  {activeDelivery && activeDelivery.status !== "available" && activeDelivery.assignedRider && (
+                    <div className="p-3 rounded-xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs animate-in fade-in duration-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                          <FaMotorcycle size={14} />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-foreground">Delivery Partner:</span>
+                            <span className="font-black text-primary">{activeDelivery.assignedRider.name}</span>
+                          </div>
+                          {activeDelivery.assignedRider.phone && (
+                            <p className="text-[11px] text-muted font-medium mt-0.5">
+                              Contact: <span className="font-mono text-foreground font-semibold">{activeDelivery.assignedRider.phone}</span>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 uppercase tracking-wider">
+                          {activeDelivery.status.replaceAll("_", " ")}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenTrackingModal(o)}
+                          className="px-3 py-1.5 rounded-lg bg-card border border-primary/30 text-primary hover:bg-primary/10 font-bold text-xs transition cursor-pointer"
+                        >
+                          View Live GPS
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             );
