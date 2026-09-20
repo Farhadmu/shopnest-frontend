@@ -200,7 +200,7 @@ export default function AiIntelligenceSection() {
   };
 
   return (
-    <section className="py-6 sm:py-10">
+    <section className="w-full">
       <div className="group relative overflow-hidden rounded-3xl p-6 sm:p-10 lg:p-12 shadow-xl transition-all duration-500 hover:shadow-2xl">
         {/* Conic Glow & Surface Backgrounds */}
         <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none p-0.5">

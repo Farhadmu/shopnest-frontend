@@ -138,7 +138,7 @@ export default function FeaturedProductsSection({
   }
 
   return (
-    <section className="relative w-full overflow-hidden py-10 sm:py-14">
+    <section className="relative w-full overflow-hidden">
       {/* Embedded CSS for smooth scale & opacity transition on centered coverflow slider */}
       <style>{`
         .featured-coverflow-slider {

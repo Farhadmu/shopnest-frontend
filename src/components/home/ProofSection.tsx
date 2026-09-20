@@ -63,7 +63,7 @@ export default function ProofSection() {
   const totalReviews = stats?.totalReviews ?? 0;
 
   return (
-    <section className="my-6 w-full overflow-hidden rounded-3xl border border-border/50 bg-muted-bg py-10">
+    <section className="w-full overflow-hidden rounded-3xl border border-border/50 bg-muted-bg py-10">
       <div className="text-center mb-8 px-4">
         <h2 className="text-3xl md:text-4xl font-black text-text tracking-tight">
           What Our Users Say
