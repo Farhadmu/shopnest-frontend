@@ -219,6 +219,7 @@ export interface CategoryIntelligenceData {
 }
 
 export interface SystemTelemetryData {
+  /** Core system telemetry status, V8 heap diagnostics, and database latency */
   overallStatus: string;
   uptime: string;
   p95LatencyMs: number;
