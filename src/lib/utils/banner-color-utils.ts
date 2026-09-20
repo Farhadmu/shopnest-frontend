@@ -195,6 +195,16 @@ export function getContrastRatio(hex1: string, hex2: string): number {
 }
 
 /**
+ * Returns '#0F172A' (dark) if background is light/bright, or '#FFFFFF' (white) if background is dark.
+ */
+export function getContrastingTextColor(bgHex: string | null | undefined): string {
+  if (!bgHex) return "#FFFFFF";
+  const rgb = hexToRgb(bgHex);
+  const lum = getLuminance(rgb.r, rgb.g, rgb.b);
+  return lum >= 0.45 ? "#0F172A" : "#FFFFFF";
+}
+
+/**
  * Simulates blending overlay color over a background color at a given opacity (0-100).
  */
 export function blendColors(

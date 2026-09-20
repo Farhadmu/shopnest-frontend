@@ -11,14 +11,15 @@ import {
   extractColorsFromImageUrl,
   analyzeBannerContrast,
   getAutoFixColors,
+  getContrastingTextColor,
   type ExtractedPalette,
 } from "@/lib/utils/banner-color-utils";
-import type { EditSlot } from "./types";
+import type { EditSlot, BannerSaveResult } from "./types";
 
 interface HeroBannerEditModalProps {
   slot: EditSlot;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (result?: BannerSaveResult) => void;
 }
 
 const inputClass =
@@ -191,11 +192,12 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
     };
     try {
       if (existing) {
-        await updateHeroBanner(existing.id, body);
+        const updated = await updateHeroBanner(existing.id, body);
+        onSaved({ type: "update", banner: updated });
       } else {
-        await createHeroBanner(body as Omit<HeroBanner, "id" | "createdAt" | "updatedAt">);
+        const created = await createHeroBanner(body as Omit<HeroBanner, "id" | "createdAt" | "updatedAt">);
+        onSaved({ type: "create", banner: created });
       }
-      onSaved();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Failed to save banner.");
     } finally {
@@ -209,7 +211,7 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
     setError(null);
     try {
       await deleteHeroBanner(existing.id);
-      onSaved();
+      onSaved({ type: "delete", id: existing.id });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Failed to remove banner.");
     } finally {
@@ -565,8 +567,9 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
                       key={i}
                       type="button"
                       onClick={() => {
-                        if (previewTheme === "light") setLightButtonColor(hex);
-                        else setDarkButtonColor(hex);
+                        setLightButtonColor(hex);
+                        setDarkButtonColor(hex);
+                        setSelectedPresetId(null);
                       }}
                       className="group flex items-center gap-1.5 rounded-md border border-border bg-muted-bg/50 px-2 py-1 transition hover:border-primary"
                     >
@@ -616,7 +619,21 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
 
               {/* Button colors — both modes visible; current theme highlighted */}
               <div>
-                <p className={`mb-2 ${labelClass}`}>Button Color</p>
+                <div className="mb-2 flex items-center justify-between">
+                  <p className={labelClass}>Button Color</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const activeColor = previewTheme === "light" ? lightButtonColor : darkButtonColor;
+                      setLightButtonColor(activeColor);
+                      setDarkButtonColor(activeColor);
+                    }}
+                    className="text-[11px] font-semibold text-primary hover:underline"
+                    title="Copy active button color to both Light and Dark modes"
+                  >
+                    Sync to both modes
+                  </button>
+                </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <ColorField
                     label="Light Mode Button"
@@ -804,7 +821,7 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
                   {subtitle && (
                     <p
                       style={{ opacity: 0.85 }}
-                      className={`font-medium ${placement === "hero" ? "text-xs sm:text-sm" : "text-xs"}`}
+                      className={`hidden font-medium sm:block ${placement === "hero" ? "text-xs sm:text-sm" : "text-xs"}`}
                     >
                       {subtitle}
                     </p>
@@ -812,7 +829,7 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
                   {placement === "hero" && description && (
                     <p
                       style={{ opacity: 0.8 }}
-                      className="line-clamp-2 leading-relaxed text-xs sm:text-sm"
+                      className="hidden line-clamp-2 leading-relaxed text-xs sm:block sm:text-sm"
                     >
                       {description}
                     </p>
@@ -830,11 +847,11 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
                           previewTheme === "light"
                             ? lightButtonColor || "#ffffff"
                             : darkButtonColor || "#5b5cf0",
-                        color:
-                          (previewTheme === "light" ? lightButtonColor : darkButtonColor) === "#ffffff" ||
-                          (previewTheme === "light" ? lightButtonColor : darkButtonColor) === "#FFFFFF"
-                            ? "#0f172a"
-                            : "#ffffff",
+                        color: getContrastingTextColor(
+                          previewTheme === "light"
+                            ? lightButtonColor || "#ffffff"
+                            : darkButtonColor || "#5b5cf0"
+                        ),
                       }}
                     >
                       {buttonText}
