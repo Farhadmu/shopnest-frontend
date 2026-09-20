@@ -6,3 +6,9 @@ export interface EditSlot {
   placement: "hero" | "side" | "bottom";
   banner: HeroBanner | null;
 }
+
+export type BannerSaveResult =
+  | { type: "create"; banner: HeroBanner }
+  | { type: "update"; banner: HeroBanner }
+  | { type: "delete"; id: string };
+
