@@ -18,7 +18,7 @@ import {
   FiUser,
   FiCompass,
 } from "react-icons/fi";
-import { FaMotorcycle, FaBoxOpen, FaTimes } from "react-icons/fa";
+import { FaMotorcycle, FaBoxOpen, FaTimes, FaLock } from "react-icons/fa";
 
 const ORDER_STEPS = [
   { key: "confirmed", label: "Accept Order" },
