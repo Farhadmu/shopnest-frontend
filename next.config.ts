@@ -11,6 +11,7 @@ const backendUrl = rawBackendUrl
   .replace(/\/api\/v1$/, "");
 
 const nextConfig: NextConfig = {
+  transpilePackages: ["swiper"],
   async rewrites() {
     return [
       {
