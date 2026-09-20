@@ -881,27 +881,12 @@ export default function BannerSection({
   const sideBanners = categoryBanners.filter((banner) => banner.placement === "side");
   const bottomBanners = categoryBanners.filter((banner) => banner.placement === "bottom");
 
-  const fallbackDynamicHeroSlides: HeroSlide[] = [
-    {
-      id: `hero-${activeCat?.id || "default"}`,
-      title: categoryLabel,
-      subtitle: `Featured Deals for ${categoryLabel}`,
-      description: `Explore top-rated products and exclusive offers in ${categoryLabel}.`,
-      buttonText: "SHOP NOW",
-      buttonLink: activeCat?.href || `/products?category=${encodeURIComponent(categoryLabel)}`,
-      image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1600&auto=format&fit=crop&q=80",
-      textTheme: "light" as const,
-      overlayColor: "#000000",
-      overlayOpacity: 50,
-    },
-  ];
-
   const activeHeroSlides =
     heroBanners.length > 0
       ? customBannerSlides(heroBanners, categoryLabel)
       : heroSlides.length > 0
       ? heroSlides
-      : fallbackDynamicHeroSlides;
+      : [];
 
   const activeSideCards = (
     sideBanners.length > 0 ? customPromoCards(sideBanners, categoryLabel) : []
