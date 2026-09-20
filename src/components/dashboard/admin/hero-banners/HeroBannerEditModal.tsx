@@ -11,6 +11,7 @@ import {
   extractColorsFromImageUrl,
   analyzeBannerContrast,
   getAutoFixColors,
+  getContrastingTextColor,
   type ExtractedPalette,
 } from "@/lib/utils/banner-color-utils";
 import type { EditSlot } from "./types";
@@ -565,8 +566,9 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
                       key={i}
                       type="button"
                       onClick={() => {
-                        if (previewTheme === "light") setLightButtonColor(hex);
-                        else setDarkButtonColor(hex);
+                        setLightButtonColor(hex);
+                        setDarkButtonColor(hex);
+                        setSelectedPresetId(null);
                       }}
                       className="group flex items-center gap-1.5 rounded-md border border-border bg-muted-bg/50 px-2 py-1 transition hover:border-primary"
                     >
@@ -616,7 +618,21 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
 
               {/* Button colors — both modes visible; current theme highlighted */}
               <div>
-                <p className={`mb-2 ${labelClass}`}>Button Color</p>
+                <div className="mb-2 flex items-center justify-between">
+                  <p className={labelClass}>Button Color</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const activeColor = previewTheme === "light" ? lightButtonColor : darkButtonColor;
+                      setLightButtonColor(activeColor);
+                      setDarkButtonColor(activeColor);
+                    }}
+                    className="text-[11px] font-semibold text-primary hover:underline"
+                    title="Copy active button color to both Light and Dark modes"
+                  >
+                    Sync to both modes
+                  </button>
+                </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <ColorField
                     label="Light Mode Button"
@@ -830,11 +846,11 @@ export function HeroBannerEditModal({ slot, onClose, onSaved }: HeroBannerEditMo
                           previewTheme === "light"
                             ? lightButtonColor || "#ffffff"
                             : darkButtonColor || "#5b5cf0",
-                        color:
-                          (previewTheme === "light" ? lightButtonColor : darkButtonColor) === "#ffffff" ||
-                          (previewTheme === "light" ? lightButtonColor : darkButtonColor) === "#FFFFFF"
-                            ? "#0f172a"
-                            : "#ffffff",
+                        color: getContrastingTextColor(
+                          previewTheme === "light"
+                            ? lightButtonColor || "#ffffff"
+                            : darkButtonColor || "#5b5cf0"
+                        ),
                       }}
                     >
                       {buttonText}
