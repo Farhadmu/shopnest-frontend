@@ -22,7 +22,6 @@ export type UserRole = "customer" | "seller" | "admin" | "delivery_man" | "deliv
 export const mainNavItems: Record<UserRole, NavItem[]> = {
   guest: [
     { href: "/products", label: "Products" },
-    { href: "/ai-advisor", label: "AI Advisor" },
     { href: "/stores", label: "Stores" },
     { href: "/compare", label: "Compare" },
   ],

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -10,6 +10,7 @@ import { WishlistProvider } from "@/context/WishlistContext";
 import { FlyToCartProvider } from "@/context/FlyToCartContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { CartDrawer } from "@/components/cart/CartDrawer";
+import { AiCommerceCopilot } from "@/components/ai/AiCommerceCopilot";
 import { useSession } from "@/lib/auth-client";
 import { recordSession } from "@/lib/api/security-intelligence";
 
@@ -72,6 +73,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
+  const isHydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+  const isAuthenticated = isHydrated && Boolean(session?.user);
+
   return (
     <ToastProvider>
       <WishlistProvider>
@@ -87,6 +95,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <MobileBottomNav />
             </div>
             <CartDrawer />
+
+            {/* Pro-Level Floating AI Advisor: Guest mode only (hidden once customer logs in) */}
+            {isHydrated && !isAuthenticated && (
+              <AiCommerceCopilot
+                role="advisor"
+                positionClass="bottom-20 right-4 md:bottom-6 md:right-6"
+              />
+            )}
           </FlyToCartProvider>
         </CartDrawerProvider>
       </WishlistProvider>
