@@ -435,7 +435,9 @@ export function AiCommerceCopilot({
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [typingPhase, setTypingPhase] = useState(0);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatBodyRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const isUserScrolledUp = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const TYPING_PHASES = [
@@ -492,19 +494,36 @@ export function AiCommerceCopilot({
     }
   }, [effectiveRole]);
 
-  // Auto-scroll to bottom
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const handleChatScroll = () => {
+    if (!chatBodyRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = chatBodyRef.current;
+    isUserScrolledUp.current = scrollHeight - scrollTop - clientHeight > 60;
+  };
+
+  // Safe inner container scroll — never scrolls parent backdrop or window
+  const scrollToBottom = useCallback((force = false) => {
+    if (!chatBodyRef.current) return;
+    if (force || !isUserScrolledUp.current) {
+      chatBodyRef.current.scrollTo({
+        top: chatBodyRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
+    scrollToBottom(false);
   }, [messages, scrollToBottom]);
 
-  // Focus input when opened
+  // Reset backdrop scrollTop and focus input on open without jumping
   useEffect(() => {
-    if (isOpen && !isMinimized) {
-      setTimeout(() => inputRef.current?.focus(), 100);
+    if (isOpen) {
+      if (backdropRef.current) {
+        backdropRef.current.scrollTop = 0;
+      }
+      if (!isMinimized) {
+        setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 100);
+      }
     }
   }, [isOpen, isMinimized]);
 
@@ -580,6 +599,8 @@ export function AiCommerceCopilot({
     setQuery("");
     setLoading(true);
     setShowBriefing(false);
+    isUserScrolledUp.current = false;
+    setTimeout(() => scrollToBottom(true), 60);
 
     try {
       const experience: AIExperience =
@@ -1029,6 +1050,8 @@ export function AiCommerceCopilot({
       {/* Ultra-Glassmorphic Copilot Drawer */}
       {(isOpen || compact) && (
         <div
+          ref={backdropRef}
+          onScroll={(e) => { e.currentTarget.scrollTop = 0; }}
           className={
             compact
               ? "rounded-3xl border border-white/10 bg-slate-950/80 backdrop-blur-2xl p-4 shadow-2xl"
@@ -1112,7 +1135,11 @@ export function AiCommerceCopilot({
             {/* Chat Body - Hidden when minimized */}
             {!isMinimized && (
               <>
-                <div className="flex-1 min-h-0 overflow-y-auto space-y-4 p-3 sm:p-4 relative z-10">
+                <div
+                  ref={chatBodyRef}
+                  onScroll={handleChatScroll}
+                  className="flex-1 min-h-0 overflow-y-auto overscroll-contain space-y-4 p-3 sm:p-4 relative z-10"
+                >
                   <AnimatePresence mode="popLayout">
                     {messages.map((m) => renderMessage(m))}
                   </AnimatePresence>
@@ -1146,8 +1173,6 @@ export function AiCommerceCopilot({
                       </div>
                     </motion.div>
                   )}
-
-                  <div ref={messagesEndRef} />
                 </div>
 
                 {/* Quick Actions / Starter Prompts */}
