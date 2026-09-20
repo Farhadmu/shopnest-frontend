@@ -1455,14 +1455,20 @@ export default function AdminDashboard() {
                 </p>
               </div>
 
-              <div className="rounded-xl bg-surface border border-border px-3.5 py-2 text-center">
+              <div
+                className="rounded-xl bg-surface border border-border px-3.5 py-2 text-center"
+                title="Roundtrip admin ping latency to primary MongoDB replica set"
+              >
                 <p className="text-[10px] text-muted font-bold">DB Ping Latency</p>
                 <p className="text-sm font-black text-primary">
                   {telemetryData?.databaseTelemetry?.pingLatencyMs ?? telemetryData?.averageLatencyMs ?? 2}ms
                 </p>
               </div>
 
-              <div className="rounded-xl bg-surface border border-border px-3.5 py-2 text-center">
+              <div
+                className="rounded-xl bg-surface border border-border px-3.5 py-2 text-center"
+                title="Active real-time WebSocket client sockets connected to Socket.IO gateway"
+              >
                 <p className="text-[10px] text-muted font-bold">Active Sockets</p>
                 <p className="text-sm font-black text-text">
                   {telemetryData?.serverMetrics?.activeConnections ?? 0} Live
