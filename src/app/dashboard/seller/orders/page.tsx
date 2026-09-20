@@ -189,12 +189,26 @@ export default function SellerOrdersPage() {
   }, []);
 
   const handleAdvanceStatus = async (orderId: string, newStatus: string) => {
+    if (!["confirmed", "processing"].includes(newStatus)) {
+      setNotification({
+        type: "error",
+        message: "Delivery fulfillment stages (Dispatched, Out for Delivery, Delivered) are automatically updated by the courier partner.",
+      });
+      return;
+    }
     setUpdatingId(orderId);
     try {
       await clientMutation(`/orders/${orderId}/status`, "PATCH", { status: newStatus });
+      setNotification({
+        type: "success",
+        message: `Order #${orderId.slice(-8).toUpperCase()} status updated to ${newStatus}.`,
+      });
       loadOrders();
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      setNotification({
+        type: "error",
+        message: err?.message || "Failed to update order status.",
+      });
     } finally {
       setUpdatingId(null);
     }
