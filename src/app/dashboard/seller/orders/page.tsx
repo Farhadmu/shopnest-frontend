@@ -525,7 +525,14 @@ export default function SellerOrdersPage() {
                         </button>
                       )}
 
-                      {["shipped", "out_for_delivery", "delivered", "picked_up", "in_transit"].includes(o.status) && (
+                      {isReadyForPickup && activeDelivery?.status === "available" && (
+                        <span className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
+                          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                          Awaiting Courier Claim
+                        </span>
+                      )}
+
+                      {(isReadyForPickup || ["shipped", "out_for_delivery", "delivered", "picked_up", "in_transit"].includes(o.status)) && (
                         <button
                           type="button"
                           onClick={() => handleOpenTrackingModal(o)}
