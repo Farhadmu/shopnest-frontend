@@ -1211,7 +1211,7 @@ export default function AdminDashboard() {
                 </span>
               </div>
               <p className="text-xs text-muted mt-1">
-                These categories have strong customer order demand but low seller saturation. Onboarding targeted vendors here will minimize market leakage.
+                These categories have strong customer order demand but low seller saturation. Onboarding targeted vendors here will capture unmet GMV and reduce platform leakage.
               </p>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 {catData.highOpportunityCategories.map((hoc, i) => (
