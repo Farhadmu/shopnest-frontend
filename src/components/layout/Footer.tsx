@@ -3,15 +3,44 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FaFacebookF, FaInstagram, FaLinkedinIn, FaTwitter, FaChevronDown } from "react-icons/fa";
+import { FaFacebookF, FaInstagram, FaLinkedinIn, FaChevronDown } from "react-icons/fa";
 import type { IconType } from "react-icons";
 import { APP_NAME } from "@/lib/constants";
+import { FaXTwitter } from "react-icons/fa6";
 
-const socials: Array<[IconType, string]> = [
-  [FaFacebookF, "Facebook"],
-  [FaInstagram, "Instagram"],
-  [FaTwitter, "Twitter"],
-  [FaLinkedinIn, "LinkedIn"],
+interface SocialItem {
+  icon: IconType;
+  label: string;
+  href: string;
+  hoverClass: string;
+}
+
+const socials: SocialItem[] = [
+  {
+    icon: FaFacebookF,
+    label: "Facebook",
+    href: "https://www.facebook.com",
+    hoverClass: "hover:bg-[#1877F2] hover:border-[#1877F2] hover:text-white",
+  },
+  {
+    icon: FaInstagram,
+    label: "Instagram",
+    href: "https://www.instagram.com",
+    hoverClass: "hover:bg-[#E4405F] hover:border-[#E4405F] hover:text-white",
+  },
+  {
+    icon: FaXTwitter,
+    label: "X",
+    href: "https://x.com",
+    hoverClass:
+      "hover:bg-black hover:border-black hover:text-white dark:hover:bg-white dark:hover:border-white dark:hover:text-black",
+  },
+  {
+    icon: FaLinkedinIn,
+    label: "LinkedIn",
+    href: "https://www.linkedin.com",
+    hoverClass: "hover:bg-[#0A66C2] hover:border-[#0A66C2] hover:text-white",
+  },
 ];
 
 const footerColumns: Array<{ title: string; links: [string, string][] }> = [
@@ -134,15 +163,18 @@ export const Footer: React.FC = () => {
               deliveries.
             </p>
             <div className="mt-6 flex gap-2">
-              {socials.map(([Icon, label]) => (
-                <div
+              {socials.map(({ icon: Icon, label, href, hoverClass }) => (
+                <a
                   key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   aria-label={label}
                   title={label}
-                  className="grid h-9 w-9 place-items-center rounded-lg border border-border bg-muted-bg text-muted transition hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
+                  className={`grid h-9 w-9 cursor-pointer place-items-center rounded-full border border-border bg-muted-bg text-muted transition-all duration-200 ${hoverClass}`}
                 >
-                  <Icon size={13} />
-                </div>
+                  <Icon size={20} />
+                </a>
               ))}
             </div>
           </div>

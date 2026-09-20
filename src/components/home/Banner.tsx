@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -24,7 +24,6 @@ const CATEGORY_CYCLE_MS = 7000;
 const HERO_ADVANCE_MS = 7000;
 const MAX_VISIBLE_CATEGORIES = 10;
 const MAX_PROMO_CARDS = 2;
-const SWIPE_EASE = [0.22, 1, 0.36, 1] as const;
 
 // ---------------------------------------------------------------------------
 // PromoCard
@@ -209,22 +208,20 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   const total = slides.length;
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const startTimer = () => {
+  const startTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (total <= 1) return;
     timerRef.current = setInterval(() => {
       setActive((prev) => (prev + 1) % total);
     }, HERO_ADVANCE_MS);
-  };
+  }, [total]);
 
   useEffect(() => {
-    setActive(0);
     startTimer();
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slides, total]);
+  }, [startTimer]);
 
   if (total === 0) return null;
 
@@ -572,37 +569,47 @@ export default function BannerSection({
   data,
   initialCategories,
 }: {
-  data: BannerSectionData;
+  data?: BannerSectionData;
   /** Pre-fetched categories from HomeDataContext — skips own fetch when provided. */
   initialCategories?: import("@/lib/api/categories").Category[];
 }) {
-  const { heroSlides, sideCards, bottomCards } = data;
+  const heroSlides = data?.heroSlides ?? [];
+  const sideCards = data?.sideCards ?? [];
+  const bottomCards = data?.bottomCards ?? [];
 
   // Map all parent categories
-  const mapApiCategories = (cats: import("@/lib/api/categories").Category[]): BannerCategory[] =>
-    cats
-      .filter((c) => !c.parent) // only top-level (parent) categories
-      .map((c, i) => ({
-        ...(FALLBACK_CATEGORIES[i % FALLBACK_CATEGORIES.length] ?? FALLBACK_CATEGORIES[0]),
-        id: c.id,
-        label: c.name,
-        href: `/products?category=${encodeURIComponent(c.name)}`,
-      }));
+  const mapApiCategories = useCallback(
+    (cats: import("@/lib/api/categories").Category[]): BannerCategory[] =>
+      cats
+        .filter((c) => !c.parent) // only top-level (parent) categories
+        .map((c, i) => ({
+          ...(FALLBACK_CATEGORIES[i % FALLBACK_CATEGORIES.length] ?? FALLBACK_CATEGORIES[0]),
+          id: c.id,
+          label: c.name,
+          href: `/products?category=${encodeURIComponent(c.name)}`,
+        })),
+    []
+  );
 
-  const [categories, setCategories] = useState<BannerCategory[]>(() => {
+  const [fetchedCategories, setFetchedCategories] = useState<BannerCategory[]>([]);
+  const [isFetchingCats, setIsFetchingCats] = useState(
+    () => !initialCategories || initialCategories.length === 0
+  );
+
+  const categories = useMemo(() => {
     if (initialCategories && initialCategories.length > 0) {
       return mapApiCategories(initialCategories);
     }
-    return data.categories ?? FALLBACK_CATEGORIES;
-  });
-  const [categoriesLoading, setCategoriesLoading] = useState(
-    () => !initialCategories || initialCategories.length === 0
-  );
-  const [customBanners, setCustomBanners] = useState<HeroBanner[]>([]);
-  const [bannerCategoryId, setBannerCategoryId] = useState<string | null>(null);
-  const [, setBannersLoading] = useState(false);
-  const bannerCache = useRef(new Map<string, HeroBanner[]>());
+    if (fetchedCategories.length > 0) {
+      return fetchedCategories;
+    }
+    return data?.categories ?? FALLBACK_CATEGORIES;
+  }, [initialCategories, fetchedCategories, data?.categories, mapApiCategories]);
 
+  const categoriesLoading =
+    (!initialCategories || initialCategories.length === 0) && isFetchingCats;
+
+  const [bannerMap, setBannerMap] = useState<Record<string, HeroBanner[]>>({});
   const [activeIdx, setActiveIdx] = useState(0);
   const isPaused = useRef(false);
   const isVisible = useRef(true);
@@ -610,52 +617,87 @@ export default function BannerSection({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    // If pre-fetched categories are available, apply them and skip fetch.
-    if (initialCategories && initialCategories.length > 0) {
-      setCategories(mapApiCategories(initialCategories));
-      setCategoriesLoading(false);
-      return;
-    }
+    if (initialCategories && initialCategories.length > 0) return;
 
-    // Fallback: self-fetch when no initialCategories provided.
     let cancelled = false;
     getCategories()
       .then((cats) => {
         if (cancelled) return;
-        setCategories(mapApiCategories(cats));
+        setFetchedCategories(mapApiCategories(cats));
       })
-      .catch(() => {
-        if (!cancelled) {
-          setCategories(data.categories ?? FALLBACK_CATEGORIES);
-        }
-      })
+      .catch(() => {})
       .finally(() => {
-        if (!cancelled) setCategoriesLoading(false);
+        if (!cancelled) setIsFetchingCats(false);
       });
+
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialCategories]);
+  }, [initialCategories, mapApiCategories]);
 
-  // Pre-fetch banners for ALL categories upfront so transitions never flash default cards
+  // Fetch global hero banners on mount
+  useEffect(() => {
+    let cancelled = false;
+    getHeroBanners()
+      .then((globalBanners) => {
+        if (cancelled || !globalBanners || globalBanners.length === 0) return;
+        setBannerMap((prev) => ({ ...prev, global: globalBanners }));
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const activeCat = categories[activeIdx];
+  const activeCategoryId = activeCat?.id;
+
+  // Fetch banners for active category if not already cached in bannerMap
+  useEffect(() => {
+    if (!activeCategoryId || !/^[a-f\d]{24}$/i.test(activeCategoryId)) {
+      return;
+    }
+    if (bannerMap[activeCategoryId]) {
+      return;
+    }
+
+    let cancelled = false;
+    getHeroBanners(activeCategoryId)
+      .then((categoryBanners) => {
+        if (cancelled) return;
+        setBannerMap((prev) => ({ ...prev, [activeCategoryId]: categoryBanners }));
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeCategoryId, bannerMap]);
+
+  // Pre-fetch banners for ALL categories in the background so transitions are instant
   useEffect(() => {
     if (categories.length === 0) return;
+    let cancelled = false;
+
     categories.forEach((cat) => {
-      if (cat.id && /^[a-f\d]{24}$/i.test(cat.id) && !bannerCache.current.has(cat.id)) {
+      if (cat.id && /^[a-f\d]{24}$/i.test(cat.id)) {
         getHeroBanners(cat.id)
           .then((categoryBanners) => {
-            bannerCache.current.set(cat.id, categoryBanners);
-            // If this category is the currently active one, sync state immediately
-            if (cat.id === categories[activeIdx]?.id) {
-              setBannerCategoryId(cat.id);
-              setCustomBanners(categoryBanners);
-            }
+            if (cancelled) return;
+            setBannerMap((prev) => {
+              if (prev[cat.id!]) return prev;
+              return { ...prev, [cat.id!]: categoryBanners };
+            });
           })
           .catch(() => {});
       }
     });
-  }, [categories, activeIdx]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [categories]);
 
   // Invalidate banner cache on window focus so admin changes show immediately on homepage
   useEffect(() => {
@@ -664,48 +706,46 @@ export default function BannerSection({
       if (activeId && /^[a-f\d]{24}$/i.test(activeId)) {
         getHeroBanners(activeId)
           .then((categoryBanners) => {
-            bannerCache.current.set(activeId, categoryBanners);
-            setBannerCategoryId(activeId);
-            setCustomBanners(categoryBanners);
+            setBannerMap((prev) => ({ ...prev, [activeId]: categoryBanners }));
           })
           .catch(() => {});
       }
+      getHeroBanners()
+        .then((globalBanners) => {
+          if (globalBanners && globalBanners.length > 0) {
+            setBannerMap((prev) => ({ ...prev, global: globalBanners }));
+          }
+        })
+        .catch(() => {});
     };
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
   }, [categories, activeIdx]);
 
-  const startCategoryTimer = () => {
+  const startCategoryTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (categories.length === 0) return;
     timerRef.current = setInterval(() => {
       if (!isPaused.current && isVisible.current) {
-        setActiveIdx((prev) => {
-          const nextIdx = (prev + 1) % categories.length;
-          const nextCat = categories[nextIdx];
-          if (nextCat?.id && bannerCache.current.has(nextCat.id)) {
-            setBannerCategoryId(nextCat.id);
-            setCustomBanners(bannerCache.current.get(nextCat.id) ?? []);
-          }
-          return nextIdx;
-        });
+        setActiveIdx((prev) => (prev + 1) % categories.length);
       }
     }, CATEGORY_CYCLE_MS);
-  };
+  }, [categories.length]);
 
   useEffect(() => {
     startCategoryTimer();
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categories]);
+  }, [startCategoryTimer]);
 
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      ([entry]) => { isVisible.current = entry.isIntersecting; },
+      ([entry]) => {
+        isVisible.current = entry.isIntersecting;
+      },
       { threshold: 0.1 }
     );
     observer.observe(el);
@@ -713,66 +753,60 @@ export default function BannerSection({
   }, []);
 
   const handleSelectCategory = (idx: number) => {
-    const cat = categories[idx];
-    if (cat?.id && bannerCache.current.has(cat.id)) {
-      setBannerCategoryId(cat.id);
-      setCustomBanners(bannerCache.current.get(cat.id) ?? []);
-    }
     setActiveIdx(idx);
     startCategoryTimer(); // Reset the category auto-cycle timer on user click!
   };
 
-  const activeCat = categories[activeIdx];
-  useEffect(() => {
-    const activeCategoryId = activeCat?.id;
-    if (!activeCategoryId || !/^[a-f\d]{24}$/i.test(activeCategoryId)) {
-      return;
-    }
-
-    const cached = bannerCache.current.get(activeCategoryId);
-    if (cached) {
-      setBannerCategoryId(activeCategoryId);
-      setCustomBanners(cached);
-      setBannersLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    setBannersLoading(true);
-    getHeroBanners(activeCategoryId)
-      .then((categoryBanners) => {
-        if (cancelled) return;
-        bannerCache.current.set(activeCategoryId, categoryBanners);
-        setBannerCategoryId(activeCategoryId);
-        setCustomBanners(categoryBanners);
-      })
-      .catch(() => {
-        if (!cancelled) setBannersLoading(false);
-      })
-      .finally(() => {
-        if (!cancelled) setBannersLoading(false);
-      });
-    return () => { cancelled = true; };
-  }, [activeCat?.id]);
-
   const categoryLabel = activeCat?.label ?? "ShopNest";
-  const categoryBanners = bannerCategoryId === activeCat?.id ? customBanners : (bannerCache.current.get(activeCat?.id ?? "") ?? []);
+  const globalBanners = bannerMap["global"] ?? [];
+  const currentCatBanners = activeCategoryId ? bannerMap[activeCategoryId] : undefined;
+  const categoryBanners =
+    currentCatBanners && currentCatBanners.length > 0
+      ? currentCatBanners
+      : globalBanners;
+
   const heroBanners = categoryBanners.filter((banner) => banner.placement === "hero");
   const sideBanners = categoryBanners.filter((banner) => banner.placement === "side");
   const bottomBanners = categoryBanners.filter((banner) => banner.placement === "bottom");
 
-  const activeHeroSlides = heroBanners.length > 0
-    ? customBannerSlides(heroBanners, categoryLabel)
-    : activeCat?.heroSlides ?? heroSlides;
+  const fallbackDynamicHeroSlides: HeroSlide[] = [
+    {
+      id: `hero-${activeCat?.id || "default"}`,
+      title: categoryLabel,
+      subtitle: `Featured Deals for ${categoryLabel}`,
+      description: `Explore top-rated products and exclusive offers in ${categoryLabel}.`,
+      buttonText: "SHOP NOW",
+      buttonLink: activeCat?.href || `/products?category=${encodeURIComponent(categoryLabel)}`,
+      image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1600&auto=format&fit=crop&q=80",
+      textTheme: "light" as const,
+      overlayColor: "#000000",
+      overlayOpacity: 50,
+    },
+  ];
 
-  const activeSideCards = (sideBanners.length > 0
-    ? customPromoCards(sideBanners, categoryLabel)
-    : activeCat?.sideCards ?? sideCards
+  const activeHeroSlides =
+    heroBanners.length > 0
+      ? customBannerSlides(heroBanners, categoryLabel)
+      : activeCat?.heroSlides && activeCat.heroSlides.length > 0
+      ? activeCat.heroSlides
+      : heroSlides.length > 0
+      ? heroSlides
+      : fallbackDynamicHeroSlides;
+
+  const activeSideCards = (
+    sideBanners.length > 0
+      ? customPromoCards(sideBanners, categoryLabel)
+      : activeCat?.sideCards && activeCat.sideCards.length > 0
+      ? activeCat.sideCards
+      : sideCards
   ).slice(0, MAX_PROMO_CARDS);
 
-  const activeBottomCards = (bottomBanners.length > 0
-    ? customPromoCards(bottomBanners, categoryLabel)
-    : activeCat?.bottomCards ?? bottomCards
+  const activeBottomCards = (
+    bottomBanners.length > 0
+      ? customPromoCards(bottomBanners, categoryLabel)
+      : activeCat?.bottomCards && activeCat.bottomCards.length > 0
+      ? activeCat.bottomCards
+      : bottomCards
   ).slice(0, MAX_PROMO_CARDS);
 
   const hasSideCards = activeSideCards.length > 0;
@@ -780,10 +814,11 @@ export default function BannerSection({
   return (
     <section
       ref={sectionRef}
-      className={`grid gap-4 ${hasSideCards
+      className={`grid gap-4 ${
+        hasSideCards
           ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-[165px_1fr_260px] xl:grid-cols-[175px_1fr_280px]"
           : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-[165px_1fr] xl:grid-cols-[175px_1fr]"
-        }`}
+      }`}
     >
       {/* ── Left: Category sidebar ── */}
       <div className="col-span-1 sm:col-span-2 lg:col-span-1">
@@ -798,7 +833,10 @@ export default function BannerSection({
       {/* ── Centre: Hero + bottom cards ── */}
       <div className="col-span-1 flex flex-col gap-4 sm:col-span-2 lg:col-span-1">
         <div className="flex-1">
-          <HeroCarousel slides={activeHeroSlides} />
+          <HeroCarousel
+            key={activeHeroSlides[0]?.id ?? `hero-${activeIdx}`}
+            slides={activeHeroSlides}
+          />
         </div>
 
         {activeBottomCards.length > 0 && (
