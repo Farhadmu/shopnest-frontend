@@ -12,6 +12,7 @@ import {
   updateHeroBanner,
 } from "@/lib/api/hero-banners";
 import { uploadImageToImgBB } from "@/lib/utils/imgbb";
+import { getContrastingTextColor } from "@/lib/utils/banner-color-utils";
 import type { CategoryItem } from "@/types/category";
 
 type FormState = {
@@ -30,6 +31,8 @@ type FormState = {
   overlayOpacity: string;
   lightTextColor: string;
   darkTextColor: string;
+  lightButtonColor: string;
+  darkButtonColor: string;
   bgClassName: string;
   textTheme: "light" | "dark";
   displayOrder: string;
@@ -52,6 +55,8 @@ const emptyForm: FormState = {
   overlayOpacity: "50",
   lightTextColor: "",
   darkTextColor: "",
+  lightButtonColor: "#FFFFFF",
+  darkButtonColor: "#5B5CF0",
   bgClassName: "",
   textTheme: "light",
   displayOrder: "1",
@@ -140,6 +145,8 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
       overlayOpacity: String(banner.overlayOpacity ?? 50),
       lightTextColor: banner.lightTextColor ?? "",
       darkTextColor: banner.darkTextColor ?? "",
+      lightButtonColor: banner.lightButtonColor ?? "#FFFFFF",
+      darkButtonColor: banner.darkButtonColor ?? "#5B5CF0",
       bgClassName: banner.bgClassName ?? "",
       textTheme: banner.textTheme,
       displayOrder: String(banner.displayOrder),
@@ -187,6 +194,8 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
         overlayOpacity: form.overlayColor ? Number(form.overlayOpacity) : null,
         lightTextColor: form.lightTextColor || null,
         darkTextColor: form.darkTextColor || null,
+        lightButtonColor: form.lightButtonColor || null,
+        darkButtonColor: form.darkButtonColor || null,
         bgClassName: form.bgClassName.trim() || null,
         textTheme: form.textTheme,
         displayOrder: Number(form.displayOrder) || 0,
@@ -473,44 +482,33 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
               </span>
             </div>
           </label>
-          <label className="text-sm font-bold text-text">
-            Image overlay
-            <div className="mt-2 flex items-center gap-3">
-              <input
-                type="color"
-                value={form.overlayColor || "#000000"}
-                onChange={(event) => setForm({ ...form, overlayColor: event.target.value })}
-                className="h-11 w-14 cursor-pointer rounded-lg border border-border bg-background p-1"
-                aria-label="Choose image overlay color"
-              />
-              <button
-                type="button"
-                onClick={() => setForm({ ...form, overlayColor: "" })}
-                className={`rounded-lg border px-3 py-2 text-xs font-bold ${!form.overlayColor ? "border-primary bg-primary/10 text-primary" : "border-border text-muted"}`}
-              >
-                None
-              </button>
-              <span className="text-xs font-normal text-muted">
-                {form.overlayColor || "No overlay"}
-              </span>
+          <fieldset className="text-sm font-bold text-text sm:col-span-2">
+            <legend>Button colors by mode</legend>
+            <div className="mt-2 grid gap-3 sm:grid-cols-2">
+              {([
+                ["lightButtonColor", "Light / white mode button", "#FFFFFF"],
+                ["darkButtonColor", "Dark mode button", "#5B5CF0"],
+              ] as const).map(([field, label, defaultColor]) => (
+                <div key={field} className="flex items-center gap-3 rounded-xl border border-border bg-background p-3">
+                  <input
+                    type="color"
+                    value={form[field] || defaultColor}
+                    onChange={(event) => setForm({ ...form, [field]: event.target.value })}
+                    className="h-10 w-12 cursor-pointer rounded-lg border border-border bg-background p-1"
+                    aria-label={`Choose ${label}`}
+                  />
+                  <span className="min-w-0 flex-1 text-xs font-semibold">{label}</span>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, [field]: defaultColor })}
+                    className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-bold ${form[field] === defaultColor ? "border-primary bg-primary/10 text-primary" : "border-border text-muted"}`}
+                  >
+                    Default
+                  </button>
+                </div>
+              ))}
             </div>
-            <div className="mt-3 flex items-center gap-3">
-              <input
-                type="range"
-                min="0"
-                max="100"
-                step="1"
-                value={form.overlayOpacity}
-                onChange={(event) => setForm({ ...form, overlayOpacity: event.target.value })}
-                disabled={!form.overlayColor}
-                className="w-full accent-primary disabled:opacity-40"
-                aria-label="Choose image overlay opacity"
-              />
-              <span className="w-12 text-right text-xs font-semibold text-muted">
-                {form.overlayColor ? `${form.overlayOpacity}%` : "Off"}
-              </span>
-            </div>
-          </label>
+          </fieldset>
           <label className="text-sm font-bold text-text">
             Display order
             <input
@@ -628,12 +626,30 @@ export function HeroBannerManager({ categories }: { categories: CategoryItem[] }
                     (form.textTheme === "light" ? form.lightTextColor : form.darkTextColor) || undefined,
                 }}
               >
-                <span className="text-xs font-bold uppercase">{form.eyebrow}</span>
+                {form.eyebrow && <span className="text-xs font-bold uppercase">{form.eyebrow}</span>}
                 <strong>
-                  {form.title || "Banner title"} {form.highlight && <span>{form.highlight}</span>}
+                  {form.title || "Banner title"} {form.highlight && <span className="text-warm font-extrabold">{form.highlight}</span>}
                 </strong>
-                <span className="text-sm">{form.subtitle || "Banner subtitle"}</span>
-                <span className="text-xs">{form.description}</span>
+                {form.subtitle && <span className="text-sm">{form.subtitle}</span>}
+                {form.description && <span className="text-xs">{form.description}</span>}
+                {form.buttonText && (
+                  <span
+                    className="mt-2 inline-flex w-fit items-center rounded-lg px-3 py-1.5 text-xs font-bold shadow-md"
+                    style={{
+                      backgroundColor:
+                        form.textTheme === "light"
+                          ? form.lightButtonColor || "#FFFFFF"
+                          : form.darkButtonColor || "#5B5CF0",
+                      color: getContrastingTextColor(
+                        form.textTheme === "light"
+                          ? form.lightButtonColor || "#FFFFFF"
+                          : form.darkButtonColor || "#5B5CF0"
+                      ),
+                    }}
+                  >
+                    {form.buttonText}
+                  </span>
+                )}
               </div>
             </>
           ) : (

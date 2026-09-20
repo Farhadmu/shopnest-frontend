@@ -14,6 +14,7 @@ import {
 } from "@/lib/constants/banner";
 import { getCategories } from "@/lib/api/categories";
 import { getHeroBanners, HeroBanner } from "@/lib/api/hero-banners";
+import { getContrastingTextColor } from "@/lib/utils/banner-color-utils";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -40,7 +41,8 @@ function PromoCard({
 }) {
   const isLight = card.textTheme !== "dark";
   const customTextColor = isLight ? card.lightTextColor : card.darkTextColor;
-  const customButtonColor = isLight ? card.lightButtonColor : card.darkButtonColor;
+  const customButtonColor = (isLight ? card.lightButtonColor : card.darkButtonColor) || card.lightButtonColor || card.darkButtonColor;
+  const buttonTextColor = customButtonColor ? getContrastingTextColor(customButtonColor) : undefined;
 
   return (
     <div
@@ -126,7 +128,7 @@ function PromoCard({
               customButtonColor
                 ? {
                     backgroundColor: customButtonColor,
-                    color: isLight ? "#FFFFFF" : "#FFFFFF",
+                    color: buttonTextColor,
                   }
                 : undefined
             }
@@ -230,7 +232,8 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   const slide = slides[currentIndex];
   const isLight = slide.textTheme !== "dark";
   const customTextColor = isLight ? slide.lightTextColor : slide.darkTextColor;
-  const customButtonColor = isLight ? slide.lightButtonColor : slide.darkButtonColor;
+  const customButtonColor = (isLight ? slide.lightButtonColor : slide.darkButtonColor) || slide.lightButtonColor || slide.darkButtonColor;
+  const buttonTextColor = customButtonColor ? getContrastingTextColor(customButtonColor) : undefined;
 
   const goTo = (index: number) => {
     setActive((index + total) % total);
@@ -347,7 +350,7 @@ function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
               customButtonColor
                 ? {
                     backgroundColor: customButtonColor,
-                    color: isLight ? "#FFFFFF" : "#FFFFFF",
+                    color: buttonTextColor,
                   }
                 : undefined
             }
@@ -652,6 +655,24 @@ export default function BannerSection({
           .catch(() => {});
       }
     });
+  }, [categories, activeIdx]);
+
+  // Invalidate banner cache on window focus so admin changes show immediately on homepage
+  useEffect(() => {
+    const handleFocus = () => {
+      const activeId = categories[activeIdx]?.id;
+      if (activeId && /^[a-f\d]{24}$/i.test(activeId)) {
+        getHeroBanners(activeId)
+          .then((categoryBanners) => {
+            bannerCache.current.set(activeId, categoryBanners);
+            setBannerCategoryId(activeId);
+            setCustomBanners(categoryBanners);
+          })
+          .catch(() => {});
+      }
+    };
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
   }, [categories, activeIdx]);
 
   const startCategoryTimer = () => {
