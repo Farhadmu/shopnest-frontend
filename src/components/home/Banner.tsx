@@ -562,6 +562,104 @@ function CategorySidebar({
 }
 
 // ---------------------------------------------------------------------------
+// BannerSkeleton Component (Ultra-modern Shimmer Loading State)
+// ---------------------------------------------------------------------------
+
+export function BannerSkeleton() {
+  return (
+    <section
+      aria-label="Loading banners"
+      className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-[165px_1fr_260px] xl:grid-cols-[175px_1fr_280px]"
+    >
+      {/* ── Left: Category Sidebar Skeleton ── */}
+      <div className="col-span-1 sm:col-span-2 lg:col-span-1">
+        <aside className="h-full rounded-xl border border-border/70 bg-surface p-2 shadow-xs flex flex-col justify-between gap-1 min-h-[280px] lg:min-h-[360px]">
+          <div className="space-y-1.5 w-full">
+            {[...Array(8)].map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between rounded-lg px-2.5 py-2 bg-muted-bg/50 relative overflow-hidden"
+              >
+                <div
+                  className="h-3 rounded-full bg-muted/30 shimmer"
+                  style={{ width: `${55 + (i % 4) * 12}%` }}
+                />
+                <div className="h-2.5 w-2.5 rounded-full bg-muted/20" />
+              </div>
+            ))}
+          </div>
+        </aside>
+      </div>
+
+      {/* ── Centre: Hero + Bottom Cards Skeleton ── */}
+      <div className="col-span-1 flex flex-col gap-4 sm:col-span-2 lg:col-span-1">
+        {/* Main Hero Banner Skeleton */}
+        <div className="relative flex-1 min-h-56 sm:min-h-72 lg:min-h-80 overflow-hidden rounded-xl border border-border/70 bg-gradient-to-br from-surface via-muted-bg/60 to-surface/90 p-5 sm:p-8 flex flex-col justify-center gap-3.5 shadow-xs">
+          {/* Ambient Glowing Shimmer Sweep */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent shimmer" />
+
+          {/* Eyebrow Badge Pill */}
+          <div className="h-4 w-28 rounded-full bg-primary/20 shimmer" />
+
+          {/* Title Lines */}
+          <div className="space-y-2.5 max-w-[85%] sm:max-w-[70%]">
+            <div className="h-7 sm:h-10 w-full rounded-lg bg-muted/30 shimmer" />
+            <div className="h-5 sm:h-7 w-3/4 rounded-lg bg-muted/25 shimmer" />
+          </div>
+
+          {/* Subtitle */}
+          <div className="h-3.5 sm:h-4 w-1/2 rounded-md bg-muted/20 shimmer hidden sm:block" />
+
+          {/* Price & Action Button */}
+          <div className="mt-2 flex items-center gap-3">
+            <div className="h-9 sm:h-10 w-32 sm:w-36 rounded-xl bg-primary/30 shimmer shadow-xs" />
+            <div className="h-6 w-20 rounded-md bg-muted/20 shimmer" />
+          </div>
+
+          {/* Carousel indicator dots */}
+          <div className="absolute bottom-4 right-4 flex items-center gap-1.5">
+            <div className="h-2 w-6 rounded-full bg-primary/50 shimmer" />
+            <div className="h-2 w-2 rounded-full bg-muted/30" />
+            <div className="h-2 w-2 rounded-full bg-muted/30" />
+          </div>
+        </div>
+
+        {/* Bottom Cards Skeleton */}
+        <div className="grid grid-cols-2 gap-4">
+          {[0, 1].map((i) => (
+            <div
+              key={i}
+              className="relative min-h-28 sm:min-h-36 overflow-hidden rounded-xl border border-border/70 bg-surface p-3.5 sm:p-4 flex flex-col justify-end gap-1.5 shadow-xs"
+            >
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent shimmer" />
+              <div className="h-3 w-16 rounded-full bg-muted/25 shimmer" />
+              <div className="h-4 sm:h-5 w-4/5 rounded-md bg-muted/30 shimmer" />
+              <div className="h-3 w-1/3 rounded-sm bg-primary/20 shimmer" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Right: Side Cards Skeleton ── */}
+      <div className="col-span-1 grid grid-cols-2 gap-4 sm:col-span-2 lg:col-span-1 lg:flex lg:flex-col">
+        {[0, 1].map((i) => (
+          <div
+            key={i}
+            className="relative min-h-36 sm:min-h-48 lg:flex-1 overflow-hidden rounded-xl border border-border/70 bg-surface p-4 sm:p-5 flex flex-col justify-end gap-2 shadow-xs"
+          >
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent shimmer" />
+            <div className="h-3 w-20 rounded-full bg-muted/25 shimmer" />
+            <div className="h-5 sm:h-6 w-5/6 rounded-lg bg-muted/30 shimmer" />
+            <div className="h-3 w-1/2 rounded bg-muted/20 shimmer hidden sm:block" />
+            <div className="mt-1 h-7 sm:h-8 w-24 rounded-lg bg-primary/25 shimmer" />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // BannerSection
 // ---------------------------------------------------------------------------
 
@@ -595,6 +693,9 @@ export default function BannerSection({
   const [isFetchingCats, setIsFetchingCats] = useState(
     () => !initialCategories || initialCategories.length === 0
   );
+  const [isInitialLoading, setIsInitialLoading] = useState(
+    () => !initialCategories || initialCategories.length === 0
+  );
 
   const categories = useMemo(() => {
     if (initialCategories && initialCategories.length > 0) {
@@ -617,7 +718,10 @@ export default function BannerSection({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    if (initialCategories && initialCategories.length > 0) return;
+    if (initialCategories && initialCategories.length > 0) {
+      setIsInitialLoading(false);
+      return;
+    }
 
     let cancelled = false;
     getCategories()
@@ -627,7 +731,10 @@ export default function BannerSection({
       })
       .catch(() => {})
       .finally(() => {
-        if (!cancelled) setIsFetchingCats(false);
+        if (!cancelled) {
+          setIsFetchingCats(false);
+          setIsInitialLoading(false);
+        }
       });
 
     return () => {
@@ -643,7 +750,12 @@ export default function BannerSection({
         if (cancelled || !globalBanners || globalBanners.length === 0) return;
         setBannerMap((prev) => ({ ...prev, global: globalBanners }));
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) {
+          setIsInitialLoading(false);
+        }
+      });
 
     return () => {
       cancelled = true;
@@ -787,29 +899,23 @@ export default function BannerSection({
   const activeHeroSlides =
     heroBanners.length > 0
       ? customBannerSlides(heroBanners, categoryLabel)
-      : activeCat?.heroSlides && activeCat.heroSlides.length > 0
-      ? activeCat.heroSlides
       : heroSlides.length > 0
       ? heroSlides
       : fallbackDynamicHeroSlides;
 
   const activeSideCards = (
-    sideBanners.length > 0
-      ? customPromoCards(sideBanners, categoryLabel)
-      : activeCat?.sideCards && activeCat.sideCards.length > 0
-      ? activeCat.sideCards
-      : sideCards
+    sideBanners.length > 0 ? customPromoCards(sideBanners, categoryLabel) : []
   ).slice(0, MAX_PROMO_CARDS);
 
   const activeBottomCards = (
-    bottomBanners.length > 0
-      ? customPromoCards(bottomBanners, categoryLabel)
-      : activeCat?.bottomCards && activeCat.bottomCards.length > 0
-      ? activeCat.bottomCards
-      : bottomCards
+    bottomBanners.length > 0 ? customPromoCards(bottomBanners, categoryLabel) : []
   ).slice(0, MAX_PROMO_CARDS);
 
   const hasSideCards = activeSideCards.length > 0;
+
+  if (categoriesLoading || (isInitialLoading && categories.length === 0)) {
+    return <BannerSkeleton />;
+  }
 
   return (
     <section
