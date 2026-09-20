@@ -20,14 +20,6 @@ import {
 } from "react-icons/fi";
 import { FaMotorcycle, FaBoxOpen, FaTimes, FaLock } from "react-icons/fa";
 
-const ORDER_STEPS = [
-  { key: "confirmed", label: "Accept Order" },
-  { key: "processing", label: "Mark Packing" },
-  { key: "shipped", label: "Dispatched to Courier" },
-  { key: "out_for_delivery", label: "Out for Delivery" },
-  { key: "delivered", label: "Mark Delivered" },
-];
-
 export default function SellerOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
