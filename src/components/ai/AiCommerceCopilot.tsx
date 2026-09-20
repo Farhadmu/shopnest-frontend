@@ -37,6 +37,7 @@ import { askAdminCopilot, CopilotResponse, CopilotMetric, CopilotInsight } from 
 import { askCustomerCopilot, CustomerCopilotResponse } from "@/lib/api/customer-copilot";
 import { askSellerCopilot, SellerCopilotResponse } from "@/lib/api/seller-copilot";
 import { askUnifiedAiCore, consumeHandoffToken, AIExperience, AIEvidenceItem, AIActionItem } from "@/lib/api/ai-core";
+import { askConversationalAdvisor } from "@/lib/api/commerce-companion";
 import { useSession } from "@/lib/auth-client";
 import { AiActionConfirmationModal } from "./AiActionConfirmationModal";
 
@@ -486,7 +487,7 @@ export function AiCommerceCopilot({
           : effectiveRole === "seller"
           ? "Welcome! I'm your AI Business Intelligence Copilot. I can analyze your sales velocity, low-stock hazards, and customer order statuses in real time."
           : effectiveRole === "advisor"
-          ? "Hello! 👋 I'm your ShopNest AI Advisor. I can help you find products, discover deals, compare options, and answer any questions about shopping with ShopNest. What are you looking for today?"
+          ? "Hey! 👋 I'm your ShopNest AI Advisor. I can help you find products, track orders, manage your cart and wishlist, explain how ShopNest works, and assist with returns, delivery, and more. What are you looking for today?"
           : "Hello! I'm your Personal Shopping Copilot. I have live access to verified products, your active orders, wishlist, and cart. How can I help you today?",
         timestamp: new Date(),
       };
@@ -603,13 +604,39 @@ export function AiCommerceCopilot({
     setTimeout(() => scrollToBottom(true), 60);
 
     try {
+      if (effectiveRole === "advisor") {
+        const advisorRes = await askConversationalAdvisor(prompt.trim(), conversationId);
+        if (advisorRes.conversationId) {
+          setConversationId(advisorRes.conversationId);
+        }
+
+        const assistantMessage: Message = {
+          id: "assistant-" + Date.now(),
+          role: "assistant",
+          content: advisorRes.reply,
+          referencedProducts: advisorRes.products,
+          referencedOrders: advisorRes.orders,
+          actions: advisorRes.actions?.map((act) => ({
+            id: `action-${Date.now()}-${Math.random()}`,
+            action: act.type || "NAVIGATE",
+            label: act.label,
+            description: act.label,
+            targetUrl: act.targetUrl,
+            riskLevel: "READ" as const,
+            requiresConfirmation: false,
+          })),
+          timestamp: new Date(),
+        };
+
+        setMessages((prev) => [...prev.slice(0, -1), assistantMessage]);
+        return;
+      }
+
       const experience: AIExperience =
         effectiveRole === "admin"
           ? "ADMIN_COPILOT"
           : effectiveRole === "seller"
           ? "SELLER_COPILOT"
-          : effectiveRole === "advisor"
-          ? "ADVISOR"
           : "CUSTOMER_COPILOT";
 
       try {
@@ -695,7 +722,9 @@ export function AiCommerceCopilot({
     setMessages([{
       id: "welcome-reset",
       role: "assistant",
-      content: "Conversation cleared. How can I help you?",
+      content: effectiveRole === "advisor"
+        ? "Hey! 👋 Conversation cleared. What products, deals, or questions can I help you with today?"
+        : "Conversation cleared. How can I help you?",
       timestamp: new Date(),
     }]);
     setShowBriefing(false);
