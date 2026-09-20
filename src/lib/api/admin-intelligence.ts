@@ -128,19 +128,60 @@ export interface SellerRiskData {
 
 export interface MarketplaceForecastData {
   horizon: string;
+  summary?: {
+    totalGmv: number;
+    totalOrders: number;
+    totalUsers: number;
+    activeStores: number;
+    avgOrderValue: number;
+    returnRatePercent: number;
+  };
   metrics: {
     userGrowth: { expectedDelta: string; baseline: string; projected: string; confidence: string };
     orderGrowth: { expectedDelta: string; baseline: string; projected: string; confidence: string };
     revenueGmv: { expectedDelta: string; baseline: string; projected: string; confidence: string };
     returnRate: { expectedDelta: string; baseline: string; projected: string; confidence: string };
   };
+  trajectoryTimeline?: Array<{
+    label: string;
+    date: string;
+    historicalGmv?: number;
+    projectedGmv: number;
+    historicalOrders?: number;
+    projectedOrders: number;
+    isProjected: boolean;
+  }>;
+  categoryForecasts?: Array<{
+    category: string;
+    currentRevenue: number;
+    projectedRevenue: number;
+    orderSharePercent: number;
+    expectedGrowthPercent: number;
+    trend: "bullish" | "steady";
+  }>;
+  regionalForecasts?: Array<{
+    division: string;
+    historicalOrders: number;
+    projectedOrders: number;
+    orderSharePercent: number;
+    gmv: number;
+    velocityStatus: string;
+  }>;
   macroDrivers: string[];
+  modelDetails?: {
+    algorithm: string;
+    dataPointsAnalyzed: number;
+    lastComputedAt: string;
+  };
 }
 
 export interface CategoryIntelligenceData {
   categories: Array<{
     name: string;
     products: number;
+    inStockCount?: number;
+    outOfStockCount?: number;
+    stockHealthPercent?: number;
     activeSellers: number;
     orders: number;
     unitsSold: number;
@@ -150,10 +191,30 @@ export interface CategoryIntelligenceData {
     growthRate: number;
     avgRating: number;
     ratingCount: number;
+    returnsCount?: number;
+    returnRatePercent?: number;
+    demandOpportunity?: "HIGH_OPPORTUNITY" | "BALANCED" | "SATURATED" | "EMERGING";
+    topProduct?: {
+      id: string;
+      title: string;
+      price: number;
+      unitsSold: number;
+      revenue: number;
+      image?: string | null;
+    } | null;
   }>;
   topPerformer: string;
+  fastestGrowing?: string;
   fastestExpandingCatalog: string;
   totalRevenue: number;
+  totalUnitsSold?: number;
+  totalCatalogProducts?: number;
+  averageAov?: number;
+  highOpportunityCategories?: Array<{
+    category: string;
+    reason: string;
+    potentialGmv: number;
+  }>;
 }
 
 export interface SystemTelemetryData {
@@ -168,8 +229,36 @@ export interface SystemTelemetryData {
     status: string;
     errorRate: string;
     throughputRps: number;
+    detail?: string;
   }>;
   recentIncidents: Array<{ time: string; message: string; status: string }>;
+  serverMetrics?: {
+    uptimeSeconds: number;
+    uptimeFormatted: string;
+    memoryHeapUsedMB: number;
+    memoryHeapTotalMB: number;
+    memoryRssMB: number;
+    memoryUtilizationPercent: number;
+    nodeVersion: string;
+    platform: string;
+    environment: string;
+    activeConnections: number;
+  };
+  databaseTelemetry?: {
+    status: string;
+    pingLatencyMs: number;
+    databaseName: string;
+    readyState: number;
+    totalCollections: number;
+  };
+  platformCounters?: {
+    users: number;
+    orders: number;
+    products: number;
+    stores: number;
+    deliveries: number;
+    returns: number;
+  };
 }
 
 // API functions
@@ -201,12 +290,12 @@ export async function getSellerRiskRanking() {
   return clientFetch<SellerRiskData>("/admin/seller-risk-ranking");
 }
 
-export async function getMarketplaceForecast() {
-  return clientFetch<MarketplaceForecastData>("/admin/marketplace-forecast");
+export async function getMarketplaceForecast(horizon = "30d") {
+  return clientFetch<MarketplaceForecastData>(`/admin/marketplace-forecast?horizon=${horizon}`);
 }
 
-export async function getCategoryIntelligence() {
-  return clientFetch<CategoryIntelligenceData>("/admin/category-intelligence");
+export async function getCategoryIntelligence(range = "30d", sort = "revenue") {
+  return clientFetch<CategoryIntelligenceData>(`/admin/category-intelligence?range=${range}&sort=${sort}`);
 }
 
 export async function getSystemTelemetry() {
