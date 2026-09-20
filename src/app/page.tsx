@@ -7,13 +7,11 @@ import SellersSection from "@/components/home/SellersSection";
 import HowItWorksSection from "@/components/home/HowItWorksSection";
 import ProofSection from "@/components/home/ProofSection";
 import DevelopersBanner from "@/components/home/DevelopersBanner";
-import { defaultBannerData } from "@/lib/banner/BannerData";
 import AiIntelligenceSection from "@/components/home/AiIntelligenceSection";
 import FeaturedProductsSection from "@/components/home/FeaturedProductsSection";
 import TrendingSection from "@/components/home/Trending/TrendingSection";
 import CouponSection from "@/components/home/CouponSection";
 import JustForYouSection from "@/components/home/JustForYouSection";
-import HomePageLoader from "@/components/common/HomePageLoader";
 import { HomeDataProvider, useHomeData } from "@/context/HomeDataContext";
 
 // ---------------------------------------------------------------------------
@@ -21,60 +19,46 @@ import { HomeDataProvider, useHomeData } from "@/context/HomeDataContext";
 // ---------------------------------------------------------------------------
 
 function HomePageContent() {
-  const { categories, trendingProducts, justForYouProducts, loadingProgress, isHomeReady } =
-    useHomeData();
+  const { categories, trendingProducts, justForYouProducts } = useHomeData();
 
   return (
-    <>
-      {/* Full-screen loader: visible while isHomeReady is false */}
-      <HomePageLoader progress={loadingProgress} visible={!isHomeReady} />
+    <div className="flex flex-col gap-10 sm:gap-14 lg:gap-16 overflow-hidden">
+      {/* 01 — Hero */}
+      <BannerSection initialCategories={categories} />
 
-      {/* Homepage content: fades in once isHomeReady */}
-      <div
-        className={[
-          "flex flex-col gap-10 sm:gap-14 lg:gap-16 overflow-hidden",
-          "transition-opacity duration-500",
-          isHomeReady ? "opacity-100" : "opacity-0",
-        ].join(" ")}
-        aria-hidden={!isHomeReady}
-      >
-        {/* 01 — Hero */}
-        <BannerSection data={defaultBannerData} initialCategories={categories} />
+      {/* 02 — Trust */}
+      <TrustFeatures />
 
-        {/* 02 — Trust */}
-        <TrustFeatures />
+      {/* 03 — Categories */}
+      <ShopByCategory initialCategories={categories} />
 
-        {/* 03 — Categories */}
-        <ShopByCategory initialCategories={categories} />
+      {/* 04 — Featured Products */}
+      <FeaturedProductsSection />
 
-        {/* 04 — Featured Products */}
-        <FeaturedProductsSection />
+      {/* 05 — Trending */}
+      <TrendingSection initialProducts={trendingProducts} />
 
-        {/* 05 — Trending */}
-        <TrendingSection initialProducts={trendingProducts} />
+      {/* 06 — Just For You */}
+      <JustForYouSection initialProducts={justForYouProducts} />
 
-        {/* 06 — Just For You */}
-        <JustForYouSection initialProducts={justForYouProducts} />
+      {/* 07 — Coupon (non-critical: self-fetches with own skeleton) */}
+      <CouponSection />
 
-        {/* 06 — Coupon (non-critical: self-fetches with own skeleton) */}
-        <CouponSection />
+      {/* 08 — Sellers (non-critical: self-fetches) */}
+      <SellersSection />
 
-        {/* 07 — Sellers (non-critical: self-fetches) */}
-        <SellersSection />
+      {/* 09 — How it works (static) */}
+      <HowItWorksSection />
 
-        {/* 08 — How it works (static) */}
-        <HowItWorksSection />
+      {/* 10 — AI (static/scripted UI) */}
+      <AiIntelligenceSection />
 
-        {/* 09 — AI (static/scripted UI) */}
-        <AiIntelligenceSection />
+      {/* 11 — Reviews (static) */}
+      <ProofSection />
 
-        {/* 10 — Reviews (static) */}
-        <ProofSection />
-
-        {/* 11 — Engineering Spotlight */}
-        <DevelopersBanner />
-      </div>
-    </>
+      {/* 12 — Engineering Spotlight */}
+      <DevelopersBanner />
+    </div>
   );
 }
 
