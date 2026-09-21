@@ -20,7 +20,10 @@ type BackendStore = {
   banner?: string;
   rating: number;
   ratingCount: number;
-  businessInfo?: { category?: string };
+  businessInfo?: {
+    category?: string;
+    categoryId?: string | { name?: string; slug?: string };
+  };
   products?: BackendProduct[];
   salesNumber?: number;
 };
@@ -50,19 +53,21 @@ export const STORE_CATEGORIES = [
   "Beauty",
   "Sports",
   "Books",
+  "Groceries",
 ] as const;
 
 function normalizeCategory(category?: string) {
   const value = category?.toLowerCase() || "";
 
-  if (value.includes("electronic")) return "Electronics";
-  if (value.includes("fashion") || value.includes("lifestyle")) return "Fashion";
-  if (value.includes("home") || value.includes("living")) return "Home & Living";
-  if (value.includes("beauty") || value.includes("skin")) return "Beauty";
-  if (value.includes("sport") || value.includes("fitness")) return "Sports";
-  if (value.includes("book") || value.includes("education")) return "Books";
+  if (value.includes("electronic") || value.includes("gadget") || value.includes("tech") || value.includes("phone")) return "Electronics";
+  if (value.includes("fashion") || value.includes("lifestyle") || value.includes("cloth") || value.includes("apparel") || value.includes("wear")) return "Fashion";
+  if (value.includes("home") || value.includes("living") || value.includes("kitchen") || value.includes("furniture") || value.includes("decor")) return "Home & Living";
+  if (value.includes("beauty") || value.includes("skin") || value.includes("cosmetic") || value.includes("care") || value.includes("personal")) return "Beauty";
+  if (value.includes("sport") || value.includes("fitness") || value.includes("gym") || value.includes("outdoor")) return "Sports";
+  if (value.includes("book") || value.includes("education") || value.includes("stationery") || value.includes("read")) return "Books";
+  if (value.includes("grocer") || value.includes("food") || value.includes("organic") || value.includes("mart")) return "Groceries";
 
-  return category?.trim() || "Other";
+  return category?.trim() || "General";
 }
 
 function formatCount(value: number) {
@@ -104,7 +109,19 @@ function normalizeReview(review: BackendStoreDetails["reviews"][number], product
 
 function normalizeStore(store: BackendStore & { id?: string }): Store {
   const salesNumber = store.salesNumber || 0;
-  const category = normalizeCategory(store.businessInfo?.category);
+  
+  let rawCategoryName: string | undefined;
+  if (typeof store.businessInfo?.categoryId === "object" && store.businessInfo?.categoryId !== null) {
+    rawCategoryName = store.businessInfo.categoryId.name || store.businessInfo.categoryId.slug;
+  } else if (typeof store.businessInfo?.categoryId === "string") {
+    if (!/^[0-9a-fA-F]{24}$/.test(store.businessInfo.categoryId.trim())) {
+      rawCategoryName = store.businessInfo.categoryId;
+    }
+  } else if (store.businessInfo?.category) {
+    rawCategoryName = store.businessInfo.category;
+  }
+
+  const category = normalizeCategory(rawCategoryName);
   const storeId = store._id || store.id || "";
 
   return {
@@ -129,7 +146,10 @@ export async function getPublicStores(): Promise<{ stores: Store[]; categories: 
   });
   const stores = "data" in response ? response.data : response;
   const normalizedStores = stores.map(normalizeStore);
-  const categories = ["All Stores", ...STORE_CATEGORIES];
+  
+  const presentCategories = Array.from(new Set(normalizedStores.map((s) => s.filterCategory).filter(Boolean)));
+  const combined = Array.from(new Set([...STORE_CATEGORIES, ...presentCategories])).filter(c => c !== "All Stores");
+  const categories = ["All Stores", ...combined];
 
   return { stores: normalizedStores, categories };
 }
