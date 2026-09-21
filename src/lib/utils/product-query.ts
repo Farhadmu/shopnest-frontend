@@ -21,6 +21,7 @@ export interface ProductsQueryState {
   verified?: string;
   aiPick?: string;
   isFeatured?: string;
+  ids?: string;
   view?: string;
   page?: string;
 }
@@ -40,6 +41,7 @@ const KEYS: (keyof ProductsQueryState)[] = [
   "verified",
   "aiPick",
   "isFeatured",
+  "ids",
   "view",
   "page",
 ];
