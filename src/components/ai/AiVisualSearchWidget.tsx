@@ -19,6 +19,7 @@ import {
   Info,
   Sliders,
   CheckCircle2,
+  Link2,
 } from "lucide-react";
 import Image from "next/image";
 import { useSession } from "@/lib/auth-client";
@@ -53,7 +54,10 @@ export function AiVisualSearchWidget() {
 
   // Widget states
   const [isOpen, setIsOpen] = useState(false);
+  const [inputMode, setInputMode] = useState<"file" | "url">("file");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imageUrlInput, setImageUrlInput] = useState("");
+  const [isValidatingUrl, setIsValidatingUrl] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isUploading, setIsUploading] = useState(false);
@@ -95,6 +99,38 @@ export function AiVisualSearchWidget() {
     setResult(null);
   };
 
+  // Handle URL Preview Load
+  const handleUrlPreview = () => {
+    const trimmed = imageUrlInput.trim();
+    if (!trimmed) {
+      setError("Please paste or type an image URL first");
+      return;
+    }
+    if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
+      setError("Image URL must begin with http:// or https://");
+      return;
+    }
+
+    setIsValidatingUrl(true);
+    setError(null);
+
+    // Test loading image in browser
+    const testImg = new window.Image();
+    testImg.onload = () => {
+      setPreviewUrl(trimmed);
+      setSelectedFile(null);
+      setIsValidatingUrl(false);
+      setError(null);
+    };
+    testImg.onerror = () => {
+      // In case hotlink/CORS blocks browser image preview, the backend server can still download it:
+      setPreviewUrl(trimmed);
+      setSelectedFile(null);
+      setIsValidatingUrl(false);
+    };
+    testImg.src = trimmed;
+  };
+
   // Drag and Drop
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -108,8 +144,13 @@ export function AiVisualSearchWidget() {
 
   // Handle Visual Search Execution
   const handleStartSearch = async () => {
-    if (!selectedFile && !previewUrl) {
-      setError("Please select an image first");
+    let finalImageUrl = previewUrl || "";
+    if (inputMode === "url" && !previewUrl && imageUrlInput.trim()) {
+      finalImageUrl = imageUrlInput.trim();
+    }
+
+    if (!selectedFile && !finalImageUrl) {
+      setError("Please select an image file or enter an image URL first");
       return;
     }
 
@@ -121,9 +162,7 @@ export function AiVisualSearchWidget() {
     const stepTimer2 = setTimeout(() => setScanStep(3), 2200);
 
     try {
-      let finalImageUrl = previewUrl || "";
-
-      // If a new local file was selected, upload it to the backend
+      // If a local file was selected, upload it to the backend
       if (selectedFile) {
         setIsUploading(true);
         const uploadRes = await uploadVisualSearchImage(selectedFile);
@@ -153,6 +192,7 @@ export function AiVisualSearchWidget() {
   // Reset search
   const handleReset = () => {
     setSelectedFile(null);
+    setImageUrlInput("");
     if (previewUrl && previewUrl.startsWith("blob:")) {
       URL.revokeObjectURL(previewUrl);
     }
@@ -292,42 +332,125 @@ export function AiVisualSearchWidget() {
                 {/* Upload & Setup Section (Hidden or condensed when results are active) */}
                 {!result ? (
                   <div className="space-y-4">
-                    {/* Drag & Drop Upload Zone */}
-                    {!previewUrl ? (
-                      <div
-                        ref={dropZoneRef}
-                        onDragOver={handleDragOver}
-                        onDrop={handleDrop}
-                        onClick={() => fileInputRef.current?.click()}
-                        className="group relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-emerald-500/40 bg-emerald-500/5 p-8 text-center transition hover:border-emerald-500 hover:bg-emerald-500/10 cursor-pointer"
-                      >
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp"
-                          className="hidden"
-                          onChange={handleFileChange}
-                        />
-                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition duration-300">
-                          <UploadCloud className="h-7 w-7" />
-                        </div>
-                        <p className="mt-3 text-sm font-bold text-foreground">
-                          Drop your product image here, or{" "}
-                          <span className="text-emerald-600 dark:text-emerald-400 underline underline-offset-2">
-                            browse
-                          </span>
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Supports JPG, PNG, WebP up to 5MB
-                        </p>
+                    {/* Input Mode Selector (Upload vs Image URL) */}
+                    {!previewUrl && (
+                      <div className="flex items-center gap-2 border-b border-border/60 pb-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setInputMode("file");
+                            setError(null);
+                          }}
+                          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
+                            inputMode === "file"
+                              ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/20"
+                              : "bg-muted text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          <UploadCloud className="h-4 w-4" />
+                          <span>Upload Photo</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setInputMode("url");
+                            setError(null);
+                          }}
+                          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
+                            inputMode === "url"
+                              ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/20"
+                              : "bg-muted text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          <Link2 className="h-4 w-4" />
+                          <span>Image URL Link</span>
+                        </button>
                       </div>
+                    )}
+
+                    {/* Image Selection Area */}
+                    {!previewUrl ? (
+                      inputMode === "file" ? (
+                        /* Drag & Drop Upload Zone */
+                        <div
+                          ref={dropZoneRef}
+                          onDragOver={handleDragOver}
+                          onDrop={handleDrop}
+                          onClick={() => fileInputRef.current?.click()}
+                          className="group relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-emerald-500/40 bg-emerald-500/5 p-8 text-center transition hover:border-emerald-500 hover:bg-emerald-500/10 cursor-pointer"
+                        >
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            className="hidden"
+                            onChange={handleFileChange}
+                          />
+                          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition duration-300">
+                            <UploadCloud className="h-7 w-7" />
+                          </div>
+                          <p className="mt-3 text-sm font-bold text-foreground">
+                            Drop your product image here, or{" "}
+                            <span className="text-emerald-600 dark:text-emerald-400 underline underline-offset-2">
+                              browse
+                            </span>
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Supports JPG, PNG, WebP up to 5MB
+                          </p>
+                        </div>
+                      ) : (
+                        /* Direct Image URL Input */
+                        <div className="rounded-2xl border-2 border-dashed border-emerald-500/40 bg-emerald-500/5 p-6 space-y-3.5">
+                          <div className="flex items-center gap-2 text-foreground font-bold text-sm">
+                            <Link2 className="h-4 w-4 text-emerald-500" />
+                            <span>Paste Public Image URL</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Enter a direct link to any product photo on the web (JPG, PNG, WebP).
+                          </p>
+                          <div className="flex flex-col sm:flex-row items-center gap-2">
+                            <input
+                              type="url"
+                              value={imageUrlInput}
+                              onChange={(e) => {
+                                setImageUrlInput(e.target.value);
+                                setError(null);
+                              }}
+                              placeholder="https://example.com/images/product.jpg"
+                              className="w-full flex-1 rounded-xl border border-border bg-background px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                              disabled={isSearching}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  handleUrlPreview();
+                                }
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={handleUrlPreview}
+                              disabled={!imageUrlInput.trim() || isValidatingUrl}
+                              className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-emerald-500 disabled:opacity-50"
+                            >
+                              {isValidatingUrl ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Check className="h-3.5 w-3.5" />
+                              )}
+                              <span>Load Preview</span>
+                            </button>
+                          </div>
+                        </div>
+                      )
                     ) : (
-                      /* Preview of Uploaded Image */
+                      /* Preview of Selected/Loaded Image */
                       <div className="relative flex flex-col sm:flex-row items-center gap-4 rounded-2xl border border-border bg-muted/30 p-4">
                         <div className="relative h-40 w-40 shrink-0 overflow-hidden rounded-xl border border-border bg-background shadow-inner">
                           <img
                             src={previewUrl}
                             alt="Visual search target"
+                            referrerPolicy="no-referrer"
                             className="h-full w-full object-contain"
                           />
                           {isSearching && (
@@ -356,12 +479,16 @@ export function AiVisualSearchWidget() {
                               </button>
                             )}
                           </div>
-                          <p className="text-sm font-medium text-foreground">
-                            {selectedFile ? selectedFile.name : "Target Product Image"}
+                          <p className="text-sm font-medium text-foreground truncate max-w-xs">
+                            {selectedFile
+                              ? selectedFile.name
+                              : imageUrlInput
+                              ? imageUrlInput
+                              : "Target Product Image"}
                           </p>
                           <p className="text-xs text-muted-foreground leading-relaxed">
                             AI will inspect colors, contours, text, labels, and product type to find
-                            identical or related catalog items.
+                            identical or same-type catalog items.
                           </p>
                         </div>
                       </div>
@@ -406,7 +533,7 @@ export function AiVisualSearchWidget() {
                     <div className="pt-2">
                       <button
                         onClick={handleStartSearch}
-                        disabled={!previewUrl || isSearching}
+                        disabled={(!previewUrl && !imageUrlInput.trim()) || isSearching}
                         className="w-full relative flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 py-3.5 px-6 font-bold text-sm text-white shadow-lg shadow-teal-500/20 transition hover:shadow-xl hover:shadow-teal-500/35 hover:brightness-105 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isSearching ? (
@@ -440,7 +567,7 @@ export function AiVisualSearchWidget() {
                         </span>
                         <h3 className="font-extrabold text-base text-foreground">
                           {result.isUnmetDemand
-                            ? "Market Demand Recorded"
+                            ? "Demand Saved to Marketplace"
                             : `Found ${result.products.length} Products`}
                         </h3>
                       </div>
@@ -475,6 +602,11 @@ export function AiVisualSearchWidget() {
                               📁 {result.detected.category}
                             </span>
                           )}
+                          {result.detected.subcategory && (
+                            <span className="rounded-lg bg-background/80 px-2.5 py-1 text-xs font-semibold text-muted-foreground border border-border/80">
+                              📦 {result.detected.subcategory}
+                            </span>
+                          )}
                           {result.detected.brand && result.detected.brand !== "Generic" && (
                             <span className="rounded-lg bg-background/80 px-2.5 py-1 text-xs font-semibold text-muted-foreground border border-border/80">
                               🏷️ {result.detected.brand}
@@ -507,131 +639,141 @@ export function AiVisualSearchWidget() {
                       )}
                     </div>
 
-                    {/* Unmet Demand Notice (if no exact stock) */}
+                    {/* Unmet Demand Notice (if no exact or same-type stock) */}
                     {result.isUnmetDemand && (
                       <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 space-y-1.5">
                         <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold text-sm">
                           <Info className="h-4 w-4" />
-                          <span>Exact Match Not In Stock Yet</span>
+                          <span>Not Currently In Stock</span>
                         </div>
                         <p className="text-xs text-muted-foreground leading-relaxed">
-                          We noticed this exact model isn&apos;t currently listed by our sellers.
-                          Good news! Your visual search demand has been saved to our{" "}
-                          <strong className="text-foreground">Seller Demand Dashboard</strong> so
-                          merchants can stock this product soon. In the meantime, here are closest
-                          alternatives available now:
+                          We don&apos;t show fake or unrelated items. Your exact visual search demand has been saved to our{" "}
+                          <strong className="text-foreground">Seller Customer Demand Center</strong> so verified sellers can stock and list this product for you soon!
                         </p>
                       </div>
                     )}
 
-                    {/* Products Grid */}
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      {result.products.map((prod) => {
-                        const isAdded = addedCartIds.has(prod._id);
-                        const isAdding = addingCartId === prod._id;
-                        const mainImage = prod.images?.[0] || "/placeholder-product.png";
-                        const price = prod.discountPrice ?? prod.price;
-                        const storeName =
-                          typeof prod.sellerId === "object"
-                            ? prod.sellerId?.storeName || prod.sellerId?.name || "ShopNest Store"
-                            : "ShopNest Store";
+                    {/* Products Grid or Genuine Empty State */}
+                    {result.products.length === 0 ? (
+                      <div className="rounded-2xl border border-dashed border-border/80 bg-muted/20 p-8 text-center space-y-2.5">
+                        <ShoppingBag className="mx-auto h-8 w-8 text-muted-foreground/60" />
+                        <h4 className="text-sm font-bold text-foreground">
+                          No Direct or Same-Type Products In Stock Yet
+                        </h4>
+                        <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
+                          Our system strictly displays genuine catalog products. Because no matching or same-type item currently exists in store, we have notified our merchant network to stock this inventory.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        {result.products.map((prod) => {
+                          const isAdded = addedCartIds.has(prod._id);
+                          const isAdding = addingCartId === prod._id;
+                          const mainImage = prod.images?.[0] || "/placeholder-product.png";
+                          const price = prod.discountPrice ?? prod.price;
+                          const storeName =
+                            typeof prod.sellerId === "object"
+                              ? prod.sellerId?.storeName || prod.sellerId?.name || "ShopNest Store"
+                              : "ShopNest Store";
 
-                        return (
-                          <div
-                            key={prod._id}
-                            className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border bg-card p-3.5 transition hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/5"
-                          >
-                            <div>
-                              {/* Product Thumbnail & Match Badge */}
-                              <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-muted/30">
-                                <img
-                                  src={mainImage}
-                                  alt={prod.title}
-                                  className="h-full w-full object-contain transition duration-300 group-hover:scale-105"
-                                />
-                                {prod.matchBadge && (
-                                  <div className="absolute top-2 left-2 rounded-full bg-black/75 px-2.5 py-0.5 text-[11px] font-bold text-white backdrop-blur-md flex items-center gap-1 border border-white/20">
-                                    <Sparkles className="h-3 w-3 text-amber-300" />
-                                    <span>
-                                      {prod.matchScore
-                                        ? `${prod.matchScore}% Match`
-                                        : prod.matchBadge}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Title & Metadata */}
-                              <div className="mt-3 space-y-1">
-                                <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                                  <Store className="h-3 w-3" /> {storeName}
-                                </span>
-                                <h4 className="line-clamp-2 text-sm font-bold text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition">
-                                  {prod.title}
-                                </h4>
-                              </div>
-                            </div>
-
-                            {/* Price & Action Buttons */}
-                            <div className="mt-3 space-y-3 pt-2 border-t border-border/60">
-                              <div className="flex items-baseline justify-between">
-                                <div className="flex items-baseline gap-1.5">
-                                  <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
-                                    {formatCurrency(price)}
-                                  </span>
-                                  {prod.discountPrice && (
-                                    <span className="text-xs text-muted-foreground line-through">
-                                      {formatCurrency(prod.price)}
-                                    </span>
+                          return (
+                            <div
+                              key={prod._id}
+                              className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border bg-card p-3.5 transition hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/5"
+                            >
+                              <div>
+                                {/* Product Thumbnail & Match Badge */}
+                                <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-muted/30">
+                                  <img
+                                    src={mainImage}
+                                    alt={prod.title}
+                                    referrerPolicy="no-referrer"
+                                    className="h-full w-full object-contain transition duration-300 group-hover:scale-105"
+                                  />
+                                  {prod.matchBadge && (
+                                    <div className="absolute top-2 left-2 rounded-full bg-black/75 px-2.5 py-0.5 text-[11px] font-bold text-white backdrop-blur-md flex items-center gap-1 border border-white/20">
+                                      <Sparkles className="h-3 w-3 text-amber-300" />
+                                      <span>
+                                        {prod.matchScore
+                                          ? `${prod.matchScore}% • ${prod.matchBadge}`
+                                          : prod.matchBadge}
+                                      </span>
+                                    </div>
                                   )}
                                 </div>
-                                {prod.ratingAvg ? (
-                                  <span className="text-xs text-amber-500 font-bold">
-                                    ★ {prod.ratingAvg.toFixed(1)}
+
+                                {/* Title & Metadata */}
+                                <div className="mt-3 space-y-1">
+                                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                                    <Store className="h-3 w-3" /> {storeName}
                                   </span>
-                                ) : null}
+                                  <h4 className="line-clamp-2 text-sm font-bold text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition">
+                                    {prod.title}
+                                  </h4>
+                                </div>
                               </div>
 
-                              <div className="grid grid-cols-2 gap-2">
-                                {/* Add to Cart */}
-                                <button
-                                  type="button"
-                                  onClick={() => handleAddToCart(prod)}
-                                  disabled={isAdding}
-                                  className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-bold transition ${
-                                    isAdded
-                                      ? "border-emerald-500 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                                      : "border-border bg-background text-foreground hover:border-emerald-500 hover:bg-emerald-500/5"
-                                  }`}
-                                >
-                                  {isAdding ? (
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                  ) : isAdded ? (
-                                    <>
-                                      <Check className="h-3.5 w-3.5" /> Added
-                                    </>
-                                  ) : (
-                                    <>
-                                      <ShoppingBag className="h-3.5 w-3.5" /> Add to Cart
-                                    </>
-                                  )}
-                                </button>
+                              {/* Price & Action Buttons */}
+                              <div className="mt-3 space-y-3 pt-2 border-t border-border/60">
+                                <div className="flex items-baseline justify-between">
+                                  <div className="flex items-baseline gap-1.5">
+                                    <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                                      {formatCurrency(price)}
+                                    </span>
+                                    {prod.discountPrice && (
+                                      <span className="text-xs text-muted-foreground line-through">
+                                        {formatCurrency(prod.price)}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {prod.ratingAvg ? (
+                                    <span className="text-xs text-amber-500 font-bold">
+                                      ★ {prod.ratingAvg.toFixed(1)}
+                                    </span>
+                                  ) : null}
+                                </div>
 
-                                {/* Buy Now */}
-                                <button
-                                  type="button"
-                                  onClick={() => handleBuyNow(prod)}
-                                  disabled={isAdding}
-                                  className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-2 text-xs font-bold text-white shadow-md shadow-teal-500/20 hover:brightness-105 transition"
-                                >
-                                  <span>Buy Now</span>
-                                </button>
+                                <div className="grid grid-cols-2 gap-2">
+                                  {/* Add to Cart */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAddToCart(prod)}
+                                    disabled={isAdding}
+                                    className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-bold transition ${
+                                      isAdded
+                                        ? "border-emerald-500 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                                        : "border-border bg-background text-foreground hover:border-emerald-500 hover:bg-emerald-500/5"
+                                    }`}
+                                  >
+                                    {isAdding ? (
+                                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    ) : isAdded ? (
+                                      <>
+                                        <Check className="h-3.5 w-3.5" /> Added
+                                      </>
+                                    ) : (
+                                      <>
+                                        <ShoppingBag className="h-3.5 w-3.5" /> Add to Cart
+                                      </>
+                                    )}
+                                  </button>
+
+                                  {/* Buy Now */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleBuyNow(prod)}
+                                    disabled={isAdding}
+                                    className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-2 text-xs font-bold text-white shadow-md shadow-teal-500/20 hover:brightness-105 transition"
+                                  >
+                                    <span>Buy Now</span>
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

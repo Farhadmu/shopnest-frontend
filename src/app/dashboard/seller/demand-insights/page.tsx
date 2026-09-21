@@ -318,7 +318,12 @@ export default function SellerDemandInsightsPage() {
                           <img
                             src={item.imageUrl}
                             alt={item.detectedTitle}
+                            referrerPolicy="no-referrer"
                             className="h-full w-full object-contain transition duration-300 group-hover:scale-105"
+                            onError={(e) => {
+                              // If image fails to load, gracefully hide broken icon
+                              (e.target as HTMLElement).style.display = "none";
+                            }}
                           />
 
                           {/* Top Status Tag */}
@@ -441,6 +446,7 @@ export default function SellerDemandInsightsPage() {
                 <img
                   src={activeModalItem.imageUrl}
                   alt={activeModalItem.detectedTitle}
+                  referrerPolicy="no-referrer"
                   className="h-full w-full object-contain"
                 />
               </div>
