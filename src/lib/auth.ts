@@ -146,6 +146,16 @@ export const auth = betterAuth({
         defaultValue: "customer",
         input: true,
       },
+      banned: {
+        type: "boolean",
+        defaultValue: false,
+        input: true,
+      },
+      status: {
+        type: "string",
+        defaultValue: "active",
+        input: true,
+      },
       phone: {
         type: "string",
         required: false,
