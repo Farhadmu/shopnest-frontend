@@ -15,7 +15,7 @@ import { AiVisualSearchWidget } from "@/components/ai/AiVisualSearchWidget";
 import { useSession } from "@/lib/auth-client";
 import { recordSession } from "@/lib/api/security-intelligence";
 
-const AUTH_ROUTES = ["/login", "/register", "/forgot-password", "/reset-password"];
+const AUTH_ROUTES = ["/login", "/register", "/forgot-password", "/reset-password", "/suspended"];
 const emptySubscribe = () => () => {};
 
 export function AppShell({ children }: { children: React.ReactNode }) {
