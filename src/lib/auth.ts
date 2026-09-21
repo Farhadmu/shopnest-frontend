@@ -54,7 +54,7 @@ export const auth = betterAuth({
       try {
         console.log(`[Auth] Sending password reset email to: ${user.email}`);
         const info = await transporter.sendMail({
-          from: process.env.SMTP_FROM || `"ShopNest" <${smtpUser}>`,
+          from: `"ShopNest" <${smtpUser}>`,
           to: user.email,
           subject: "Reset your ShopNest password",
           html: `
@@ -87,13 +87,12 @@ export const auth = betterAuth({
       overrideDefaultEmailVerification: true,
       sendVerificationOnSignUp: true,
       async sendVerificationOTP({ email, otp, type }) {
-        if (type === "email-verification") {
-          try {
-            console.log(`[Auth] Sending email verification OTP to: ${email}`);
-            const info = await transporter.sendMail({
-              from: process.env.SMTP_FROM || `"ShopNest" <${smtpUser}>`,
-              to: email,
-              subject: `${otp} is your ShopNest verification code`,
+        try {
+          console.log(`[Auth] Sending verification OTP (${type || "email-verification"}) to: ${email}`);
+          const info = await transporter.sendMail({
+            from: `"ShopNest" <${smtpUser}>`,
+            to: email,
+            subject: `${otp} is your ShopNest verification code`,
               html: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; border: 1px solid #e5e7eb; border-radius: 16px; background: #ffffff;">
                   <div style="text-align: center; margin-bottom: 24px;">
@@ -125,9 +124,8 @@ export const auth = betterAuth({
             console.error(`[Auth] Failed to send verification OTP email:`, error);
             throw error;
           }
-        }
-      },
-    }),
+        },
+      }),
   ],
   socialProviders: {
     google: {
