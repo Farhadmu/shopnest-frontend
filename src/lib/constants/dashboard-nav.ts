@@ -26,6 +26,7 @@ export const userDashboardLinks: DashboardLink[] = [
   // ACCOUNT
   { label: "Profile & Settings", href: "/dashboard/user/profile", icon: "👤", description: "Account identity and settings.", group: "ACCOUNT" },
   { label: "Security Center", href: "/dashboard/user/security", icon: "🔐", description: "Active sessions & security score.", group: "ACCOUNT" },
+  { label: "Become a Seller / Status", href: "/become-seller", icon: "🏪", description: "Apply to sell or track application.", group: "ACCOUNT" },
   { label: "My Complaints", href: "/dashboard/user/complaints", icon: "📝", description: "Submit and track your complaints.", group: "ACCOUNT" },
 ];
 

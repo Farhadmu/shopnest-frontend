@@ -16,6 +16,7 @@ export type DashboardLink = {
   description: string;
   group?: string;
   badge?: string;
+  badgeColor?: "amber" | "rose" | "emerald" | "primary" | "accent";
   highlight?: boolean;
 };
 

@@ -78,6 +78,14 @@ export interface MyStore {
   banner?: string;
   businessInfo?: BusinessInfo;
   rejectionReason?: string;
+  suspensionReason?: string;
+  appeal?: {
+    reason: string;
+    email?: string;
+    submittedAt?: string;
+    status: "pending" | "reviewed" | "rejected";
+    adminResponse?: string;
+  };
   verifiedAt?: string;
   verifiedBy?: string;
   status: StoreStatus;
@@ -158,6 +166,11 @@ export async function updateMyStore(input: Partial<RegisterStoreInput>) {
   return clientMutation<MyStore>("/sellers/me", "PATCH", input);
 }
 
+/** Submits an official merchant appeal for a suspended store */
+export async function submitSellerAppeal(input: { reason: string; email?: string }) {
+  return clientMutation<{ message: string; store: MyStore }>("/sellers/me/appeal", "POST", input);
+}
+
 /** Admin endpoints for seller moderation */
 export async function listAdminSellers(params?: { status?: string; search?: string }) {
   const query = new URLSearchParams();
@@ -171,6 +184,9 @@ export async function getAdminSellerDetails(id: string) {
   return clientFetch<AdminSellerFullDetails>(`/admin/sellers/${id}`);
 }
 
-export async function updateAdminSellerStatus(id: string, input: { status: StoreStatus; rejectionReason?: string }) {
+export async function updateAdminSellerStatus(
+  id: string,
+  input: { status: StoreStatus; rejectionReason?: string; suspensionReason?: string }
+) {
   return clientMutation<MyStore>(`/admin/sellers/${id}/status`, "PATCH", input);
 }

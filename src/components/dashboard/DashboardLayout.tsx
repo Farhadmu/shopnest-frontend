@@ -17,6 +17,7 @@ import { SidebarBrand } from "@/components/dashboard/sidebar/SidebarBrand";
 import { SidebarNavList } from "@/components/dashboard/sidebar/SidebarNavList";
 import { SidebarUserFooter } from "@/components/dashboard/sidebar/SidebarUserFooter";
 import { DashboardTopbar } from "@/components/dashboard/sidebar/DashboardTopbar";
+import { getMyStore, MyStore } from "@/lib/api/sellers";
 
 interface DashboardSidebarLayoutProps {
   role?: string;
@@ -65,6 +66,7 @@ export function DashboardSidebarLayout({
 }: DashboardSidebarLayoutProps) {
   const pathname = usePathname();
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [customerStore, setCustomerStore] = useState<MyStore | null>(null);
   const { data: session } = useSession();
 
   useEffect(() => {
@@ -72,6 +74,71 @@ export function DashboardSidebarLayout({
   }, [pathname]);
 
   const { role, links } = resolveRoleAndLinks(pathname, initialRole, initialLinks);
+
+  useEffect(() => {
+    if (role !== "Customer" || !session?.user?.email) {
+      setCustomerStore(null);
+      return;
+    }
+    let isMounted = true;
+    getMyStore()
+      .then((res) => {
+        if (!isMounted) return;
+        const data = "data" in res ? (res as { data: MyStore }).data : (res as MyStore);
+        if (data && data.status) {
+          setCustomerStore(data);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setCustomerStore(null);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [role, session?.user?.email]);
+
+  const dynamicLinks = React.useMemo(() => {
+    if (role !== "Customer") return links;
+    return links.map((item) => {
+      if (item.href === "/become-seller") {
+        if (customerStore?.status === "pending") {
+          return {
+            ...item,
+            label: "Store Application",
+            badge: "Pending",
+            badgeColor: "amber" as const,
+          };
+        }
+        if (customerStore?.status === "rejected") {
+          return {
+            ...item,
+            label: "Store Application",
+            badge: "Needs Review",
+            badgeColor: "rose" as const,
+          };
+        }
+        if (customerStore?.status === "suspended") {
+          return {
+            ...item,
+            label: "Store Status",
+            badge: "Suspended",
+            badgeColor: "rose" as const,
+          };
+        }
+        if (customerStore?.status === "approved") {
+          return {
+            ...item,
+            label: "Seller Dashboard",
+            href: "/dashboard/seller",
+            badge: "Active",
+            badgeColor: "emerald" as const,
+          };
+        }
+      }
+      return item;
+    });
+  }, [role, links, customerStore]);
+
   const userName = session?.user?.name || "Member";
   const userEmail = session?.user?.email || "";
   const userImage = session?.user?.image || "";
@@ -93,7 +160,7 @@ export function DashboardSidebarLayout({
         className="fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-surface lg:flex"
       >
         <SidebarBrand role={role} />
-        <SidebarNavList links={links} />
+        <SidebarNavList links={dynamicLinks} />
         <div className="border-t border-border p-2.5">
           <Link
             href="/"
@@ -125,7 +192,7 @@ export function DashboardSidebarLayout({
               className="fixed inset-y-0 left-0 z-50 flex flex-col bg-surface shadow-xl lg:hidden"
             >
               <SidebarBrand role={role} onNavigate={() => setMobileDrawerOpen(false)} />
-              <SidebarNavList links={links} onNavigate={() => setMobileDrawerOpen(false)} />
+              <SidebarNavList links={dynamicLinks} onNavigate={() => setMobileDrawerOpen(false)} />
               <div className="flex items-center justify-between gap-2 border-t border-border p-2.5">
                 <Link
                   href="/"

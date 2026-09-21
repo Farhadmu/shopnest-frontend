@@ -120,6 +120,18 @@ export function NavbarMobileMenu({
             >
               Open Dashboard
             </Link>
+            {role === "customer" && (
+              <Link
+                href="/become-seller"
+                onClick={onClose}
+                className="rounded-xl px-4 py-2.5 text-sm font-bold text-amber-200 hover:bg-white/15 flex items-center justify-between"
+              >
+                <span>🏪 Become a Seller / Status</span>
+                <span className="text-[10px] uppercase font-black px-1.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300">
+                  Track
+                </span>
+              </Link>
+            )}
             <button
               type="button"
               onClick={() => { onClose(); onSignOut(); }}

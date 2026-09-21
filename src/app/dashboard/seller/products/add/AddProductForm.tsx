@@ -1,11 +1,13 @@
 "use client";
 
-import React, { Suspense } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@heroui/react";
 import { FaCheckCircle } from "react-icons/fa";
+import { FiAlertTriangle } from "react-icons/fi";
 import { Panel } from "@/components/dashboard/DashboardUI";
+import { getMyStore, MyStore } from "@/lib/api/sellers";
 
 import type { ProductFormState } from "@/types/product-form";
 import { CoreIdentitySection } from "@/components/dashboard/seller/products/CoreIdentitySection";
@@ -23,6 +25,24 @@ function AddProductFormInner() {
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
   const fromAi = searchParams.get("fromAi");
+  const [store, setStore] = useState<MyStore | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    getMyStore()
+      .then((res) => {
+        if (!isMounted) return;
+        const data = "data" in res ? (res as { data: MyStore }).data : (res as MyStore);
+        if (data) setStore(data);
+      })
+      .catch(() => {
+        if (isMounted) setStore(null);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const aiPrefill = fromAi === "1" ? (() => {
     try {
@@ -54,6 +74,18 @@ function AddProductFormInner() {
 
   return (
     <div className="mx-auto max-w-6xl pb-24">
+      {/* ── Store Suspension Banner ── */}
+      {store?.status === "suspended" && (
+        <div className="mb-5 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs text-rose-700 dark:text-rose-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-2.5 font-bold">
+            <FiAlertTriangle className="h-4 w-4 shrink-0 text-rose-600" />
+            <span>Store Account Suspended: Publishing or editing product listings is restricted while your store is under compliance review.</span>
+          </div>
+          <Link href="/become-seller" className="underline font-bold shrink-0 hover:text-rose-800 dark:hover:text-rose-200">
+            View Appeal Notice →
+          </Link>
+        </div>
+      )}
       {/* ── Header / breadcrumb / actions ── */}
       <div className="mb-5 flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-xs sm:p-6 xl:flex-row xl:items-center xl:justify-between">
         <div className="max-w-2xl">
@@ -83,11 +115,11 @@ function AddProductFormInner() {
           <Button
             type="button"
             variant="primary"
-            isDisabled={p.isLoading}
+            isDisabled={p.isLoading || store?.status === "suspended"}
             onPress={p.handleSubmit as any}
-            className="whitespace-nowrap"
+            className={`whitespace-nowrap ${store?.status === "suspended" ? "opacity-60 cursor-not-allowed bg-rose-500/20 text-rose-600 border border-rose-500/30" : ""}`}
           >
-            {p.isLoading ? "Saving..." : editId ? "Update Product" : "Publish Product"}
+            {p.isLoading ? "Saving..." : store?.status === "suspended" ? "Listing Locked" : editId ? "Update Product" : "Publish Product"}
           </Button>
         </div>
       </div>
@@ -198,8 +230,8 @@ function AddProductFormInner() {
             >
               Cancel
             </Link>
-            <Button type="button" variant="primary" isDisabled={p.isLoading} onPress={p.handleSubmit as any}>
-              {p.isLoading ? "Saving..." : editId ? "Update Product" : "Publish Product"}
+            <Button type="button" variant="primary" isDisabled={p.isLoading || store?.status === "suspended"} onPress={p.handleSubmit as any}>
+              {p.isLoading ? "Saving..." : store?.status === "suspended" ? "Listing Locked" : editId ? "Update Product" : "Publish Product"}
             </Button>
           </div>
         </div>

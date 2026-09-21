@@ -18,6 +18,7 @@ import {
   FaChevronDown,
 } from "react-icons/fa";
 import type { DropdownItem, UserRole } from "./NavbarLinks";
+import { getMyStore, MyStore } from "@/lib/api/sellers";
 
 const SPRING_TRANSITION = {
   type: "spring",
@@ -125,8 +126,77 @@ function RoleBadge({ role }: { role: UserRole }) {
 export function NavbarUserMenu({ user, role, onOpenCart, onSignOut }: NavbarUserMenuProps) {
   const [open, setOpen] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [customerStore, setCustomerStore] = useState<MyStore | null>(null);
   const ref = useRef<HTMLDivElement>(null);
-  const dropdownLinks = role !== "guest" ? userDropdownItems[role as Exclude<UserRole, "guest">] || [] : [];
+  const baseDropdownLinks = role !== "guest" ? userDropdownItems[role as Exclude<UserRole, "guest">] || [] : [];
+
+  useEffect(() => {
+    if (role !== "customer" || !user?.email) {
+      setCustomerStore(null);
+      return;
+    }
+    let isMounted = true;
+    getMyStore()
+      .then((res) => {
+        if (!isMounted) return;
+        const data = "data" in res ? (res as { data: MyStore }).data : (res as MyStore);
+        if (data && data.status) {
+          setCustomerStore(data);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setCustomerStore(null);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [role, user?.email]);
+
+  const dropdownLinks = React.useMemo(() => {
+    if (role !== "customer") return baseDropdownLinks;
+    return baseDropdownLinks.map((item) => {
+      if (item.href === "/become-seller") {
+        if (customerStore?.status === "pending") {
+          return {
+            ...item,
+            label: "Store Application",
+            badge: "Pending",
+            badgeColor: "amber" as const,
+            isPrimary: true,
+          };
+        }
+        if (customerStore?.status === "rejected") {
+          return {
+            ...item,
+            label: "Store Application",
+            badge: "Needs Review",
+            badgeColor: "rose" as const,
+            isPrimary: true,
+          };
+        }
+        if (customerStore?.status === "suspended") {
+          return {
+            ...item,
+            label: "Store Status",
+            badge: "Suspended",
+            badgeColor: "rose" as const,
+            isPrimary: true,
+          };
+        }
+        if (customerStore?.status === "approved") {
+          return {
+            ...item,
+            label: "Seller Dashboard",
+            href: "/dashboard/seller",
+            badge: "Active",
+            badgeColor: "emerald" as const,
+            isPrimary: true,
+          };
+        }
+      }
+      return item;
+    });
+  }, [role, baseDropdownLinks, customerStore]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -240,7 +310,7 @@ export function NavbarUserMenu({ user, role, onOpenCart, onSignOut }: NavbarUser
                   <Link
                     href={item.href}
                     onClick={() => setOpen(false)}
-                    className={`relative flex items-center gap-2.5 rounded-lg p-2.5 transition-colors ${
+                    className={`relative flex items-center justify-between gap-2 rounded-lg p-2.5 transition-colors ${
                       item.isPrimary ? "text-primary" : "text-text"
                     }`}
                   >
@@ -266,6 +336,22 @@ export function NavbarUserMenu({ user, role, onOpenCart, onSignOut }: NavbarUser
                       )}
                       <span>{item.label}</span>
                     </div>
+
+                    {item.badge && (
+                      <span
+                        className={`relative z-10 shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider ${
+                          item.badgeColor === "amber"
+                            ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 animate-pulse"
+                            : item.badgeColor === "rose"
+                            ? "bg-rose-500/20 text-rose-600 dark:text-rose-400"
+                            : item.badgeColor === "emerald"
+                            ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                            : "bg-primary/20 text-primary"
+                        }`}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
                   </Link>
                 </motion.div>
               );
