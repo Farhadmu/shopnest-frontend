@@ -87,7 +87,17 @@ export function SidebarNavList({ links, onNavigate }: SidebarNavListProps) {
                   <span className="truncate">{item.label}</span>
                 </div>
                 {item.badge && (
-                  <span className="relative z-10 rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-extrabold text-accent">
+                  <span
+                    className={`relative z-10 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${
+                      item.badgeColor === "amber" || item.badge.toLowerCase().includes("pend")
+                        ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse"
+                        : item.badgeColor === "rose" || item.badge.toLowerCase().includes("review") || item.badge.toLowerCase().includes("reject")
+                        ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30"
+                        : item.badgeColor === "emerald" || item.badge.toLowerCase().includes("active") || item.badge.toLowerCase().includes("approved")
+                        ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                        : "bg-accent/20 text-accent"
+                    }`}
+                  >
                     {item.badge}
                   </span>
                 )}
@@ -184,7 +194,17 @@ export function SidebarNavList({ links, onNavigate }: SidebarNavListProps) {
                         </span>
                       )}
                       {item.badge && (
-                        <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-extrabold text-accent">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${
+                            item.badgeColor === "amber" || item.badge.toLowerCase().includes("pend")
+                              ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse"
+                              : item.badgeColor === "rose" || item.badge.toLowerCase().includes("review") || item.badge.toLowerCase().includes("reject")
+                              ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30"
+                              : item.badgeColor === "emerald" || item.badge.toLowerCase().includes("active") || item.badge.toLowerCase().includes("approved")
+                              ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                              : "bg-accent/20 text-accent"
+                          }`}
+                        >
                           {item.badge}
                         </span>
                       )}
