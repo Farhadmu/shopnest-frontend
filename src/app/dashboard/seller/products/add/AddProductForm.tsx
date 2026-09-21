@@ -36,8 +36,18 @@ function AddProductFormInner() {
     }
     return undefined;
   })() : undefined;
+  const queryTitle = searchParams.get("title");
+  const queryCategory = searchParams.get("category");
+  const queryTags = searchParams.get("tags");
 
-  const p = useProductForm(editId, aiPrefill);
+  const queryPrefill = (queryTitle || queryCategory || queryTags) ? {
+    title: queryTitle || undefined,
+    category: queryCategory || undefined,
+    tags: queryTags ? queryTags.split(",") : undefined,
+  } : undefined;
+
+  const mergedPrefill = aiPrefill || queryPrefill;
+  const p = useProductForm(editId, mergedPrefill);
 
   const patchForm = (patch: Partial<ProductFormState>) =>
     p.setForm((prev) => ({ ...prev, ...patch }));

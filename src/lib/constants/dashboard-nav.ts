@@ -41,6 +41,7 @@ export const sellerDashboardLinks: DashboardLink[] = [
   { label: "Products", href: "/dashboard/seller/products", icon: "🧾", description: "Manage product catalog.", group: "CATALOG" },
   { label: "Add Product", href: "/dashboard/seller/products/add", icon: "➕", description: "List a new product manually or with AI.", group: "CATALOG" },
   { label: "AI Product Studio", href: "/dashboard/seller/ai-tools", icon: "🤖", description: "Create listings from product images with AI.", group: "CATALOG", highlight: true },
+  { label: "Customer Demand (AI Search)", href: "/dashboard/seller/demand-insights", icon: "🔍", description: "Customer visual search demands & products to stock.", group: "CATALOG", highlight: true },
   { label: "Smart Inventory", href: "/dashboard/seller/inventory", icon: "📦", description: "Stock levels & restock alerts.", group: "CATALOG" },
 
   // ORDERS & FULFILLMENT
