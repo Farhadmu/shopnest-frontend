@@ -128,8 +128,9 @@ export function CartDrawerProvider({ children }: { children: React.ReactNode }) 
       }
       const data = await getCart();
       setCart(data);
-    } catch (err) {
-      setError(getErrorMessage(err));
+    } catch {
+      const localCart = getGuestCart();
+      setCart(localCart);
     } finally {
       setIsLoading(false);
     }
@@ -261,7 +262,17 @@ export function CartDrawerProvider({ children }: { children: React.ReactNode }) 
         }
         setIsOpen(true);
       } catch (err) {
-        setError(getErrorMessage(err));
+        const msg = getErrorMessage(err);
+        setError(msg);
+        if (msg.toLowerCase().includes("suspended") || msg.toLowerCase().includes("banned")) {
+          toast.error("Account Suspended", {
+            description: "Your account has been suspended. You cannot add items to cart. Please contact support.",
+          });
+        } else {
+          toast.error("Failed to add to cart", {
+            description: msg,
+          });
+        }
       } finally {
         setIsUpdating(false);
       }
