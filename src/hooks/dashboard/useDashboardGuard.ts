@@ -50,6 +50,13 @@ export function useDashboardGuard(expectedRole: DashboardRole) {
       return;
     }
 
+    const userObj = session.user as any;
+    const isSuspended = Boolean(userObj?.banned || userObj?.status === "suspended");
+    if (isSuspended) {
+      router.replace("/suspended");
+      return;
+    }
+
     if (targetExpected === "delivery_man") {
       if (actualRole === "delivery_man") {
         setIsDeliveryApproved(true);
@@ -87,9 +94,13 @@ export function useDashboardGuard(expectedRole: DashboardRole) {
     }
   }, [isPending, session, actualRole, targetExpected, router]);
 
+  const userObj = session?.user as any;
+  const isSuspended = Boolean(userObj?.banned || userObj?.status === "suspended");
+
   const isAuthorized =
     !isPending &&
     !deliveryStatusChecking &&
+    !isSuspended &&
     !!session?.user &&
     (targetExpected === "delivery_man" ? isDeliveryApproved : actualRole === targetExpected);
 

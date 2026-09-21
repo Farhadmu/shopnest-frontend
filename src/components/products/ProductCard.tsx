@@ -30,6 +30,8 @@ import {
   addGuestCartItem,
   clearGuestCart,
 } from "@/lib/guest-store";
+import { toast } from "@/context/ToastContext";
+import { getErrorMessage } from "@/lib/core/errors";
 
 export type UnifiedProduct = Partial<Product> & Partial<ProductCardData> & {
   id: string;
@@ -120,7 +122,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       clearGuestCart();
       setInternalAdded(true);
       setTimeout(() => setInternalAdded(false), 2000);
-    } catch {
+    } catch (err) {
+      const msg = getErrorMessage(err);
+      if (msg.toLowerCase().includes("suspended") || msg.toLowerCase().includes("banned")) {
+        toast.error("Account Suspended", {
+          description: "Your account has been suspended. You cannot add items to cart. Please contact support.",
+        });
+        return;
+      }
       router.push(`/products/${product.id}`);
     }
   };

@@ -148,7 +148,14 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
         price: displayPrice,
       }).catch(() => {});
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to add to cart");
+      const msg = err instanceof Error ? err.message : "Failed to add to cart";
+      if (msg.toLowerCase().includes("suspended") || msg.toLowerCase().includes("banned")) {
+        toast.error("Account Suspended", {
+          description: "Your account has been suspended. You cannot add items to cart. Please contact support.",
+        });
+      } else {
+        toast.error(msg);
+      }
     }
   };
 
@@ -172,7 +179,14 @@ export function ProductBuyBox({ product }: ProductBuyBoxProps) {
     try {
       await addToCart(product.id, quantity, selectedVariant?.name ?? undefined);
       router.push("/checkout");
-    } catch {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to process";
+      if (msg.toLowerCase().includes("suspended") || msg.toLowerCase().includes("banned")) {
+        toast.error("Account Suspended", {
+          description: "Your account has been suspended. You cannot make purchases. Please contact support.",
+        });
+        return;
+      }
       router.push("/cart");
     }
   };
