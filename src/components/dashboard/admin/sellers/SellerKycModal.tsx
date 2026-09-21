@@ -9,7 +9,7 @@ export interface SellerKycModalProps {
   onClose: () => void;
   onApprove: (id: string) => void;
   onRejectPrompt: (seller: AdminSellerFullDetails) => void;
-  onSuspend: (id: string) => void;
+  onSuspendPrompt: (seller: AdminSellerFullDetails) => void;
   isProcessing: boolean;
 }
 
@@ -18,7 +18,7 @@ export function SellerKycModal({
   onClose,
   onApprove,
   onRejectPrompt,
-  onSuspend,
+  onSuspendPrompt,
   isProcessing,
 }: SellerKycModalProps) {
   useEffect(() => {
@@ -57,7 +57,7 @@ export function SellerKycModal({
           seller={seller}
           onApprove={onApprove}
           onRejectPrompt={onRejectPrompt}
-          onSuspend={onSuspend}
+          onSuspendPrompt={onSuspendPrompt}
           isProcessing={isProcessing}
           onClose={onClose}
         />
