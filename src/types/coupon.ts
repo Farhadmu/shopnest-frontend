@@ -39,8 +39,11 @@ export interface Coupon {
   createdAt: string;
   updatedAt: string;
 
-  /** Attached by the public homepage endpoint: the coupon's seller's store info. */
+  /** Attached by the public homepage/store endpoint: the coupon's seller/store info. */
   storeName?: string;
+  storeSlug?: string;
+  storeId?: string;
+  sellerId?: string;
   logo?: string;
 }
 

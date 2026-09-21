@@ -22,9 +22,9 @@ const StoreTabs = ({
             key={tab}
             type="button"
             onClick={() => onTabChange(tab)}
-            className={`px-5 py-4 text-sm font-semibold transition ${
+            className={`px-5 py-3.5 text-sm font-semibold transition cursor-pointer ${
               activeTab === tab
-                ? "border-b-2 border-blue-600 text-blue-600"
+                ? "border-b-2 border-primary text-primary"
                 : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
             }`}
           >

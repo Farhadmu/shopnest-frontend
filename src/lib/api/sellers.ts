@@ -44,13 +44,22 @@ export interface CategoryObj {
 
 export function resolveCategoryTitle(
   cat: string | CategoryObj | undefined | null,
-  fallback = "General"
+  fallback = "General Marketplace"
 ): string {
   if (!cat) return fallback;
   if (typeof cat === "object" && cat !== null) {
-    return cat.name || fallback;
+    return cat.name || cat.slug || fallback;
   }
-  return typeof cat === "string" ? cat : fallback;
+  if (typeof cat === "string") {
+    const trimmed = cat.trim();
+    if (!trimmed) return fallback;
+    // If it's a 24-char Mongo ObjectId that was not populated, return fallback rather than raw hex
+    if (/^[0-9a-fA-F]{24}$/.test(trimmed)) {
+      return fallback;
+    }
+    return trimmed;
+  }
+  return fallback;
 }
 
 export interface BusinessInfo {

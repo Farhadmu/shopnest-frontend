@@ -35,10 +35,10 @@ const ReviewFilters = ({
           key={filter.label}
           type="button"
           onClick={() => onFilterChange?.(filter.label)}
-          className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+          className={`rounded-xl border px-4 py-2 text-sm font-medium transition cursor-pointer ${
             activeFilter === filter.label
-              ? "border-blue-600 bg-blue-600 text-white"
-              : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+              ? "border-primary bg-primary text-white shadow-xs shadow-primary/25"
+              : "border-slate-200/90 bg-white text-slate-600 hover:bg-slate-50 hover:border-primary/40 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
           }`}
         >
           {filter.label}

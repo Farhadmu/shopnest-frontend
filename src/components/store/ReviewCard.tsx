@@ -20,12 +20,12 @@ const ReviewCard = ({
       {/* User */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-bold text-primary dark:bg-primary/20">
             {review.author.charAt(0)}
           </div>
 
           <div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
                 {review.author}
               </h3>
@@ -39,7 +39,7 @@ const ReviewCard = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-1 text-sm text-yellow-500">
+        <div className="flex items-center gap-1 text-sm text-amber-400">
           {[...Array(review.rating)].map((_, index) => (
             <FaStar key={index} />
           ))}
@@ -98,8 +98,8 @@ const ReviewCard = ({
 
       {/* Seller Reply */}
       {review.reply && (
-        <div className="mt-4 rounded-xl border-l-4 border-blue-500 bg-blue-50 p-4 dark:bg-blue-500/10">
-          <p className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+        <div className="mt-4 rounded-xl border-l-4 border-primary bg-primary/5 p-4 dark:bg-primary/10">
+          <p className="text-xs font-semibold text-primary">
             {storeName} replied
           </p>
 
