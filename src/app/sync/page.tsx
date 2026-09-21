@@ -17,6 +17,11 @@ function SyncHandler() {
 
     async function runSync() {
       if (session?.user) {
+        const userObj = session.user as any;
+        if (userObj?.banned || userObj?.status === "suspended") {
+          router.replace("/suspended");
+          return;
+        }
         await syncGuestDataToServer();
       }
       router.replace(next);
