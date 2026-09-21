@@ -11,6 +11,7 @@ import { FlyToCartProvider } from "@/context/FlyToCartContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { AiCommerceCopilot } from "@/components/ai/AiCommerceCopilot";
+import { AiVisualSearchWidget } from "@/components/ai/AiVisualSearchWidget";
 import { useSession } from "@/lib/auth-client";
 import { recordSession } from "@/lib/api/security-intelligence";
 
@@ -101,9 +102,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {isHydrated && !isAuthenticated && (
               <AiCommerceCopilot
                 role="advisor"
-                positionClass="bottom-20 right-4 md:bottom-6 md:right-6"
+                positionClass={
+                  pathname.startsWith("/products") || pathname.startsWith("/product")
+                    ? "bottom-36 right-4 sm:bottom-[9.5rem] sm:right-6"
+                    : "bottom-36 right-4 sm:bottom-[5.5rem] sm:right-6"
+                }
               />
             )}
+
+            {/* Pro-Level Floating AI Visual Lens Search: Guest mode and Customer mode */}
+            {isHydrated && <AiVisualSearchWidget />}
           </FlyToCartProvider>
         </CartDrawerProvider>
       </WishlistProvider>

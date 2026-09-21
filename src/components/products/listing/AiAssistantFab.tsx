@@ -4,7 +4,7 @@ import { FiZap, FiArrowRight } from "react-icons/fi";
 
 export function AiAssistantFab() {
   return (
-    <div className="fixed bottom-6 right-6 z-40 hidden sm:block">
+    <div className="fixed bottom-6 right-4 sm:right-6 z-40 hidden sm:block transition-all duration-300">
       <Link
         href="/compare"
         className="group flex items-center gap-2.5 rounded-full border border-white/10 bg-text px-4 py-3 text-background shadow-2xl transition-transform hover:-translate-y-1"

@@ -1055,24 +1055,30 @@ export function AiCommerceCopilot({
         <button
           type="button"
           onClick={() => { setIsOpen(true); setIsMinimized(false); }}
-          className={`group fixed ${positionClass || "bottom-4 right-4 sm:bottom-6 sm:right-6"} z-40 flex items-center justify-center gap-2 sm:gap-3 rounded-full ${theme.launcherBg} p-3 sm:px-5 sm:py-3.5 text-xs font-black tracking-wide text-white shadow-2xl hover:shadow-[0_0_35px_rgba(139,92,246,0.5)] transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer border border-white/30 backdrop-blur-xl ring-2 ring-white/20`}
+          className={`group fixed ${positionClass || "bottom-4 right-4 sm:bottom-6 sm:right-6"} z-40 flex items-center justify-center gap-2 sm:gap-2.5 rounded-full ${theme.launcherBg} ${
+            effectiveRole === "advisor"
+              ? "p-2.5 sm:px-3.5 sm:py-2.5 text-xs font-bold"
+              : "p-3 sm:px-4 sm:py-3 text-xs font-black"
+          } tracking-wide text-white shadow-2xl hover:shadow-[0_0_35px_rgba(139,92,246,0.5)] transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer border border-white/30 backdrop-blur-xl ring-2 ring-white/20`}
           aria-label={`Open ${theme.roleName}`}
           title={theme.roleName}
         >
           {/* Subtle Outer Glow Ring on Hover */}
           <span className="pointer-events-none absolute -inset-0.5 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 opacity-0 blur-sm transition-opacity duration-300 group-hover:opacity-80" />
 
-          <span className="relative flex h-2.5 w-2.5 sm:h-3 sm:w-3">
+          <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-85" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 sm:h-3 sm:w-3 bg-white" />
+            <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-white" />
           </span>
-          <Sparkles className="relative h-4 w-4 sm:h-4.5 sm:w-4.5 text-amber-300 fill-amber-300/80 group-hover:rotate-12 transition-transform duration-200 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)] shrink-0" />
-          <span className="hidden sm:inline uppercase font-black tracking-wider text-xs relative truncate max-w-[180px]">
+          <Sparkles className="relative h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-300 fill-amber-300/80 group-hover:rotate-12 transition-transform duration-200 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)] shrink-0" />
+          <span className="hidden sm:inline uppercase font-bold tracking-wider text-xs relative truncate max-w-[180px]">
             {theme.roleName}
           </span>
-          <span className="hidden sm:inline-block text-[9.5px] font-extrabold bg-white/25 px-2 py-0.5 rounded-full uppercase border border-white/25 tracking-widest relative shrink-0">
-            PRO AI
-          </span>
+          {effectiveRole !== "advisor" && (
+            <span className="hidden sm:inline-block text-[9.5px] font-extrabold bg-white/25 px-2 py-0.5 rounded-full uppercase border border-white/25 tracking-widest relative shrink-0">
+              PRO AI
+            </span>
+          )}
         </button>
       )}
 
