@@ -27,6 +27,7 @@ export interface SellerFullDossierProps {
   seller: AdminSellerFullDetails;
   onApprove?: (id: string) => void;
   onRejectPrompt?: (seller: AdminSellerFullDetails) => void;
+  onSuspendPrompt?: (seller: AdminSellerFullDetails) => void;
   onSuspend?: (id: string) => void;
   isProcessing?: boolean;
   onClose?: () => void;
@@ -37,6 +38,7 @@ export function SellerFullDossier({
   seller,
   onApprove,
   onRejectPrompt,
+  onSuspendPrompt,
   onSuspend,
   isProcessing = false,
   onClose,
@@ -135,7 +137,76 @@ export function SellerFullDossier({
       </div>
 
       {/* Alert if rejected or suspended */}
-      {seller.rejectionReason && (
+      {seller.status === "suspended" && (seller.suspensionReason || seller.rejectionReason) && (
+        <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs">
+          <p className="font-bold text-rose-600 dark:text-rose-400 mb-0.5">🚨 Administrative Suspension Reason:</p>
+          <p className="text-text font-medium">{seller.suspensionReason || seller.rejectionReason}</p>
+        </div>
+      )}
+
+      {/* Merchant Appeal Submission Review Section */}
+      {seller.appeal?.reason && (
+        <div className="rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/10 via-surface to-surface p-6 shadow-md space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/80 pb-3">
+            <div className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-white text-sm shadow-sm">
+                📬
+              </span>
+              <div>
+                <h3 className="text-sm font-black text-text">Merchant Compliance Appeal Request</h3>
+                <p className="text-[11px] text-muted">
+                  Submitted on {seller.appeal.submittedAt ? new Date(seller.appeal.submittedAt).toLocaleString() : "Recently"}
+                </p>
+              </div>
+            </div>
+            <span
+              className={`rounded-full px-3 py-0.5 text-[10px] font-black uppercase tracking-wider ${
+                seller.appeal.status === "reviewed"
+                  ? "bg-emerald-500/15 text-emerald-600 border border-emerald-500/30"
+                  : seller.appeal.status === "rejected"
+                  ? "bg-rose-500/15 text-rose-600 border border-rose-500/30"
+                  : "bg-amber-500/15 text-amber-600 border border-amber-500/30 animate-pulse"
+              }`}
+            >
+              Status: {seller.appeal.status || "Pending Review"}
+            </span>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-surface p-4 text-xs space-y-2">
+            <div>
+              <span className="text-[10px] font-extrabold uppercase text-muted block mb-1">
+                Seller Explanation & Remediation Details
+              </span>
+              <p className="text-xs text-text leading-relaxed font-medium">
+                "{seller.appeal.reason}"
+              </p>
+            </div>
+            {seller.appeal.email && (
+              <div className="pt-2 border-t border-border flex items-center gap-1.5 text-muted text-[11px]">
+                <FiMail size={12} className="text-primary" />
+                <span>Contact Email:</span>
+                <strong className="text-text font-mono">{seller.appeal.email}</strong>
+              </div>
+            )}
+          </div>
+
+          {seller.status === "suspended" && onApprove && (
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <span className="text-xs text-muted mr-auto font-medium">Satisfied with the merchant's appeal?</span>
+              <button
+                type="button"
+                disabled={isProcessing}
+                onClick={() => onApprove(storeId)}
+                className="rounded-xl bg-emerald-600 px-5 py-2 text-xs font-black text-white hover:bg-emerald-700 transition shadow-sm shadow-emerald-600/20 cursor-pointer"
+              >
+                ✓ Accept Appeal & Reinstate Store
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {seller.status === "rejected" && seller.rejectionReason && (
         <div className="rounded-2xl border border-rose-500/25 bg-rose-500/5 p-4 text-xs">
           <p className="font-bold text-rose-600 dark:text-rose-400 mb-0.5">⚠️ Rejection Feedback Recorded:</p>
           <p className="text-text">{seller.rejectionReason}</p>
@@ -388,11 +459,14 @@ export function SellerFullDossier({
             </button>
           )}
 
-          {seller.status === "approved" && onSuspend && (
+          {seller.status === "approved" && (onSuspendPrompt || onSuspend) && (
             <button
               type="button"
               disabled={isProcessing}
-              onClick={() => onSuspend(storeId)}
+              onClick={() => {
+                if (onSuspendPrompt) onSuspendPrompt(seller);
+                else if (onSuspend) onSuspend(storeId);
+              }}
               className="rounded-2xl border border-border bg-surface px-5 py-2.5 text-xs font-bold text-muted hover:text-rose-600 hover:border-rose-500/40 transition disabled:opacity-50 cursor-pointer"
             >
               ⚠ Suspend Store
