@@ -15,6 +15,7 @@ export interface Store {
   category: string;
   filterCategory: string;
   rating: number | string;
+  ratingCount?: number;
   sales: string;
   salesNumber: number;
   response: string;
@@ -59,7 +60,10 @@ export interface StoreVoucher {
 }
 
 export interface StoreData {
+  _id?: string;
   id: string;
+  storeId?: string;
+  slug?: string;
   ownerId?: string;
   name: string;
   tagline: string;
