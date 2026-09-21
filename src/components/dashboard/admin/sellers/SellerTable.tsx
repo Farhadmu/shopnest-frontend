@@ -15,6 +15,7 @@ import {
   FiClock,
   FiUser,
   FiArrowRight,
+  FiTag,
 } from "react-icons/fi";
 import { FaStore } from "react-icons/fa";
 
@@ -115,11 +116,12 @@ export function SellerTable({
                       )}
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted mt-0.5">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted mt-1">
                       <span className="font-mono text-[11px] text-primary font-bold">/store/{s.slug}</span>
                       <span className="text-border">·</span>
-                      <span className="rounded-md bg-muted-bg px-2 py-0.5 text-[10px] font-bold uppercase text-muted">
-                        {resolveCategoryTitle(s.businessInfo?.categoryId, "General")}
+                      <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-[11px] font-bold text-primary shadow-2xs">
+                        <FiTag size={11} className="text-primary/70 shrink-0" />
+                        {resolveCategoryTitle(s.businessInfo?.categoryId, "General Marketplace")}
                       </span>
                       <span className="text-border">·</span>
                       <span
