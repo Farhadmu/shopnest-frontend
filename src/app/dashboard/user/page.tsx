@@ -8,6 +8,7 @@ import { GaugeMeter } from "@/components/analytics/GaugeMeter";
 import { userDashboardLinks } from "@/lib/constants/dashboard-nav";
 import { useOverviewStats } from "@/hooks/dashboard/user/useOverviewStats";
 import { useShoppingIntent } from "@/hooks/dashboard/user/useShoppingIntent";
+import { SellerApplicationBanner } from "@/components/dashboard/user/SellerApplicationBanner";
 import { useSession } from "@/lib/auth-client";
 import { addToCart } from "@/lib/api/cart";
 import { formatCurrency } from "@/lib/utils";
@@ -80,7 +81,10 @@ export default function CustomerOverviewPage() {
       subtitle="Welcome to your personal ShopNest Command Center. Live overview of your orders, active deliveries, spending analytics, and AI shopping intelligence."
       links={userDashboardLinks}
     >
-      <div className="space-y-8">
+      <div className="space-y-6">
+        {/* Seller Application Status Banner (Real-Time Notification) */}
+        <SellerApplicationBanner />
+
         {/* Toast Alert */}
         <AnimatePresence>
           {toastMsg && (

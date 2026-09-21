@@ -15,6 +15,8 @@ export interface DropdownItem {
   label: string;
   href: string;
   isPrimary?: boolean;
+  badge?: string;
+  badgeColor?: "amber" | "rose" | "emerald" | "primary" | "sky";
 }
 
 export type UserRole = "customer" | "seller" | "admin" | "delivery_man" | "delivery" | "guest";

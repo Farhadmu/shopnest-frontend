@@ -102,22 +102,23 @@ function normalizeReview(review: BackendStoreDetails["reviews"][number], product
   };
 }
 
-function normalizeStore(store: BackendStore): Store {
+function normalizeStore(store: BackendStore & { id?: string }): Store {
   const salesNumber = store.salesNumber || 0;
   const category = normalizeCategory(store.businessInfo?.category);
+  const storeId = store._id || store.id || "";
 
   return {
-    _id: store._id,
-    id: store.slug || store._id,
+    _id: storeId,
+    id: store.slug || storeId,
     name: store.storeName,
     category,
     filterCategory: category,
-    rating: store.rating.toFixed(1),
+    rating: Number(store.rating || 0).toFixed(1),
     sales: formatCount(salesNumber),
     salesNumber,
     response: "Fast response",
     logo: store.logo || "/assets/electronics/Wireless Charging Pad.png",
-    desc: store.description,
+    desc: store.description || "",
     products: (store.products || []).map(normalizeProduct),
   };
 }
