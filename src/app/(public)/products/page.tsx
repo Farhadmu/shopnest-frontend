@@ -88,11 +88,13 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const freeDelivery = params.freeDelivery ?? "";
   const aiPick = params.aiPick ?? "";
   const isFeatured = params.isFeatured ?? "";
+  const ids = params.ids ?? "";
 
   const sharedFilters = {
     search: search.trim() || undefined,
     store: store || undefined,
     seller: seller || undefined,
+    ids: ids || undefined,
     productRating: productRating || undefined,
     inStock: inStock || undefined,
     verified: verified || undefined,
