@@ -23,6 +23,8 @@ import { useProductFilter } from "./ProductFilterContext";
 
 export interface StoreFilterOption {
   id: string;
+  slug?: string;
+  ownerId?: string;
   name: string;
   rating: number;
 }
@@ -86,11 +88,25 @@ export function ProductsFilterSidebar({
 
   const activePills: { label: string; href: string; id: string }[] = [];
   if (query.category) {
-    activePills.push({
-      label: `Category: ${query.category}`,
-      href: buildProductsHref(query, { category: undefined }),
-      id: "pill-category",
-    });
+    const cats = query.category.split(",").map((s) => s.trim()).filter(Boolean);
+    if (cats.length <= 1) {
+      activePills.push({
+        label: `Category: ${query.category}`,
+        href: buildProductsHref(query, { category: undefined }),
+        id: "pill-category",
+      });
+    } else {
+      cats.forEach((cat) => {
+        const remaining = cats.filter((c) => c !== cat);
+        activePills.push({
+          label: `Category: ${cat}`,
+          href: buildProductsHref(query, {
+            category: remaining.length ? remaining.join(",") : undefined,
+          }),
+          id: `pill-category-${cat.replace(/\s+/g, "-")}`,
+        });
+      });
+    }
   }
   if (query.isFeatured === "1" || query.isFeatured === "true")
     activePills.push({
@@ -142,14 +158,30 @@ export function ProductsFilterSidebar({
       id: "pill-price",
     });
   }
+  if (query.ids) {
+    const count = query.ids.split(",").filter(Boolean).length;
+    activePills.push({
+      label: `${count} Selected Product${count > 1 ? "s" : ""}`,
+      href: buildProductsHref(query, { ids: undefined }),
+      id: "pill-ids",
+    });
+  }
   if (query.seller) {
-    for (const id of query.seller.split(",").filter(Boolean)) {
-      const seller = sellerOptions.find((s) => s.id === id);
+    for (const rawVal of query.seller.split(",").map((s) => s.trim()).filter(Boolean)) {
+      const seller = sellerOptions.find(
+        (s) =>
+          s.id === rawVal ||
+          (s.slug && s.slug.toLowerCase() === rawVal.toLowerCase()) ||
+          (s.ownerId && s.ownerId === rawVal) ||
+          s.name.toLowerCase() === rawVal.toLowerCase()
+      );
       if (seller)
         activePills.push({
           label: seller.name,
-          href: buildProductsHref(query, { seller: toggleInList(query.seller, id) }),
-          id: `pill-seller-${id}`,
+          href: buildProductsHref(query, {
+            seller: toggleInList(query.seller, seller.id),
+          }),
+          id: `pill-seller-${seller.id}`,
         });
     }
   }
@@ -218,7 +250,21 @@ export function ProductsFilterSidebar({
           </div>
           <div className="custom-scrollbar flex max-h-36 flex-col gap-0.5 overflow-y-auto pr-1">
             {sellerOptions.map((seller) => {
-              const checked = isInList(query.seller, seller.id);
+              const isChecked =
+                isInList(query.seller, seller.id) ||
+                (seller.slug ? isInList(query.seller, seller.slug) : false) ||
+                (seller.ownerId ? isInList(query.seller, seller.ownerId) : false) ||
+                (query.seller
+                  ? query.seller.split(",").some((val) => {
+                      const v = val.trim().toLowerCase();
+                      return (
+                        v === (seller.slug || "").toLowerCase() ||
+                        v === seller.id.toLowerCase() ||
+                        v === seller.name.toLowerCase()
+                      );
+                    })
+                  : false);
+              const checked = !!isChecked;
               const targetId = `seller-${seller.id}`;
               const isItemPending = pendingTarget === targetId;
               const targetHref = buildProductsHref(query, {

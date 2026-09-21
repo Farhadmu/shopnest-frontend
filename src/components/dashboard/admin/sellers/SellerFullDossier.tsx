@@ -110,9 +110,12 @@ export function SellerFullDossier({
                   <FiExternalLink size={11} /> View Public Page
                 </Link>
               </p>
-              <p className="text-xs text-muted">
-                <strong className="text-text">Category:</strong> {resolveCategoryTitle(seller.businessInfo?.categoryId, "General Marketplace")}
-              </p>
+              <div className="flex flex-wrap items-center gap-2 mt-1">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/25 px-3 py-0.5 text-xs font-bold text-primary shadow-2xs">
+                  <FiTag size={12} className="text-primary/70" />
+                  <span>Category: <strong>{resolveCategoryTitle(seller.businessInfo?.categoryId, "General Marketplace")}</strong></span>
+                </span>
+              </div>
             </div>
           </div>
 
@@ -292,7 +295,10 @@ export function SellerFullDossier({
 
             <div className="rounded-xl border border-border bg-muted-bg/20 p-3">
               <span className="text-muted block text-[10px] font-bold">Store Category</span>
-              <p className="font-bold text-text mt-0.5">{resolveCategoryTitle(seller.businessInfo?.categoryId, "General")}</p>
+              <p className="font-bold text-primary mt-0.5 inline-flex items-center gap-1.5">
+                <FiTag size={12} className="text-primary/70 shrink-0" />
+                <span>{resolveCategoryTitle(seller.businessInfo?.categoryId, "General Marketplace")}</span>
+              </p>
             </div>
 
             <div className="rounded-xl border border-border bg-muted-bg/20 p-3">

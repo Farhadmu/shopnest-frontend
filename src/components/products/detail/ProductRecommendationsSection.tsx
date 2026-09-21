@@ -37,6 +37,10 @@ export function ProductRecommendationsSection({
     badgeLabel = "Trending & Popular";
   }
 
+  const [visibleCount, setVisibleCount] = React.useState(8);
+  const displayedProducts = products.slice(0, visibleCount);
+  const remainingCount = products.length - visibleCount;
+
   return (
     <section className="relative mt-4 flex flex-col gap-6 rounded-3xl border border-border/80 bg-gradient-to-b from-card/80 to-card/40 p-6 shadow-sm backdrop-blur-sm sm:p-8">
       {/* Background ambient lighting */}
@@ -78,7 +82,7 @@ export function ProductRecommendationsSection({
 
       {/* Products Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {products.map((product, idx) => (
+        {displayedProducts.map((product, idx) => (
           <ProductCard
             key={product.id || (product as { _id?: string })._id || idx}
             product={product}
@@ -86,6 +90,19 @@ export function ProductRecommendationsSection({
           />
         ))}
       </div>
+
+      {/* Load More Button for Large Recommendation Sets */}
+      {remainingCount > 0 && (
+        <div className="mt-2 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setVisibleCount((prev) => prev + 4)}
+            className="inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-6 py-2.5 text-xs font-bold text-primary transition hover:bg-primary/10 hover:border-primary/50 dark:border-primary/40 dark:bg-primary/10 dark:hover:bg-primary/20 cursor-pointer shadow-xs"
+          >
+            <span>Load More Recommendations (+{Math.min(4, remainingCount)})</span>
+          </button>
+        </div>
+      )}
     </section>
   );
 }

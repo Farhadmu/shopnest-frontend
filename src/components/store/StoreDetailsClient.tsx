@@ -18,6 +18,7 @@ import ReviewsList from "./ReviewsList";
 import MerchantAssurance from "./MerchantAssurance";
 import TopSellerProducts from "./TopSellerProducts";
 import StoreVoucher from "./StoreVoucher";
+import StoreCouponsGrid from "./StoreCouponsGrid";
 
 export default function StoreDetailsClient({ store }: { store: StoreData }) {
   const router = useRouter();
@@ -41,8 +42,11 @@ export default function StoreDetailsClient({ store }: { store: StoreData }) {
         .then((result) => setFollowed(result.followed))
         .catch(() => setFollowed(false));
     }
-    if (store.ownerId) getStoreCoupons(store.ownerId).then(setCoupons).catch(() => setCoupons([]));
-  }, [session?.user, store.id, store.ownerId]);
+    const targetSellerId = store.ownerId || store.storeId || store._id || store.id;
+    if (targetSellerId) {
+      getStoreCoupons(targetSellerId).then(setCoupons).catch(() => setCoupons([]));
+    }
+  }, [session?.user, store.id, store.ownerId, store.storeId, store._id]);
 
   const filteredReviews = useMemo(() => {
     if (reviewFilter === "5 Stars") return store.reviewsList.filter((review) => review.rating === 5);
@@ -51,11 +55,37 @@ export default function StoreDetailsClient({ store }: { store: StoreData }) {
     return store.reviewsList;
   }, [reviewFilter, store.reviewsList]);
 
-  const voucher = coupons[0]
+  const bestCoupon = useMemo(() => {
+    if (coupons.length === 0) return null;
+    return [...coupons].sort((a, b) => {
+      const aVal = a.type === "percentage" ? a.value * 10 : a.value;
+      const bVal = b.type === "percentage" ? b.value * 10 : b.value;
+      return bVal - aVal;
+    })[0];
+  }, [coupons]);
+
+  const voucher = bestCoupon
     ? {
-        discount: coupons[0].type === "percentage" ? `${coupons[0].value}% OFF` : `৳${coupons[0].value} OFF`,
-        validTill: coupons[0].expiresAt ? `Valid till ${new Date(coupons[0].expiresAt).toLocaleDateString()}` : "No expiry date",
-        code: coupons[0].code,
+        discount:
+          bestCoupon.type === "percentage"
+            ? `${bestCoupon.value}% OFF`
+            : bestCoupon.type === "free-shipping"
+            ? "FREE DELIVERY"
+            : `৳${bestCoupon.value} OFF`,
+        terms:
+          bestCoupon.scope === "all-products"
+            ? "Applicable on: All store items"
+            : bestCoupon.scope === "specific-category" && (bestCoupon.category || bestCoupon.categories?.length)
+            ? `Applicable on: ${bestCoupon.categories?.join(", ") || bestCoupon.category}`
+            : "Special store promotion",
+        validTill: bestCoupon.expiresAt
+          ? `Valid till ${new Date(bestCoupon.expiresAt).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}`
+          : "Limited time offer",
+        code: bestCoupon.code,
       }
     : store.storeVoucher;
 
@@ -123,7 +153,7 @@ export default function StoreDetailsClient({ store }: { store: StoreData }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 pb-16 font-sans text-slate-900 dark:bg-slate-950 dark:text-white">
+    <div className="min-h-screen bg-slate-50 pb-16 font-sans text-slate-900 dark:bg-slate-950 dark:text-white">
       <StoreBanner banner={store.banner} storeName={store.name} />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <StoreProfileHeader
@@ -134,21 +164,21 @@ export default function StoreDetailsClient({ store }: { store: StoreData }) {
         <StoreTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
         {messageOpen && (
-          <div className="mb-6 rounded-2xl border border-blue-200 bg-white p-5 shadow-sm dark:border-blue-500/30 dark:bg-slate-900">
+          <div className="mb-6 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-bold">Message {store.name}</h2>
-              <button type="button" onClick={() => { setMessageOpen(false); setMessageStatus(null); }} className="text-sm text-slate-500 hover:text-slate-900 dark:hover:text-white">Close</button>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Message {store.name}</h2>
+              <button type="button" onClick={() => { setMessageOpen(false); setMessageStatus(null); }} className="text-sm text-slate-500 hover:text-slate-900 dark:hover:text-white cursor-pointer">Close</button>
             </div>
-            <textarea value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Write your message..." className="mt-4 min-h-24 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950" />
-            <button type="button" onClick={handleMessage} disabled={isSendingMessage} className="mt-3 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
+            <textarea value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Write your message..." className="mt-4 min-h-24 w-full rounded-xl border border-slate-200/90 bg-white p-3 text-sm text-slate-900 dark:text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-950" />
+            <button type="button" onClick={handleMessage} disabled={isSendingMessage} className="mt-3 rounded-xl bg-primary hover:bg-primary/90 px-4 py-2.5 text-sm font-semibold text-white shadow-xs shadow-primary/25 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer transition">
               {isSendingMessage ? "Sending..." : "Send Message"}
             </button>
             {messageStatus && (
               <p className={`mt-3 rounded-lg px-3 py-2 text-xs font-semibold ${
                 messageStatus === "Message sent successfully"
-                  ? "bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400"
+                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
                   : messageStatus === "Sending message..."
-                    ? "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
+                    ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary"
                     : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400"
               }`} role="status">
                 {messageStatus}
@@ -165,8 +195,19 @@ export default function StoreDetailsClient({ store }: { store: StoreData }) {
               <ReviewsList reviews={filteredReviews} storeName={store.name} />
             </div>
             <div className="space-y-5 lg:col-span-4">
-              <TopSellerProducts products={store.products} productsCount={store.productsCount} onAddToCart={handleAddToCart} />
-              <StoreVoucher voucher={voucher} copied={copied} onCopy={handleCopy} />
+              <TopSellerProducts
+                products={store.products}
+                productsCount={store.productsCount}
+                onAddToCart={handleAddToCart}
+                catalogUrl={`/products?seller=${encodeURIComponent(store.storeId || store._id || store.slug || store.id)}`}
+              />
+              <StoreVoucher
+                voucher={voucher}
+                copied={copied}
+                onCopy={handleCopy}
+                totalCoupons={coupons.length}
+                onViewAllCoupons={() => setActiveTab("Vouchers & Deals")}
+              />
             </div>
           </div>
         )}
@@ -180,9 +221,12 @@ export default function StoreDetailsClient({ store }: { store: StoreData }) {
         )}
 
         {activeTab === "Vouchers & Deals" && (
-          <div className="max-w-xl space-y-5">
-            <StoreVoucher voucher={voucher} copied={copied} onCopy={handleCopy} />
-            {coupons.length === 0 && <p className="text-sm text-slate-500">No active voucher is available for this store.</p>}
+          <div className="max-w-5xl">
+            <StoreCouponsGrid
+              coupons={coupons}
+              storeName={store.name}
+              sellerId={store.storeId || store._id || store.slug || store.ownerId || store.id}
+            />
           </div>
         )}
 

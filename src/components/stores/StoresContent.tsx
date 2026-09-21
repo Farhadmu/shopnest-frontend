@@ -1,91 +1,151 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import type { Store } from "@/types/store";
 import StoresHero from "./StoresHero";
 import StoreGrid from "./StoreGrid";
 import TrustStandard from "./TrustStandard";
 import SellerCTA from "./SellerCTA";
+import { Pagination } from "@/components/common/Pagination";
+
+const PAGE_SIZE = 12;
 
 type StoresContentProps = {
-  stores: Store[];
+  initialStores: Store[];
   categories: string[];
+  initialCategoryCounts?: Record<string, number>;
+  totalApprovedStores?: number;
+  initialTotal: number;
+  initialPage: number;
+  initialTotalPages: number;
+  initialCategory?: string;
+  initialSearch?: string;
+  initialSort?: string;
 };
 
 export default function StoresContent({
-  stores,
+  initialStores,
   categories,
+  initialCategoryCounts = {},
+  totalApprovedStores,
+  initialTotal,
+  initialPage,
+  initialTotalPages,
+  initialCategory = "All Stores",
+  initialSearch = "",
+  initialSort = "Highest Rated",
 }: StoresContentProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All Stores");
-  const [sortOption, setSortOption] = useState("Highest Rated");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
-  // Filter + Search + Sort logic
-  const filteredStores = useMemo(() => {
-    const search = searchTerm.trim().toLowerCase();
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  const [sortOption, setSortOption] = useState(initialSort);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-    const result = stores.filter((store) => {
-      const matchesCategory =
-        selectedCategory === "All Stores" ||
-        store.filterCategory === selectedCategory;
+  const updateQuery = (params: { page?: number; category?: string; search?: string; sort?: string }) => {
+    const current = new URLSearchParams(Array.from(searchParams?.entries() || []));
 
-      const matchesSearch =
-        search === "" ||
-        store.name.toLowerCase().includes(search) ||
-        store.category.toLowerCase().includes(search) ||
-        store.desc.toLowerCase().includes(search) ||
-        store.products.some((product) =>
-          product.name.toLowerCase().includes(search)
-        );
+    if (params.page !== undefined) {
+      if (params.page <= 1) current.delete("page");
+      else current.set("page", String(params.page));
+    }
 
-      return matchesCategory && matchesSearch;
+    if (params.category !== undefined) {
+      if (!params.category || params.category === "All Stores" || params.category === "All") {
+        current.delete("category");
+      } else {
+        current.set("category", params.category);
+      }
+    }
+
+    if (params.search !== undefined) {
+      if (!params.search.trim()) current.delete("search");
+      else current.set("search", params.search.trim());
+    }
+
+    if (params.sort !== undefined) {
+      if (params.sort === "Highest Rated" || !params.sort) current.delete("sort");
+      else current.set("sort", params.sort);
+    }
+
+    const search = current.toString();
+    const query = search ? `?${search}` : "";
+
+    startTransition(() => {
+      router.push(`${pathname}${query}`, { scroll: false });
     });
+  };
 
-    return [...result].sort((a, b) => {
-      if (sortOption === "Highest Rated") {
-        return Number(b.rating) - Number(a.rating);
-      }
-      if (sortOption === "Most Popular") {
-        return b.salesNumber - a.salesNumber;
-      }
-      if (sortOption === "Newest") {
-        return stores.indexOf(b) - stores.indexOf(a);
-      }
-      return 0;
-    });
-  }, [stores, searchTerm, selectedCategory, sortOption]);
+  const handleCategoryChange = (cat: string) => {
+    setSelectedCategory(cat);
+    updateQuery({ category: cat, page: 1 });
+  };
 
+  const handleSearchChange = (val: string) => {
+    setSearchTerm(val);
+    updateQuery({ search: val, page: 1 });
+  };
 
-  const handleClearFilters = () => {
+  const handleClearSearch = () => {
     setSearchTerm("");
-    setSelectedCategory("All Stores");
-    setSortOption("Highest Rated");
+    updateQuery({ search: "", page: 1 });
+  };
+
+  const handleSortChange = (sort: string) => {
+    setSortOption(sort);
+    updateQuery({ sort, page: 1 });
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 320, behavior: "smooth" });
+    }
+    updateQuery({ page: newPage });
   };
 
   return (
-    <main className="bg-slate-50 dark:bg-slate-950">
-      {/* 1. Hero Section (Banner) */}
+    <main className="bg-slate-50 dark:bg-slate-950 min-h-screen">
+      {/* 1. Hero Section (Banner & Category Chips) */}
       <StoresHero
-        stores={stores}
+        stores={initialStores}
         searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        onClearSearch={() => setSearchTerm("")}
+        onSearchChange={handleSearchChange}
+        onClearSearch={handleClearSearch}
         categories={categories}
         selectedCategory={selectedCategory}
-        onCategoryChange={setSelectedCategory}
-      />
-
-      {/* 2. Store Grid Section */}
-   
-      
-      <StoreGrid
-        stores={filteredStores}
+        onCategoryChange={handleCategoryChange}
         sortOption={sortOption}
-        onSortChange={setSortOption} 
-        totalStoresCount={filteredStores.length}
+        onSortChange={handleSortChange}
+        totalStoresCount={totalApprovedStores ?? initialTotal}
+        globalCategoryCounts={initialCategoryCounts}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
       />
 
-      {/* 3. Other Sections */}
+      {/* 2. Store Grid Section with Server-Rendered Stores */}
+      <div className={isPending ? "opacity-70 transition-opacity duration-150" : "transition-opacity duration-150"}>
+        <StoreGrid stores={initialStores} viewMode={viewMode} />
+      </div>
+
+      {/* 3. Server-Side Reusable Pagination Bar */}
+      {initialTotal > 0 && (
+        <div className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
+          <Pagination
+            currentPage={initialPage}
+            totalPages={initialTotalPages}
+            totalItems={initialTotal}
+            itemsPerPage={PAGE_SIZE}
+            itemName="verified stores"
+            onPageChange={handlePageChange}
+          />
+        </div>
+      )}
+
+      {/* 4. Trust & CTA Sections */}
       <TrustStandard />
       <SellerCTA />
     </main>
