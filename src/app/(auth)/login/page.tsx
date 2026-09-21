@@ -209,6 +209,13 @@ function LoginForm() {
 
       // Check user role and route accordingly
       const user = (result.data as any)?.user;
+
+      if (user?.banned || user?.status === "suspended") {
+        router.replace("/suspended");
+        router.refresh();
+        return;
+      }
+
       const userRole = user?.role;
 
       if (userRole === "delivery_man") {
