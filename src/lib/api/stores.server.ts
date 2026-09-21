@@ -131,6 +131,7 @@ function normalizeStore(store: BackendStore & { id?: string }): Store {
     category,
     filterCategory: category,
     rating: Number(store.rating || 0).toFixed(1),
+    ratingCount: Number(store.ratingCount || 0),
     sales: formatCount(salesNumber),
     salesNumber,
     response: "Fast response",
@@ -140,18 +141,85 @@ function normalizeStore(store: BackendStore & { id?: string }): Store {
   };
 }
 
-export async function getPublicStores(): Promise<{ stores: Store[]; categories: string[] }> {
-  const response = await publicFetch<BackendStore[] | { data: BackendStore[] }>("/sellers", {
+export interface PublicStoresQuery {
+  page?: number | string;
+  limit?: number | string;
+  search?: string;
+  category?: string;
+  sort?: string;
+}
+
+export interface PagedStoresResult {
+  stores: Store[];
+  categories: string[];
+  categoryCounts: Record<string, number>;
+  totalApprovedStores: number;
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export async function getPublicStores(params?: PublicStoresQuery): Promise<PagedStoresResult> {
+  const queryParams: Record<string, string | number | undefined> = {};
+  if (params?.page) queryParams.page = params.page;
+  if (params?.limit) queryParams.limit = params.limit;
+  if (params?.search?.trim()) queryParams.search = params.search.trim();
+  if (params?.category && params.category !== "All Stores" && params.category !== "All") {
+    queryParams.category = params.category;
+  }
+  if (params?.sort) queryParams.sort = params.sort;
+
+  const response = await publicFetch<any>("/sellers", {
+    params: queryParams,
     cache: "no-store",
   });
-  const stores = "data" in response ? response.data : response;
-  const normalizedStores = stores.map(normalizeStore);
+
+  const rawStores: BackendStore[] = Array.isArray(response)
+    ? response
+    : Array.isArray(response?.data)
+    ? response.data
+    : Array.isArray(response?.items)
+    ? response.items
+    : [];
+
+  const total = Number(response?.total ?? rawStores.length);
+  const totalApprovedStores = Number(response?.totalApprovedStores ?? total);
+  const page = Number(response?.page ?? params?.page ?? 1);
+  const limit = Number(response?.limit ?? params?.limit ?? 12);
+  const totalPages = Number(response?.totalPages ?? Math.max(1, Math.ceil(total / limit)));
+
+  const normalizedStores = rawStores.map(normalizeStore);
   
   const presentCategories = Array.from(new Set(normalizedStores.map((s) => s.filterCategory).filter(Boolean)));
   const combined = Array.from(new Set([...STORE_CATEGORIES, ...presentCategories])).filter(c => c !== "All Stores");
   const categories = ["All Stores", ...combined];
 
-  return { stores: normalizedStores, categories };
+  const rawCategoryCounts: Record<string, number> = response?.categoryCounts || {};
+  const categoryCounts: Record<string, number> = {};
+  for (const [key, count] of Object.entries(rawCategoryCounts)) {
+    const normalizedKey = normalizeCategory(key);
+    categoryCounts[normalizedKey] = (categoryCounts[normalizedKey] || 0) + count;
+  }
+
+  // Fallback if categoryCounts is empty
+  if (Object.keys(categoryCounts).length === 0) {
+    for (const store of normalizedStores) {
+      const cat = store.filterCategory || "General";
+      categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+    }
+  }
+
+  return {
+    stores: normalizedStores,
+    categories,
+    categoryCounts,
+    totalApprovedStores,
+    total,
+    page,
+    limit,
+    totalPages,
+  };
 }
 
 export async function getPublicStoreDetails(identifier: string): Promise<StoreData> {
@@ -173,8 +241,13 @@ export async function getPublicStoreDetails(identifier: string): Promise<StoreDa
   const metricValue = hasReviews ? avgRating.toFixed(1) : "N/A";
   const rating = hasReviews ? avgRating.toFixed(1) : Number(store.rating || 0).toFixed(1);
 
+  const rawStoreId = store._id || store.id;
+
   return {
-    id: store.slug || store.id,
+    _id: rawStoreId,
+    storeId: rawStoreId,
+    id: store.slug || rawStoreId,
+    slug: store.slug,
     ownerId: store.ownerId,
     name: store.storeName,
     tagline: store.description,
