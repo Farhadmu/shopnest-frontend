@@ -111,6 +111,13 @@ function getSubtitle(coupon: Coupon): string {
 }
 
 function getCategoryInfo(coupon: Coupon): { labels: string[]; href: string } {
+  const sellerQuery =
+    coupon.storeSlug ||
+    coupon.storeId ||
+    coupon.sellerId;
+
+  const sellerParam = sellerQuery ? `seller=${encodeURIComponent(sellerQuery)}` : "";
+
   if (coupon.scope === "specific-category") {
     const labels =
       coupon.categories && coupon.categories.length > 0
@@ -119,16 +126,27 @@ function getCategoryInfo(coupon: Coupon): { labels: string[]; href: string } {
           ? [coupon.category]
           : [];
     if (labels.length > 0) {
+      const catParam = `category=${encodeURIComponent(labels.join(","))}`;
       return {
         labels,
-        href: `/products?category=${encodeURIComponent(labels.join(","))}`,
+        href: `/products?${[sellerParam, catParam].filter(Boolean).join("&")}`,
       };
     }
   }
   if (coupon.scope === "specific-products") {
-    return { labels: ["Selected Products"], href: "/products" };
+    if (coupon.productIds && coupon.productIds.length === 1) {
+      return { labels: ["1 Selected Item"], href: `/products/${encodeURIComponent(coupon.productIds[0])}` };
+    }
+    if (coupon.productIds && coupon.productIds.length > 1) {
+      const idsParam = `ids=${encodeURIComponent(coupon.productIds.join(","))}`;
+      return {
+        labels: [`${coupon.productIds.length} Selected Items`],
+        href: `/products?${[sellerParam, idsParam].filter(Boolean).join("&")}`,
+      };
+    }
+    return { labels: ["Selected Products"], href: sellerParam ? `/products?${sellerParam}` : "/products" };
   }
-  return { labels: ["All Products"], href: "/products" };
+  return { labels: ["All Products"], href: sellerParam ? `/products?${sellerParam}` : "/products" };
 }
 
 function formatUnit(value: number): string {
