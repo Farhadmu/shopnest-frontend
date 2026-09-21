@@ -53,14 +53,17 @@ const StoreProfileHeader = ({
               />
             </div>
 
-            {/* Store Info */}
+              {/* Store Info */}
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-xl font-bold text-slate-900 dark:text-white">
                   {store.name}
                 </h1>
 
-                <FaCheckCircle className="text-blue-500" />
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-950/50 border border-blue-200/80 dark:border-blue-900/60 px-2 py-0.5 text-xs font-semibold text-blue-600 dark:text-blue-400 shadow-2xs">
+                  <FaCheckCircle className="text-[11px] text-blue-500" />
+                  <span>Verified</span>
+                </span>
               </div>
 
               <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
@@ -71,7 +74,7 @@ const StoreProfileHeader = ({
               <div className="mt-3 flex flex-wrap items-center gap-4 text-sm">
                 
                 <span className="flex items-center gap-1 font-semibold text-slate-800 dark:text-slate-200">
-                  <FaStar className="text-yellow-400" />
+                  <FaStar className="text-amber-400" />
                   {store.rating}
                 </span>
 
@@ -95,7 +98,7 @@ const StoreProfileHeader = ({
             <button
               type="button"
               onClick={onFollow}
-              className="flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="flex items-center gap-2 rounded-xl border border-slate-200/90 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:border-primary/40 hover:text-primary dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer shadow-2xs"
             >
               <FaUserPlus className={followed ? "text-rose-500" : ""} />
               {followed ? "Following" : "Follow Store"}
@@ -104,7 +107,7 @@ const StoreProfileHeader = ({
             <button
               type="button"
               onClick={handleMessageClick}
-              className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+              className="flex items-center gap-2 rounded-xl bg-primary hover:bg-primary/90 px-4 py-2.5 text-sm font-semibold text-white transition shadow-xs shadow-primary/25 cursor-pointer"
             >
               <FaCommentAlt />
               Message
