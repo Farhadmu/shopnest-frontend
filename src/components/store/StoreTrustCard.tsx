@@ -36,7 +36,7 @@ const StoreTrustCard = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-1 rounded-lg bg-yellow-50 px-3 py-1.5 text-sm font-bold text-yellow-600 dark:bg-yellow-500/10">
+        <div className="flex items-center gap-1 rounded-lg bg-amber-50 px-3 py-1.5 text-sm font-bold text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
           <FaStar />
           {store.rating}
         </div>
@@ -62,7 +62,7 @@ const StoreTrustCard = ({
 
               <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                 <div
-                  className="h-full rounded-full bg-blue-600 transition-all"
+                  className="h-full rounded-full bg-primary transition-all duration-500"
                   style={{
                     width: `${percentage}%`,
                   }}
@@ -73,8 +73,8 @@ const StoreTrustCard = ({
         })}
       </div>
 
-      <div className="mt-5 flex items-center gap-2 rounded-xl bg-green-50 p-3 text-sm text-green-700 dark:bg-green-500/10 dark:text-green-400">
-        <FaCheckCircle />
+      <div className="mt-5 flex items-center gap-2 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+        <FaCheckCircle className="text-emerald-500" />
         <span>
           {store.recommendationPercent ?? 0}% of customers recommend this store
         </span>
