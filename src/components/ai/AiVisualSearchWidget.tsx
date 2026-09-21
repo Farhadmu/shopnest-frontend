@@ -208,13 +208,13 @@ export function AiVisualSearchWidget() {
   // Dynamic positioning to prevent overlap with AiAssistantFab on products page and MobileBottomNav
   const isProductsPage = pathname.startsWith("/products") || pathname.startsWith("/product");
   const floatingPosClass = isProductsPage
-    ? "bottom-24 right-4 sm:bottom-22 sm:right-6"
+    ? "bottom-20 right-4 sm:bottom-[5.5rem] sm:right-6"
     : "bottom-20 right-4 sm:bottom-6 sm:right-6";
 
   return (
     <>
       {/* Floating Bottom-Right Trigger Button */}
-      <div className={`fixed ${floatingPosClass} z-40`}>
+      <div className={`fixed ${floatingPosClass} z-40 transition-all duration-300`}>
         <motion.button
           onClick={() => setIsOpen(true)}
           whileHover={{ scale: 1.05 }}

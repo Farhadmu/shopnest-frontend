@@ -102,7 +102,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {isHydrated && !isAuthenticated && (
               <AiCommerceCopilot
                 role="advisor"
-                positionClass="bottom-24 right-4 md:bottom-24 md:right-6"
+                positionClass={
+                  pathname.startsWith("/products") || pathname.startsWith("/product")
+                    ? "bottom-36 right-4 sm:bottom-[9.5rem] sm:right-6"
+                    : "bottom-36 right-4 sm:bottom-[5.5rem] sm:right-6"
+                }
               />
             )}
 
