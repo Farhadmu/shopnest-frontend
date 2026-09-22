@@ -110,3 +110,12 @@ export async function updateDemandStatus(
     { status }
   );
 }
+
+export async function deleteVisualSearchDemand(
+  demandId: string
+): Promise<{ id: string }> {
+  return clientMutation<{ id: string }>(
+    `/ai/visual-search/demands/${demandId}`,
+    "DELETE"
+  );
+}

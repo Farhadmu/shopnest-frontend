@@ -12,6 +12,7 @@ import { sellerDashboardLinks } from "@/lib/constants/dashboard-nav";
 import {
   getSellerDemandInsights,
   updateDemandStatus,
+  deleteVisualSearchDemand,
   SellerDemandInsightsResponse,
   VisualSearchDemandItem,
 } from "@/lib/api/ai-visual-search";
@@ -36,6 +37,8 @@ import {
   Check,
   ChevronRight,
   ArrowUpRight,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 
 export default function SellerDemandInsightsPage() {
@@ -48,6 +51,7 @@ export default function SellerDemandInsightsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeModalItem, setActiveModalItem] = useState<VisualSearchDemandItem | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchInsights = useCallback(async () => {
     try {
@@ -89,6 +93,42 @@ export default function SellerDemandInsightsPage() {
       toast.error("Failed to update status");
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const handleDeleteDemand = async (item: VisualSearchDemandItem, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm(`Delete customer demand for "${item.detectedTitle}"?`)) {
+      return;
+    }
+    try {
+      setDeletingId(item._id);
+      await deleteVisualSearchDemand(item._id);
+      toast.success("Demand record deleted");
+      setData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          demands: prev.demands.filter((d) => d._id !== item._id),
+          metrics: {
+            ...prev.metrics,
+            totalSearches: Math.max(prev.metrics.totalSearches - 1, 0),
+            unmetSearches: item.isUnmetDemand
+              ? Math.max(prev.metrics.unmetSearches - 1, 0)
+              : prev.metrics.unmetSearches,
+            matchedSearches: !item.isUnmetDemand
+              ? Math.max(prev.metrics.matchedSearches - 1, 0)
+              : prev.metrics.matchedSearches,
+          },
+        };
+      });
+      if (activeModalItem?._id === item._id) {
+        setActiveModalItem(null);
+      }
+    } catch {
+      toast.error("Failed to delete demand record");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -339,14 +379,28 @@ export default function SellerDemandInsightsPage() {
                             )}
                           </div>
 
-                          {/* Quick Inspect Button */}
-                          <button
-                            onClick={() => setActiveModalItem(item)}
-                            className="absolute bottom-2.5 right-2.5 flex h-7 w-7 items-center justify-center rounded-lg bg-black/60 text-white backdrop-blur-md opacity-0 group-hover:opacity-100 transition hover:bg-black/80"
-                            title="Inspect image & AI data"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
+                          {/* Quick Inspect & Delete Actions */}
+                          <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition z-10">
+                            <button
+                              onClick={() => setActiveModalItem(item)}
+                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-black/65 text-white backdrop-blur-md hover:bg-black/85 transition"
+                              title="Inspect image & AI data"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={(e) => handleDeleteDemand(item, e)}
+                              disabled={deletingId === item._id}
+                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-black/65 text-rose-300 backdrop-blur-md hover:bg-rose-600 hover:text-white transition disabled:opacity-50"
+                              title="Delete this customer demand"
+                            >
+                              {deletingId === item._id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                          </div>
                         </div>
 
                         {/* Title & Metadata */}
@@ -521,24 +575,39 @@ export default function SellerDemandInsightsPage() {
             </div>
 
             {/* Modal Bottom Actions */}
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-border/70">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border/70">
               <button
-                onClick={() => setActiveModalItem(null)}
-                className="rounded-xl border border-border px-4 py-2 text-xs font-bold text-foreground hover:bg-muted transition"
+                onClick={() => handleDeleteDemand(activeModalItem)}
+                disabled={deletingId === activeModalItem._id}
+                className="flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3.5 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition disabled:opacity-50"
               >
-                Close
+                {deletingId === activeModalItem._id ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="h-3.5 w-3.5" />
+                )}
+                <span>Delete Demand Insight</span>
               </button>
-              <button
-                onClick={() => {
-                  const item = activeModalItem;
-                  setActiveModalItem(null);
-                  handleStockProduct(item);
-                }}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-teal-500/20 hover:brightness-105 transition"
-              >
-                <PlusCircle className="h-4 w-4" />
-                <span>List Product with this Information</span>
-              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setActiveModalItem(null)}
+                  className="rounded-xl border border-border px-4 py-2 text-xs font-bold text-foreground hover:bg-muted transition"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    const item = activeModalItem;
+                    setActiveModalItem(null);
+                    handleStockProduct(item);
+                  }}
+                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-teal-500/20 hover:brightness-105 transition"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  <span>List Product with this Information</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

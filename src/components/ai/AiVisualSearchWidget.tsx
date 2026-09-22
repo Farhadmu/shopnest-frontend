@@ -62,6 +62,7 @@ export function AiVisualSearchWidget() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [scanStep, setScanStep] = useState(0);
   const [result, setResult] = useState<VisualSearchResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -132,12 +133,28 @@ export function AiVisualSearchWidget() {
   };
 
   // Drag and Drop
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
     if (file) processFile(file);
   };
@@ -374,10 +391,16 @@ export function AiVisualSearchWidget() {
                         /* Drag & Drop Upload Zone */
                         <div
                           ref={dropZoneRef}
+                          onDragEnter={handleDragEnter}
                           onDragOver={handleDragOver}
+                          onDragLeave={handleDragLeave}
                           onDrop={handleDrop}
                           onClick={() => fileInputRef.current?.click()}
-                          className="group relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-emerald-500/40 bg-emerald-500/5 p-8 text-center transition hover:border-emerald-500 hover:bg-emerald-500/10 cursor-pointer"
+                          className={`group relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 text-center transition cursor-pointer ${
+                            isDragging
+                              ? "border-emerald-500 bg-emerald-500/15 ring-4 ring-emerald-500/20 scale-[1.01]"
+                              : "border-emerald-500/40 bg-emerald-500/5 hover:border-emerald-500 hover:bg-emerald-500/10"
+                          }`}
                         >
                           <input
                             ref={fileInputRef}
@@ -386,14 +409,24 @@ export function AiVisualSearchWidget() {
                             className="hidden"
                             onChange={handleFileChange}
                           />
-                          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition duration-300">
+                          <div className={`flex h-14 w-14 items-center justify-center rounded-2xl transition duration-300 ${
+                            isDragging
+                              ? "bg-emerald-500 text-white scale-110 shadow-lg shadow-emerald-500/30"
+                              : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 group-hover:scale-110"
+                          }`}>
                             <UploadCloud className="h-7 w-7" />
                           </div>
                           <p className="mt-3 text-sm font-bold text-foreground">
-                            Drop your product image here, or{" "}
-                            <span className="text-emerald-600 dark:text-emerald-400 underline underline-offset-2">
-                              browse
-                            </span>
+                            {isDragging ? (
+                              <span className="text-emerald-500 font-black">Release to drop image here</span>
+                            ) : (
+                              <>
+                                Drop your product image here, or{" "}
+                                <span className="text-emerald-600 dark:text-emerald-400 underline underline-offset-2">
+                                  browse
+                                </span>
+                              </>
+                            )}
                           </p>
                           <p className="mt-1 text-xs text-muted-foreground">
                             Supports JPG, PNG, WebP up to 5MB
@@ -691,7 +724,15 @@ export function AiVisualSearchWidget() {
                                     className="h-full w-full object-contain transition duration-300 group-hover:scale-105"
                                   />
                                   {prod.matchBadge && (
-                                    <div className="absolute top-2 left-2 rounded-full bg-black/75 px-2.5 py-0.5 text-[11px] font-bold text-white backdrop-blur-md flex items-center gap-1 border border-white/20">
+                                    <div
+                                      className={`absolute top-2 left-2 rounded-full px-2.5 py-0.5 text-[11px] font-bold backdrop-blur-md flex items-center gap-1 border shadow-sm ${
+                                        prod.matchBadge === "Direct Match"
+                                          ? "bg-emerald-700/85 text-emerald-100 border-emerald-400/40"
+                                          : prod.matchBadge === "Similar Type"
+                                          ? "bg-teal-700/85 text-teal-100 border-teal-400/40"
+                                          : "bg-indigo-700/85 text-indigo-100 border-indigo-400/40"
+                                      }`}
+                                    >
                                       <Sparkles className="h-3 w-3 text-amber-300" />
                                       <span>
                                         {prod.matchScore
