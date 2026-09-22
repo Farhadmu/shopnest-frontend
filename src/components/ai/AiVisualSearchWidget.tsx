@@ -744,7 +744,14 @@ export function AiVisualSearchWidget() {
                         </p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-center gap-2.5 text-[11px] text-muted-foreground bg-muted/30 px-3 py-1.5 rounded-xl border border-border/50">
+                          <span className="font-bold text-foreground">Match Legend:</span>
+                          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Direct Match</span>
+                          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-teal-500" /> Similar Type</span>
+                          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-indigo-500" /> Related Product</span>
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         {result.products.map((prod) => {
                           const isAdded = addedCartIds.has(prod._id);
                           const isAdding = addingCartId === prod._id;
@@ -860,7 +867,8 @@ export function AiVisualSearchWidget() {
                           );
                         })}
                       </div>
-                    )}
+                    </div>
+                  )}
                   </div>
                 )}
               </div>
