@@ -1019,35 +1019,40 @@ export default function AdminDashboard() {
           {/* Trajectory Timeline Chart */}
           {forecastData?.trajectoryTimeline && forecastData.trajectoryTimeline.length > 0 && (
             <Panel title="📈 Historical & Projected GMV Trajectory">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-xs">
-                <p className="text-muted">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <p className="text-muted text-[11.5px]">
                   Visualizing recorded platform GMV alongside projected revenue momentum across the {forecastHorizon} horizon.
                 </p>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3.5 text-[11px]">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-full bg-primary" />
-                    <span className="font-bold text-text">Recorded GMV</span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-primary" />
+                    <span className="font-bold text-text">Recorded Actual</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-full bg-emerald-500" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                     <span className="font-bold text-text">Projected Pace</span>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-2">
+              <div className="pt-1 overflow-x-auto sm:overflow-visible">
                 <LineAreaChart
                   data={forecastData.trajectoryTimeline.map((pt) => ({
                     label: pt.label,
+                    shortLabel: pt.label.replace(/\s*\(Proj\)/gi, "*"),
+                    fullLabel: pt.isProjected
+                      ? `${pt.label.replace(/\s*\(Proj\)/gi, "")} (Projected Forecast)`
+                      : `${pt.label} (Recorded Actual)`,
                     value: pt.historicalGmv !== undefined ? pt.historicalGmv : pt.projectedGmv,
                     secondaryValue: pt.projectedGmv,
                   }))}
-                  height={260}
+                  height={190}
                   valuePrefix="৳"
                   primaryLabel="Actual GMV"
                   secondaryLabel="Projected Baseline"
                   primaryColor="var(--primary, #0ea5e9)"
                   secondaryColor="#10b981"
+                  showLegend={false}
                 />
               </div>
             </Panel>
