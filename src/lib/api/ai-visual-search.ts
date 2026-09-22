@@ -38,6 +38,7 @@ export interface VisualSearchResult {
   products: VisualSearchProduct[];
   isUnmetDemand: boolean;
   demandId: string | null;
+  latencyMs?: number;
 }
 
 export interface VisualSearchDemandItem {
