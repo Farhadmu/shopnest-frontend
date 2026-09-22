@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { getPublicSellerStoreBySlug, getPublicSellerStores } from "@/lib/api/sellers";
+import React, { useEffect, useState, useMemo } from "react";
+import { getPublicSellerStoreBySlug, getPublicSellerStores, PublicSellerStore } from "@/lib/api/sellers";
 import { followStore, unfollowStore } from "@/lib/api/messages";
 import SellerHeader from "./SellerHeader";
 import SellerMarquee from "./SellerMarquee";
@@ -27,7 +27,102 @@ function normalizeMediaUrl(value?: string) {
   return `/uploads/${cleanValue}`;
 }
 
-function toSeller(store: Awaited<ReturnType<typeof getPublicSellerStores>>[number], index: number): Seller {
+function getStoreCategorySlugs(store: PublicSellerStore): string[] {
+  const slugs = new Set<string>(["all"]);
+  const texts: string[] = [];
+
+  if (typeof store.businessInfo?.categoryId === "object" && store.businessInfo.categoryId !== null) {
+    texts.push((store.businessInfo.categoryId as { name?: string }).name || "");
+  } else if (typeof store.businessInfo?.categoryId === "string") {
+    texts.push(store.businessInfo.categoryId);
+  }
+
+  if (store.products) {
+    for (const p of store.products) {
+      if (p.category) texts.push(p.category);
+      if (p.title) texts.push(p.title);
+      if (p.tags) texts.push(...p.tags);
+    }
+  }
+  if (store.storeName) texts.push(store.storeName);
+  if (store.description) texts.push(store.description);
+
+  const combined = texts.join(" ").toLowerCase();
+
+  if (
+    combined.includes("elect") ||
+    combined.includes("gadget") ||
+    combined.includes("tech") ||
+    combined.includes("phone") ||
+    combined.includes("laptop") ||
+    combined.includes("pc") ||
+    combined.includes("camera") ||
+    combined.includes("drone") ||
+    combined.includes("audio") ||
+    combined.includes("headphone") ||
+    combined.includes("sound") ||
+    combined.includes("mobile") ||
+    combined.includes("gaming") ||
+    combined.includes("keyboard") ||
+    combined.includes("device") ||
+    combined.includes("cable") ||
+    combined.includes("charger")
+  ) {
+    slugs.add("electronics");
+  }
+
+  if (
+    combined.includes("fashion") ||
+    combined.includes("cloth") ||
+    combined.includes("wear") ||
+    combined.includes("panjabi") ||
+    combined.includes("dress") ||
+    combined.includes("shirt") ||
+    combined.includes("pant") ||
+    combined.includes("shoe") ||
+    combined.includes("footwear") ||
+    combined.includes("beauty") ||
+    combined.includes("skin") ||
+    combined.includes("cosmetic") ||
+    combined.includes("makeup") ||
+    combined.includes("lip") ||
+    combined.includes("eyewear") ||
+    combined.includes("frame") ||
+    combined.includes("glass") ||
+    combined.includes("watch") ||
+    combined.includes("jewel") ||
+    combined.includes("lifestyle") ||
+    combined.includes("care")
+  ) {
+    slugs.add("fashion");
+  }
+
+  if (
+    combined.includes("home") ||
+    combined.includes("living") ||
+    combined.includes("decor") ||
+    combined.includes("kitchen") ||
+    combined.includes("lamp") ||
+    combined.includes("light") ||
+    combined.includes("oil") ||
+    combined.includes("grocer") ||
+    combined.includes("food") ||
+    combined.includes("fitness") ||
+    combined.includes("gym") ||
+    combined.includes("bike") ||
+    combined.includes("sport") ||
+    combined.includes("furniture") ||
+    combined.includes("book") ||
+    combined.includes("fiction") ||
+    combined.includes("station")
+  ) {
+    slugs.add("home");
+  }
+
+  return Array.from(slugs);
+}
+
+function toSeller(store: PublicSellerStore, index: number): Seller {
   const rawCat = store.businessInfo?.categoryId;
   const category =
     (typeof rawCat === "object" && rawCat !== null
@@ -35,7 +130,9 @@ function toSeller(store: Awaited<ReturnType<typeof getPublicSellerStores>>[numbe
       : typeof rawCat === "string"
       ? rawCat
       : store.products?.[0]?.category) || "Marketplace Store";
-  const categorySlug = category.toLowerCase().includes("elect") ? "electronics" : category.toLowerCase().includes("fashion") || category.toLowerCase().includes("beaut") ? "fashion" : category.toLowerCase().includes("home") || category.toLowerCase().includes("decor") ? "home" : "all";
+
+  const categorySlugs = getStoreCategorySlugs(store);
+  const primarySlug = categorySlugs.find((s) => s !== "all") || "all";
   const style = CARD_STYLES[index % CARD_STYLES.length];
   const initials = store.storeName.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
   const tags = Array.from(new Set((store.products || []).flatMap((product) => product.tags || [product.category]).filter(Boolean))).slice(0, 3) as string[];
@@ -50,7 +147,8 @@ function toSeller(store: Awaited<ReturnType<typeof getPublicSellerStores>>[numbe
     logo: store.logo || store.products?.find((product) => product.images?.[0])?.images?.[0],
     banner: normalizeMediaUrl(store.banner || store.bannerUrl || store.bannerImage || store.products?.find((product) => product.images?.[0])?.images?.[0]),
     category,
-    categorySlug,
+    categorySlug: primarySlug,
+    categorySlugs,
     tagline: store.description || "Verified products from a trusted ShopNest store.",
     rating: Number(Number(store.rating || 0).toFixed(1)),
     reviewsCount: formatCount(store.ratingCount || 0),
@@ -101,6 +199,7 @@ function SellerSkeleton() {
 
 export default function SellersSection() {
   const [activeTab, setActiveTab] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [followedStores, setFollowedStores] = useState<Record<string, boolean>>({});
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -121,6 +220,24 @@ export default function SellersSection() {
             }
           })
         );
+
+        // Sort by highest rating, highest review count, highest sales volume, then trustScore
+        enrichedStores.sort((a, b) => {
+          const ratingA = Number(a.rating || 0);
+          const ratingB = Number(b.rating || 0);
+          const countA = Number(a.ratingCount || 0);
+          const countB = Number(b.ratingCount || 0);
+          const salesA = Number(a.salesNumber || 0);
+          const salesB = Number(b.salesNumber || 0);
+          const trustA = Number(a.trustScore || 0);
+          const trustB = Number(b.trustScore || 0);
+
+          if (ratingB !== ratingA) return ratingB - ratingA;
+          if (countB !== countA) return countB - countA;
+          if (salesB !== salesA) return salesB - salesA;
+          return trustB - trustA;
+        });
+
         if (active) {
           setSellers(enrichedStores.map(toSeller));
           setIsLoading(false);
@@ -135,10 +252,32 @@ export default function SellersSection() {
     };
   }, []);
 
-  const displaySellers =
-    activeTab === "all"
-      ? sellers
-      : sellers.filter((seller) => seller.categorySlug === activeTab);
+  const displaySellers = useMemo(() => {
+    const cleanSearch = searchQuery.trim().toLowerCase();
+
+    return sellers.filter((seller) => {
+      // 1. Category Tab Filter
+      const matchesCategory =
+        activeTab === "all" || (seller.categorySlugs && seller.categorySlugs.includes(activeTab));
+
+      if (!matchesCategory) return false;
+
+      // 2. Search Query Filter
+      if (!cleanSearch) return true;
+
+      const searchableText = [
+        seller.name,
+        seller.tagline,
+        seller.category,
+        ...(seller.featuredTags || []),
+        ...(seller.featuredProducts?.map((p) => p.title) || []),
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return searchableText.includes(cleanSearch);
+    });
+  }, [sellers, activeTab, searchQuery]);
 
   const handleToggleFollow = async (id: string) => {
     const seller = sellers.find((item) => item.id === id);
@@ -154,22 +293,20 @@ export default function SellersSection() {
     }
   };
 
-  return (
-    <section className="relative w-full overflow-hidden transition-all duration-300">
-      {/* Background Ambient Glows */}
-      <div
-        className="pointer-events-none absolute -top-24 -left-24 h-96 w-96 rounded-full blur-3xl opacity-40 dark:opacity-20"
-        style={{ background: "radial-gradient(circle, var(--color-primary) 0%, transparent 70%)" }}
-      />
-      <div
-        className="pointer-events-none absolute -bottom-24 -right-24 h-96 w-96 rounded-full blur-3xl opacity-30 dark:opacity-15"
-        style={{ background: "radial-gradient(circle, var(--color-accent) 0%, transparent 70%)" }}
-      />
+  const handleResetFilters = () => {
+    setActiveTab("all");
+    setSearchQuery("");
+  };
 
-      {/* 1. Header with Badge & Category Tabs */}
+  return (
+    <section className="relative w-full transition-all duration-300">
+      {/* 1. Header with Badge, Category Tabs & Search Bar */}
       <SellerHeader
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        resultCount={displaySellers.length}
       />
 
       {/* 2. Loading Skeleton or Seller Marquee */}
@@ -180,6 +317,8 @@ export default function SellersSection() {
           sellers={displaySellers}
           followedStores={followedStores}
           onToggleFollow={handleToggleFollow}
+          onResetFilters={handleResetFilters}
+          hasActiveFilters={activeTab !== "all" || searchQuery.trim().length > 0}
         />
       )}
 

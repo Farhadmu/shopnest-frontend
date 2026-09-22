@@ -23,6 +23,7 @@ export interface Seller {
   featuredProducts?: Array<{ image: string; title: string }>;
   isTopRated?: boolean;
   storeSlug?: string;
+  categorySlugs?: string[];
 }
 
 export interface SellerCategoryTab {

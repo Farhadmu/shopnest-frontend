@@ -3,17 +3,23 @@
 import React from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowRight, Search, X } from "lucide-react";
 import { CATEGORY_TABS } from "./seller.data";
 
 interface SellerHeaderProps {
   activeTab: string;
   onTabChange: (tabId: string) => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  resultCount?: number;
 }
 
 export default function SellerHeader({
   activeTab,
   onTabChange,
+  searchQuery,
+  onSearchChange,
+  resultCount,
 }: SellerHeaderProps) {
   return (
     <div>
@@ -63,20 +69,22 @@ export default function SellerHeader({
         </div>
       </div>
 
-      {/* Category Tabs & Hover Note */}
-      <div className="relative z-10 mt-3 flex flex-wrap items-center justify-between gap-1 pb-1">
-        <div className="flex flex-wrap items-center gap-1">
+      {/* Category Tabs & Search Bar Row */}
+      <div className="relative z-10 mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
+        {/* Category Tabs */}
+        <div className="flex flex-wrap items-center gap-1.5">
           {CATEGORY_TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => onTabChange(tab.id)}
-                className={`group relative flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all duration-200 ${
+                className={`group relative flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? "text-primary bg-primary/10 border border-primary/30"
-                    : "text-muted hover:bg-muted-bg/60 hover:text-text border border-transparent"
+                    ? "text-primary bg-primary/10 border border-primary/30 shadow-2xs"
+                    : "text-muted hover:bg-muted-bg/70 hover:text-text border border-transparent"
                 }`}
               >
                 <span className="relative z-10 flex items-center gap-1.5">
@@ -88,6 +96,29 @@ export default function SellerHeader({
           })}
         </div>
 
+        {/* Search Bar */}
+        <div className="relative flex items-center min-w-[240px] sm:max-w-xs w-full sm:w-auto">
+          <div className="pointer-events-none absolute left-3 flex items-center text-muted">
+            <Search className="h-3.5 w-3.5" />
+          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Search stores or products..."
+            className="h-9 w-full rounded-xl border border-border bg-surface pl-8.5 pr-8 text-xs text-text placeholder:text-muted/70 focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/20 transition-all"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => onSearchChange("")}
+              aria-label="Clear search"
+              className="absolute right-2.5 flex h-4 w-4 items-center justify-center rounded-full text-muted hover:bg-muted-bg hover:text-text transition-colors cursor-pointer"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
