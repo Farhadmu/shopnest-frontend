@@ -143,6 +143,20 @@ export function AiVisualSearchWidget() {
     testImg.src = trimmed;
   };
 
+  // Paste from clipboard helper
+  const handlePasteFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        setImageUrlInput(text.trim());
+        setError(null);
+        toast.success("URL pasted from clipboard");
+      }
+    } catch {
+      // Browser permissions denied or unsupported
+    }
+  };
+
   // Drag and Drop
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
@@ -446,9 +460,18 @@ export function AiVisualSearchWidget() {
                       ) : (
                         /* Direct Image URL Input */
                         <div className="rounded-2xl border-2 border-dashed border-emerald-500/40 bg-emerald-500/5 p-6 space-y-3.5">
-                          <div className="flex items-center gap-2 text-foreground font-bold text-sm">
-                            <Link2 className="h-4 w-4 text-emerald-500" />
-                            <span>Paste Public Image URL</span>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-foreground font-bold text-sm">
+                              <Link2 className="h-4 w-4 text-emerald-500" />
+                              <span>Paste Public Image URL</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handlePasteFromClipboard}
+                              className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                            >
+                              Paste from Clipboard
+                            </button>
                           </div>
                           <p className="text-xs text-muted-foreground">
                             Enter a direct link to any product photo on the web (JPG, PNG, WebP).
