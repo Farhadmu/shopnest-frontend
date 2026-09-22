@@ -1,10 +1,21 @@
-# ShopNest — AI-Powered Multi-Vendor Commerce & Seller Platform
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=1,12,24&height=280&section=header&text=ShopNest%20Frontend&fontSize=56&fontAlignY=36&desc=%E2%9C%A8%20AI-Powered%20Multi-Vendor%20Commerce%20%26%20Seller%20Platform&descAlignY=60&descAlign=50" alt="ShopNest Frontend Header" width="100%" />
+</p>
 
-![Next.js](https://img.shields.io/badge/Next.js-16.3.1-black)
-![React](https://img.shields.io/badge/React-19.2.8-61dafb)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38bdf8)
-![Better Auth](https://img.shields.io/badge/Better_Auth-1.7.1-green)
+<p align="center">
+  <a href="https://readme-typing-svg.demolab.com">
+    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=19&duration=3000&pause=1000&color=A855F7&center=true&vCenter=true&width=750&lines=Next.js+16+App+Router+%2B+React+19+%2B+Tailwind+v4;Quad-Role+Dashboard+Suites+(Guest%2C+User%2C+Seller%2C+Admin);Bengali+%26+English+Natural+Language+Catalog+Search;Real-Time+WebSocket+Milestone+GPS+Tracking;Multimodal+AI+Visual+Search+%26+Role-Aware+Copilots" alt="Typing SVG" />
+  </a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-16.3.1-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" />
+  <img src="https://img.shields.io/badge/React-19.2.8-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript-5.7-blue?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/Better_Auth-1.7.1-0052CC?style=for-the-badge&logo=auth0&logoColor=white" alt="Better Auth" />
+  <img src="https://img.shields.io/badge/Framer_Motion-Latest-black?style=for-the-badge&logo=framer&logoColor=white" alt="Framer Motion" />
+</p>
 
 **ShopNest** is a modern, AI-powered multi-vendor commerce platform that combines a marketplace shopping experience with powerful seller and administrator tooling. The frontend delivers role-aware experiences for **Customers**, **Sellers**, and **Administrators**, backed by real-time AI assistance, responsive design, and dark mode support.
 
@@ -13,8 +24,9 @@
 ## Table of Contents
 
 1. [Project Overview](#project-overview)
-2. [User Roles](#user-roles)
-3. [Key Features](#key-features)
+2. [Dashboard & Portal Showcase](#-immersive-dashboard--portal-showcase)
+3. [User Roles](#user-roles)
+4. [Key Features](#key-features)
 4. [AI Commerce Experience](#ai-commerce-experience)
 5. [Application Architecture](#application-architecture)
 6. [Technology Stack](#technology-stack)
@@ -58,6 +70,76 @@ This repository is the **frontend-only** codebase. It communicates with the [Sho
 - Database schemas or migrations
 - AI model training code
 - Payment processor integrations (payment UI is present; processing is backend-managed)
+
+---
+
+## 📸 Immersive Dashboard & Portal Showcase
+
+### 01. Next-Gen Shopper Storefront (Guest Hub)
+> *The modern public gateway featuring high-performance gaming gear, lifestyle hubs, AI visual search, and 100% verified merchant badges.*
+
+<p align="center">
+  <img src="docs/assets/guest-storefront.png" alt="ShopNest Guest Storefront" width="100%" style="border-radius: 12px; box-shadow: 0 16px 40px -12px rgba(168, 85, 247, 0.25);" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Feature-AI_Visual_Search-9333ea?style=flat-square" />
+  <img src="https://img.shields.io/badge/Feature-Neural_Engine_Discovery-ec4899?style=flat-square" />
+  <img src="https://img.shields.io/badge/Feature-Milestone_GPS_Tracking-3b82f6?style=flat-square" />
+  <img src="https://img.shields.io/badge/Feature-Escrow_Secured_Payments-10b981?style=flat-square" />
+  <img src="https://img.shields.io/badge/Feature-Instant_COD-f59e0b?style=flat-square" />
+</p>
+
+---
+
+### 02. Customer Intelligence Command Center (User Dashboard)
+> *Role-aware shopper command center equipped with natural language catalog search in English & Bengali, spending analytics, and intelligent copilot.*
+
+<p align="center">
+  <img src="docs/assets/customer-dashboard.png" alt="ShopNest Customer Dashboard" width="100%" style="border-radius: 12px; box-shadow: 0 16px 40px -12px rgba(59, 130, 246, 0.25);" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Query_Engine-Bengali_%26_English_NLP-6366f1?style=flat-square" />
+  <img src="https://img.shields.io/badge/Copilot-Live_Account_Intelligence-8b5cf6?style=flat-square" />
+  <img src="https://img.shields.io/badge/Security-75%25_Active_Guard-059669?style=flat-square" />
+  <img src="https://img.shields.io/badge/Database-Real_MongoDB_Catalog-16a34a?style=flat-square" />
+  <img src="https://img.shields.io/badge/Wallet-BDT_(৳)_Realtime_Spend-f59e0b?style=flat-square" />
+</p>
+
+---
+
+### 03. Seller Growth & Intelligence Hub (Seller Dashboard)
+> *A merchant operations engine providing real-time telemetry, 30-day AI sales forecasting, store health scores, and actionable growth blueprints.*
+
+<p align="center">
+  <img src="docs/assets/seller-dashboard.png" alt="ShopNest Seller Dashboard" width="100%" style="border-radius: 12px; box-shadow: 0 16px 40px -12px rgba(16, 185, 129, 0.25);" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Telemetry-Realtime_Live_Sync-10b981?style=flat-square" />
+  <img src="https://img.shields.io/badge/Store_Health-81%2F100_Optimal-06b6d4?style=flat-square" />
+  <img src="https://img.shields.io/badge/Forecasting-30--Day_Predictive_Sales-8b5cf6?style=flat-square" />
+  <img src="https://img.shields.io/badge/Growth-Actionable_Blueprint-eab308?style=flat-square" />
+  <img src="https://img.shields.io/badge/AI_Copilot-Seller_Business_Advisor-f43f5e?style=flat-square" />
+</p>
+
+---
+
+### 04. Executive Marketplace Control Center (Administrator Dashboard)
+> *The central platform command hub offering total marketplace oversight, Bangladesh delivery radar, seller risk ranking, and anomaly audits.*
+
+<p align="center">
+  <img src="docs/assets/admin-dashboard.png" alt="ShopNest Admin Dashboard" width="100%" style="border-radius: 12px; box-shadow: 0 16px 40px -12px rgba(239, 68, 68, 0.25);" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Status-All_Systems_Live-22c55e?style=flat-square" />
+  <img src="https://img.shields.io/badge/Radar-Bangladesh_Geo_Map-3b82f6?style=flat-square" />
+  <img src="https://img.shields.io/badge/Risk_Matrix-4_Tier_Seller_Audit-ef4444?style=flat-square" />
+  <img src="https://img.shields.io/badge/Security-Anomaly_Audits-f97316?style=flat-square" />
+  <img src="https://img.shields.io/badge/AI_Intelligence-Admin_Pro_Copilot-a855f7?style=flat-square" />
+</p>
 
 ---
 
@@ -1123,13 +1205,20 @@ The following improvements are identified but not yet implemented in the current
 
 ---
 
-## Contact
+## 👨‍💻 Maintainer & Contact
 
-For questions or support regarding the ShopNest frontend:
+<p align="center">
+  <a href="https://github.com/Farhadmu">
+    <img src="https://img.shields.io/badge/Maintained%20by-Farhadmu-8b5cf6?style=for-the-badge&logo=github&logoColor=white" alt="Farhadmu GitHub" />
+  </a>
+</p>
 
-- **Repository:** https://github.com/Farhadmu/shopnest-frontend
-- **Backend:** https://github.com/Farhadmu/shopnest-backend
+- **Frontend Repository:** [https://github.com/Farhadmu/shopnest-frontend](https://github.com/Farhadmu/shopnest-frontend)
+- **Backend API Repository:** [https://github.com/Farhadmu/shopnest-backend](https://github.com/Farhadmu/shopnest-backend)
+- **Lead Developer:** Farhad ([@Farhadmu](https://github.com/Farhadmu))
 
 ---
 
-*Last updated: 2026-09-15*
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=1,12,24&height=120&section=footer" alt="ShopNest Footer" width="100%" />
+</p>
