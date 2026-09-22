@@ -571,14 +571,26 @@ export function AiVisualSearchWidget() {
                           </span>
                         </label>
                       </div>
-                      <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="e.g. Wireless Headphone, Denim Jacket, Sony XM4..."
-                        className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                        disabled={isSearching}
-                      />
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="e.g. Wireless Headphone, Denim Jacket, Sony XM4..."
+                          className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                          disabled={isSearching}
+                        />
+                        {searchQuery && !isSearching && (
+                          <button
+                            type="button"
+                            onClick={() => setSearchQuery("")}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-full hover:bg-muted transition"
+                            aria-label="Clear query"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
                       <p className="text-[11px] text-muted-foreground flex items-start gap-1.5 pt-0.5">
                         <Info className="h-3.5 w-3.5 text-emerald-500 shrink-0 mt-0.5" />
                         <span>
