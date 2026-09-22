@@ -79,6 +79,31 @@ export interface UnifiedAiResponse {
       deliveryAddress?: string;
       estimatedDistance?: number;
     }>;
+    sellers?: Array<{
+      id: string;
+      storeName: string;
+      status: string;
+      trustScore?: number;
+      rating?: number;
+      orders?: number;
+    }>;
+    incidents?: Array<{
+      id: string;
+      title: string;
+      severity: string;
+      status: string;
+    }>;
+  };
+  auditReceipt?: {
+    auditId: string;
+    action: string;
+    targetType: string;
+    targetId?: string;
+    targetName?: string;
+    performedBy: string;
+    status: "SUCCESS" | "FAILED";
+    timestamp: string;
+    details?: Record<string, unknown>;
   };
   handoffAvailable?: boolean;
   handoffContext?: AIHandoffData;
@@ -96,6 +121,20 @@ export async function askUnifiedAiCore(params: {
   handoffId?: string;
 }): Promise<UnifiedAiResponse> {
   return clientMutation<UnifiedAiResponse>("/ai/core/chat", "POST", params);
+}
+
+/**
+ * Confirms and executes an administrative mutation through server-side Admin AI
+ */
+export async function confirmAdminAiAction(params: {
+  action: AIActionItem;
+  conversationId?: string;
+}): Promise<{
+  success: boolean;
+  message: string;
+  receipt: any;
+}> {
+  return clientMutation<{ success: boolean; message: string; receipt: any }>("/admin/ai/confirm", "POST", params);
 }
 
 /**

@@ -31,12 +31,21 @@ import {
   AlertOctagon,
   MapPin,
   Star,
+  ShieldCheck,
+  ExternalLink,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { askAdminCopilot, CopilotResponse, CopilotMetric, CopilotInsight } from "@/lib/api/admin-copilot";
 import { askCustomerCopilot, CustomerCopilotResponse } from "@/lib/api/customer-copilot";
 import { askSellerCopilot, SellerCopilotResponse } from "@/lib/api/seller-copilot";
-import { askUnifiedAiCore, consumeHandoffToken, AIExperience, AIEvidenceItem, AIActionItem } from "@/lib/api/ai-core";
+import {
+  askUnifiedAiCore,
+  confirmAdminAiAction,
+  consumeHandoffToken,
+  AIExperience,
+  AIEvidenceItem,
+  AIActionItem,
+} from "@/lib/api/ai-core";
 import { askConversationalAdvisor } from "@/lib/api/commerce-companion";
 import { useSession } from "@/lib/auth-client";
 import { AiActionConfirmationModal } from "./AiActionConfirmationModal";
@@ -53,6 +62,10 @@ interface Message {
   provider?: string;
   referencedProducts?: any[];
   referencedOrders?: any[];
+  referencedSellers?: any[];
+  referencedDeliveries?: any[];
+  referencedIncidents?: any[];
+  auditReceipt?: any;
   isLoading?: boolean;
   error?: string;
   timestamp: Date;
@@ -127,13 +140,13 @@ const ROLE_THEMES = {
 // Quick admin actions
 const ADMIN_QUICK_ACTIONS = [
   { label: "Today's Briefing", query: "Give me today's executive briefing.", icon: BarChart3 },
-  { label: "Revenue Analysis", query: "How is our revenue performing? Show trends and insights.", icon: DollarSign },
-  { label: "Seller Risk", query: "Which sellers are most risky? Show risk scores and evidence.", icon: Shield },
-  { label: "Revenue Leakage", query: "Show revenue leakage. Where are we losing money?", icon: AlertOctagon },
-  { label: "Critical Anomalies", query: "Show critical anomalies detected recently.", icon: AlertTriangle },
-  { label: "Platform Health", query: "Is the platform healthy? Check system telemetry and security.", icon: Activity },
-  { label: "Forecast", query: "Forecast next month's GMV and orders.", icon: TrendingUp },
-  { label: "What Should I Do?", query: "What should I investigate first? What needs my attention?", icon: Sparkles },
+  { label: "Pending Sellers", query: "Show all pending sellers waiting for approval.", icon: Store },
+  { label: "Low Stock (< 5)", query: "Show low stock products (< 5 items remaining).", icon: Package },
+  { label: "Delayed Deliveries", query: "Show delayed or stalled deliveries.", icon: MapPin },
+  { label: "Revenue & GMV", query: "What is today's revenue and sales performance?", icon: DollarSign },
+  { label: "Banglish: 'seller gula dekhao'", query: "pending seller gula koi? shob dekhao", icon: Bot },
+  { label: "Banglish: 'ajker revenue koto'", query: "ajker revenue koto? overview dao", icon: TrendingUp },
+  { label: "Critical Incidents", query: "Show recent critical security anomalies and incidents.", icon: Shield },
 ];
 
 // Follow-up suggestions based on intent
@@ -469,6 +482,31 @@ export function AiCommerceCopilot({
   };
 
   const handleConfirmAction = async (action: AIActionItem) => {
+    // If it's an administrative action requiring confirmation
+    if (effectiveRole === "admin" && action.requiresConfirmation) {
+      try {
+        const result = await confirmAdminAiAction({ action, conversationId });
+        const receipt = result.receipt;
+        const confirmationMsg: Message = {
+          id: `audit-receipt-${Date.now()}`,
+          role: "assistant",
+          content: `Action executed successfully.\n\nTarget: **${receipt?.targetName || "Item"}**\nAudit ID: \`${receipt?.auditId}\``,
+          auditReceipt: receipt,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, confirmationMsg]);
+      } catch (err: any) {
+        const errorMsg: Message = {
+          id: `error-${Date.now()}`,
+          role: "assistant",
+          content: `Execution failed: ${err.message || "Could not complete operation."}`,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, errorMsg]);
+      }
+      return;
+    }
+
     const url = action.targetUrl || (action.payload?.url as string);
     if (url) {
       router.push(url);
@@ -527,6 +565,18 @@ export function AiCommerceCopilot({
       }
     }
   }, [isOpen, isMinimized]);
+
+  // Global Ctrl + K / Cmd + K shortcut to toggle copilot
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // Close on Escape key
   useEffect(() => {
@@ -659,6 +709,10 @@ export function AiCommerceCopilot({
           provider: unifiedRes.provider,
           referencedProducts: unifiedRes.referencedEntities?.products,
           referencedOrders: unifiedRes.referencedEntities?.orders,
+          referencedSellers: unifiedRes.referencedEntities?.sellers,
+          referencedDeliveries: unifiedRes.referencedEntities?.deliveries,
+          referencedIncidents: unifiedRes.referencedEntities?.incidents,
+          auditReceipt: unifiedRes.auditReceipt,
           timestamp: new Date(),
         };
 
@@ -834,6 +888,106 @@ export function AiCommerceCopilot({
                       <ChevronRight className="h-3 w-3" />
                     </button>
                   ))}
+                </div>
+              )}
+
+              {/* Referenced Marketplace Sellers */}
+              {m.referencedSellers && m.referencedSellers.length > 0 && (
+                <div className="mt-2.5 space-y-2">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <Store className="h-3 w-3 text-amber-400" />
+                    <span>Referenced Marketplace Stores ({m.referencedSellers.length})</span>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2">
+                    {m.referencedSellers.map((seller: any, i: number) => (
+                      <div
+                        key={i}
+                        className="rounded-2xl border border-white/10 bg-slate-900/80 p-3 hover:border-amber-500/30 transition-all shadow-md backdrop-blur-sm flex items-center justify-between gap-3"
+                      >
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-xs text-white truncate">{seller.storeName}</span>
+                            <span
+                              className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                                seller.status === "approved"
+                                  ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                                  : seller.status === "rejected"
+                                  ? "bg-rose-500/15 text-rose-400 border-rose-500/30"
+                                  : "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                              }`}
+                            >
+                              {seller.status}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 text-[10px] text-slate-400">
+                            {seller.trustScore !== undefined && <span>Trust: <strong className="text-slate-200">{seller.trustScore}/100</strong></span>}
+                            {seller.rating !== undefined && <span>★ <strong className="text-slate-200">{seller.rating}</strong></span>}
+                            {seller.orders !== undefined && <span>Orders: <strong className="text-slate-200">{seller.orders}</strong></span>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {seller.status === "pending" && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleSend(`Approve ${seller.storeName}`)}
+                                className="px-2.5 py-1 rounded-xl text-[10.5px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500 hover:text-black transition cursor-pointer"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleSend(`Reject ${seller.storeName} because verification documents are incomplete`)}
+                                className="px-2.5 py-1 rounded-xl text-[10.5px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500 hover:text-white transition cursor-pointer"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
+                          <a
+                            href={`/dashboard/admin/sellers`}
+                            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition"
+                            title="Inspect Seller"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Administrative Audit Receipt Badge */}
+              {m.auditReceipt && (
+                <div className="mt-3 rounded-2xl border border-emerald-500/35 bg-emerald-950/25 p-3.5 backdrop-blur-md space-y-2 shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-emerald-400 font-black text-xs uppercase tracking-wider">
+                      <ShieldCheck className="h-4 w-4" />
+                      <span>Administrative Audit Receipt</span>
+                    </div>
+                    <span className="text-[9.5px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">
+                      STATUS: {m.auditReceipt.status}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-[10.5px] font-mono pt-1 border-t border-emerald-500/20">
+                    <div>
+                      <span className="text-slate-400 block text-[9.5px]">Audit ID:</span>
+                      <span className="text-emerald-300 font-bold truncate block">{m.auditReceipt.auditId}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[9.5px]">Action:</span>
+                      <span className="text-white font-bold">{m.auditReceipt.action}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[9.5px]">Target:</span>
+                      <span className="text-white font-medium">{m.auditReceipt.targetName || m.auditReceipt.targetId || "Resource"}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[9.5px]">Actor:</span>
+                      <span className="text-slate-300">{m.auditReceipt.performedBy}</span>
+                    </div>
+                  </div>
                 </div>
               )}
 
