@@ -145,8 +145,10 @@ export async function getStoreById(storeId: string) {
 }
 
 /** Fetches approved public stores and their real product/sales summaries. */
-export async function getPublicSellerStores() {
-  return clientFetch<PublicSellerStore[]>('/sellers');
+export async function getPublicSellerStores(): Promise<PublicSellerStore[]> {
+  const res = await clientFetch<PublicSellerStore[] | { data?: PublicSellerStore[]; items?: PublicSellerStore[] }>('/sellers');
+  if (Array.isArray(res)) return res;
+  return res?.data || res?.items || [];
 }
 
 export async function getPublicSellerStoreBySlug(slug: string) {
