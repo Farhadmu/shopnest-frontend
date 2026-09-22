@@ -243,33 +243,43 @@ export default function SellerDemandInsightsPage() {
               <div className="flex items-center gap-1.5 rounded-xl bg-muted/40 p-1 text-xs font-bold border border-border/60">
                 <button
                   onClick={() => setSelectedStatus("all")}
-                  className={`rounded-lg px-3 py-1.5 transition ${
+                  className={`rounded-lg px-3 py-1.5 transition flex items-center gap-1.5 ${
                     selectedStatus === "all"
                       ? "bg-emerald-600 text-white shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  All Demands
+                  <span>All Demands</span>
+                  <span className="rounded-full bg-black/20 px-1.5 py-0.2 text-[10px]">
+                    {metrics.totalSearches}
+                  </span>
                 </button>
                 <button
                   onClick={() => setSelectedStatus("unmet")}
-                  className={`flex items-center gap-1 rounded-lg px-3 py-1.5 transition ${
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition ${
                     selectedStatus === "unmet"
                       ? "bg-rose-600 text-white shadow-sm"
                       : "text-rose-500 hover:text-rose-600"
                   }`}
                 >
-                  <AlertCircle className="h-3.5 w-3.5" /> High Opportunity (0 In Stock)
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  <span>High Opportunity (0 In Stock)</span>
+                  <span className="rounded-full bg-black/20 px-1.5 py-0.2 text-[10px]">
+                    {metrics.unmetSearches}
+                  </span>
                 </button>
                 <button
                   onClick={() => setSelectedStatus("matched")}
-                  className={`rounded-lg px-3 py-1.5 transition ${
+                  className={`rounded-lg px-3 py-1.5 transition flex items-center gap-1.5 ${
                     selectedStatus === "matched"
                       ? "bg-teal-600 text-white shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  In Stock / Matched
+                  <span>In Stock / Matched</span>
+                  <span className="rounded-full bg-black/20 px-1.5 py-0.2 text-[10px]">
+                    {metrics.matchedSearches}
+                  </span>
                 </button>
               </div>
 
