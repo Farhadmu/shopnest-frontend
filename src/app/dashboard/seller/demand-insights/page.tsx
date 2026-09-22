@@ -39,6 +39,7 @@ import {
   ArrowUpRight,
   Trash2,
   Loader2,
+  Copy,
 } from "lucide-react";
 
 export default function SellerDemandInsightsPage() {
@@ -419,9 +420,21 @@ export default function SellerDemandInsightsPage() {
                           </h4>
 
                           {item.searchQuery && (
-                            <p className="text-xs text-muted-foreground">
-                              Buyer query: <strong className="text-foreground font-semibold">&quot;{item.searchQuery}&quot;</strong>
-                            </p>
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <span>Buyer query: <strong className="text-foreground font-semibold">&quot;{item.searchQuery}&quot;</strong></span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigator.clipboard.writeText(item.searchQuery || "");
+                                  toast.success("Query copied!");
+                                }}
+                                className="text-muted-foreground hover:text-foreground p-0.5 rounded transition hover:bg-muted"
+                                title="Copy search query"
+                              >
+                                <Copy className="h-3 w-3" />
+                              </button>
+                            </div>
                           )}
                         </div>
 
