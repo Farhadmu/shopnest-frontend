@@ -13,8 +13,15 @@ import {
   FiTag,
   FiXCircle,
   FiCalendar,
+  FiInfo,
+  FiX,
+  FiLayers,
+  FiExternalLink,
+  FiShield,
 } from "react-icons/fi";
 import { getHomepageCoupons } from "@/lib/api/coupons";
+import { getProductById, type Product } from "@/lib/api/products";
+import { formatCurrency } from "@/lib/utils";
 import type { Coupon, CouponDiscountType } from "@/types/coupon";
 import { toast } from "@/context/ToastContext";
 
@@ -23,6 +30,7 @@ interface CouponTheme {
   cardBg: string;
   chipBg: string;
   categoryBg: string;
+  categoryHoverBg: string;
   divider: string;
   boxBg: string;
   btnBg: string;
@@ -36,7 +44,7 @@ interface TypeVisuals {
   theme: CouponTheme;
 }
 
-/** Decorative image + color theme per coupon type — no backend image field, this lives entirely in the frontend. */
+/** Decorative image + color theme per coupon type */
 const TYPE_VISUALS: Record<CouponDiscountType, TypeVisuals> = {
   percentage: {
     image:
@@ -50,6 +58,7 @@ const TYPE_VISUALS: Record<CouponDiscountType, TypeVisuals> = {
       chipBg: "bg-purple-200/60 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300",
       categoryBg:
         "bg-purple-100/80 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200/80 dark:border-purple-800/40",
+      categoryHoverBg: "hover:bg-purple-200/90 dark:hover:bg-purple-900/60",
       divider: "border-purple-200/80 dark:border-purple-800/50",
       boxBg: "bg-white dark:bg-[#1C1635] border-purple-200 dark:border-purple-800/40",
       btnBg: "bg-purple-50 dark:bg-[#251D44] hover:bg-purple-100 dark:hover:bg-[#2F2555] text-purple-700 dark:text-purple-300",
@@ -68,6 +77,7 @@ const TYPE_VISUALS: Record<CouponDiscountType, TypeVisuals> = {
       chipBg: "bg-rose-200/60 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300",
       categoryBg:
         "bg-rose-100/80 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200/80 dark:border-rose-800/40",
+      categoryHoverBg: "hover:bg-rose-200/90 dark:hover:bg-rose-900/60",
       divider: "border-rose-200/80 dark:border-rose-900/50",
       boxBg: "bg-white dark:bg-[#2B1320] border-rose-200 dark:border-rose-800/40",
       btnBg: "bg-rose-50 dark:bg-[#3B192C] hover:bg-rose-100 dark:hover:bg-[#4B2038] text-rose-700 dark:text-rose-300",
@@ -85,6 +95,7 @@ const TYPE_VISUALS: Record<CouponDiscountType, TypeVisuals> = {
       chipBg: "bg-emerald-200/60 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300",
       categoryBg:
         "bg-emerald-100/80 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/40",
+      categoryHoverBg: "hover:bg-emerald-200/90 dark:hover:bg-emerald-900/60",
       divider: "border-emerald-200/80 dark:border-emerald-900/50",
       boxBg: "bg-white dark:bg-[#102720] border-emerald-200 dark:border-emerald-800/40",
       btnBg: "bg-emerald-50 dark:bg-[#16382E] hover:bg-emerald-100 dark:hover:bg-[#1E483B] text-emerald-700 dark:text-emerald-300",
@@ -110,7 +121,22 @@ function getSubtitle(coupon: Coupon): string {
   return `${minText} on your order`;
 }
 
-function getCategoryInfo(coupon: Coupon): { labels: string[]; href: string } {
+interface TargetDetails {
+  badgeLabel: string;
+  badgeSub?: string;
+  buttonText: string;
+  href: string;
+  allLabels: string[];
+  productIds: string[];
+  scopeType: "multi-category" | "single-category" | "multi-product" | "single-product" | "all";
+  tooltipText: string;
+}
+
+/**
+ * Modern Helper: Intelligently formats labels, multi-item badges,
+ * and high-converting CTA button copy based on coupon scope.
+ */
+function getCouponTargetDetails(coupon: Coupon): TargetDetails {
   const sellerQuery =
     coupon.storeSlug ||
     coupon.storeId ||
@@ -119,34 +145,88 @@ function getCategoryInfo(coupon: Coupon): { labels: string[]; href: string } {
   const sellerParam = sellerQuery ? `seller=${encodeURIComponent(sellerQuery)}` : "";
 
   if (coupon.scope === "specific-category") {
-    const labels =
+    const list =
       coupon.categories && coupon.categories.length > 0
         ? coupon.categories
         : coupon.category
           ? [coupon.category]
           : [];
-    if (labels.length > 0) {
-      const catParam = `category=${encodeURIComponent(labels.join(","))}`;
+
+    if (list.length === 1) {
       return {
-        labels,
-        href: `/products?${[sellerParam, catParam].filter(Boolean).join("&")}`,
+        badgeLabel: list[0],
+        buttonText: `Shop ${list[0]}`,
+        href: `/products?${[sellerParam, `category=${encodeURIComponent(list[0])}`].filter(Boolean).join("&")}`,
+        allLabels: list,
+        productIds: [],
+        scopeType: "single-category",
+        tooltipText: `Applicable to category: ${list[0]}`,
+      };
+    }
+
+    if (list.length > 1) {
+      return {
+        badgeLabel: list[0],
+        badgeSub: `+${list.length - 1}`,
+        buttonText: `Explore Deals (${list.length})`,
+        href: `/products?${[sellerParam, `category=${encodeURIComponent(list.join(","))}`].filter(Boolean).join("&")}`,
+        allLabels: list,
+        productIds: [],
+        scopeType: "multi-category",
+        tooltipText: `Applicable to ${list.length} categories: ${list.join(", ")}`,
       };
     }
   }
+
   if (coupon.scope === "specific-products") {
-    if (coupon.productIds && coupon.productIds.length === 1) {
-      return { labels: ["1 Selected Item"], href: `/products/${encodeURIComponent(coupon.productIds[0])}` };
-    }
-    if (coupon.productIds && coupon.productIds.length > 1) {
-      const idsParam = `ids=${encodeURIComponent(coupon.productIds.join(","))}`;
+    const validProductIds = (coupon.productIds ?? []).filter(
+      (id) => id && id !== "undefined" && id !== "null" && id.trim() !== ""
+    );
+
+    if (validProductIds.length === 1) {
       return {
-        labels: [`${coupon.productIds.length} Selected Items`],
-        href: `/products?${[sellerParam, idsParam].filter(Boolean).join("&")}`,
+        badgeLabel: "1 Item",
+        buttonText: "View Product",
+        href: `/products/${encodeURIComponent(validProductIds[0])}`,
+        allLabels: ["1 Specific Item"],
+        productIds: validProductIds,
+        scopeType: "single-product",
+        tooltipText: "Valid on 1 specific selected item",
       };
     }
-    return { labels: ["Selected Products"], href: sellerParam ? `/products?${sellerParam}` : "/products" };
+
+    if (validProductIds.length > 1) {
+      return {
+        badgeLabel: `${validProductIds.length} Items`,
+        buttonText: `Shop ${validProductIds.length} Items`,
+        href: `/products?${[sellerParam, `ids=${encodeURIComponent(validProductIds.join(","))}`].filter(Boolean).join("&")}`,
+        allLabels: [`${validProductIds.length} Selected Products`],
+        productIds: validProductIds,
+        scopeType: "multi-product",
+        tooltipText: `Valid on ${validProductIds.length} specific promotional products`,
+      };
+    }
+
+    return {
+      badgeLabel: "Selected Items",
+      buttonText: "Explore Items",
+      href: sellerParam ? `/products?${sellerParam}` : "/products",
+      allLabels: ["Selected Products"],
+      productIds: [],
+      scopeType: "multi-product",
+      tooltipText: "Valid on selected products",
+    };
   }
-  return { labels: ["All Products"], href: sellerParam ? `/products?${sellerParam}` : "/products" };
+
+  return {
+    badgeLabel: "Storewide",
+    buttonText: "Shop All Deals",
+    href: sellerParam ? `/products?${sellerParam}` : "/products",
+    allLabels: ["All Products in Store"],
+    productIds: [],
+    scopeType: "all",
+    tooltipText: "Applies to all products across the entire store",
+  };
 }
 
 function formatUnit(value: number): string {
@@ -164,6 +244,236 @@ function getRemaining(expiresAt: string | undefined, now: number) {
     minutes: Math.floor((diff % 3_600_000) / 60_000),
     seconds: Math.floor((diff % 60_000) / 1_000),
   };
+}
+
+/**
+ * Modern Quick-View Eligibility Modal:
+ * Lets users inspect all categories or specific products under a coupon with one click.
+ */
+function CouponQuickModal({
+  coupon,
+  onClose,
+  onCopy,
+  isCopied,
+}: {
+  coupon: Coupon | null;
+  onClose: () => void;
+  onCopy: (coupon: Coupon) => void;
+  isCopied: boolean;
+}) {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+
+  useEffect(() => {
+    if (!coupon) return;
+    const validIds = (coupon.productIds ?? []).filter(
+      (id) => id && id !== "undefined" && id !== "null" && id.trim() !== ""
+    );
+
+    if (coupon.scope === "specific-products" && validIds.length > 0) {
+      setLoadingProducts(true);
+      Promise.allSettled(validIds.map((id) => getProductById(id)))
+        .then((res) => {
+          const items = res
+            .filter((r): r is PromiseFulfilledResult<Product> => r.status === "fulfilled")
+            .map((r) => r.value);
+          setProducts(items);
+        })
+        .finally(() => setLoadingProducts(false));
+    } else {
+      setProducts([]);
+    }
+  }, [coupon]);
+
+  if (!coupon) return null;
+
+  const target = getCouponTargetDetails(coupon);
+  const visuals = TYPE_VISUALS[coupon.type];
+  const sellerQuery = coupon.storeSlug || coupon.storeId || coupon.sellerId;
+  const sellerParam = sellerQuery ? `seller=${encodeURIComponent(sellerQuery)}` : "";
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="relative my-auto flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between border-b border-border px-5 py-4 bg-muted-bg/30">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <FiTag className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                Coupon Eligibility & Scope
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {coupon.storeName || "Verified Seller Store"}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+          >
+            <FiX className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Modal Body */}
+        <div className="overflow-y-auto p-5 space-y-4 max-h-[60vh] custom-scrollbar">
+          {/* Coupon Code Banner */}
+          <div className={`p-4 rounded-xl border ${visuals.theme.cardBorder} ${visuals.theme.cardBg} flex items-center justify-between gap-3`}>
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                PROMO CODE
+              </span>
+              <div className="font-mono text-lg font-black tracking-wider text-slate-900 dark:text-white">
+                {coupon.code}
+              </div>
+              <p className="text-xs font-semibold text-primary mt-0.5">
+                {getTitle(coupon)} • {getSubtitle(coupon)}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => onCopy(coupon)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-border shadow-xs text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer"
+            >
+              {isCopied ? (
+                <>
+                  <FiCheck className="text-emerald-500 text-sm" />
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <FiCopy className="text-sm opacity-70" />
+                  <span>Copy Code</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Scope Categories */}
+          {target.scopeType === "multi-category" || target.scopeType === "single-category" ? (
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <FiLayers className="text-primary text-xs" />
+                <span>Eligible Categories ({target.allLabels.length})</span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                This coupon applies to any product belonging to the following categories:
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {target.allLabels.map((cat) => (
+                  <Link
+                    key={cat}
+                    href={`/products?${[sellerParam, `category=${encodeURIComponent(cat)}`].filter(Boolean).join("&")}`}
+                    onClick={onClose}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-colors"
+                  >
+                    <FiTag className="text-[11px]" />
+                    <span>{cat}</span>
+                    <FiArrowRight className="text-[10px] opacity-70" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Scope Products */}
+          {target.scopeType === "multi-product" || target.scopeType === "single-product" ? (
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <FiShoppingBag className="text-primary text-xs" />
+                <span>Eligible Products ({target.productIds.length})</span>
+              </div>
+              {loadingProducts ? (
+                <div className="flex items-center gap-2 py-4 justify-center text-xs text-slate-500">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  Loading eligible items…
+                </div>
+              ) : products.length > 0 ? (
+                <div className="space-y-2 pt-1">
+                  {products.map((prod) => (
+                    <Link
+                      key={prod.id}
+                      href={`/products/${encodeURIComponent(prod.id)}`}
+                      onClick={onClose}
+                      className="flex items-center gap-3 p-2.5 rounded-xl border border-border bg-background/60 hover:border-primary/40 hover:bg-primary/5 transition-all group"
+                    >
+                      {prod.images?.[0] ? (
+                        <Image
+                          src={prod.images[0]}
+                          alt={prod.title}
+                          width={44}
+                          height={44}
+                          className="h-11 w-11 rounded-lg object-cover border border-border shrink-0"
+                        />
+                      ) : (
+                        <div className="h-11 w-11 rounded-lg bg-muted-bg flex items-center justify-center text-slate-400 shrink-0">
+                          <FiShoppingBag />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate group-hover:text-primary transition-colors">
+                          {prod.title}
+                        </p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          {formatCurrency(prod.discountPrice ?? prod.price)}
+                          {prod.category && ` • ${prod.category}`}
+                        </p>
+                      </div>
+                      <FiExternalLink className="text-xs text-slate-400 group-hover:text-primary shrink-0" />
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Valid exclusively on selected promotional items.
+                </p>
+              )}
+            </div>
+          ) : null}
+
+          {/* Storewide message */}
+          {target.scopeType === "all" && (
+            <div className="flex items-start gap-2.5 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 text-emerald-800 dark:text-emerald-300 text-xs">
+              <FiShield className="text-sm shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Storewide Voucher</p>
+                <p className="text-[11px] opacity-90">
+                  This promo coupon applies to all eligible active products from this seller.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Modal Footer */}
+        <div className="flex items-center justify-between border-t border-border px-5 py-3.5 bg-muted-bg/20">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-3.5 py-1.5 rounded-lg border border-border text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          >
+            Close
+          </button>
+
+          <Link
+            href={target.href}
+            onClick={onClose}
+            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold ${visuals.theme.actionBtn} shadow-xs hover:shadow transition-all`}
+          >
+            <span>{target.buttonText}</span>
+            <FiArrowRight className="text-xs" />
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function CouponSkeleton() {
@@ -193,6 +503,7 @@ function CouponSkeleton() {
 export default function CouponSection() {
   const [coupons, setCoupons] = useState<Coupon[] | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [activeModalCoupon, setActiveModalCoupon] = useState<Coupon | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -241,7 +552,7 @@ export default function CouponSection() {
           </h2>
         </div>
         <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-sm">
-          Copy promo codes from verified sellers and browse by category for direct discounts.
+          Copy promo codes from verified sellers and browse by category or items for direct discounts.
         </p>
       </div>
 
@@ -264,34 +575,48 @@ export default function CouponSection() {
           {coupons!.map((coupon) => {
             const visuals = TYPE_VISUALS[coupon.type];
             const { theme } = visuals;
-            const category = getCategoryInfo(coupon);
+            const target = getCouponTargetDetails(coupon);
             const isRunning = coupon.homepageStatus === "running";
             const remaining = isRunning ? getRemaining(coupon.expiresAt, now) : null;
+            const hasMultipleItems =
+              target.scopeType === "multi-category" || target.scopeType === "multi-product";
 
             return (
               <Card
                 key={coupon.id}
-                className={`relative overflow-hidden border ${theme.cardBorder} ${theme.cardBg} shadow-xs hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 rounded-md group ${!isRunning ? "opacity-80" : ""
-                  }`}
+                className={`relative overflow-hidden border ${theme.cardBorder} ${theme.cardBg} shadow-xs hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 rounded-md group ${
+                  !isRunning ? "opacity-80" : ""
+                }`}
               >
                 <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full gap-3.5">
-                  {/* Meta Top Header: Seller Name & Category Badge */}
-                  <div className="flex items-center justify-between gap-2 flex-wrap pb-1 border-b border-black/5 dark:border-white/5">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <FiShoppingBag className="text-xs text-slate-500 dark:text-slate-400 shrink-0" />
-                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                  {/* Meta Top Header: Seller Name & Interactive Category Badge */}
+                  <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-black/5 dark:border-white/5">
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                      <FiShoppingBag className="text-xs text-slate-400 dark:text-slate-500 shrink-0" />
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">
                         {coupon.storeName || "Verified Seller"}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span
-                        className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${theme.categoryBg}`}
+                    <div className="flex items-center shrink-0">
+                      {/* Interactive Target Badge */}
+                      <button
+                        type="button"
+                        onClick={() => setActiveModalCoupon(coupon)}
+                        title={target.tooltipText}
+                        className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md border ${theme.categoryBg} ${theme.categoryHoverBg} transition-all cursor-pointer group/badge leading-tight shrink-0`}
                       >
-                        <FiTag className="text-[9px]" />
-                        {category.labels[0]}
-                        {category.labels.length > 1 && ` +${category.labels.length - 1}`}
-                      </span>
+                        <FiTag className="text-[10px] shrink-0 opacity-80" />
+                        <span className="truncate max-w-[120px]">{target.badgeLabel}</span>
+                        {target.badgeSub && (
+                          <span className="font-bold px-1 py-0.2 bg-primary/15 text-primary rounded text-[9px] leading-none">
+                            {target.badgeSub}
+                          </span>
+                        )}
+                        {hasMultipleItems && (
+                          <FiInfo className="text-[10px] opacity-70 group-hover/badge:opacity-100 shrink-0 ml-0.5" />
+                        )}
+                      </button>
                     </div>
                   </div>
 
@@ -377,12 +702,13 @@ export default function CouponSection() {
                     <div className="absolute -right-6 -top-1.5 w-3 h-3 rounded-full bg-background" />
                   </div>
 
-                  {/* Bottom Row: Code Box & Category Navigation Button */}
+                  {/* Bottom Row: Code Box & Action-Driven Navigation Button */}
                   <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
                     {/* Code Copy Pill */}
                     <div
-                      className={`flex items-center ${theme.boxBg} rounded-md p-1 border shadow-xs shrink-0 ${!isRunning ? "opacity-60" : ""
-                        }`}
+                      className={`flex items-center ${theme.boxBg} rounded-md p-1 border shadow-xs shrink-0 ${
+                        !isRunning ? "opacity-60" : ""
+                      }`}
                     >
                       <span className="text-[10px] font-semibold text-slate-400 pl-1.5 pr-1 uppercase tracking-wider">
                         CODE:
@@ -392,8 +718,9 @@ export default function CouponSection() {
                         onClick={() => handleCopy(coupon)}
                         disabled={!isRunning}
                         aria-disabled={!isRunning}
-                        className={`flex items-center gap-1.5 ${theme.btnBg} px-2 py-0.5 rounded-md text-xs font-bold font-mono tracking-wider transition-colors ${isRunning ? "cursor-pointer" : "cursor-not-allowed"
-                          }`}
+                        className={`flex items-center gap-1.5 ${theme.btnBg} px-2 py-0.5 rounded-md text-xs font-bold font-mono tracking-wider transition-colors ${
+                          isRunning ? "cursor-pointer" : "cursor-not-allowed"
+                        }`}
                       >
                         <span>{coupon.code}</span>
                         {copiedCode === coupon.code ? (
@@ -406,15 +733,12 @@ export default function CouponSection() {
                       </button>
                     </div>
 
-                    {/* Category Navigation Button */}
+                    {/* Action-Oriented CTA Button */}
                     <Link
-                      href={category.href}
+                      href={target.href}
                       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold ${theme.actionBtn} shadow-xs hover:shadow transition-all active:scale-95 shrink-0`}
                     >
-                      <span>
-                        {category.labels[0]}
-                        {category.labels.length > 1 && ` +${category.labels.length - 1}`}
-                      </span>
+                      <span>{target.buttonText}</span>
                       <FiArrowRight className="text-[11px]" />
                     </Link>
                   </div>
@@ -423,6 +747,16 @@ export default function CouponSection() {
             );
           })}
         </div>
+      )}
+
+      {/* Quick View Eligibility Modal */}
+      {activeModalCoupon && (
+        <CouponQuickModal
+          coupon={activeModalCoupon}
+          onClose={() => setActiveModalCoupon(null)}
+          onCopy={handleCopy}
+          isCopied={copiedCode === activeModalCoupon.code}
+        />
       )}
     </section>
   );
