@@ -69,28 +69,70 @@ function toSeller(store: Awaited<ReturnType<typeof getPublicSellerStores>>[numbe
   };
 }
 
+function SellerSkeleton() {
+  return (
+    <div className="mt-6 grid grid-cols-1 gap-4 py-2 sm:grid-cols-2 lg:grid-cols-4">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div
+          key={i}
+          className="relative overflow-hidden rounded-2xl border border-border bg-surface p-5 shadow-xs"
+        >
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 shrink-0 animate-pulse rounded-full bg-muted-bg" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 w-3/4 animate-pulse rounded-md bg-muted-bg" />
+              <div className="h-3 w-1/2 animate-pulse rounded-md bg-muted-bg" />
+            </div>
+          </div>
+          <div className="mt-4 space-y-2">
+            <div className="h-3 w-full animate-pulse rounded-md bg-muted-bg" />
+            <div className="h-3 w-4/5 animate-pulse rounded-md bg-muted-bg" />
+          </div>
+          <div className="mt-4 flex gap-2">
+            <div className="h-14 flex-1 animate-pulse rounded-lg bg-muted-bg" />
+            <div className="h-14 flex-1 animate-pulse rounded-lg bg-muted-bg" />
+            <div className="h-14 flex-1 animate-pulse rounded-lg bg-muted-bg" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function SellersSection() {
   const [activeTab, setActiveTab] = useState("all");
   const [followedStores, setFollowedStores] = useState<Record<string, boolean>>({});
   const [sellers, setSellers] = useState<Seller[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
     getPublicSellerStores()
       .then(async (stores) => {
-        const enrichedStores = await Promise.all(stores.map(async (store) => {
-          if (store.banner || store.bannerUrl || store.bannerImage) return store;
-          try {
-            const detail = await getPublicSellerStoreBySlug(store.slug);
-            return { ...store, banner: detail.banner || detail.bannerUrl || detail.bannerImage };
-          } catch {
-            return store;
-          }
-        }));
-        if (active) setSellers(enrichedStores.map(toSeller));
+        const list = Array.isArray(stores) ? stores : [];
+        const enrichedStores = await Promise.all(
+          list.map(async (store) => {
+            if (store.banner || store.bannerUrl || store.bannerImage) return store;
+            try {
+              const detail = await getPublicSellerStoreBySlug(store.slug);
+              return { ...store, banner: detail.banner || detail.bannerUrl || detail.bannerImage };
+            } catch {
+              return store;
+            }
+          })
+        );
+        if (active) {
+          setSellers(enrichedStores.map(toSeller));
+          setIsLoading(false);
+        }
       })
-      .catch((error) => console.error("Failed to load public seller stores:", error));
-    return () => { active = false; };
+      .catch((error) => {
+        console.error("Failed to load public seller stores:", error);
+        if (active) setIsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const displaySellers =
@@ -130,12 +172,16 @@ export default function SellersSection() {
         onTabChange={setActiveTab}
       />
 
-      {/* 2. Single Row Infinite Marquee */}
-      <SellerMarquee
-        sellers={displaySellers}
-        followedStores={followedStores}
-        onToggleFollow={handleToggleFollow}
-      />
+      {/* 2. Loading Skeleton or Seller Marquee */}
+      {isLoading ? (
+        <SellerSkeleton />
+      ) : (
+        <SellerMarquee
+          sellers={displaySellers}
+          followedStores={followedStores}
+          onToggleFollow={handleToggleFollow}
+        />
+      )}
 
       {/* 3. Bottom Marketplace Trust Pillars */}
       <SellerTrustPillars />
