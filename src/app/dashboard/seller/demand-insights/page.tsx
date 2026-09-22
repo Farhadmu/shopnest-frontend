@@ -544,9 +544,22 @@ export default function SellerDemandInsightsPage() {
                     <span className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">
                       Buyer Search Input
                     </span>
-                    <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                      &quot;{activeModalItem.searchQuery}&quot;
-                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                        &quot;{activeModalItem.searchQuery}&quot;
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(activeModalItem.searchQuery || "");
+                          toast.success("Query copied!");
+                        }}
+                        className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted transition"
+                        title="Copy search query"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
                 )}
 
