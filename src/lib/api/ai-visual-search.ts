@@ -119,3 +119,9 @@ export async function deleteVisualSearchDemand(
     "DELETE"
   );
 }
+
+export async function getVisualSearchDemandById(
+  demandId: string
+): Promise<VisualSearchDemandItem> {
+  return clientFetch<VisualSearchDemandItem>(`/ai/visual-search/demands/${demandId}`);
+}
