@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=1,12,24&height=280&section=header&text=ShopNest%20Frontend&fontSize=56&fontAlignY=36&desc=%E2%9C%A8%20AI-Powered%20Multi-Vendor%20Commerce%20%26%20Seller%20Platform&descAlignY=60&descAlign=50" alt="ShopNest Frontend Header" width="100%" />
+  <img src="docs/assets/shopnest-banner.png" alt="ShopNest Header Banner" width="100%" style="border-radius: 12px; box-shadow: 0 16px 40px -12px rgba(168, 85, 247, 0.35);" />
 </p>
 
 <p align="center">
@@ -1218,7 +1218,3 @@ The following improvements are identified but not yet implemented in the current
 - **Lead Developer:** Farhad ([@Farhadmu](https://github.com/Farhadmu))
 
 ---
-
-<p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=1,12,24&height=120&section=footer" alt="ShopNest Footer" width="100%" />
-</p>
