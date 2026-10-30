@@ -19,11 +19,13 @@ import {
   FraudAlertsData,
   SellerRiskData,
 } from "@/lib/api/admin-intelligence";
+import { CustomerFraudRadar } from "@/components/admin/CustomerFraudRadar";
 
-type TabType = "overview" | "alerts" | "orders" | "sellers" | "financial";
+type TabType = "overview" | "customers" | "alerts" | "orders" | "sellers" | "financial";
 
 const tabs: { id: TabType; label: string; icon: string }[] = [
   { id: "overview", label: "Overview", icon: "🛡️" },
+  { id: "customers", label: "Fraud Customers", icon: "👤" },
   { id: "alerts", label: "Fraud Alerts", icon: "🚨" },
   { id: "orders", label: "Suspicious Orders", icon: "📦" },
   { id: "sellers", label: "Seller Risk", icon: "🏪" },
@@ -322,6 +324,9 @@ export default function RiskFraudPage() {
             )}
           </div>
         )}
+
+        {/* Customer Fraud Radar Tab */}
+        {activeTab === "customers" && <CustomerFraudRadar />}
 
         {/* Fraud Alerts Tab */}
         {activeTab === "alerts" && (
