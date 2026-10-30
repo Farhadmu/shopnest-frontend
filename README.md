@@ -289,6 +289,19 @@ The copilot:
 **Frontend components:** `src/components/ai/AiCommerceCopilot.tsx`  
 **API clients:** `src/lib/api/customer-copilot.ts`, `src/lib/api/seller-copilot.ts`, `src/lib/api/admin-copilot.ts`
 
+### ShopNest AI Lens (Multimodal Visual Search & Seller Demand Center)
+
+**Location:** Floating Action Launcher across marketplace, `/dashboard/seller/demand-insights`
+
+The AI Lens allows buyers to find catalog products by uploading a photo, entering a direct image URL, or dragging and dropping an image.
+
+- **Multimodal Visual Search:** Analyzes visual contours, category, subcategory, brand, and color attributes.
+- **Multi-Tiered Catalog Matching:** Categorizes real catalog matches into `Direct Match` (≥70%), `Similar Type` (≥30%), and `Related Product` (≥15%) — preventing false 0-match drops when identical titles differ.
+- **Persistent Seller Demand Center:** All guest and customer visual searches are logged to the verified seller dashboard with customer demand insights, opportunity status, and full deletion management.
+
+**Frontend components:** `src/components/ai/AiVisualSearchWidget.tsx`, `src/app/dashboard/seller/demand-insights/page.tsx`  
+**API clients:** `src/lib/api/ai-visual-search.ts`
+
 ### AI Product Tools (Seller)
 
 Sellers have access to AI-powered product tools:

@@ -616,3 +616,115 @@ export async function getAuditLogs(params?: Record<string, string | undefined>) 
   return clientFetch<AuditLogItem[]>(`/admin/audit-logs${qStr ? `?${qStr}` : ""}`);
 }
 
+// 40. CUSTOMER FRAUD INTELLIGENCE & DETECTION
+export interface CustomerRiskFactor {
+  code: string;
+  name: string;
+  description: string;
+  weight: number;
+  severity: "low" | "medium" | "high" | "critical";
+  detectedAt?: string;
+}
+
+export interface CustomerFraudActivityLog {
+  action: string;
+  note: string;
+  adminId?: string;
+  at: string;
+}
+
+export interface CustomerFraudProfileItem {
+  id: string;
+  _id: string;
+  userId: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  avatarUrl?: string;
+  riskScore: number;
+  riskLevel: "low" | "medium" | "high" | "critical";
+  trustGrade: "A" | "B" | "C" | "D" | "F";
+  totalOrders: number;
+  deliveredOrders: number;
+  cancelledOrders: number;
+  returnedOrders: number;
+  refundedOrders: number;
+  totalSpent: number;
+  rtoRate: number;
+  cancellationRate: number;
+  fulfillmentRate: number;
+  isCodRestricted: boolean;
+  isBlacklisted: boolean;
+  adminNotes?: string;
+  riskFactors: CustomerRiskFactor[];
+  tags: string[];
+  lastEvaluatedAt: string;
+  lastOrderAt?: string;
+  activityLogs?: CustomerFraudActivityLog[];
+}
+
+export interface CustomerFraudStats {
+  totalMonitored: number;
+  criticalRisk: number;
+  highRisk: number;
+  codRestricted: number;
+  blacklisted: number;
+  avgRiskScore: number;
+}
+
+export interface CustomerFraudListResponse {
+  profiles: CustomerFraudProfileItem[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  stats: CustomerFraudStats;
+}
+
+export interface CustomerFraudDossierResponse {
+  profile: CustomerFraudProfileItem;
+  recentOrders: any[];
+}
+
+export async function getFraudCustomers(params?: {
+  search?: string;
+  riskLevel?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
+}): Promise<CustomerFraudListResponse> {
+  const query = new URLSearchParams();
+  if (params) {
+    if (params.search) query.append("search", params.search);
+    if (params.riskLevel) query.append("riskLevel", params.riskLevel);
+    if (params.status) query.append("status", params.status);
+    if (params.page) query.append("page", String(params.page));
+    if (params.limit) query.append("limit", String(params.limit));
+  }
+  const qStr = query.toString();
+  return clientFetch<CustomerFraudListResponse>(`/admin/fraud/customers${qStr ? `?${qStr}` : ""}`);
+}
+
+export async function getCustomerFraudDossier(userId: string): Promise<CustomerFraudDossierResponse> {
+  return clientFetch<CustomerFraudDossierResponse>(`/admin/fraud/customers/${userId}`);
+}
+
+export async function updateCustomerFraudStatus(
+  userId: string,
+  updates: {
+    isCodRestricted?: boolean;
+    isBlacklisted?: boolean;
+    adminNotes?: string;
+    reason?: string;
+  }
+): Promise<CustomerFraudProfileItem> {
+  return clientMutation<CustomerFraudProfileItem>(`/admin/fraud/customers/${userId}/status`, "PATCH", updates);
+}
+
+export async function runGlobalFraudScan(): Promise<{ message: string; scannedCount: number }> {
+  return clientMutation<{ message: string; scannedCount: number }>("/admin/fraud/scan", "POST", {});
+}
+
+

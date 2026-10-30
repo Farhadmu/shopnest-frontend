@@ -105,9 +105,40 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
     return () => clearInterval(interval);
   }, [loading]);
   const [activeProducts, setActiveProducts] = useState<SuggestedProduct[]>([]);
+  const [visualContext, setVisualContext] = useState<any>(null);
   const [showContextPanel, setShowContextPanel] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const idCounterRef = useRef(0);
+
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem("shopnest_visual_advisor_context");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setVisualContext(parsed);
+        if (parsed.products && parsed.products.length > 0) {
+          setActiveProducts(parsed.products);
+          setMessages([
+            {
+              id: "visual-context-msg",
+              role: "assistant",
+              content: `Hello! 📷 I've loaded ${parsed.products.length} products from your recent AI Visual Search for **"${parsed.title || parsed.query || "products"}"**. You can ask me questions like:
+• *"Which one is cheaper?"*
+• *"Compare the first two"*
+• *"Which one has better customer reviews?"*
+• *"Which one is best for gaming?"*
+• *"Which one is in stock right now?"*`,
+              timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              products: parsed.products,
+            },
+          ]);
+        }
+        sessionStorage.removeItem("shopnest_visual_advisor_context");
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const generateId = useCallback((prefix: string) => `${prefix}-${++idCounterRef.current}`, []);
 
@@ -191,7 +222,11 @@ export function AiAdvisorView({ isDashboard = false }: AiAdvisorViewProps) {
     setLoading(true);
 
     try {
-      const data = await askConversationalAdvisor(query, conversationId || undefined);
+      const data = await askConversationalAdvisor(
+        query,
+        conversationId || undefined,
+        visualContext || undefined
+      );
       
       // Store conversation ID for multi-turn context
       if (data.conversationId && !conversationId) {

@@ -11,8 +11,8 @@ import {
 import { sellerDashboardLinks } from "@/lib/constants/dashboard-nav";
 import {
   getSellerDemandInsights,
+  getSellerDemandTrends,
   updateDemandStatus,
-  deleteVisualSearchDemand,
   SellerDemandInsightsResponse,
   VisualSearchDemandItem,
 } from "@/lib/api/ai-visual-search";
@@ -37,8 +37,10 @@ import {
   Check,
   ChevronRight,
   ArrowUpRight,
-  Trash2,
-  Loader2,
+  Copy,
+  Calendar,
+  Palette,
+  ShoppingBag,
 } from "lucide-react";
 
 export default function SellerDemandInsightsPage() {
@@ -46,12 +48,12 @@ export default function SellerDemandInsightsPage() {
 
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<SellerDemandInsightsResponse | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState<"today" | "7d" | "30d" | "all">("all");
   const [selectedStatus, setSelectedStatus] = useState<"all" | "unmet" | "matched">("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeModalItem, setActiveModalItem] = useState<VisualSearchDemandItem | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchInsights = useCallback(async () => {
     try {
@@ -60,6 +62,7 @@ export default function SellerDemandInsightsPage() {
         category: selectedCategory !== "all" ? selectedCategory : undefined,
         status: selectedStatus !== "all" ? selectedStatus : undefined,
         search: searchQuery.trim() || undefined,
+        period: selectedPeriod !== "all" ? selectedPeriod : undefined,
         limit: 30,
       });
       setData(res);
@@ -68,7 +71,7 @@ export default function SellerDemandInsightsPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedCategory, selectedStatus, searchQuery]);
+  }, [selectedCategory, selectedStatus, searchQuery, selectedPeriod]);
 
   useEffect(() => {
     fetchInsights();
@@ -96,42 +99,6 @@ export default function SellerDemandInsightsPage() {
     }
   };
 
-  const handleDeleteDemand = async (item: VisualSearchDemandItem, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    if (!window.confirm(`Delete customer demand for "${item.detectedTitle}"?`)) {
-      return;
-    }
-    try {
-      setDeletingId(item._id);
-      await deleteVisualSearchDemand(item._id);
-      toast.success("Demand record deleted");
-      setData((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          demands: prev.demands.filter((d) => d._id !== item._id),
-          metrics: {
-            ...prev.metrics,
-            totalSearches: Math.max(prev.metrics.totalSearches - 1, 0),
-            unmetSearches: item.isUnmetDemand
-              ? Math.max(prev.metrics.unmetSearches - 1, 0)
-              : prev.metrics.unmetSearches,
-            matchedSearches: !item.isUnmetDemand
-              ? Math.max(prev.metrics.matchedSearches - 1, 0)
-              : prev.metrics.matchedSearches,
-          },
-        };
-      });
-      if (activeModalItem?._id === item._id) {
-        setActiveModalItem(null);
-      }
-    } catch {
-      toast.error("Failed to delete demand record");
-    } finally {
-      setDeletingId(null);
-    }
-  };
-
   const handleStockProduct = (item: VisualSearchDemandItem) => {
     const params = new URLSearchParams();
     params.set("title", item.detectedTitle);
@@ -150,6 +117,8 @@ export default function SellerDemandInsightsPage() {
     matchedSearches: 0,
     topCategories: [],
     trendingKeywords: [],
+    popularColors: [],
+    trendingProductTypes: [],
   };
 
   const topCategoryName = metrics.topCategories[0]?.category || "None yet";
@@ -166,17 +135,47 @@ export default function SellerDemandInsightsPage() {
       links={sellerDashboardLinks}
     >
       <div className="space-y-6">
-        {/* Top Banner Notice */}
-        <div className="flex items-start gap-3.5 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4.5 text-xs text-foreground">
-          <Sparkles className="mt-0.5 h-5 w-5 text-emerald-500 shrink-0" />
-          <div className="space-y-1">
-            <p className="font-extrabold text-sm text-foreground">
-              Direct Buyer Demand Intelligence
-            </p>
-            <p className="text-muted-foreground leading-relaxed">
-              Every time a customer or guest uploads a product image to search ShopNest, our Vision AI analyzes the product details.
-              When an item has <strong>0 in stock (Unmet Demand)</strong>, it represents an immediate market gap you can capture by listing the product first!
-            </p>
+        {/* Top Banner Notice with Time Period Switcher */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4.5 text-xs text-foreground">
+          <div className="flex items-start gap-3.5">
+            <Sparkles className="mt-0.5 h-5 w-5 text-emerald-500 shrink-0" />
+            <div className="space-y-1">
+              <p className="font-extrabold text-sm text-foreground">
+                Aggregated Customer Demand Intelligence
+              </p>
+              <p className="text-muted-foreground leading-relaxed">
+                Every visual search generates real anonymized demand trends. When an item has{" "}
+                <strong>0 in stock (Unmet Demand)</strong>, it represents an immediate market gap you can capture!
+              </p>
+            </div>
+          </div>
+
+          {/* Time Period Filter Pills */}
+          <div className="flex items-center gap-1 bg-background/80 p-1.5 rounded-xl border border-border/80 shrink-0">
+            <span className="text-[11px] font-bold text-muted-foreground px-2 flex items-center gap-1">
+              <Calendar className="h-3 w-3" /> Period:
+            </span>
+            {(
+              [
+                { id: "today", label: "Today" },
+                { id: "7d", label: "7 Days" },
+                { id: "30d", label: "30 Days" },
+                { id: "all", label: "All Time" },
+              ] as const
+            ).map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setSelectedPeriod(p.id)}
+                className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${
+                  selectedPeriod === p.id
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -186,7 +185,7 @@ export default function SellerDemandInsightsPage() {
             label="Total Visual Searches"
             value={metrics.totalSearches.toString()}
             icon="📷"
-            note="Searches conducted by buyers"
+            note={`Searches in selected ${selectedPeriod === "all" ? "history" : selectedPeriod}`}
             color="default"
           />
           <StatCard
@@ -210,6 +209,82 @@ export default function SellerDemandInsightsPage() {
             note="Most searched category"
             color="accent"
           />
+        </div>
+
+        {/* Trending Intelligence: Popular Colors & Trending Product Types */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Popular Colors Card */}
+          <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Palette className="h-4 w-4 text-emerald-500" />
+                <h4 className="text-sm font-extrabold text-foreground">
+                  Popular Visual Colors
+                </h4>
+              </div>
+              <span className="text-[11px] text-muted-foreground">Detected from customer images</span>
+            </div>
+
+            {metrics.popularColors && metrics.popularColors.length > 0 ? (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {metrics.popularColors.map((c) => (
+                  <div
+                    key={c.color}
+                    className="flex items-center gap-2 rounded-xl border border-border bg-muted/30 px-3 py-1.5 text-xs font-semibold"
+                  >
+                    <span
+                      className="h-3 w-3 rounded-full border border-black/20 shadow-xs"
+                      style={{
+                        backgroundColor: c.color.toLowerCase(),
+                      }}
+                    />
+                    <span className="capitalize text-foreground font-bold">{c.color}</span>
+                    <span className="rounded-full bg-emerald-500/15 px-1.5 py-0.2 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                      {c.count} searches
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-6 text-center text-xs text-muted-foreground">
+                No color trend data yet for this period.
+              </div>
+            )}
+          </div>
+
+          {/* Trending Product Types Card */}
+          <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="h-4 w-4 text-emerald-500" />
+                <h4 className="text-sm font-extrabold text-foreground">
+                  Trending Product Types
+                </h4>
+              </div>
+              <span className="text-[11px] text-muted-foreground">Top searched items</span>
+            </div>
+
+            {metrics.trendingProductTypes && metrics.trendingProductTypes.length > 0 ? (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {metrics.trendingProductTypes.map((pt) => (
+                  <div
+                    key={pt.productType}
+                    className="flex items-center gap-2 rounded-xl border border-border bg-muted/30 px-3 py-1.5 text-xs font-semibold"
+                  >
+                    <Tag className="h-3 w-3 text-muted-foreground" />
+                    <span className="capitalize text-foreground font-bold">{pt.productType}</span>
+                    <span className="rounded-full bg-indigo-500/15 px-1.5 py-0.2 text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
+                      {pt.count} searches
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-6 text-center text-xs text-muted-foreground">
+                No product type trends recorded yet for this period.
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Filter and Search Bar */}
@@ -242,33 +317,43 @@ export default function SellerDemandInsightsPage() {
               <div className="flex items-center gap-1.5 rounded-xl bg-muted/40 p-1 text-xs font-bold border border-border/60">
                 <button
                   onClick={() => setSelectedStatus("all")}
-                  className={`rounded-lg px-3 py-1.5 transition ${
+                  className={`rounded-lg px-3 py-1.5 transition flex items-center gap-1.5 ${
                     selectedStatus === "all"
                       ? "bg-emerald-600 text-white shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  All Demands
+                  <span>All Demands</span>
+                  <span className="rounded-full bg-black/20 px-1.5 py-0.2 text-[10px]">
+                    {metrics.totalSearches}
+                  </span>
                 </button>
                 <button
                   onClick={() => setSelectedStatus("unmet")}
-                  className={`flex items-center gap-1 rounded-lg px-3 py-1.5 transition ${
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition ${
                     selectedStatus === "unmet"
                       ? "bg-rose-600 text-white shadow-sm"
                       : "text-rose-500 hover:text-rose-600"
                   }`}
                 >
-                  <AlertCircle className="h-3.5 w-3.5" /> High Opportunity (0 In Stock)
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  <span>High Opportunity (0 In Stock)</span>
+                  <span className="rounded-full bg-black/20 px-1.5 py-0.2 text-[10px]">
+                    {metrics.unmetSearches}
+                  </span>
                 </button>
                 <button
                   onClick={() => setSelectedStatus("matched")}
-                  className={`rounded-lg px-3 py-1.5 transition ${
+                  className={`rounded-lg px-3 py-1.5 transition flex items-center gap-1.5 ${
                     selectedStatus === "matched"
                       ? "bg-teal-600 text-white shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  In Stock / Matched
+                  <span>In Stock / Matched</span>
+                  <span className="rounded-full bg-black/20 px-1.5 py-0.2 text-[10px]">
+                    {metrics.matchedSearches}
+                  </span>
                 </button>
               </div>
 
@@ -283,7 +368,7 @@ export default function SellerDemandInsightsPage() {
               </button>
             </div>
 
-            {/* Category Filter Pills (if categories exist) */}
+            {/* Category Filter Pills */}
             {metrics.topCategories.length > 0 && (
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
@@ -361,7 +446,6 @@ export default function SellerDemandInsightsPage() {
                             referrerPolicy="no-referrer"
                             className="h-full w-full object-contain transition duration-300 group-hover:scale-105"
                             onError={(e) => {
-                              // If image fails to load, gracefully hide broken icon
                               (e.target as HTMLElement).style.display = "none";
                             }}
                           />
@@ -379,7 +463,7 @@ export default function SellerDemandInsightsPage() {
                             )}
                           </div>
 
-                          {/* Quick Inspect & Delete Actions */}
+                          {/* Quick Inspect Action */}
                           <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition z-10">
                             <button
                               onClick={() => setActiveModalItem(item)}
@@ -388,40 +472,64 @@ export default function SellerDemandInsightsPage() {
                             >
                               <Eye className="h-3.5 w-3.5" />
                             </button>
-                            <button
-                              onClick={(e) => handleDeleteDemand(item, e)}
-                              disabled={deletingId === item._id}
-                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-black/65 text-rose-300 backdrop-blur-md hover:bg-rose-600 hover:text-white transition disabled:opacity-50"
-                              title="Delete this customer demand"
-                            >
-                              {deletingId === item._id ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-3.5 w-3.5" />
-                              )}
-                            </button>
                           </div>
                         </div>
 
                         {/* Title & Metadata */}
-                        <div className="mt-3.5 space-y-1.5">
+                        <div className="mt-3.5 space-y-2">
                           <div className="flex items-center justify-between gap-2">
                             <span className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-bold text-muted-foreground">
                               📁 {item.detectedCategory || "General"}
                             </span>
-                            <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                              <Clock className="h-3 w-3" /> {dateStr}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-2 py-0.2 text-[10px] font-bold border border-indigo-500/20 capitalize">
+                                {item.userRole || "guest"}
+                              </span>
+                              <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                                <Clock className="h-3 w-3" /> {dateStr}
+                              </span>
+                            </div>
                           </div>
 
                           <h4 className="line-clamp-2 text-sm font-extrabold text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition">
                             {item.detectedTitle}
                           </h4>
 
+                          {/* Model and Market Price Estimate Highlights */}
+                          <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-xs">
+                            {item.detectedModel && item.detectedModel !== "N/A" && (
+                              <span className="rounded-lg bg-background border border-border px-2 py-0.5 font-bold text-foreground text-[11px]">
+                                Model: {item.detectedModel}
+                              </span>
+                            )}
+                            {item.detectedBrand && item.detectedBrand !== "Generic" && (
+                              <span className="rounded-lg bg-background border border-border px-2 py-0.5 font-semibold text-muted-foreground text-[11px]">
+                                {item.detectedBrand}
+                              </span>
+                            )}
+                            {item.marketPriceEstimate && item.marketPriceEstimate !== "N/A" && (
+                              <span className="rounded-lg bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 font-bold text-emerald-600 dark:text-emerald-400 text-[11px]">
+                                Est: {item.marketPriceEstimate}
+                              </span>
+                            )}
+                          </div>
+
                           {item.searchQuery && (
-                            <p className="text-xs text-muted-foreground">
-                              Buyer query: <strong className="text-foreground font-semibold">&quot;{item.searchQuery}&quot;</strong>
-                            </p>
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-0.5">
+                              <span>Buyer query: <strong className="text-foreground font-semibold">&quot;{item.searchQuery}&quot;</strong></span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigator.clipboard.writeText(item.searchQuery || "");
+                                  toast.success("Query copied!");
+                                }}
+                                className="text-muted-foreground hover:text-foreground p-0.5 rounded transition hover:bg-muted"
+                                title="Copy search query"
+                              >
+                                <Copy className="h-3 w-3" />
+                              </button>
+                            </div>
                           )}
                         </div>
 
@@ -521,9 +629,22 @@ export default function SellerDemandInsightsPage() {
                     <span className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">
                       Buyer Search Input
                     </span>
-                    <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                      &quot;{activeModalItem.searchQuery}&quot;
-                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                        &quot;{activeModalItem.searchQuery}&quot;
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(activeModalItem.searchQuery || "");
+                          toast.success("Query copied!");
+                        }}
+                        className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted transition"
+                        title="Copy search query"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -540,6 +661,22 @@ export default function SellerDemandInsightsPage() {
                       {activeModalItem.isUnmetDemand ? "0 In Stock" : `${activeModalItem.matchedCount} Available`}
                     </p>
                   </div>
+                  {activeModalItem.detectedModel && activeModalItem.detectedModel !== "N/A" && (
+                    <div className="rounded-xl border border-border p-2.5">
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold">Model / Spec</span>
+                      <p className="text-xs font-bold text-foreground mt-0.5">
+                        {activeModalItem.detectedModel}
+                      </p>
+                    </div>
+                  )}
+                  {activeModalItem.marketPriceEstimate && activeModalItem.marketPriceEstimate !== "N/A" && (
+                    <div className="rounded-xl border border-border p-2.5">
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold">Market Est. Price</span>
+                      <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                        {activeModalItem.marketPriceEstimate}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {activeModalItem.detectedFeatures && activeModalItem.detectedFeatures.length > 0 && (
@@ -576,18 +713,11 @@ export default function SellerDemandInsightsPage() {
 
             {/* Modal Bottom Actions */}
             <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border/70">
-              <button
-                onClick={() => handleDeleteDemand(activeModalItem)}
-                disabled={deletingId === activeModalItem._id}
-                className="flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3.5 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition disabled:opacity-50"
-              >
-                {deletingId === activeModalItem._id ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Trash2 className="h-3.5 w-3.5" />
-                )}
-                <span>Delete Demand Insight</span>
-              </button>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1 rounded-md bg-amber-500/10 border border-amber-500/20 px-2 py-1 text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                  🔒 Anonymized customer visual demand intelligence
+                </span>
+              </div>
 
               <div className="flex items-center gap-2">
                 <button
