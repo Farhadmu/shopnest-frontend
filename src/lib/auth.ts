@@ -18,6 +18,11 @@ const db = client.db("shopnest");
 const rawBaseURL =
   process.env.BETTER_AUTH_URL ||
   process.env.NEXT_PUBLIC_APP_URL ||
+  (process.env.RENDER_EXTERNAL_URL
+    ? (process.env.RENDER_EXTERNAL_URL.startsWith("http")
+        ? process.env.RENDER_EXTERNAL_URL
+        : `https://${process.env.RENDER_EXTERNAL_URL}`)
+    : undefined) ||
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined) ||
   "https://shopnest-frontend-six.vercel.app";
 
@@ -41,6 +46,8 @@ export const auth = betterAuth({
   trustedOrigins: [
     "https://shopnest-frontend-six.vercel.app",
     "https://*.vercel.app",
+    "https://shopnest-frontend-q07b.onrender.com",
+    "https://*.onrender.com",
     "http://localhost:3000",
     "http://localhost:3001",
     "http://127.0.0.1:3000",

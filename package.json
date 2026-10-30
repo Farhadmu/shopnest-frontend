@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test"
+    "test": "node --test",
+    "admin:recover": "node --env-file=.env ../shopnest-backend/node_modules/tsx/dist/cli.mjs scripts/recover-admin.ts"
   },
   "dependencies": {
     "@bangladeshi/bangladesh-address": "^2.1.0",
