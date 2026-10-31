@@ -159,15 +159,16 @@ export interface PurchaseOrderProposal {
 }
 
 export async function getDemandIQOverview(): Promise<DemandIQOverview> {
-  const res = await clientFetch<{ data: DemandIQOverview }>("/api/v1/ai/demandiq/overview");
+  const res = await clientFetch<{ data: DemandIQOverview }>("/ai/demandiq/overview");
   return res.data;
 }
 
 export async function simulateShock(params: ShockSimulationParams): Promise<ShockSimulationResult> {
-  const res = await clientMutation<{ data: ShockSimulationResult }>("/api/v1/ai/demandiq/simulate-shock", {
-    method: "POST",
-    body: JSON.stringify(params),
-  });
+  const res = await clientMutation<{ data: ShockSimulationResult }>(
+    "/ai/demandiq/simulate-shock",
+    "POST",
+    params
+  );
   return res.data;
 }
 
@@ -175,10 +176,11 @@ export async function askProcurementAnalyst(
   query: string,
   conversationHistory: Array<{ role: "user" | "assistant"; content: string }> = []
 ): Promise<ProcurementChatResponse> {
-  const res = await clientMutation<{ data: ProcurementChatResponse }>("/api/v1/ai/demandiq/procurement-chat", {
-    method: "POST",
-    body: JSON.stringify({ query, conversationHistory }),
-  });
+  const res = await clientMutation<{ data: ProcurementChatResponse }>(
+    "/ai/demandiq/procurement-chat",
+    "POST",
+    { query, conversationHistory }
+  );
   return res.data;
 }
 
@@ -186,9 +188,10 @@ export async function generatePurchaseOrder(options: {
   targetServiceLevel?: number;
   leadTimeDays?: number;
 } = {}): Promise<PurchaseOrderProposal> {
-  const res = await clientMutation<{ data: PurchaseOrderProposal }>("/api/v1/ai/demandiq/generate-po", {
-    method: "POST",
-    body: JSON.stringify(options),
-  });
+  const res = await clientMutation<{ data: PurchaseOrderProposal }>(
+    "/ai/demandiq/generate-po",
+    "POST",
+    options
+  );
   return res.data;
 }

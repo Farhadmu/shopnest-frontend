@@ -85,7 +85,7 @@ export interface GrowthPilotOverview {
 }
 
 export async function getGrowthPilotOverview(): Promise<GrowthPilotOverview> {
-  const res = await clientFetch<{ data: GrowthPilotOverview }>("/api/v1/ai/growthpilot/overview");
+  const res = await clientFetch<{ data: GrowthPilotOverview }>("/ai/growthpilot/overview");
   return res.data;
 }
 
@@ -93,14 +93,15 @@ export async function orchestrateCampaign(
   productId: string,
   targetAudience?: string
 ): Promise<GeneratedCampaign[]> {
-  const res = await clientMutation<{ data: GeneratedCampaign[] }>("/api/v1/ai/growthpilot/orchestrate-campaign", {
-    method: "POST",
-    body: JSON.stringify({ productId, targetAudience }),
-  });
+  const res = await clientMutation<{ data: GeneratedCampaign[] }>(
+    "/ai/growthpilot/orchestrate-campaign",
+    "POST",
+    { productId, targetAudience }
+  );
   return res.data;
 }
 
 export async function getDynamicValueProps(productId: string): Promise<DynamicValueProp[]> {
-  const res = await clientFetch<{ data: DynamicValueProp[] }>(`/api/v1/ai/growthpilot/dynamic-value-props/${productId}`);
+  const res = await clientFetch<{ data: DynamicValueProp[] }>(`/ai/growthpilot/dynamic-value-props/${productId}`);
   return res.data;
 }
