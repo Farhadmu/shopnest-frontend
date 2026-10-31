@@ -85,23 +85,23 @@ export interface GrowthPilotOverview {
 }
 
 export async function getGrowthPilotOverview(): Promise<GrowthPilotOverview> {
-  const res = await clientFetch<{ data: GrowthPilotOverview }>("/ai/growthpilot/overview");
-  return res.data;
+  const res = await clientFetch<any>("/ai/growthpilot/overview");
+  return res.data ?? res;
 }
 
 export async function orchestrateCampaign(
   productId: string,
   targetAudience?: string
 ): Promise<GeneratedCampaign[]> {
-  const res = await clientMutation<{ data: GeneratedCampaign[] }>(
+  const res = await clientMutation<any>(
     "/ai/growthpilot/orchestrate-campaign",
     "POST",
     { productId, targetAudience }
   );
-  return res.data;
+  return res.data ?? res.campaigns ?? res;
 }
 
 export async function getDynamicValueProps(productId: string): Promise<DynamicValueProp[]> {
-  const res = await clientFetch<{ data: DynamicValueProp[] }>(`/ai/growthpilot/dynamic-value-props/${productId}`);
-  return res.data;
+  const res = await clientFetch<any>(`/ai/growthpilot/dynamic-value-props/${productId}`);
+  return res.data ?? res;
 }

@@ -74,28 +74,28 @@ export interface CulturalContextualizedProduct {
 }
 
 export async function getNextBestAction(): Promise<NextBestAction> {
-  const res = await clientFetch<{ data: NextBestAction }>("/ai/hyperpersonal/next-best-action");
-  return res.data;
+  const res = await clientFetch<any>("/ai/hyperpersonal/next-best-action");
+  return res.data ?? res;
 }
 
 export async function getCustomerGenome(): Promise<CustomerGenomeProfile> {
-  const res = await clientFetch<{ data: CustomerGenomeProfile }>("/ai/hyperpersonal/genome");
-  return res.data;
+  const res = await clientFetch<any>("/ai/hyperpersonal/genome");
+  return res.data ?? res;
 }
 
 export async function sendSentimentChat(message: string): Promise<SentimentAdaptiveResponse> {
-  const res = await clientMutation<{ data: SentimentAdaptiveResponse }>(
+  const res = await clientMutation<any>(
     "/ai/hyperpersonal/sentiment-chat",
     "POST",
     { message }
   );
-  return res.data;
+  return res.data ?? res;
 }
 
 export async function getCulturalContext(productId: string, region?: string): Promise<CulturalContextualizedProduct> {
   const url = region
     ? `/ai/hyperpersonal/cultural-context/${productId}?region=${encodeURIComponent(region)}`
     : `/ai/hyperpersonal/cultural-context/${productId}`;
-  const res = await clientFetch<{ data: CulturalContextualizedProduct }>(url);
-  return res.data;
+  const res = await clientFetch<any>(url);
+  return res.data ?? res;
 }
