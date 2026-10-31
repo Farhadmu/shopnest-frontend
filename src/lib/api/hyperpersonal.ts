@@ -74,27 +74,28 @@ export interface CulturalContextualizedProduct {
 }
 
 export async function getNextBestAction(): Promise<NextBestAction> {
-  const res = await clientFetch<{ data: NextBestAction }>("/api/v1/ai/hyperpersonal/next-best-action");
+  const res = await clientFetch<{ data: NextBestAction }>("/ai/hyperpersonal/next-best-action");
   return res.data;
 }
 
 export async function getCustomerGenome(): Promise<CustomerGenomeProfile> {
-  const res = await clientFetch<{ data: CustomerGenomeProfile }>("/api/v1/ai/hyperpersonal/genome");
+  const res = await clientFetch<{ data: CustomerGenomeProfile }>("/ai/hyperpersonal/genome");
   return res.data;
 }
 
 export async function sendSentimentChat(message: string): Promise<SentimentAdaptiveResponse> {
-  const res = await clientMutation<{ data: SentimentAdaptiveResponse }>("/api/v1/ai/hyperpersonal/sentiment-chat", {
-    method: "POST",
-    body: JSON.stringify({ message }),
-  });
+  const res = await clientMutation<{ data: SentimentAdaptiveResponse }>(
+    "/ai/hyperpersonal/sentiment-chat",
+    "POST",
+    { message }
+  );
   return res.data;
 }
 
 export async function getCulturalContext(productId: string, region?: string): Promise<CulturalContextualizedProduct> {
   const url = region
-    ? `/api/v1/ai/hyperpersonal/cultural-context/${productId}?region=${encodeURIComponent(region)}`
-    : `/api/v1/ai/hyperpersonal/cultural-context/${productId}`;
+    ? `/ai/hyperpersonal/cultural-context/${productId}?region=${encodeURIComponent(region)}`
+    : `/ai/hyperpersonal/cultural-context/${productId}`;
   const res = await clientFetch<{ data: CulturalContextualizedProduct }>(url);
   return res.data;
 }

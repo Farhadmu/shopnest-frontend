@@ -679,7 +679,7 @@ export default function SellerDemandInsightsPage() {
                           </span>
                           <span
                             className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                              item.status === "unmet"
+                              (item.status as string) === "unmet" || item.status === "new"
                                 ? "bg-rose-500/10 text-rose-500"
                                 : item.status === "stocked"
                                 ? "bg-emerald-500/10 text-emerald-500"
