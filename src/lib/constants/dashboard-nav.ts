@@ -20,6 +20,7 @@ export const userDashboardLinks: DashboardLink[] = [
   { label: "Product Lifecycle", href: "/dashboard/user/lifecycle", icon: "🛡️", description: "Warranty & maintenance tracker.", group: "ACTIVITY" },
 
   // INSIGHTS & AI
+  { label: "HyperPersonal (1:1 Journey)", href: "/dashboard/user/hyperpersonal", icon: "✨", description: "Next Best Action, Customer Genome & Sentiment AI.", group: "INSIGHTS", highlight: true },
   { label: "AI Copilot / Advisor", href: "/dashboard/user/ai-advisor", icon: "🤖", description: "AI commerce shopping assistant.", group: "INSIGHTS", highlight: true },
   { label: "Notifications", href: "/dashboard/user/notifications", icon: "🔔", description: "Order updates & alerts.", group: "INSIGHTS" },
 
@@ -42,7 +43,7 @@ export const sellerDashboardLinks: DashboardLink[] = [
   { label: "Products", href: "/dashboard/seller/products", icon: "🧾", description: "Manage product catalog.", group: "CATALOG" },
   { label: "Add Product", href: "/dashboard/seller/products/add", icon: "➕", description: "List a new product manually or with AI.", group: "CATALOG" },
   { label: "AI Product Studio", href: "/dashboard/seller/ai-tools", icon: "🤖", description: "Create listings from product images with AI.", group: "CATALOG", highlight: true },
-  { label: "Customer Demand (AI Search)", href: "/dashboard/seller/demand-insights", icon: "🔍", description: "Customer visual search demands & products to stock.", group: "CATALOG", highlight: true },
+  { label: "DemandIQ (Forecasting & Stockouts)", href: "/dashboard/seller/demand-insights", icon: "📈", description: "Time-series demand forecasting, stockout prevention & RAG procurement.", group: "CATALOG", highlight: true },
   { label: "Smart Inventory", href: "/dashboard/seller/inventory", icon: "📦", description: "Stock levels & restock alerts.", group: "CATALOG" },
 
   // ORDERS & FULFILLMENT
@@ -51,6 +52,7 @@ export const sellerDashboardLinks: DashboardLink[] = [
   { label: "Sales Forecast", href: "/dashboard/seller/forecast", icon: "🔮", description: "AI demand forecasting.", group: "ORDERS" },
 
   // CUSTOMERS & GROWTH
+  { label: "GrowthPilot (Marketing & CAC)", href: "/dashboard/seller/growth-pilot", icon: "🚀", description: "Autonomous growth, omnichannel campaigns & churn discounter.", group: "GROWTH", highlight: true },
   { label: "Customers", href: "/dashboard/seller/customers", icon: "👥", description: "Buyer behavior analytics.", group: "GROWTH" },
   { label: "Coupons", href: "/dashboard/seller/coupons", icon: "🏷️", description: "Discount campaigns.", group: "GROWTH" },
   { label: "Goals", href: "/dashboard/seller/goals", icon: "🎯", description: "Business targets & progress.", group: "GROWTH" },

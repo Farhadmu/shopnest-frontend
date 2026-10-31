@@ -1,6 +1,7 @@
 "use client";
 
 import BannerSection from "@/components/home/Banner";
+import { NextBestActionBanner } from "@/components/hyperpersonal/NextBestActionBanner";
 import ShopByCategory from "@/components/home/ShopByCategory";
 import TrustFeatures from "@/components/home/TrustFeatures";
 import SellersSection from "@/components/home/SellersSection";
@@ -25,6 +26,11 @@ function HomePageContent() {
     <div className="flex flex-col gap-10 sm:gap-14 lg:gap-16 overflow-hidden">
       {/* 01 — Hero */}
       <BannerSection initialCategories={categories} />
+
+      {/* 01.5 — HyperPersonal: Real-Time Next Best Action (NBA) Personalization */}
+      <div className="container mx-auto px-4 max-w-7xl -mt-4">
+        <NextBestActionBanner />
+      </div>
 
       {/* 02 — Trust */}
       <TrustFeatures />
