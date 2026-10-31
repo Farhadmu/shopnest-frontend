@@ -20,6 +20,7 @@ export const userDashboardLinks: DashboardLink[] = [
   { label: "Product Lifecycle", href: "/dashboard/user/lifecycle", icon: "🛡️", description: "Warranty & maintenance tracker.", group: "ACTIVITY" },
 
   // INSIGHTS & AI
+  { label: "HyperPersonal (1:1 Journey)", href: "/dashboard/user/hyperpersonal", icon: "✨", description: "Next Best Action, Customer Genome & Sentiment AI.", group: "INSIGHTS", highlight: true },
   { label: "AI Copilot / Advisor", href: "/dashboard/user/ai-advisor", icon: "🤖", description: "AI commerce shopping assistant.", group: "INSIGHTS", highlight: true },
   { label: "Notifications", href: "/dashboard/user/notifications", icon: "🔔", description: "Order updates & alerts.", group: "INSIGHTS" },
 
@@ -51,6 +52,7 @@ export const sellerDashboardLinks: DashboardLink[] = [
   { label: "Sales Forecast", href: "/dashboard/seller/forecast", icon: "🔮", description: "AI demand forecasting.", group: "ORDERS" },
 
   // CUSTOMERS & GROWTH
+  { label: "GrowthPilot (Marketing & CAC)", href: "/dashboard/seller/growth-pilot", icon: "🚀", description: "Autonomous growth, omnichannel campaigns & churn discounter.", group: "GROWTH", highlight: true },
   { label: "Customers", href: "/dashboard/seller/customers", icon: "👥", description: "Buyer behavior analytics.", group: "GROWTH" },
   { label: "Coupons", href: "/dashboard/seller/coupons", icon: "🏷️", description: "Discount campaigns.", group: "GROWTH" },
   { label: "Goals", href: "/dashboard/seller/goals", icon: "🎯", description: "Business targets & progress.", group: "GROWTH" },
