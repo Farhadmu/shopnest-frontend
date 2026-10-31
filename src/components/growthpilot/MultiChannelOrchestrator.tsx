@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { GeneratedCampaign, orchestrateCampaign } from "@/lib/api/growthpilot";
 import {
   Sparkles,
@@ -37,13 +37,23 @@ export function MultiChannelOrchestrator({ products }: Props) {
   const [activeChannel, setActiveChannel] = useState<string>("instagram_reels");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!selectedProductId && products.length > 0) {
+      setSelectedProductId(products[0].id);
+    }
+  }, [products, selectedProductId]);
+
   const handleGenerate = async () => {
-    if (!selectedProductId) return;
+    const prodId = selectedProductId || products[0]?.id;
+    if (!prodId) {
+      toast.error("Please select a product to generate campaigns");
+      return;
+    }
     try {
       setLoading(true);
-      const res = await orchestrateCampaign(selectedProductId, targetAudience.trim() || undefined);
+      const res = await orchestrateCampaign(prodId, targetAudience.trim() || undefined);
       setCampaigns(res);
-      if (res.length > 0) {
+      if (res && res.length > 0) {
         setActiveChannel(res[0].channel);
       }
       toast.success("5-Channel Growth Campaigns Generated!");

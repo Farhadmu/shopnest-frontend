@@ -25,6 +25,7 @@ export default function GrowthPilotPage() {
   const [data, setData] = useState<GrowthPilotOverview | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<"orchestrator" | "churn" | "dynamic_layer" | "lead_radar">("orchestrator");
+  const [selectedDynamicProductId, setSelectedDynamicProductId] = useState<string>("");
 
   const fetchOverview = useCallback(async () => {
     try {
@@ -169,9 +170,30 @@ export default function GrowthPilotPage() {
 
         {/* TAB 3: DYNAMIC WEBSITE LAYER */}
         {activeTab === "dynamic_layer" && (
-          <div className="animate-in fade-in duration-200">
+          <div className="space-y-4 animate-in fade-in duration-200">
             {data && data.topProducts.length > 0 ? (
-              <DynamicValuePropViewer productId={data.topProducts[0].id} />
+              <>
+                <div className="flex flex-wrap items-center gap-2 border-b border-border/40 pb-3">
+                  <span className="text-xs font-semibold text-muted-foreground mr-1">Select Product:</span>
+                  {data.topProducts.map((p) => {
+                    const isSelected = (selectedDynamicProductId || data.topProducts[0].id) === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => setSelectedDynamicProductId(p.id)}
+                        className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+                          isSelected
+                            ? "bg-indigo-600 text-white shadow-sm"
+                            : "bg-card border border-border/60 text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {p.title.slice(0, 24)}...
+                      </button>
+                    );
+                  })}
+                </div>
+                <DynamicValuePropViewer productId={selectedDynamicProductId || data.topProducts[0].id} />
+              </>
             ) : (
               <div className="py-12 text-center text-xs text-muted-foreground">
                 Please add products to preview dynamic storefront layers.

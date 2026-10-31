@@ -98,7 +98,9 @@ export default function SellerDemandInsightsPage() {
       setDemandiqLoading(true);
       const res = await getDemandIQOverview();
       setOverview(res);
-      if (res.topStockoutRisks.length > 0) {
+      if (res.allProducts && res.allProducts.length > 0) {
+        setSelectedProduct(res.topStockoutRisks[0] || res.allProducts[0]);
+      } else if (res.topStockoutRisks.length > 0) {
         setSelectedProduct(res.topStockoutRisks[0]);
       } else if (res.topRevenueGenerators.length > 0) {
         setSelectedProduct(res.topRevenueGenerators[0]);
@@ -197,8 +199,11 @@ export default function SellerDemandInsightsPage() {
   };
 
   // Filtered Product List for Matrix
-  const filteredProducts = (overview?.topStockoutRisks || [])
-    .concat(overview?.topRevenueGenerators || [])
+  const allAvailableProducts = overview?.allProducts && overview.allProducts.length > 0
+    ? overview.allProducts
+    : (overview?.topStockoutRisks || []).concat(overview?.topRevenueGenerators || []);
+
+  const filteredProducts = allAvailableProducts
     .filter((prod, index, self) => index === self.findIndex((p) => p.productId === prod.productId))
     .filter((p) => (riskFilter === "all" ? true : p.stockoutRisk === riskFilter));
 
@@ -334,8 +339,10 @@ export default function SellerDemandInsightsPage() {
                   </h4>
 
                   <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
-                    {(overview?.topStockoutRisks || [])
-                      .concat(overview?.topRevenueGenerators || [])
+                    {(overview?.allProducts && overview.allProducts.length > 0
+                      ? overview.allProducts
+                      : (overview?.topStockoutRisks || []).concat(overview?.topRevenueGenerators || [])
+                    )
                       .filter((p, i, self) => i === self.findIndex((x) => x.productId === p.productId))
                       .map((p) => {
                         const isSelected = selectedProduct?.productId === p.productId;
