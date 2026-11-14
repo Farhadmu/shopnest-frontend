@@ -10,13 +10,9 @@ import {
   Send,
   User,
   Sparkles,
-  ArrowRight,
-  TrendingDown,
-  AlertTriangle,
-  FileSpreadsheet,
-  PackageCheck,
   RefreshCw,
 } from "lucide-react";
+import { InfoTooltip } from "./InfoTooltip";
 
 interface Message {
   role: "user" | "assistant";
@@ -26,7 +22,7 @@ interface Message {
 }
 
 interface Props {
-  onTriggerAction?: (actionType: string, payload?: any) => void;
+  onTriggerAction?: (actionType: string, payload?: unknown) => void;
 }
 
 export function ProcurementChatWidget({ onTriggerAction }: Props) {
@@ -34,7 +30,7 @@ export function ProcurementChatWidget({ onTriggerAction }: Props) {
     {
       role: "assistant",
       content:
-        "Hello! I am **DemandIQ Procurement Analyst**. I continuously monitor your catalog velocity, stockout horizons, and supply chain lead times. Ask me any question about SKU risk, replenishment quantities, or disruption mitigation.",
+        "Hello! I am your **DemandIQ AI Procurement Analyst**.\n\nI continuously evaluate your store's live catalog inventory, daily sales velocity, stockout horizons, and supplier lead times.\n\nAsk me any question below or choose a quick prompt to analyze stockout risks, calculate exact reorder quantities, or simulate supply disruptions.",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
@@ -100,43 +96,48 @@ export function ProcurementChatWidget({ onTriggerAction }: Props) {
   };
 
   return (
-    <div className="flex h-[620px] flex-col rounded-2xl border border-border/60 bg-gradient-to-b from-card/95 via-card/80 to-card/50 shadow-md backdrop-blur-md overflow-hidden">
+    <div className="flex h-[520px] sm:h-[580px] md:h-[640px] flex-col rounded-2xl border border-border/60 bg-gradient-to-b from-card/95 via-card/85 to-card/60 shadow-md backdrop-blur-md overflow-hidden">
       {/* Top Header */}
-      <div className="flex items-center justify-between border-b border-border/40 bg-card/60 px-5 py-3.5 backdrop-blur-md">
+      <div className="flex items-center justify-between border-b border-border/40 bg-card/70 px-4 sm:px-5 py-3.5 backdrop-blur-md shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white shadow-sm">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white shadow-sm shrink-0">
             <Bot className="h-4 w-4" />
           </div>
           <div>
-            <h4 className="font-bold text-foreground text-xs flex items-center gap-1.5">
-              DemandIQ RAG Procurement Analyst
-              <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <h4 className="font-bold text-foreground text-xs sm:text-sm flex items-center gap-1.5">
+              <span>DemandIQ RAG Procurement Analyst</span>
+              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <InfoTooltip
+                title="RAG Procurement Analyst"
+                description="Retrieval-Augmented Generation (RAG) means the AI does not hallucinate answers — it directly fetches your active SKU catalog, current stock, and 7-day velocity to calculate recommendations mathematically."
+                whyItMatters="Gives you store-specific restocking math instead of generic e-commerce advice."
+              />
             </h4>
             <p className="text-[10px] text-muted-foreground">
-              Grounded in live inventory, burn rates & 98% service level EOQ calculations
+              Grounded in live stock, 7d/30d velocities & 98% SLA EOQ formulas
             </p>
           </div>
         </div>
       </div>
 
       {/* Message List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4">
         {messages.map((m, idx) => (
           <div
             key={idx}
-            className={`flex gap-3 ${m.role === "user" ? "justify-end" : "justify-start"}`}
+            className={`flex gap-2.5 sm:gap-3 ${m.role === "user" ? "justify-end" : "justify-start"}`}
           >
             {m.role === "assistant" && (
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
                 <Bot className="h-3.5 w-3.5" />
               </div>
             )}
 
             <div
-              className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs leading-relaxed shadow-sm ${
+              className={`max-w-[90%] sm:max-w-[85%] rounded-2xl px-3.5 sm:px-4 py-3 text-xs leading-relaxed shadow-sm ${
                 m.role === "user"
                   ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-medium"
-                  : "border border-border/60 bg-card/80 text-foreground backdrop-blur-sm"
+                  : "border border-border/60 bg-card/85 text-foreground backdrop-blur-sm"
               }`}
             >
               {/* Message text with basic markdown rendering */}
@@ -156,11 +157,11 @@ export function ProcurementChatWidget({ onTriggerAction }: Props) {
 
               {/* Summary Pills from AI */}
               {m.responseObj?.summaryPills && m.responseObj.summaryPills.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2 border-t border-border/40 pt-2.5">
+                <div className="mt-3 flex flex-wrap gap-1.5 border-t border-border/40 pt-2.5">
                   {m.responseObj.summaryPills.map((pill, pIdx) => (
                     <span
                       key={pIdx}
-                      className="rounded-full bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 text-[10px] font-semibold text-indigo-500"
+                      className="rounded-full bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 text-[10px] font-semibold text-indigo-400"
                     >
                       {pill.label}: <strong className="text-foreground">{pill.value}</strong>
                     </span>
@@ -176,11 +177,11 @@ export function ProcurementChatWidget({ onTriggerAction }: Props) {
                     {m.responseObj.citations.map((c, cIdx) => (
                       <div
                         key={cIdx}
-                        className="rounded-lg border border-border/40 bg-card/40 p-2 text-[10px]"
+                        className="rounded-lg border border-border/40 bg-card/50 p-2 text-[10px]"
                       >
-                        <div className="flex items-center justify-between font-mono font-bold text-indigo-500">
+                        <div className="flex items-center justify-between font-mono font-bold text-indigo-400">
                           <span>{c.sku}</span>
-                          <span className="text-rose-500">{c.daysRemaining}d left</span>
+                          <span className="text-rose-400">{c.daysRemaining}d left</span>
                         </div>
                         <p className="font-medium text-foreground truncate mt-0.5">{c.title}</p>
                         <p className="text-muted-foreground mt-0.5">
@@ -199,7 +200,7 @@ export function ProcurementChatWidget({ onTriggerAction }: Props) {
                     <button
                       key={aIdx}
                       onClick={() => onTriggerAction?.(act.actionType, act.payload)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-1 text-[10px] font-semibold text-indigo-500 hover:bg-indigo-500/20 transition-colors"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-1 text-[10px] font-semibold text-indigo-400 hover:bg-indigo-500/20 transition-colors"
                     >
                       <Sparkles className="h-3 w-3" />
                       {act.title}
@@ -222,11 +223,11 @@ export function ProcurementChatWidget({ onTriggerAction }: Props) {
         ))}
 
         {loading && (
-          <div className="flex gap-3 justify-start items-center text-xs text-muted-foreground">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
+          <div className="flex gap-2.5 justify-start items-center text-xs text-muted-foreground">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
               <RefreshCw className="h-3.5 w-3.5 animate-spin" />
             </div>
-            <div className="rounded-2xl border border-border/60 bg-card/60 px-4 py-2.5 shadow-sm backdrop-blur-sm">
+            <div className="rounded-2xl border border-border/60 bg-card/60 px-3.5 py-2 shadow-sm backdrop-blur-sm">
               <span className="font-mono text-[11px] animate-pulse">
                 Analyzing SKU burn rates & simulating replenishment horizons...
               </span>
@@ -237,14 +238,14 @@ export function ProcurementChatWidget({ onTriggerAction }: Props) {
       </div>
 
       {/* Quick Prompts Bar */}
-      <div className="border-t border-border/40 bg-card/30 p-2.5">
+      <div className="border-t border-border/40 bg-card/30 p-2 sm:p-2.5 shrink-0">
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           {quickPrompts.map((qp, qIdx) => (
             <button
               key={qIdx}
               onClick={() => handleSend(qp)}
               disabled={loading}
-              className="shrink-0 rounded-full border border-border/60 bg-card/60 px-3 py-1 text-[10px] font-medium text-muted-foreground hover:border-indigo-500/40 hover:text-indigo-500 hover:bg-indigo-500/5 transition-all disabled:opacity-50"
+              className="shrink-0 rounded-full border border-border/60 bg-card/60 px-3 py-1 text-[10px] font-medium text-muted-foreground hover:border-indigo-500/40 hover:text-indigo-400 hover:bg-indigo-500/5 transition-all disabled:opacity-50"
             >
               {qp}
             </button>
@@ -258,7 +259,7 @@ export function ProcurementChatWidget({ onTriggerAction }: Props) {
           e.preventDefault();
           handleSend();
         }}
-        className="flex items-center gap-2 border-t border-border/40 bg-card/60 p-3 backdrop-blur-md"
+        className="flex items-center gap-2 border-t border-border/40 bg-card/70 p-2.5 sm:p-3 backdrop-blur-md shrink-0"
       >
         <input
           type="text"
@@ -271,7 +272,7 @@ export function ProcurementChatWidget({ onTriggerAction }: Props) {
         <button
           type="submit"
           disabled={!input.trim() || loading}
-          className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md hover:from-indigo-500 hover:to-violet-500 transition-all disabled:opacity-40"
+          className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md hover:from-indigo-500 hover:to-violet-500 transition-all active:scale-95 disabled:opacity-40 shrink-0"
         >
           <Send className="h-3.5 w-3.5" />
         </button>

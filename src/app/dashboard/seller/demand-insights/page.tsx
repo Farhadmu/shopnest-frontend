@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import Link from "next/link";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   DashboardShell,
@@ -27,115 +26,108 @@ import { TimeSeriesForecastChart } from "@/components/demandiq/TimeSeriesForecas
 import { SupplyChainShockSimulator } from "@/components/demandiq/SupplyChainShockSimulator";
 import { ProcurementChatWidget } from "@/components/demandiq/ProcurementChatWidget";
 import { PurchaseOrderModal } from "@/components/demandiq/PurchaseOrderModal";
+import { DemandIQGuideModal } from "@/components/demandiq/DemandIQGuideModal";
+import { InfoTooltip } from "@/components/demandiq/InfoTooltip";
 import { toast } from "@/context/ToastContext";
 import {
   Search,
-  Camera,
   Sparkles,
   TrendingUp,
-  AlertCircle,
   AlertTriangle,
-  CheckCircle,
   PlusCircle,
-  ExternalLink,
-  Filter,
   RefreshCw,
-  Eye,
   X,
-  Package,
-  Clock,
-  Layers,
-  Tag,
   Check,
-  ChevronRight,
-  ArrowUpRight,
-  Copy,
   Calendar,
-  Palette,
-  ShoppingBag,
-  Sliders,
   Bot,
   FileSpreadsheet,
-  Activity,
   ShieldCheck,
   Ship,
-  TrendingDown,
   Info,
+  BookOpen,
 } from "lucide-react";
+
+type TabId =
+  | "forecasting"
+  | "stockouts"
+  | "simulator"
+  | "analyst"
+  | "po_planner"
+  | "market_demands";
 
 export default function SellerDemandInsightsPage() {
   const router = useRouter();
 
   // Active Tab State
-  const [activeTab, setActiveTab] = useState<
-    "forecasting" | "stockouts" | "simulator" | "analyst" | "po_planner" | "market_demands"
-  >("forecasting");
+  const [activeTab, setActiveTab] = useState<TabId>("forecasting");
+
+  // Guide Modal State
+  const [guideModalOpen, setGuideModalOpen] = useState(false);
 
   // DemandIQ Overview Data
   const [demandiqLoading, setDemandiqLoading] = useState(true);
   const [overview, setOverview] = useState<DemandIQOverview | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<ProductDemandMetrics | null>(null);
   const [riskFilter, setRiskFilter] = useState<"all" | StockoutRiskLevel>("all");
+  const [productSearch, setProductSearch] = useState("");
 
   // Purchase Order State
   const [poModalOpen, setPoModalOpen] = useState(false);
   const [poData, setPoData] = useState<PurchaseOrderProposal | null>(null);
   const [generatingPo, setGeneratingPo] = useState(false);
 
-  // Legacy Visual Search Demand State (Preserved 100%)
+  // Visual Search Demand State
   const [visualLoading, setVisualLoading] = useState(true);
   const [visualData, setVisualData] = useState<SellerDemandInsightsResponse | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<"today" | "7d" | "30d" | "all">("all");
   const [selectedStatus, setSelectedStatus] = useState<"all" | "unmet" | "matched">("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeModalItem, setActiveModalItem] = useState<VisualSearchDemandItem | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  // Fetch DemandIQ Data
-  const fetchDemandIQ = useCallback(async () => {
-    try {
-      setDemandiqLoading(true);
-      const res = await getDemandIQOverview();
-      setOverview(res);
-      if (res.allProducts && res.allProducts.length > 0) {
-        setSelectedProduct(res.topStockoutRisks[0] || res.allProducts[0]);
-      } else if (res.topStockoutRisks.length > 0) {
-        setSelectedProduct(res.topStockoutRisks[0]);
-      } else if (res.topRevenueGenerators.length > 0) {
-        setSelectedProduct(res.topRevenueGenerators[0]);
-      }
-    } catch (err) {
-      console.error("DemandIQ fetch error:", err);
-      toast.error("Failed to load DemandIQ forecasting data");
-    } finally {
-      setDemandiqLoading(false);
-    }
-  }, []);
-
-  // Fetch Visual Search Demands
-  const fetchVisualDemands = useCallback(async () => {
-    try {
-      setVisualLoading(true);
-      const res = await getSellerDemandInsights({
-        category: selectedCategory !== "all" ? selectedCategory : undefined,
-        status: selectedStatus !== "all" ? selectedStatus : undefined,
-        search: searchQuery.trim() || undefined,
-        period: selectedPeriod !== "all" ? selectedPeriod : undefined,
-        limit: 30,
-      });
-      setVisualData(res);
-    } catch {
-      toast.error("Failed to load visual search demands");
-    } finally {
-      setVisualLoading(false);
-    }
-  }, [selectedCategory, selectedStatus, searchQuery, selectedPeriod]);
-
+  // Fetch DemandIQ & Visual Demands data
   useEffect(() => {
-    fetchDemandIQ();
-    fetchVisualDemands();
-  }, [fetchDemandIQ, fetchVisualDemands]);
+    let isMounted = true;
+    async function loadData() {
+      try {
+        const [demandRes, visualRes] = await Promise.all([
+          getDemandIQOverview(),
+          getSellerDemandInsights({
+            category: selectedCategory !== "all" ? selectedCategory : undefined,
+            status: selectedStatus !== "all" ? selectedStatus : undefined,
+            search: searchQuery.trim() || undefined,
+            period: selectedPeriod !== "all" ? selectedPeriod : undefined,
+            limit: 30,
+          }),
+        ]);
+
+        if (isMounted) {
+          setOverview(demandRes);
+          if (demandRes.allProducts && demandRes.allProducts.length > 0) {
+            setSelectedProduct(demandRes.topStockoutRisks[0] || demandRes.allProducts[0]);
+          } else if (demandRes.topStockoutRisks.length > 0) {
+            setSelectedProduct(demandRes.topStockoutRisks[0]);
+          } else if (demandRes.topRevenueGenerators.length > 0) {
+            setSelectedProduct(demandRes.topRevenueGenerators[0]);
+          }
+          setVisualData(visualRes);
+        }
+      } catch (err) {
+        console.error("DemandIQ fetch error:", err);
+        toast.error("Failed to load DemandIQ data");
+      } finally {
+        if (isMounted) {
+          setDemandiqLoading(false);
+          setVisualLoading(false);
+        }
+      }
+    }
+
+    loadData();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedCategory, selectedStatus, searchQuery, selectedPeriod]);
 
   // Generate Purchase Order Handler
   const handleGeneratePO = async (targetSla: number = 98) => {
@@ -166,9 +158,6 @@ export default function SellerDemandInsightsPage() {
           demands: prev.demands.map((d) => (d._id === item._id ? { ...d, status: newStatus } : d)),
         };
       });
-      if (activeModalItem?._id === item._id) {
-        setActiveModalItem((prev) => (prev ? { ...prev, status: newStatus } : null));
-      }
     } catch {
       toast.error("Failed to update status");
     } finally {
@@ -198,14 +187,64 @@ export default function SellerDemandInsightsPage() {
     trendingProductTypes: [],
   };
 
-  // Filtered Product List for Matrix
-  const allAvailableProducts = overview?.allProducts && overview.allProducts.length > 0
-    ? overview.allProducts
-    : (overview?.topStockoutRisks || []).concat(overview?.topRevenueGenerators || []);
+  // Filtered Product List for Matrix & Selector
+  const allAvailableProducts = useMemo(() => {
+    if (overview?.allProducts && overview.allProducts.length > 0) {
+      return overview.allProducts;
+    }
+    return (overview?.topStockoutRisks || []).concat(overview?.topRevenueGenerators || []);
+  }, [overview]);
 
-  const filteredProducts = allAvailableProducts
-    .filter((prod, index, self) => index === self.findIndex((p) => p.productId === prod.productId))
-    .filter((p) => (riskFilter === "all" ? true : p.stockoutRisk === riskFilter));
+  const uniqueProducts = useMemo(() => {
+    return allAvailableProducts.filter(
+      (prod, index, self) => index === self.findIndex((p) => p.productId === prod.productId)
+    );
+  }, [allAvailableProducts]);
+
+  const filteredProducts = useMemo(() => {
+    return uniqueProducts.filter((p) => (riskFilter === "all" ? true : p.stockoutRisk === riskFilter));
+  }, [uniqueProducts, riskFilter]);
+
+  const searchedSelectorProducts = useMemo(() => {
+    if (!productSearch.trim()) return uniqueProducts;
+    const term = productSearch.toLowerCase();
+    return uniqueProducts.filter(
+      (p) => p.title.toLowerCase().includes(term) || p.sku.toLowerCase().includes(term)
+    );
+  }, [uniqueProducts, productSearch]);
+
+  const tabDescriptions: Record<TabId, { title: string; subtitle: string; tip: string }> = {
+    forecasting: {
+      title: "14-Day Sales Velocity & AI Time-Series Forecast",
+      subtitle: "Observe daily demand trends and 95% confidence intervals to plan stock with pinpoint accuracy.",
+      tip: "Select any SKU from the right column to inspect its sales velocity curve and safety buffer.",
+    },
+    stockouts: {
+      title: "Stockout Prevention Matrix & SKU Runway",
+      subtitle: "Filter your entire catalog by days of supply remaining to catch stockouts before customer impact.",
+      tip: "Pay immediate attention to Critical (<3.5d) SKUs — these will deplete before normal supplier lead times.",
+    },
+    simulator: {
+      title: "Supply Chain Shock & Disruption Modeling",
+      subtitle: "Stress-test inventory against port delays, supplier shutdowns, and viral demand spikes.",
+      tip: "Drag the sliders to model 'what-if' scenarios and review the instant AI mitigation playbook.",
+    },
+    analyst: {
+      title: "DemandIQ RAG AI Procurement Specialist",
+      subtitle: "Chat with an AI analyst grounded in your real-time store stock, daily velocities, and EOQ math.",
+      tip: "Click any quick prompt below or ask custom questions about upcoming supplier reorders.",
+    },
+    po_planner: {
+      title: "Automated EOQ Replenishment Engine",
+      subtitle: "Instantly draft vendor-ready Purchase Orders calculated with Gaussian safety buffers.",
+      tip: "Generates optimal reorder batch sizes to balance delivery shipping costs against warehouse storage.",
+    },
+    market_demands: {
+      title: "Collective Market Demands & Visual Search Gaps",
+      subtitle: "High-intent buyer searches where zero merchants currently have stock (Untapped Profit Opportunities).",
+      tip: "Click 'Stock Product' on any gap item to immediately add it to your catalog with pre-filled AI details.",
+    },
+  };
 
   return (
     <DashboardShell
@@ -216,32 +255,51 @@ export default function SellerDemandInsightsPage() {
     >
       <div className="space-y-6">
         {/* Executive Banner */}
-        <div className="relative overflow-hidden rounded-3xl border border-indigo-500/30 bg-gradient-to-r from-indigo-950/60 via-purple-950/40 to-card/80 p-6 shadow-xl backdrop-blur-xl">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+        <div className="relative overflow-hidden rounded-3xl border border-indigo-500/30 bg-gradient-to-r from-indigo-950/70 via-purple-950/50 to-card/90 p-5 sm:p-6 shadow-xl backdrop-blur-xl">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
             <div className="space-y-2 max-w-2xl">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 px-3 py-0.5 text-xs font-bold text-indigo-300">
                   <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
                   DemandIQ AI Engine Active
+                  <InfoTooltip
+                    title="DemandIQ AI Engine"
+                    description="Continuously tracks your product order rates, historical seasonal patterns, and inventory depletion speeds to prevent stockouts."
+                  />
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 px-3 py-0.5 text-xs font-bold text-emerald-300">
                   <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
                   Target SLA: 98.0% Service Level
+                  <InfoTooltip
+                    title="Target SLA (Service Level Agreement)"
+                    description="A mathematical safety benchmark guaranteeing 98 out of 100 customer purchases can be fulfilled immediately without backorders."
+                  />
                 </span>
               </div>
-              <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                 Predict Stockouts Before They Occur. Protect Store Revenue.
               </h2>
-              <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
-                Utilizing time-series machine learning, burn-rate velocity sensing, and maritime supply chain shock modeling to ensure you never miss customer demand.
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Utilizing time-series machine learning, burn-rate velocity sensing, and maritime supply chain shock modeling to ensure your store never misses customer demand.
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 shrink-0">
+            {/* Quick Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto shrink-0">
               <button
+                type="button"
+                onClick={() => setGuideModalOpen(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 px-4 py-2.5 text-xs font-bold text-indigo-300 transition-all active:scale-95 shadow-sm"
+              >
+                <BookOpen className="h-4 w-4 text-indigo-400" />
+                📖 DemandIQ Guide & Glossary
+              </button>
+
+              <button
+                type="button"
                 onClick={() => handleGeneratePO(98)}
                 disabled={generatingPo}
-                className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-600 px-5 py-3 text-xs font-bold text-white shadow-lg hover:from-indigo-400 hover:to-violet-500 transition-all active:scale-95 disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg hover:from-indigo-400 hover:to-violet-500 transition-all active:scale-95 disabled:opacity-50"
               >
                 {generatingPo ? (
                   <RefreshCw className="h-4 w-4 animate-spin" />
@@ -254,65 +312,131 @@ export default function SellerDemandInsightsPage() {
           </div>
         </div>
 
-        {/* Executive KPI Metrics Grid */}
+        {/* Executive KPI Metrics Grid with Explanations */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            label="Tracked Catalog SKUs"
-            value={(overview?.totalTrackedProducts || 0).toString()}
-            icon="📦"
-            note={`${overview?.healthyStockCount || 0} in optimal stock buffer`}
-            color="default"
-          />
-          <StatCard
-            label="Critical Stockouts (< 3.5d)"
-            value={(overview?.criticalStockoutsCount || 0).toString()}
-            icon="🚨"
-            note="Will run out before next delivery"
-            color="error"
-          />
-          <StatCard
-            label="30-Day Revenue at Risk"
-            value={`$${(overview?.totalRevenueAtRisk30d || 0).toLocaleString()}`}
-            icon="💸"
-            note="Projected lost sales without reorders"
-            color="error"
-          />
-          <StatCard
-            label="Avg Days of Supply"
-            value={`${overview?.averageDaysOfSupply || 0}d`}
-            icon="⏳"
-            note="Store inventory turnover runway"
-            color="accent"
-          />
+          <div className="relative group">
+            <StatCard
+              label="Tracked Catalog SKUs"
+              value={(overview?.totalTrackedProducts || 0).toString()}
+              icon="📦"
+              note={`${overview?.healthyStockCount || 0} in optimal stock buffer`}
+              color="default"
+            />
+            <div className="absolute top-3 right-3">
+              <InfoTooltip
+                title="Tracked Catalog SKUs"
+                description="Total unique product variants actively monitored by DemandIQ for velocity and stockout horizon."
+              />
+            </div>
+          </div>
+
+          <div className="relative group">
+            <StatCard
+              label="Critical Stockouts (< 3.5d)"
+              value={(overview?.criticalStockoutsCount || 0).toString()}
+              icon="🚨"
+              note="Will run out before next delivery"
+              color="error"
+            />
+            <div className="absolute top-3 right-3">
+              <InfoTooltip
+                title="Critical Stockouts (< 3.5 Days)"
+                description="Products that will completely deplete within 3.5 days at your current sales rate. Immediate supplier orders needed!"
+              />
+            </div>
+          </div>
+
+          <div className="relative group">
+            <StatCard
+              label="30-Day Revenue at Risk"
+              value={`$${(overview?.totalRevenueAtRisk30d || 0).toLocaleString()}`}
+              icon="💸"
+              note="Projected lost sales without reorders"
+              color="error"
+            />
+            <div className="absolute top-3 right-3">
+              <InfoTooltip
+                title="30-Day Revenue at Risk"
+                description="Estimated gross dollar sales your store will lose if critical SKUs stock out and are not replenished."
+              />
+            </div>
+          </div>
+
+          <div className="relative group">
+            <StatCard
+              label="Avg Days of Supply"
+              value={`${overview?.averageDaysOfSupply || 0}d`}
+              icon="⏳"
+              note="Store inventory turnover runway"
+              color="accent"
+            />
+            <div className="absolute top-3 right-3">
+              <InfoTooltip
+                title="Average Days of Supply (Runway)"
+                description="The average number of days your entire inventory can sustain current sales velocity before running dry."
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 border-b border-border/60 pb-1 overflow-x-auto scrollbar-none">
-          {[
-            { id: "forecasting", label: "Demand Forecasting & Time-Series", icon: TrendingUp },
-            { id: "stockouts", label: "Stockout Prevention & Risk Matrix", icon: AlertTriangle },
-            { id: "simulator", label: "Supply Chain Shock Simulator", icon: Ship },
-            { id: "analyst", label: "Ask DemandIQ (RAG AI Analyst)", icon: Bot },
-            { id: "po_planner", label: "Smart Purchase Orders", icon: FileSpreadsheet },
-            { id: "market_demands", label: "Collective Market Demands", icon: Camera },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`inline-flex items-center gap-2 shrink-0 rounded-2xl px-4 py-2.5 text-xs font-bold transition-all ${
-                  isActive
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {tab.label}
-              </button>
-            );
-          })}
+        {/* Navigation Tabs - Responsive Scroll */}
+        <div className="border-b border-border/60 pb-1">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1 -mx-2 px-2 sm:mx-0 sm:px-0">
+            {(
+              [
+                { id: "forecasting", label: "Demand Forecasting", badge: "AI Chart", icon: TrendingUp },
+                { id: "stockouts", label: "Stockout Prevention", badge: "Risk Matrix", icon: AlertTriangle },
+                { id: "simulator", label: "Disruption Simulator", badge: "Stress Test", icon: Ship },
+                { id: "analyst", label: "Ask DemandIQ", badge: "AI Chat", icon: Bot },
+                { id: "po_planner", label: "Smart Purchase Orders", badge: "Auto EOQ", icon: FileSpreadsheet },
+                { id: "market_demands", label: "Collective Demands", badge: "Visual Search", icon: Sparkles },
+              ] as const
+            ).map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`inline-flex items-center gap-2 shrink-0 rounded-2xl px-3.5 sm:px-4 py-2.5 text-xs font-bold transition-all relative ${
+                    isActive
+                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/25 ring-2 ring-indigo-500/30"
+                      : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                  }`}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span>{tab.label}</span>
+                  <span
+                    className={`hidden sm:inline-block rounded-md px-1.5 py-0.5 text-[9px] font-semibold ${
+                      isActive ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {tab.badge}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Active Tab Explainer Banner */}
+        <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-3.5 sm:p-4 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex items-start sm:items-center gap-2.5">
+            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/15 text-indigo-400 shrink-0 mt-0.5 sm:mt-0">
+              <Info className="h-3.5 w-3.5" />
+            </span>
+            <div>
+              <p className="font-bold text-foreground">
+                {tabDescriptions[activeTab]?.title}
+              </p>
+              <p className="text-muted-foreground text-[11px]">
+                {tabDescriptions[activeTab]?.subtitle}
+              </p>
+            </div>
+          </div>
+          <span className="text-[10px] text-indigo-400 font-medium sm:text-right shrink-0">
+            💡 {tabDescriptions[activeTab]?.tip}
+          </span>
         </div>
 
         {/* TAB 1: DEMAND FORECASTING & TIME-SERIES */}
@@ -329,22 +453,50 @@ export default function SellerDemandInsightsPage() {
                   <TimeSeriesForecastChart product={selectedProduct} />
                 </div>
 
-                {/* Product Selector Column */}
-                <div className="rounded-2xl border border-border/60 bg-card/60 p-5 shadow-sm backdrop-blur-md">
-                  <h4 className="font-bold text-foreground text-sm flex items-center justify-between border-b border-border/40 pb-3 mb-3">
-                    <span>Select Product to Inspect</span>
-                    <span className="text-[10px] text-muted-foreground font-mono">
-                      {overview?.topStockoutRisks.length || 0} Critical
-                    </span>
-                  </h4>
+                {/* Product Selector Column with Search */}
+                <div className="rounded-2xl border border-border/60 bg-card/60 p-4 sm:p-5 shadow-sm backdrop-blur-md">
+                  <div className="border-b border-border/40 pb-3 mb-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-foreground text-sm flex items-center gap-1.5">
+                        <span>Select SKU to Inspect</span>
+                        <InfoTooltip
+                          title="Product Selector"
+                          description="Click any product below to render its time-series sales curve and calculate its reorder threshold."
+                        />
+                      </h4>
+                      <span className="text-[10px] text-muted-foreground font-mono bg-muted/40 px-2 py-0.5 rounded">
+                        {overview?.topStockoutRisks.length || 0} Critical
+                      </span>
+                    </div>
 
-                  <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
-                    {(overview?.allProducts && overview.allProducts.length > 0
-                      ? overview.allProducts
-                      : (overview?.topStockoutRisks || []).concat(overview?.topRevenueGenerators || [])
-                    )
-                      .filter((p, i, self) => i === self.findIndex((x) => x.productId === p.productId))
-                      .map((p) => {
+                    {/* Quick SKU search input */}
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                      <input
+                        type="text"
+                        value={productSearch}
+                        onChange={(e) => setProductSearch(e.target.value)}
+                        placeholder="Search SKU or title..."
+                        className="w-full rounded-xl border border-border/60 bg-card/80 pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      />
+                      {productSearch && (
+                        <button
+                          onClick={() => setProductSearch("")}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1 scrollbar-thin">
+                    {searchedSelectorProducts.length === 0 ? (
+                      <p className="text-center py-6 text-xs text-muted-foreground">
+                        No SKUs match &quot;{productSearch}&quot;.
+                      </p>
+                    ) : (
+                      searchedSelectorProducts.map((p) => {
                         const isSelected = selectedProduct?.productId === p.productId;
                         return (
                           <button
@@ -357,17 +509,17 @@ export default function SellerDemandInsightsPage() {
                             }`}
                           >
                             <div className="flex items-center justify-between">
-                              <span className="font-mono text-[10px] font-bold text-indigo-500">{p.sku}</span>
+                              <span className="font-mono text-[10px] font-bold text-indigo-400">{p.sku}</span>
                               <span
                                 className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${
                                   p.stockoutRisk === "critical"
-                                    ? "bg-rose-500/10 text-rose-500"
+                                    ? "bg-rose-500/10 text-rose-400"
                                     : p.stockoutRisk === "warning"
-                                    ? "bg-amber-500/10 text-amber-500"
-                                    : "bg-emerald-500/10 text-emerald-500"
+                                    ? "bg-amber-500/10 text-amber-400"
+                                    : "bg-emerald-500/10 text-emerald-400"
                                 }`}
                               >
-                                {p.daysOfSupply}d Left
+                                {p.daysOfSupply}d Runway
                               </span>
                             </div>
                             <p className="font-semibold text-xs text-foreground truncate mt-1">{p.title}</p>
@@ -377,7 +529,8 @@ export default function SellerDemandInsightsPage() {
                             </div>
                           </button>
                         );
-                      })}
+                      })
+                    )}
                   </div>
                 </div>
               </div>
@@ -392,25 +545,29 @@ export default function SellerDemandInsightsPage() {
         {/* TAB 2: STOCKOUT PREVENTION & RISK MATRIX */}
         {activeTab === "stockouts" && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            {/* Filter Pills */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-1.5 rounded-2xl bg-card border border-border/60 p-1.5 text-xs">
+            {/* Filter Pills & Actions */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-1.5 rounded-2xl bg-card border border-border/60 p-1.5 text-xs overflow-x-auto scrollbar-none">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase px-2 hidden sm:inline">
+                  Filter:
+                </span>
                 {(
                   [
-                    { id: "all", label: "All Items" },
-                    { id: "critical", label: "Critical (< 3.5d)" },
-                    { id: "warning", label: "Warning (3.5 - 8d)" },
-                    { id: "healthy", label: "Healthy" },
-                    { id: "overstocked", label: "Overstocked" },
+                    { id: "all", label: "All Items", tip: "View complete catalog inventory" },
+                    { id: "critical", label: "Critical (< 3.5d)", tip: "Runs out in <3.5 days! Immediate reorder required" },
+                    { id: "warning", label: "Warning (3.5 - 8d)", tip: "Depleting in 3.5 to 8 days. Plan reorder now" },
+                    { id: "healthy", label: "Healthy", tip: "Stock levels are optimal with safe buffers" },
+                    { id: "overstocked", label: "Overstocked", tip: "Excess inventory tying up working capital" },
                   ] as const
                 ).map((f) => (
                   <button
                     key={f.id}
                     onClick={() => setRiskFilter(f.id)}
-                    className={`rounded-xl px-3 py-1 font-semibold transition ${
+                    title={f.tip}
+                    className={`rounded-xl px-3 py-1 font-semibold transition whitespace-nowrap text-xs ${
                       riskFilter === f.id
                         ? "bg-indigo-600 text-white shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
                     }`}
                   >
                     {f.label}
@@ -420,91 +577,236 @@ export default function SellerDemandInsightsPage() {
 
               <button
                 onClick={() => handleGeneratePO(98)}
-                className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow hover:bg-indigo-500 transition"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow hover:bg-indigo-500 transition active:scale-95"
               >
                 <FileSpreadsheet className="h-3.5 w-3.5" />
                 Add All Critical to PO
               </button>
             </div>
 
-            {/* Matrix Table */}
-            <div className="overflow-hidden rounded-2xl border border-border/60 bg-card/60 shadow-sm backdrop-blur-md">
+            {/* Matrix Table: Desktop View */}
+            <div className="hidden md:block overflow-hidden rounded-2xl border border-border/60 bg-card/60 shadow-sm backdrop-blur-md">
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-border/40 bg-muted/30 text-[10px] text-muted-foreground uppercase text-left">
-                      <th className="p-3.5">SKU & Title</th>
+                      <th className="p-3.5">
+                        <span className="inline-flex items-center gap-1">
+                          SKU & Title
+                          <InfoTooltip
+                            title="SKU & Title"
+                            description="Stock Keeping Unit identification code and product name."
+                          />
+                        </span>
+                      </th>
                       <th className="p-3.5">Category</th>
-                      <th className="p-3.5 text-center">Current Stock</th>
-                      <th className="p-3.5 text-center">7-Day Velocity</th>
-                      <th className="p-3.5 text-center">Days Remaining</th>
-                      <th className="p-3.5 text-center">Risk Level</th>
-                      <th className="p-3.5 text-right">30d Revenue at Risk</th>
-                      <th className="p-3.5 text-center text-indigo-500 font-bold">Suggested Reorder</th>
+                      <th className="p-3.5 text-center">
+                        <span className="inline-flex items-center gap-1">
+                          Current Stock
+                          <InfoTooltip
+                            title="Current Stock"
+                            description="Actual units currently available on hand in warehouse."
+                          />
+                        </span>
+                      </th>
+                      <th className="p-3.5 text-center">
+                        <span className="inline-flex items-center gap-1">
+                          7-Day Velocity
+                          <InfoTooltip
+                            title="7-Day Velocity"
+                            description="Units sold per day on average over the last 7 days."
+                          />
+                        </span>
+                      </th>
+                      <th className="p-3.5 text-center">
+                        <span className="inline-flex items-center gap-1">
+                          Days Remaining
+                          <InfoTooltip
+                            title="Days Remaining (Runway)"
+                            description="Current stock divided by daily sales speed. Days until complete stockout."
+                          />
+                        </span>
+                      </th>
+                      <th className="p-3.5 text-center">
+                        <span className="inline-flex items-center gap-1">
+                          Risk Level
+                          <InfoTooltip
+                            title="Stockout Risk Level"
+                            description="Critical (<3.5d), Warning (3.5-8d), Healthy (8-30d), Overstocked (>30d)."
+                          />
+                        </span>
+                      </th>
+                      <th className="p-3.5 text-right">
+                        <span className="inline-flex items-center gap-1">
+                          30d Lost Revenue
+                          <InfoTooltip
+                            title="30-Day Revenue at Risk"
+                            description="Estimated dollar sales lost over 30 days if this item is not replenished."
+                          />
+                        </span>
+                      </th>
+                      <th className="p-3.5 text-center text-indigo-400 font-bold">
+                        <span className="inline-flex items-center gap-1">
+                          Suggested Reorder
+                          <InfoTooltip
+                            title="Suggested Reorder Quantity"
+                            description="Economic Order Quantity (EOQ) calculated to cover demand + safety buffer."
+                          />
+                        </span>
+                      </th>
                       <th className="p-3.5 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/30">
-                    {filteredProducts.map((p) => (
-                      <tr key={p.productId} className="hover:bg-muted/20 transition-colors">
-                        <td className="p-3.5">
-                          <span className="font-mono text-[10px] font-bold text-indigo-500 block">{p.sku}</span>
-                          <span className="font-semibold text-foreground text-xs max-w-[220px] truncate block">
-                            {p.title}
-                          </span>
-                        </td>
-                        <td className="p-3.5 text-muted-foreground">{p.category}</td>
-                        <td className="p-3.5 text-center font-mono font-bold text-foreground">
-                          {p.currentStock} units
-                        </td>
-                        <td className="p-3.5 text-center font-mono text-muted-foreground">
-                          {p.dailyVelocity7d} u/d
-                        </td>
-                        <td className="p-3.5 text-center font-mono font-bold">
-                          {p.daysOfSupply} days
-                        </td>
-                        <td className="p-3.5 text-center">
-                          <span
-                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${
-                              p.stockoutRisk === "critical"
-                                ? "bg-rose-500/10 text-rose-500 border border-rose-500/20"
-                                : p.stockoutRisk === "warning"
-                                ? "bg-amber-500/10 text-amber-500 border border-amber-500/20"
-                                : p.stockoutRisk === "overstocked"
-                                ? "bg-purple-500/10 text-purple-500 border border-purple-500/20"
-                                : "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-                            }`}
-                          >
-                            {p.stockoutRisk}
-                          </span>
-                        </td>
-                        <td className="p-3.5 text-right font-mono font-bold">
-                          {p.revenueAtRisk > 0 ? (
-                            <span className="text-rose-500">${p.revenueAtRisk.toLocaleString()}</span>
-                          ) : (
-                            <span className="text-emerald-500">$0</span>
-                          )}
-                        </td>
-                        <td className="p-3.5 text-center font-mono font-black text-indigo-600 bg-indigo-500/5">
-                          +{p.recommendedReorderQty} units
-                        </td>
-                        <td className="p-3.5 text-right">
-                          <button
-                            onClick={() => {
-                              setSelectedProduct(p);
-                              setActiveTab("forecasting");
-                            }}
-                            className="inline-flex items-center gap-1 rounded-lg border border-border/60 bg-card px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-muted transition"
-                          >
-                            <TrendingUp className="h-3 w-3 text-indigo-500" />
-                            Chart
-                          </button>
+                    {filteredProducts.length === 0 ? (
+                      <tr>
+                        <td colSpan={9} className="p-8 text-center text-xs text-muted-foreground">
+                          No products found matching this filter criteria.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      filteredProducts.map((p) => (
+                        <tr key={p.productId} className="hover:bg-muted/20 transition-colors">
+                          <td className="p-3.5">
+                            <span className="font-mono text-[10px] font-bold text-indigo-400 block">{p.sku}</span>
+                            <span className="font-semibold text-foreground text-xs max-w-[220px] truncate block">
+                              {p.title}
+                            </span>
+                          </td>
+                          <td className="p-3.5 text-muted-foreground">{p.category}</td>
+                          <td className="p-3.5 text-center font-mono font-bold text-foreground">
+                            {p.currentStock} units
+                          </td>
+                          <td className="p-3.5 text-center font-mono text-muted-foreground">
+                            {p.dailyVelocity7d} u/d
+                          </td>
+                          <td className="p-3.5 text-center font-mono font-bold">
+                            {p.daysOfSupply} days
+                          </td>
+                          <td className="p-3.5 text-center">
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${
+                                p.stockoutRisk === "critical"
+                                  ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                                  : p.stockoutRisk === "warning"
+                                  ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                                  : p.stockoutRisk === "overstocked"
+                                  ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                                  : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                              }`}
+                            >
+                              {p.stockoutRisk}
+                            </span>
+                          </td>
+                          <td className="p-3.5 text-right font-mono font-bold">
+                            {p.revenueAtRisk > 0 ? (
+                              <span className="text-rose-400">${p.revenueAtRisk.toLocaleString()}</span>
+                            ) : (
+                              <span className="text-emerald-400">$0</span>
+                            )}
+                          </td>
+                          <td className="p-3.5 text-center font-mono font-black text-indigo-400 bg-indigo-500/5">
+                            +{p.recommendedReorderQty} units
+                          </td>
+                          <td className="p-3.5 text-right">
+                            <button
+                              onClick={() => {
+                                setSelectedProduct(p);
+                                setActiveTab("forecasting");
+                              }}
+                              className="inline-flex items-center gap-1 rounded-lg border border-border/60 bg-card px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-muted transition"
+                            >
+                              <TrendingUp className="h-3 w-3 text-indigo-400" />
+                              Chart
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
+            </div>
+
+            {/* Matrix Cards: Mobile View (100% Responsive for Mobile Sellers) */}
+            <div className="block md:hidden space-y-3">
+              {filteredProducts.length === 0 ? (
+                <div className="p-8 text-center text-xs text-muted-foreground rounded-2xl border border-border/40 bg-card/40">
+                  No products found matching this filter criteria.
+                </div>
+              ) : (
+                filteredProducts.map((p) => (
+                  <div
+                    key={p.productId}
+                    className="rounded-2xl border border-border/60 bg-card/70 p-4 space-y-3 shadow-xs"
+                  >
+                    {/* Card Header */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="space-y-0.5">
+                        <span className="font-mono text-indigo-400 font-bold text-[10px]">{p.sku}</span>
+                        <h4 className="font-bold text-foreground text-xs leading-snug line-clamp-2">{p.title}</h4>
+                        <span className="text-[10px] text-muted-foreground">{p.category}</span>
+                      </div>
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase shrink-0 ${
+                          p.stockoutRisk === "critical"
+                            ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                            : p.stockoutRisk === "warning"
+                            ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                            : p.stockoutRisk === "overstocked"
+                            ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                            : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                        }`}
+                      >
+                        {p.stockoutRisk}
+                      </span>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 gap-2 text-[11px] bg-muted/20 border border-border/40 rounded-xl p-2.5">
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block">Stock On Hand:</span>
+                        <span className="font-mono font-bold text-foreground">{p.currentStock} units</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block">Sales Velocity:</span>
+                        <span className="font-mono font-bold text-muted-foreground">{p.dailyVelocity7d} u/day</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block">Days Remaining:</span>
+                        <span className={`font-mono font-bold ${p.daysOfSupply < 3.5 ? "text-rose-400" : "text-foreground"}`}>
+                          {p.daysOfSupply} days
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block">Revenue at Risk:</span>
+                        <span className={`font-mono font-bold ${p.revenueAtRisk > 0 ? "text-rose-400" : "text-emerald-400"}`}>
+                          ${p.revenueAtRisk.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Suggested Reorder & Actions */}
+                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/30">
+                      <div className="text-xs">
+                        <span className="text-[10px] text-muted-foreground block">Optimal Reorder:</span>
+                        <span className="font-mono font-bold text-indigo-400">+{p.recommendedReorderQty} units</span>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setSelectedProduct(p);
+                          setActiveTab("forecasting");
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-3 py-1.5 text-xs font-semibold text-indigo-400 hover:bg-indigo-500/20 transition"
+                      >
+                        <TrendingUp className="h-3.5 w-3.5" />
+                        <span>Inspect Chart</span>
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}
@@ -524,7 +826,7 @@ export default function SellerDemandInsightsPage() {
         {activeTab === "analyst" && (
           <div className="animate-in fade-in duration-200">
             <ProcurementChatWidget
-              onTriggerAction={(actionType, payload) => {
+              onTriggerAction={(actionType) => {
                 if (actionType === "generate_po") {
                   handleGeneratePO(98);
                 } else if (actionType === "simulate_shock") {
@@ -540,65 +842,95 @@ export default function SellerDemandInsightsPage() {
         {/* TAB 5: SMART PURCHASE ORDERS */}
         {activeTab === "po_planner" && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            <div className="rounded-3xl border border-border/60 bg-card/60 p-6 shadow-sm backdrop-blur-md">
+            <div className="rounded-3xl border border-border/60 bg-card/60 p-5 sm:p-6 shadow-sm backdrop-blur-md">
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border/40 pb-5">
                 <div>
                   <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                    <FileSpreadsheet className="h-4 w-4 text-indigo-500" />
+                    <FileSpreadsheet className="h-4 w-4 text-indigo-400" />
                     Automated EOQ Replenishment Engine
+                    <InfoTooltip
+                      title="Automated EOQ Replenishment Engine"
+                      description="Calculates exact reorder batches using the Economic Order Quantity (EOQ) formula combined with Gaussian safety buffers."
+                      whyItMatters="Takes the guesswork out of ordering from manufacturers and suppliers."
+                    />
                   </h3>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Generates official Purchase Orders calculated using Gaussian Inverse Safety Buffers to guarantee 98% Order Fulfillment.
+                  <p className="text-xs text-muted-foreground mt-1 max-w-2xl">
+                    Generates official Purchase Orders calculated using Gaussian Inverse Safety Buffers to guarantee 98% Order Fulfillment without capital waste.
                   </p>
                 </div>
 
                 <button
                   onClick={() => handleGeneratePO(98)}
                   disabled={generatingPo}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:from-indigo-500 hover:to-violet-500 transition-all disabled:opacity-50"
+                  className="w-full md:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:from-indigo-500 hover:to-violet-500 transition-all active:scale-95 disabled:opacity-50"
                 >
                   {generatingPo ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <FileSpreadsheet className="h-3.5 w-3.5" />}
                   Generate Fresh PO Proposal
                 </button>
               </div>
 
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="rounded-2xl border border-border/40 bg-card/40 p-4">
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground">Standard Lead Time</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground">Standard Lead Time</span>
+                    <InfoTooltip
+                      title="Standard Lead Time"
+                      description="Average duration from sending a Purchase Order until arrival at your inventory warehouse."
+                    />
+                  </div>
                   <p className="text-lg font-black text-foreground mt-1">6 Days Cycle</p>
                   <p className="text-[11px] text-muted-foreground mt-1">SME domestic manufacturer fulfillment buffer</p>
                 </div>
 
                 <div className="rounded-2xl border border-border/40 bg-card/40 p-4">
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground">Gaussian Z-Score</span>
-                  <p className="text-lg font-black text-indigo-500 mt-1">Z = 2.05 (98.0%)</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground">Gaussian Z-Score</span>
+                    <InfoTooltip
+                      title="Gaussian Z-Score (Z=2.05)"
+                      description="Statistical confidence multiplier representing a 98.0% probability that incoming orders will not be stocked out."
+                    />
+                  </div>
+                  <p className="text-lg font-black text-indigo-400 mt-1">Z = 2.05 (98.0%)</p>
                   <p className="text-[11px] text-muted-foreground mt-1">Confidence interval against demand volatility</p>
                 </div>
 
                 <div className="rounded-2xl border border-border/40 bg-card/40 p-4">
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground">Export Formats</span>
-                  <p className="text-lg font-black text-foreground mt-1">JSON, CSV, Print</p>
-                  <p className="text-[11px] text-muted-foreground mt-1">Directly importable into ERP and supplier portals</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground">Export Formats</span>
+                    <InfoTooltip
+                      title="Export Formats"
+                      description="Download as JSON, copy text to clipboard for WhatsApp/WeChat, or print directly as official PO."
+                    />
+                  </div>
+                  <p className="text-lg font-black text-foreground mt-1">JSON, Text, Print</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Directly importable into ERP and supplier chats</p>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* TAB 6: COLLECTIVE MARKET DEMANDS (VISUAL SEARCH) - PRESERVED 100% */}
+        {/* TAB 6: COLLECTIVE MARKET DEMANDS (VISUAL SEARCH) */}
         {activeTab === "market_demands" && (
           <div className="space-y-6 animate-in fade-in duration-200">
             {/* Top Notice with Time Period Switcher */}
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4.5 text-xs text-foreground">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4 sm:p-5 text-xs text-foreground">
               <div className="flex items-start gap-3.5">
-                <Sparkles className="mt-0.5 h-5 w-5 text-emerald-500 shrink-0" />
+                <Sparkles className="mt-0.5 h-5 w-5 text-emerald-400 shrink-0" />
                 <div className="space-y-1">
-                  <p className="font-extrabold text-sm text-foreground">
-                    Aggregated Customer Visual Demand Intelligence
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-extrabold text-sm text-foreground">
+                      Aggregated Customer Visual Demand Intelligence
+                    </p>
+                    <InfoTooltip
+                      title="Visual Search Demands"
+                      description="When buyers upload a photo or screenshot to find a product, ShopNest records the demand. If zero sellers have it, it's an unmet gap!"
+                      whyItMatters="Be the first seller to stock these items to capture 100% of these ready buyers."
+                    />
+                  </div>
                   <p className="text-muted-foreground leading-relaxed">
                     Every visual search generates real anonymized demand trends. When an item has{" "}
-                    <strong>0 in stock (Unmet Demand)</strong>, it represents an immediate market gap you can capture!
+                    <strong className="text-emerald-400">0 in stock (Unmet Demand)</strong>, it represents an immediate market gap you can capture!
                   </p>
                 </div>
               </div>
@@ -627,6 +959,66 @@ export default function SellerDemandInsightsPage() {
                     }`}
                   >
                     {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Filter controls for Category & Search */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card/60 border border-border/60 rounded-2xl p-3 text-xs">
+              <div className="flex items-center gap-2 flex-1">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Filter demands by title or keyword..."
+                    className="w-full rounded-xl border border-border/60 bg-card pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="rounded-lg border border-border/60 bg-card px-2.5 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                >
+                  <option value="all">All Categories</option>
+                  {visualMetrics.topCategories.map((c) => (
+                    <option key={c.category} value={c.category}>
+                      {c.category}
+                    </option>
+                  ))}
+                </select>
+
+                <span className="text-[11px] font-bold text-muted-foreground ml-1">Status:</span>
+                {(
+                  [
+                    { id: "all", label: "All" },
+                    { id: "unmet", label: "Unmet (0 stock)" },
+                    { id: "matched", label: "Stocked" },
+                  ] as const
+                ).map((st) => (
+                  <button
+                    key={st.id}
+                    onClick={() => setSelectedStatus(st.id)}
+                    className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${
+                      selectedStatus === st.id
+                        ? "bg-emerald-600 text-white shadow-sm"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                    }`}
+                  >
+                    {st.label}
                   </button>
                 ))}
               </div>
@@ -668,7 +1060,7 @@ export default function SellerDemandInsightsPage() {
               />
             </div>
 
-            {/* Demands Grid / Table */}
+            {/* Demands Grid */}
             <Panel title="Market Gap & Customer Demand Feed">
               {visualLoading ? (
                 <div className="py-12 text-center text-xs text-muted-foreground">Loading demands...</div>
@@ -681,15 +1073,15 @@ export default function SellerDemandInsightsPage() {
                     >
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-500">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
                             {item.detectedCategory || "General"}
                           </span>
                           <span
                             className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
                               (item.status as string) === "unmet" || item.status === "new"
-                                ? "bg-rose-500/10 text-rose-500"
+                                ? "bg-rose-500/10 text-rose-400"
                                 : item.status === "stocked"
-                                ? "bg-emerald-500/10 text-emerald-500"
+                                ? "bg-emerald-500/10 text-emerald-400"
                                 : "bg-muted text-muted-foreground"
                             }`}
                           >
@@ -705,7 +1097,8 @@ export default function SellerDemandInsightsPage() {
                       <div className="mt-4 flex items-center gap-2 pt-3 border-t border-border/40">
                         <button
                           onClick={() => handleStockProduct(item)}
-                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-500 transition"
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-500 transition active:scale-95"
+                          title="Auto-fills Add Product page with title, category, and tags"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
                           Stock Product
@@ -714,8 +1107,9 @@ export default function SellerDemandInsightsPage() {
                           onClick={() => handleMarkStatus(item, "stocked")}
                           disabled={updatingId === item._id}
                           className="rounded-xl border border-border/60 p-1.5 hover:bg-muted text-muted-foreground transition"
+                          title="Mark as stocked"
                         >
-                          <Check className="h-4 w-4 text-emerald-500" />
+                          <Check className="h-4 w-4 text-emerald-400" />
                         </button>
                       </div>
                     </div>
@@ -730,8 +1124,14 @@ export default function SellerDemandInsightsPage() {
           </div>
         )}
 
+        {/* DemandIQ Pro Guide Modal */}
+        <DemandIQGuideModal
+          isOpen={guideModalOpen}
+          onClose={() => setGuideModalOpen(false)}
+        />
+
         {/* Formal Purchase Order Modal */}
-        <PurchaseOrderModal po={poData} onClose={() => setPoModalOpen(false)} />
+        <PurchaseOrderModal po={poModalOpen ? poData : null} onClose={() => setPoModalOpen(false)} />
       </div>
     </DashboardShell>
   );
