@@ -7,7 +7,6 @@ import TrustFeatures from "@/components/home/TrustFeatures";
 import SellersSection from "@/components/home/SellersSection";
 import HowItWorksSection from "@/components/home/HowItWorksSection";
 import ProofSection from "@/components/home/ProofSection";
-import DevelopersBanner from "@/components/home/DevelopersBanner";
 import AiIntelligenceSection from "@/components/home/AiIntelligenceSection";
 import FeaturedProductsSection from "@/components/home/FeaturedProductsSection";
 import TrendingSection from "@/components/home/Trending/TrendingSection";
@@ -61,9 +60,6 @@ function HomePageContent() {
 
       {/* 11 — Reviews (static) */}
       <ProofSection />
-
-      {/* 12 — Engineering Spotlight */}
-      <DevelopersBanner />
     </div>
   );
 }
