@@ -7,8 +7,8 @@ import type { DashboardLink } from "@/components/dashboard/DashboardUI";
 const sampleLinks: DashboardLink[] = [
   { label: "Overview", href: "/dashboard/user", icon: "📊", description: "Shopping metrics.", group: "SHOP" },
   { label: "My Orders", href: "/dashboard/user/orders", icon: "📦", description: "Order timeline.", group: "SHOP", badge: "2" },
-  { label: "AI Copilot / Advisor", href: "/dashboard/user/ai-advisor", icon: "🤖", description: "AI assistant.", group: "INSIGHTS", highlight: true },
   { label: "Spending Analytics", href: "/dashboard/user/analytics", icon: "📈", description: "Spend insights.", group: "ACTIVITY" },
+  { label: "Notifications", href: "/dashboard/user/notifications", icon: "🔔", description: "Order updates & alerts.", group: "INSIGHTS" },
   { label: "Profile & Settings", href: "/dashboard/user/profile", icon: "👤", description: "Account identity.", group: "ACCOUNT" },
 ];
 

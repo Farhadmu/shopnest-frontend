@@ -299,12 +299,17 @@ export default function CustomerOverviewPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-            <Link
-              href="/dashboard/user/ai-advisor"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-accent px-5 py-2.5 text-xs font-black text-white shadow-md hover:shadow-lg hover:scale-[1.02] transition-all"
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("shopnest:open-copilot"));
+                }
+              }}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-accent px-5 py-2.5 text-xs font-black text-white shadow-md hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer"
             >
-              <FaWandSparkles /> Open AI Advisor
-            </Link>
+              <HiSparkles /> Open Customer Copilot
+            </button>
           </div>
         </div>
 

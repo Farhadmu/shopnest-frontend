@@ -19,9 +19,7 @@ export const userDashboardLinks: DashboardLink[] = [
   { label: "Shopping Goals", href: "/dashboard/user/goals", icon: "🎯", description: "Track target milestones.", group: "ACTIVITY" },
   { label: "Product Lifecycle", href: "/dashboard/user/lifecycle", icon: "🛡️", description: "Warranty & maintenance tracker.", group: "ACTIVITY" },
 
-  // INSIGHTS & AI
-  { label: "HyperPersonal (1:1 Journey)", href: "/dashboard/user/hyperpersonal", icon: "✨", description: "Next Best Action, Customer Genome & Sentiment AI.", group: "INSIGHTS", highlight: true },
-  { label: "AI Copilot / Advisor", href: "/dashboard/user/ai-advisor", icon: "🤖", description: "AI commerce shopping assistant.", group: "INSIGHTS", highlight: true },
+  // INSIGHTS
   { label: "Notifications", href: "/dashboard/user/notifications", icon: "🔔", description: "Order updates & alerts.", group: "INSIGHTS" },
 
   // ACCOUNT
