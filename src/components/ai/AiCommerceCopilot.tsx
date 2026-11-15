@@ -578,6 +578,16 @@ export function AiCommerceCopilot({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  // Support custom event to open copilot from in-dashboard buttons
+  useEffect(() => {
+    const handleCustomOpen = () => {
+      setIsOpen(true);
+      setIsMinimized(false);
+    };
+    window.addEventListener("shopnest:open-copilot", handleCustomOpen);
+    return () => window.removeEventListener("shopnest:open-copilot", handleCustomOpen);
+  }, []);
+
   // Close on Escape key
   useEffect(() => {
     if (!isOpen) return;
