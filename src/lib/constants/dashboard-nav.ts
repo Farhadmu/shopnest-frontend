@@ -47,10 +47,8 @@ export const sellerDashboardLinks: DashboardLink[] = [
   // ORDERS & FULFILLMENT
   { label: "Orders", href: "/dashboard/seller/orders", icon: "🚚", description: "Order fulfillment.", group: "ORDERS" },
   { label: "Returns & Refunds", href: "/dashboard/seller/returns", icon: "🔄", description: "Manage customer returns and refunds.", group: "ORDERS" },
-  { label: "Sales Forecast", href: "/dashboard/seller/forecast", icon: "🔮", description: "AI demand forecasting.", group: "ORDERS" },
 
   // CUSTOMERS & GROWTH
-  { label: "GrowthPilot (Marketing & CAC)", href: "/dashboard/seller/growth-pilot", icon: "🚀", description: "Autonomous growth, omnichannel campaigns & churn discounter.", group: "GROWTH", highlight: true },
   { label: "Customers", href: "/dashboard/seller/customers", icon: "👥", description: "Buyer behavior analytics.", group: "GROWTH" },
   { label: "Coupons", href: "/dashboard/seller/coupons", icon: "🏷️", description: "Discount campaigns.", group: "GROWTH" },
   { label: "Goals", href: "/dashboard/seller/goals", icon: "🎯", description: "Business targets & progress.", group: "GROWTH" },
