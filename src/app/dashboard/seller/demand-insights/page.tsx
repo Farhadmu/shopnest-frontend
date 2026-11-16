@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   DashboardShell,
@@ -45,6 +45,9 @@ import {
   Ship,
   Info,
   BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  Layers,
 } from "lucide-react";
 
 type TabId =
@@ -84,6 +87,42 @@ export default function SellerDemandInsightsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  // Scroll management for responsive tab navigation bar
+  const tabsContainerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScrollButtons = useCallback(() => {
+    if (!tabsContainerRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = tabsContainerRef.current;
+    setCanScrollLeft(scrollLeft > 4);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    checkScrollButtons();
+    const handleResize = () => checkScrollButtons();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [checkScrollButtons]);
+
+  const handleScroll = (direction: "left" | "right") => {
+    if (!tabsContainerRef.current) return;
+    const distance = 260;
+    tabsContainerRef.current.scrollBy({
+      left: direction === "left" ? -distance : distance,
+      behavior: "smooth",
+    });
+    setTimeout(checkScrollButtons, 350);
+  };
+
+  const handleTabsWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (tabsContainerRef.current && Math.abs(e.deltaY) > 0) {
+      tabsContainerRef.current.scrollLeft += e.deltaY;
+      checkScrollButtons();
+    }
+  };
 
   // Fetch DemandIQ & Visual Demands data
   useEffect(() => {
@@ -379,9 +418,32 @@ export default function SellerDemandInsightsPage() {
           </div>
         </div>
 
-        {/* Navigation Tabs - Responsive Scroll */}
-        <div className="border-b border-border/60 pb-1">
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1 -mx-2 px-2 sm:mx-0 sm:px-0">
+        {/* Navigation Tabs - Responsive Scroll with Desktop Wheel & Arrow Controls */}
+        <div className="relative border-b border-border/60 pb-1">
+          {/* Left Arrow Button */}
+          {canScrollLeft && (
+            <button
+              type="button"
+              onClick={() => handleScroll("left")}
+              aria-label="Scroll tabs left"
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 hidden sm:flex h-8 w-8 items-center justify-center rounded-full bg-background/90 border border-border/80 shadow-md backdrop-blur-md text-foreground hover:bg-muted hover:scale-105 active:scale-95 transition-all"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+          )}
+
+          {/* Left Gradient Fade */}
+          {canScrollLeft && (
+            <div className="pointer-events-none absolute left-0 top-0 bottom-1 w-10 bg-gradient-to-r from-background to-transparent z-[5] hidden sm:block" />
+          )}
+
+          {/* Tabs Container */}
+          <div
+            ref={tabsContainerRef}
+            onScroll={checkScrollButtons}
+            onWheel={handleTabsWheel}
+            className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1 -mx-2 px-2 sm:mx-0 sm:px-1 scroll-smooth"
+          >
             {(
               [
                 { id: "forecasting", label: "Demand Forecasting", badge: "AI Chart", icon: TrendingUp },
@@ -397,7 +459,10 @@ export default function SellerDemandInsightsPage() {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={(e) => {
+                    setActiveTab(tab.id);
+                    e.currentTarget.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                  }}
                   className={`inline-flex items-center gap-2 shrink-0 rounded-2xl px-3.5 sm:px-4 py-2.5 text-xs font-bold transition-all relative ${
                     isActive
                       ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/25 ring-2 ring-indigo-500/30"
@@ -417,6 +482,23 @@ export default function SellerDemandInsightsPage() {
               );
             })}
           </div>
+
+          {/* Right Gradient Fade */}
+          {canScrollRight && (
+            <div className="pointer-events-none absolute right-0 top-0 bottom-1 w-10 bg-gradient-to-l from-background to-transparent z-[5] hidden sm:block" />
+          )}
+
+          {/* Right Arrow Button */}
+          {canScrollRight && (
+            <button
+              type="button"
+              onClick={() => handleScroll("right")}
+              aria-label="Scroll tabs right"
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 hidden sm:flex h-8 w-8 items-center justify-center rounded-full bg-background/90 border border-border/80 shadow-md backdrop-blur-md text-foreground hover:bg-muted hover:scale-105 active:scale-95 transition-all"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         {/* Active Tab Explainer Banner */}
@@ -454,10 +536,11 @@ export default function SellerDemandInsightsPage() {
                 </div>
 
                 {/* Product Selector Column with Search */}
-                <div className="rounded-2xl border border-border/60 bg-card/60 p-4 sm:p-5 shadow-sm backdrop-blur-md">
+                <div className="rounded-2xl border border-border/60 bg-card/60 p-4 sm:p-5 shadow-sm backdrop-blur-md flex flex-col">
                   <div className="border-b border-border/40 pb-3 mb-3 space-y-2">
                     <div className="flex items-center justify-between">
                       <h4 className="font-bold text-foreground text-sm flex items-center gap-1.5">
+                        <Layers className="h-4 w-4 text-indigo-400" />
                         <span>Select SKU to Inspect</span>
                         <InfoTooltip
                           title="Product Selector"
@@ -477,24 +560,36 @@ export default function SellerDemandInsightsPage() {
                         value={productSearch}
                         onChange={(e) => setProductSearch(e.target.value)}
                         placeholder="Search SKU or title..."
-                        className="w-full rounded-xl border border-border/60 bg-card/80 pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                        className="w-full rounded-xl border border-border/60 bg-card/80 pl-8 pr-8 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500"
                       />
                       {productSearch && (
                         <button
                           onClick={() => setProductSearch("")}
-                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
                         >
-                          <X className="h-3 w-3" />
+                          <X className="h-3.5 w-3.5" />
                         </button>
                       )}
                     </div>
+                    {productSearch && (
+                      <p className="text-[10px] text-muted-foreground">
+                        Showing {searchedSelectorProducts.length} of {uniqueProducts.length} SKUs
+                      </p>
+                    )}
                   </div>
 
-                  <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1 scrollbar-thin">
+                  <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-indigo-500/30 scrollbar-track-transparent">
                     {searchedSelectorProducts.length === 0 ? (
-                      <p className="text-center py-6 text-xs text-muted-foreground">
-                        No SKUs match &quot;{productSearch}&quot;.
-                      </p>
+                      <div className="text-center py-8 text-xs text-muted-foreground">
+                        <p>No SKUs match &quot;{productSearch}&quot;.</p>
+                        <button
+                          type="button"
+                          onClick={() => setProductSearch("")}
+                          className="mt-2 text-indigo-400 hover:underline text-[11px]"
+                        >
+                          Clear search filter
+                        </button>
+                      </div>
                     ) : (
                       searchedSelectorProducts.map((p) => {
                         const isSelected = selectedProduct?.productId === p.productId;
@@ -502,9 +597,9 @@ export default function SellerDemandInsightsPage() {
                           <button
                             key={p.productId}
                             onClick={() => setSelectedProduct(p)}
-                            className={`w-full text-left rounded-xl p-3 border transition-all ${
+                            className={`w-full text-left rounded-xl p-3 border transition-all relative ${
                               isSelected
-                                ? "border-indigo-500 bg-indigo-500/10 ring-1 ring-indigo-500/30"
+                                ? "border-indigo-500 bg-indigo-500/15 ring-2 ring-indigo-500/40 shadow-sm"
                                 : "border-border/40 bg-card/40 hover:bg-muted/40 hover:border-border"
                             }`}
                           >
@@ -513,10 +608,10 @@ export default function SellerDemandInsightsPage() {
                               <span
                                 className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${
                                   p.stockoutRisk === "critical"
-                                    ? "bg-rose-500/10 text-rose-400"
+                                    ? "bg-rose-500/15 text-rose-400 border border-rose-500/30"
                                     : p.stockoutRisk === "warning"
-                                    ? "bg-amber-500/10 text-amber-400"
-                                    : "bg-emerald-500/10 text-emerald-400"
+                                    ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                                    : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
                                 }`}
                               >
                                 {p.daysOfSupply}d Runway
@@ -525,7 +620,9 @@ export default function SellerDemandInsightsPage() {
                             <p className="font-semibold text-xs text-foreground truncate mt-1">{p.title}</p>
                             <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">
                               <span>Stock: {p.currentStock} units</span>
-                              <span>Velocity: {p.dailyVelocity7d} u/d</span>
+                              <span className="font-mono text-[10px]">
+                                {p.dailyVelocity7d.toFixed(1)} u/d
+                              </span>
                             </div>
                           </button>
                         );
