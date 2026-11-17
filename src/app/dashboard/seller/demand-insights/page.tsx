@@ -48,6 +48,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Layers,
+  Flame,
+  Clock,
+  Maximize2,
+  CheckCircle2,
+  Image as ImageIcon,
+  Eye,
 } from "lucide-react";
 
 type TabId =
@@ -87,6 +93,7 @@ export default function SellerDemandInsightsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [previewModalItem, setPreviewModalItem] = useState<VisualSearchDemandItem | null>(null);
 
   // Scroll management for responsive tab navigation bar
   const tabsContainerRef = useRef<HTMLDivElement>(null);
@@ -204,6 +211,13 @@ export default function SellerDemandInsightsPage() {
     }
   };
 
+  const resolveDemandImageUrl = (url?: string): string => {
+    if (!url) return "/placeholder-image.jpg";
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+    if (url.startsWith("/")) return url;
+    return `/${url}`;
+  };
+
   const handleStockProduct = (item: VisualSearchDemandItem) => {
     const params = new URLSearchParams();
     params.set("title", item.detectedTitle);
@@ -213,7 +227,29 @@ export default function SellerDemandInsightsPage() {
     if (item.detectedTags && item.detectedTags.length > 0) {
       params.set("tags", item.detectedTags.join(","));
     }
+    if (item.imageUrl) {
+      params.set("imageUrl", item.imageUrl);
+    }
     router.push(`/dashboard/seller/products/add?${params.toString()}`);
+  };
+
+  const refreshVisualDemands = async () => {
+    try {
+      setVisualLoading(true);
+      const res = await getSellerDemandInsights({
+        category: selectedCategory !== "all" ? selectedCategory : undefined,
+        status: selectedStatus !== "all" ? selectedStatus : undefined,
+        search: searchQuery.trim() || undefined,
+        period: selectedPeriod !== "all" ? selectedPeriod : undefined,
+        limit: 30,
+      });
+      setVisualData(res);
+      toast.success("Demand feed refreshed!");
+    } catch {
+      toast.error("Failed to refresh demands");
+    } finally {
+      setVisualLoading(false);
+    }
   };
 
   const visualMetrics = visualData?.metrics || {
@@ -1157,67 +1193,304 @@ export default function SellerDemandInsightsPage() {
               />
             </div>
 
-            {/* Demands Grid */}
-            <Panel title="Market Gap & Customer Demand Feed">
+            {/* Demands Grid with Customer Searched Images */}
+            <Panel
+              title="Market Gap & Customer Demand Feed"
+              action={
+                <div className="flex items-center gap-2">
+                  <span className="hidden sm:inline-block text-[11px] font-mono text-muted-foreground bg-muted/40 px-2.5 py-1 rounded-xl border border-border/40">
+                    {visualData?.demands?.length || 0} Inquiries Found
+                  </span>
+                  <button
+                    type="button"
+                    onClick={refreshVisualDemands}
+                    disabled={visualLoading}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 text-xs font-bold text-indigo-400 transition cursor-pointer disabled:opacity-50 active:scale-95 shadow-xs"
+                    title="Refresh live customer image inquiries"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${visualLoading ? "animate-spin" : ""}`} />
+                    <span>{visualLoading ? "Syncing..." : "Live Sync"}</span>
+                  </button>
+                </div>
+              }
+            >
               {visualLoading ? (
-                <div className="py-12 text-center text-xs text-muted-foreground">Loading demands...</div>
+                <div className="py-16 flex flex-col items-center justify-center gap-3 text-xs text-muted-foreground">
+                  <RefreshCw className="h-6 w-6 animate-spin text-indigo-500" />
+                  <span>Loading customer visual demand inquiries...</span>
+                </div>
               ) : visualData?.demands && visualData.demands.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {visualData.demands.map((item) => (
-                    <div
-                      key={item._id}
-                      className="rounded-2xl border border-border/60 bg-card/60 p-4 shadow-sm flex flex-col justify-between"
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-                            {item.detectedCategory || "General"}
-                          </span>
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                              (item.status as string) === "unmet" || item.status === "new"
-                                ? "bg-rose-500/10 text-rose-400"
-                                : item.status === "stocked"
-                                ? "bg-emerald-500/10 text-emerald-400"
-                                : "bg-muted text-muted-foreground"
-                            }`}
-                          >
-                            {item.status}
-                          </span>
-                        </div>
-                        <h4 className="font-bold text-foreground text-sm line-clamp-1">{item.detectedTitle}</h4>
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          Searched by shoppers looking for this item. Zero merchants currently stock this exact variant.
-                        </p>
-                      </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {visualData.demands.map((item) => {
+                    const isUnmet =
+                      item.isUnmetDemand || (item.status as string) === "unmet" || item.matchedCount === 0;
+                    const hasImage = Boolean(item.imageUrl);
+                    const displayTitle =
+                      item.detectedTitle && item.detectedTitle !== "Product"
+                        ? item.detectedTitle
+                        : item.detectedCategory
+                        ? `${item.detectedCategory} Product`
+                        : "Visual Discovery Item";
 
-                      <div className="mt-4 flex items-center gap-2 pt-3 border-t border-border/40">
-                        <button
-                          onClick={() => handleStockProduct(item)}
-                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-500 transition active:scale-95"
-                          title="Auto-fills Add Product page with title, category, and tags"
-                        >
-                          <PlusCircle className="h-3.5 w-3.5" />
-                          Stock Product
-                        </button>
-                        <button
-                          onClick={() => handleMarkStatus(item, "stocked")}
-                          disabled={updatingId === item._id}
-                          className="rounded-xl border border-border/60 p-1.5 hover:bg-muted text-muted-foreground transition"
-                          title="Mark as stocked"
-                        >
-                          <Check className="h-4 w-4 text-emerald-400" />
-                        </button>
+                    return (
+                      <div
+                        key={item._id}
+                        className="group rounded-3xl border border-border/80 bg-gradient-to-b from-card/95 via-card/85 to-card/60 shadow-sm hover:shadow-xl hover:border-indigo-500/40 transition-all duration-300 overflow-hidden flex flex-col justify-between backdrop-blur-md"
+                      >
+                        {/* Image Box with Badges & Live Photo */}
+                        <div className="relative h-48 sm:h-52 w-full bg-muted/30 overflow-hidden">
+                          {hasImage ? (
+                            <img
+                              src={resolveDemandImageUrl(item.imageUrl)}
+                              alt={displayTitle}
+                              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                                const fallback = e.currentTarget.parentElement?.querySelector(".image-fallback");
+                                if (fallback) fallback.classList.remove("hidden");
+                              }}
+                            />
+                          ) : null}
+
+                          {/* Fallback image state */}
+                          <div
+                            className={`image-fallback ${
+                              hasImage ? "hidden" : "flex"
+                            } h-full w-full items-center justify-center bg-muted/20 flex-col text-muted-foreground p-4 text-center`}
+                          >
+                            <ImageIcon className="h-10 w-10 text-muted-foreground/30 mb-1" />
+                            <span className="text-[11px] font-bold">Image Visual Search</span>
+                            <span className="text-[10px] text-muted-foreground">Original search target</span>
+                          </div>
+
+                          {/* Top Badges Overlay */}
+                          <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between gap-1.5 pointer-events-none">
+                            <span className="rounded-full bg-black/70 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-400 border border-emerald-500/30">
+                              {item.detectedCategory || "General"}
+                            </span>
+                            <span
+                              className={`rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1 ${
+                                isUnmet
+                                  ? "bg-rose-500 text-white ring-1 ring-rose-400/50"
+                                  : item.status === "stocked"
+                                  ? "bg-emerald-500 text-white"
+                                  : "bg-black/70 backdrop-blur-md text-sky-400 border border-sky-500/30"
+                              }`}
+                            >
+                              {isUnmet ? (
+                                <>
+                                  <Flame className="h-3 w-3" />
+                                  0 In Stock (Gap)
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  {item.status}
+                                </>
+                              )}
+                            </span>
+                          </div>
+
+                          {/* Bottom Controls on Image */}
+                          <div className="absolute bottom-2.5 inset-x-2.5 flex items-center justify-between pointer-events-auto">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-black/70 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-mono text-white/90 border border-white/10">
+                              <Clock className="h-3 w-3 text-indigo-400" />
+                              {new Date(item.createdAt).toLocaleDateString()}
+                            </span>
+
+                            {hasImage && (
+                              <button
+                                type="button"
+                                onClick={() => setPreviewModalItem(item)}
+                                className="h-7 w-7 rounded-full bg-black/75 backdrop-blur-md text-white hover:bg-indigo-600 transition flex items-center justify-center border border-white/20 cursor-pointer shadow-md"
+                                title="View full customer search image"
+                              >
+                                <Maximize2 className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Card Content Details */}
+                        <div className="p-4 space-y-2.5 flex-1 flex flex-col justify-between">
+                          <div className="space-y-1.5">
+                            <h4 className="font-black text-foreground text-sm line-clamp-2 leading-snug group-hover:text-indigo-400 transition-colors">
+                              {displayTitle}
+                            </h4>
+
+                            {/* Search query if customer typed text */}
+                            {item.searchQuery && (
+                              <div className="rounded-xl bg-muted/40 p-2 text-[11px] text-muted-foreground flex items-center gap-1.5">
+                                <Search className="h-3 w-3 text-indigo-400 shrink-0" />
+                                <span className="truncate italic">&ldquo;{item.searchQuery}&rdquo;</span>
+                              </div>
+                            )}
+
+                            {/* Detected Attributes (Price & Brand) */}
+                            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                              {item.marketPriceEstimate && (
+                                <span className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-mono font-bold text-emerald-400">
+                                  {item.marketPriceEstimate}
+                                </span>
+                              )}
+                              {item.detectedBrand && (
+                                <span className="rounded-lg bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                                  {item.detectedBrand}
+                                </span>
+                              )}
+                              {item.detectedColor && (
+                                <span className="rounded-lg bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                                  Color: {item.detectedColor}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Tags */}
+                            {item.detectedTags && item.detectedTags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 pt-1">
+                                {item.detectedTags.slice(0, 4).map((tag, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="rounded-md bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 text-[9px] font-mono text-indigo-400"
+                                  >
+                                    #{tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Unmet demand message */}
+                          <div className="pt-2 text-[11px] text-muted-foreground leading-relaxed border-t border-border/40">
+                            {isUnmet ? (
+                              <p className="text-amber-500/90 dark:text-amber-400 font-medium">
+                                ⚡ Zero merchants currently stock this item. Add it to capture active buyer traffic!
+                              </p>
+                            ) : (
+                              <p className="text-muted-foreground">
+                                Customer visual inquiry recorded. Matched with {item.matchedCount} catalog SKU(s).
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Card Footer Actions */}
+                        <div className="p-4 pt-0 flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleStockProduct(item)}
+                            className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 px-4 py-2 text-xs font-black text-white shadow-md transition-all active:scale-95 cursor-pointer"
+                            title="Prefills Add Product listing with title, category, tags, and this photo!"
+                          >
+                            <PlusCircle className="h-3.5 w-3.5" />
+                            Stock Product
+                          </button>
+
+                          {hasImage && (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewModalItem(item)}
+                              className="rounded-2xl border border-border/80 bg-card p-2 text-muted-foreground hover:text-foreground hover:bg-muted transition cursor-pointer"
+                              title="Inspect Image"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => handleMarkStatus(item, item.status === "stocked" ? "reviewed" : "stocked")}
+                            disabled={updatingId === item._id}
+                            className="rounded-2xl border border-border/80 bg-card p-2 hover:bg-muted text-muted-foreground hover:text-emerald-400 transition cursor-pointer"
+                            title={item.status === "stocked" ? "Mark as reviewed" : "Mark as stocked"}
+                          >
+                            <Check className="h-4 w-4 text-emerald-400" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
-                <div className="py-12 text-center text-xs text-muted-foreground">
-                  No visual unmet demands recorded for this filter.
+                <div className="py-16 text-center text-xs text-muted-foreground flex flex-col items-center justify-center gap-2">
+                  <ImageIcon className="h-10 w-10 text-muted-foreground/30" />
+                  <p className="font-bold text-foreground">No visual customer demands recorded for this filter</p>
+                  <p className="text-[11px] max-w-sm text-muted-foreground">
+                    When shoppers search products using image upload, unmet items will appear here automatically with their photo and details.
+                  </p>
                 </div>
               )}
             </Panel>
+          </div>
+        )}
+
+        {/* Fullscreen Photo Lightbox Modal */}
+        {previewModalItem && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200"
+            onClick={() => setPreviewModalItem(null)}
+          >
+            <div
+              className="relative max-w-2xl w-full rounded-3xl border border-border/80 bg-card p-4 sm:p-6 shadow-2xl flex flex-col gap-4 overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-border/40 pb-3">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                    {previewModalItem.detectedCategory || "General"}
+                  </span>
+                  <h3 className="font-bold text-foreground text-base">
+                    {previewModalItem.detectedTitle}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewModalItem(null)}
+                  className="rounded-full bg-muted p-2 text-muted-foreground hover:text-foreground transition cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="relative max-h-[60vh] overflow-hidden rounded-2xl bg-black/40 flex items-center justify-center">
+                <img
+                  src={resolveDemandImageUrl(previewModalItem.imageUrl)}
+                  alt={previewModalItem.detectedTitle}
+                  className="max-h-[60vh] w-auto object-contain rounded-2xl"
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+                <div className="text-xs text-muted-foreground">
+                  <p>
+                    Searched on:{" "}
+                    <span className="font-mono text-foreground font-semibold">
+                      {new Date(previewModalItem.createdAt).toLocaleString()}
+                    </span>
+                  </p>
+                  {previewModalItem.marketPriceEstimate && (
+                    <p className="font-mono text-emerald-400 font-bold mt-0.5">
+                      Estimated Market Price: {previewModalItem.marketPriceEstimate}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const item = previewModalItem;
+                      setPreviewModalItem(null);
+                      handleStockProduct(item);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 text-xs font-bold text-white shadow-md transition active:scale-95 cursor-pointer"
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                    Stock This Product Now
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

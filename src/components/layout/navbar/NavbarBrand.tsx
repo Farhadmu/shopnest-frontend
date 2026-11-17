@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { FaSearch } from "react-icons/fa";
+import { FaSearch, FaCamera } from "react-icons/fa";
 
 
 interface NavbarBrandProps {
@@ -61,9 +61,21 @@ export function NavbarBrand({ onClose, search, setSearch, isScrolled = false }: 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search products, stores..."
-            className="w-full min-w-0 bg-transparent pr-2.5 text-xs text-white outline-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100 placeholder:text-white/50"
+            className="w-full min-w-0 bg-transparent pr-1 text-xs text-white outline-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100 placeholder:text-white/50"
             aria-label="Search ShopNest"
           />
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              window.dispatchEvent(new CustomEvent("open_visual_search"));
+            }}
+            title="Search by image (AI Visual Lens)"
+            aria-label="Search by image"
+            className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-white/70 hover:text-white hover:bg-white/20 transition-all opacity-0 group-hover:opacity-100 focus-within:opacity-100 cursor-pointer"
+          >
+            <FaCamera size={11} />
+          </button>
         </div>
       </form>
     </div>

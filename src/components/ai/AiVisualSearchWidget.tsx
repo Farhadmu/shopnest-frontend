@@ -8,11 +8,9 @@ import {
   Sparkles,
   UploadCloud,
   X,
-  Search,
   ShoppingBag,
   Check,
   Loader2,
-  ExternalLink,
   Tag,
   Store,
   RefreshCw,
@@ -26,9 +24,7 @@ import {
   History,
   Trash2,
   Crop,
-  Layers,
   ChevronRight,
-  Sparkle,
 } from "lucide-react";
 import Image from "next/image";
 import { useSession } from "@/lib/auth-client";
@@ -193,6 +189,22 @@ export function AiVisualSearchWidget() {
     setActiveCropBox(null);
     setIsCropActive(false);
   };
+
+  // Listen for open_visual_search custom event (e.g. from homepage banner or search bar)
+  useEffect(() => {
+    const handleOpenVisual = (e: Event) => {
+      const customEvent = e as CustomEvent<{ file?: File; imageUrl?: string }>;
+      setIsOpen(true);
+      if (customEvent.detail?.file) {
+        processFile(customEvent.detail.file);
+      } else if (customEvent.detail?.imageUrl) {
+        setImageUrlInput(customEvent.detail.imageUrl);
+        setInputMode("url");
+      }
+    };
+    window.addEventListener("open_visual_search", handleOpenVisual);
+    return () => window.removeEventListener("open_visual_search", handleOpenVisual);
+  }, []);
 
   // Handle URL Preview Load
   const handleUrlPreview = () => {
