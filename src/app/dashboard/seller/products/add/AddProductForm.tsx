@@ -59,11 +59,13 @@ function AddProductFormInner() {
   const queryTitle = searchParams.get("title");
   const queryCategory = searchParams.get("category");
   const queryTags = searchParams.get("tags");
+  const queryImage = searchParams.get("imageUrl") || searchParams.get("image");
 
-  const queryPrefill = (queryTitle || queryCategory || queryTags) ? {
+  const queryPrefill = (queryTitle || queryCategory || queryTags || queryImage) ? {
     title: queryTitle || undefined,
     category: queryCategory || undefined,
     tags: queryTags ? queryTags.split(",") : undefined,
+    images: queryImage ? [queryImage] : undefined,
   } : undefined;
 
   const mergedPrefill = aiPrefill || queryPrefill;
@@ -112,13 +114,13 @@ function AddProductFormInner() {
         <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center xl:w-auto">
           <ListingHealthRing score={p.listingHealth} />
 
-          <Button
-            type="button"
-            variant="primary"
-            isDisabled={p.isLoading || store?.status === "suspended"}
-            onPress={p.handleSubmit as any}
-            className={`whitespace-nowrap ${store?.status === "suspended" ? "opacity-60 cursor-not-allowed bg-rose-500/20 text-rose-600 border border-rose-500/30" : ""}`}
-          >
+            <Button
+              type="button"
+              variant="primary"
+              isDisabled={p.isLoading || store?.status === "suspended"}
+              onPress={() => void p.handleSubmit()}
+              className={`whitespace-nowrap ${store?.status === "suspended" ? "opacity-60 cursor-not-allowed bg-rose-500/20 text-rose-600 border border-rose-500/30" : ""}`}
+            >
             {p.isLoading ? "Saving..." : store?.status === "suspended" ? "Listing Locked" : editId ? "Update Product" : "Publish Product"}
           </Button>
         </div>
@@ -230,7 +232,7 @@ function AddProductFormInner() {
             >
               Cancel
             </Link>
-            <Button type="button" variant="primary" isDisabled={p.isLoading || store?.status === "suspended"} onPress={p.handleSubmit as any}>
+            <Button type="button" variant="primary" isDisabled={p.isLoading || store?.status === "suspended"} onPress={() => void p.handleSubmit()}>
               {p.isLoading ? "Saving..." : store?.status === "suspended" ? "Listing Locked" : editId ? "Update Product" : "Publish Product"}
             </Button>
           </div>

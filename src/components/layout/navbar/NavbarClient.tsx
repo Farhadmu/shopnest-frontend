@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useSyncExternalStore } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { FaBars, FaTimes, FaSearch } from "react-icons/fa";
+import { FaBars, FaTimes, FaSearch, FaCamera } from "react-icons/fa";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useCartDrawer } from "@/context/CartDrawerContext";
 import { getCart } from "@/lib/api/cart";
@@ -84,9 +84,12 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
   });
 
   useEffect(() => {
-    if (typeof window !== "undefined" && window.scrollY > 30) {
-      setIsScrolled(true);
-    }
+    const timer = window.setTimeout(() => {
+      if (typeof window !== "undefined" && window.scrollY > 30) {
+        setIsScrolled(true);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   // Sync cart count
@@ -255,6 +258,18 @@ export function NavbarClient({ desktopCategoryMenu, mobileCategoryMenu }: Navbar
                     placeholder="Search ShopNest..."
                     className="min-w-0 flex-1 bg-transparent px-3 text-xs text-white outline-none placeholder:text-white/50"
                   />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      window.dispatchEvent(new CustomEvent("open_visual_search"));
+                    }}
+                    title="Search by image (AI Visual Lens)"
+                    aria-label="Search by image"
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-white/70 hover:text-white hover:bg-white/20 transition-all cursor-pointer"
+                  >
+                    <FaCamera size={12} />
+                  </button>
                 </div>
               </form>
             </motion.div>

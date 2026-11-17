@@ -1,5 +1,6 @@
+"use client";
+
 import React, { useRef, ChangeEvent } from "react";
-import Link from "next/link";
 import { FaImage, FaArrowRight, FaUpload } from "react-icons/fa";
 
 export default function VisualSearchSection(): React.JSX.Element {
@@ -12,8 +13,27 @@ export default function VisualSearchSection(): React.JSX.Element {
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const file = e.target.files?.[0];
     if (file) {
-      console.log("Selected file:", file);
+      window.dispatchEvent(new CustomEvent("open_visual_search", { detail: { file } }));
+      if (e.target) e.target.value = "";
     }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>): void => {
+    e.preventDefault();
+    e.stopPropagation();
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      window.dispatchEvent(new CustomEvent("open_visual_search", { detail: { file } }));
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>): void => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleOpenSearchModal = (): void => {
+    window.dispatchEvent(new CustomEvent("open_visual_search"));
   };
 
   return (
@@ -32,12 +52,13 @@ export default function VisualSearchSection(): React.JSX.Element {
           Upload a product photo and ShopNest can help you discover visually similar products across
           the marketplace.
         </p>
-        <Link
-          href="/products"
-          className="mt-6 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-bold text-slate-900 transition hover:border-indigo-500/30 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+        <button
+          type="button"
+          onClick={handleOpenSearchModal}
+          className="mt-6 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-bold text-slate-900 transition hover:border-indigo-500/30 dark:border-slate-800 dark:bg-slate-900 dark:text-white cursor-pointer active:scale-95"
         >
           Explore visual search <FaArrowRight />
-        </Link>
+        </button>
       </div>
 
       <div className="relative overflow-hidden rounded-[2rem] bg-indigo-50/70 p-7 dark:bg-slate-900 sm:p-9">
@@ -51,17 +72,25 @@ export default function VisualSearchSection(): React.JSX.Element {
           className="hidden"
         />
 
-        <div className="relative flex h-full flex-col items-center justify-center rounded-[1.5rem] border-2 border-dashed border-indigo-200 bg-white/80 p-8 text-center backdrop-blur-sm dark:border-slate-700 dark:bg-slate-950/50">
-          <FaImage className="text-4xl text-indigo-600 dark:text-indigo-400" />
-          <p className="mt-4 font-bold text-slate-900 dark:text-white">Drop an image here</p>
+        <div
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onClick={handleButtonClick}
+          className="relative flex h-full flex-col items-center justify-center rounded-[1.5rem] border-2 border-dashed border-indigo-200 bg-white/80 p-8 text-center backdrop-blur-sm dark:border-slate-700 dark:bg-slate-950/50 cursor-pointer hover:border-indigo-500 hover:bg-white/95 dark:hover:bg-slate-900/80 transition-all group"
+        >
+          <FaImage className="text-4xl text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform" />
+          <p className="mt-4 font-bold text-slate-900 dark:text-white">Drop an image here or click to browse</p>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            AI-powered product discovery
+            AI-powered product discovery & instant match
           </p>
 
           <button
             type="button"
-            onClick={handleButtonClick}
-            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-indigo-700 active:scale-95 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleButtonClick();
+            }}
+            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-indigo-700 active:scale-95 dark:bg-indigo-500 dark:hover:bg-indigo-600 cursor-pointer"
           >
             <FaUpload /> Upload Image
           </button>
