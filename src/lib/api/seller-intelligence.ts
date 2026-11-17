@@ -36,6 +36,8 @@ export interface SalesForecastData {
     upperBand: number;
     expectedOrders: number;
   }>;
+  historicalRevenue30d?: number;
+  activeProductsCount?: number;
   limitations: string;
 }
 
@@ -148,6 +150,7 @@ export interface AbExperimentData {
   variantB: { name: string; value: string; views: number; clicks: number; cartAdds: number; orders: number; revenue: number; conversionRate: number };
   status: "active" | "paused" | "completed";
   winner?: "variantA" | "variantB" | "inconclusive";
+  liftPercent?: number;
   confidenceScore: number;
   startDate: string;
 }
