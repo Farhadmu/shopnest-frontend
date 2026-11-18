@@ -85,7 +85,7 @@ const ACTION_URLS: Record<string, string> = {
   order: "/dashboard/admin/orders",
   review: "/dashboard/admin/reviews",
   incident: "/dashboard/admin/incidents",
-  security_event: "/dashboard/admin/security",
+  security_event: "/dashboard/admin/risk",
   product: "/dashboard/admin/products",
   delivery: "/dashboard/admin/delivery",
   payment: "/dashboard/admin/orders",
