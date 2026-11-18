@@ -67,7 +67,6 @@ export const adminDashboardLinks: DashboardLink[] = [
   { label: "Platform Analytics", href: "/dashboard/admin/analytics", icon: "📈", description: "Marketplace-wide metrics.", group: "OVERVIEW" },
 
   // SECURITY & GOVERNANCE
-  { label: "Security Center", href: "/dashboard/admin/security", icon: "🔐", description: "Platform security posture.", group: "SECURITY" },
   { label: "Risk & Fraud", href: "/dashboard/admin/risk", icon: "🚨", description: "Fraud & anomaly detection.", group: "SECURITY" },
   { label: "Incidents", href: "/dashboard/admin/incidents", icon: "📑", description: "Incident management.", group: "SECURITY" },
   { label: "Audit Logs", href: "/dashboard/admin/audit-logs", icon: "📜", description: "Governance audit trail.", group: "SECURITY" },

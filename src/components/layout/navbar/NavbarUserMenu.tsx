@@ -55,7 +55,6 @@ const userDropdownItems: Record<Exclude<UserRole, "guest">, DropdownItem[]> = {
   admin: [
     { icon: FaShieldAlt, label: "Command Center", href: "/dashboard/admin" },
     { icon: "📈", label: "Platform Analytics", href: "/dashboard/admin/analytics" },
-    { icon: FaShieldAlt, label: "Security Center", href: "/dashboard/admin/security" },
     { icon: "🚨", label: "Risk & Fraud Detection", href: "/dashboard/admin/risk" },
     { icon: "📑", label: "Incident Management", href: "/dashboard/admin/incidents" },
     { icon: "📜", label: "Governance Audit Logs", href: "/dashboard/admin/audit-logs" },

@@ -740,7 +740,6 @@ shopnest-frontend/
 | `/dashboard/admin/profile` | Admin | Admin profile |
 | `/dashboard/admin/reviews` | Admin | Review moderation |
 | `/dashboard/admin/risk` | Admin | Risk assessment |
-| `/dashboard/admin/security` | Admin | Security center |
 | `/dashboard/admin/sellers` | Admin | Seller management |
 | `/dashboard/admin/sellers/[id]` | Admin | Individual seller details |
 | `/dashboard/admin/users` | Admin | User management |
